@@ -10,6 +10,21 @@ TERMIOS = termios
 
 from select import select
 
+def safe_read(fd, length):
+    count = 0
+    data = ""
+    start = time.time()
+
+    while count < len:
+        i, _, _ = select([fd], [], [], 5)
+        if fd in i:
+            _data = os.read(fd, length - count)
+            data += _data
+        else:
+            break
+
+    return data
+
 class PtyHelper:
     def reconf(self, fd):
         iflag, oflag, cflag, lflag, ispeed, ospeed, cc = termios.tcgetattr(fd)
