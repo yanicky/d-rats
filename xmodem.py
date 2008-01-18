@@ -155,7 +155,10 @@ class XModem:
     def recv_block(self, pipe):
         csum = XModemChecksum()
         
-        block_num = self.read_header(pipe)
+        try:
+            block_num = self.read_header(pipe)
+        except:
+            return 0, None
 
         self.debug("Reading block %i" % block_num)
         data = pipe.read(self.block_size)
@@ -200,9 +203,12 @@ class XModem:
 
         while data[-1] != EOF:
             n, data = self.recv_block(pipe)
+            if data is None:
+                break
+            
             self.data += data
 
-        self.debug("Transfer complete")
+        self.debug("Transfer complete (%i bytes)" % len(self.data))
 
     def send_xfer(self, pipe, source):
         global debug
