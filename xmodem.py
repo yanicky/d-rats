@@ -3,13 +3,12 @@
 import ptyhelper
 import os
 import time
+import sys
 
 EOF = chr(26)
 NAK = chr(21)
 SOH = chr(1)
 ACK = chr(6)
-
-debug = None
 
 def hexprint(data):
     col = 0
@@ -47,15 +46,79 @@ def hexprint(data):
 
     return csum
 
-class XModem:
+class XModemChecksum:
     def __init__(self):
+        self.c = 0
+        self.r = 0
+
+    def process_block(self, data):
+        for i in data:
+            self.c += ord(i)
+            self.c &= 0xFF
+
+    def read(self, pipe):
+        data = pipe.read(1)
+        self.r = ord(data)
+
+    def validate(self):
+        return self.c == self.r
+
+class XModemCRCChecksum(XModemChecksum):
+    def update_crc(self, c, crc):
+        for _ in range(0,8):
+            c <<= 1
+
+            if (c & 0400) != 0:
+                v = 1
+            else:
+                v = 0
+                
+            if (crc & 0x8000):
+                crc <<= 1
+                crc += v
+                crc ^= 0x1021
+            else:
+                crc <<= 1
+                crc += v
+
+        return crc & 0xFFFF
+
+    def process_block(self, data):
+        for i in data:
+            self.c = self.update_crc(ord(i), self.c)
+
+        self.c = self.update_crc(0, self.c)
+        self.c = self.update_crc(0, self.c)
+
+    def read(self, pipe):
+        data = pipe.read(2)
+        if len(data) != 2:
+            raise Exception("Short CRC read")
+
+        self.r = (ord(data[0]) << 8) | (ord(data[1]))
+
+class XModem:
+    def __init__(self, debug=None):
         self.block_size = 128
         self.checksum_size = 1
         self.start_xfer = NAK
         self.data = ""
+        if debug:
+            if debug == "stdout":
+                self._debug = sys.stdout
+            else:
+                self._debug = file(debug, "w")
+        else:
+            self._debug = None
+
+    def debug(self, str):
+        if not self._debug:
+            return
+
+        self._debug.write(str + "\n")
 
     def read_header(self, pipe):
-        print "Reading header"
+        self.debug("Reading header")
         data = pipe.read(3)
 
         hexprint(data + " " * 20)
@@ -69,8 +132,7 @@ class XModem:
         return ord(data[1])
 
     def write_header(self, pipe, num):
-        if debug:
-            debug.write("Writing header %i\n" % num)
+        self.debug("Writing header %i\n" % num)
         hdr = ""
         hdr += SOH
         hdr += chr(num)
@@ -92,7 +154,7 @@ class XModem:
     def recv_block(self, pipe):
         block_num = self.read_header(pipe)
 
-        print "Reading block %i" % block_num
+        self.debug("Reading block %i" % block_num)
         data = pipe.read(self.block_size)
         r_csum = pipe.read(self.checksum_size)
         c_csum = self.checksum(data)
@@ -102,6 +164,7 @@ class XModem:
             #print "Checksum: 0x%x Received: 0x%x" % (c_csum, ord(r_csum))
             raise Exception("Block %i checksum mismatch" % block_num)
         else:
+            self.debug("Recevied block %i" % block_num)
             pipe.write(ACK)
 
         return (block_num, data)        
@@ -109,66 +172,59 @@ class XModem:
     def send_block(self, pipe, block, num):
         self.write_header(pipe, num)
 
-        if debug:
-            debug.write("Sending block %i\n" % num)
-        #print block
+        self.debug("Sending block %i\n" % num)
+
         pipe.write(block)
         csum = self.checksum(block)
         pipe.write(chr((csum & 0xFF00) >> 8) + chr(csum & 0xFF))
-        if debug:
-            debug.write("Checksum: %s\n" % chr((csum & 0xFF00) >> 8) + chr(csum & 0xFF))
-
+        self.debug("Checksum: %s\n" % chr((csum & 0xFF00) >> 8) + chr(csum & 0xFF))
 
         ack = pipe.read(1)
-        if ack == ack:
-            if debug:
-                debug.write("Got ack for block %i\n" % num)
+        if ack == ACK:
+            self.debug("Got ack for block %i\n" % num)
         else:
-            raise Exception("NAK on block" % block)
+            raise Exception("NAK on block %i (%s)" % (num, ack))
 
     def recv_xfer(self, pipe):
         pipe.write(self.start_xfer)
-        print "Sent start"
+        self.debug("Sent start")
 
         data = "aa"
 
         while data[-1] != EOF:
             n, data = self.recv_block(pipe)
-            print "Received block %i" % n
+            self.debug("Received block %i" % n)
             self.data += data
 
-        print "Transfer completed"
+        self.debug("Transfer complete")
 
     def send_xfer(self, pipe, source):
         global debug
         #pipe.write("Start receive now...\n")
-        debug = file("xmodem.debug", "w", 0)
 
         for i in range(0,10):
-            debug.write("Waiting for start %i\n" % time.time())
+            self.debug("Waiting for start %i\n" % time.time())
 
             try:
                 start = pipe.read(1)
             except Exception, e:
-                debug.write("Didn't get start %i\n" % time.time())
-                debug.write(str(e))
+                self.debug("Didn't get start %i\n" % time.time())
+                self.debug("Exception: %" % str(e))
                 return
 
-            debug.write("Got start: `%s'\n" % start)
+            self.debug("Got start: `%s'\n" % start)
 
             if start != NAK and start != "C":
-                debug.write("Waiting again...")
+                self.debug("Waiting again...")
                 time.sleep(1)
             else:
                 break
         
         if start != NAK and start != "C":
-            if debug:
-                debug.write("Got !NAK for start\n")
+            self.debug("Got !NAK for start\n")
             raise Exception("Received 0x%02x instead of NAK" % ord(start))
         else:
-            if debug:
-                debug.write("Got '%s' for start\n" % start)
+            self.debug("Got '%s' for start\n" % start)
 
         data = "aa"
         blockno = 0
@@ -176,8 +232,7 @@ class XModem:
 
         blocks = len(data) / self.block_size
 
-        if debug:
-            debug.write("Sending %i blocks\n" % blocks)
+        self.debug("Sending %i blocks\n" % blocks)
         for blockno in range(0, 10):
             try:
                 data = source.read(self.block_size)
@@ -187,20 +242,21 @@ class XModem:
                 if debug:
                     debug.write("Got exception on source read: %s\n" % e)
             self.send_block(pipe, data, blockno)
-            debug.write("sent blockno %i\n" % blockno)
+            self.debug("Sent block %i\n" % blockno)
             self.crc = 0
 
-        if debug:
-            debug.write("Transfer finished\n")
+        self.debug("Transfer finished\n")
         
 
 class XModemCRC(XModem):
-    def __init__(self):
+    def __init__(self, debug=None):
         self.block_size = 128
         self.checksum_size = 2
         self.start_xfer = "C"
         self.crc = 0
         self.data = ""
+
+        XModem.__init__(self, debug=debug)
 
     def update_crc(self, c, crc):
         for _ in range(0,8):
@@ -243,7 +299,7 @@ if __name__ == "__main__":
     #p = ptyhelper.PtyHelper("rx -v outputfile")
     #p = ptyhelper.PtyHelper("sx xmodem.py")
     
-    x = XModemCRC()
+    x = XModemCRC(debug="stdout")
 
     try:
         # Eat up the buffer
