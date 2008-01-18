@@ -144,7 +144,7 @@ class XModem:
         return ord(data[1])
 
     def write_header(self, pipe, num):
-        self.debug("Writing header %i\n" % num)
+        self.debug("Writing header %i" % num)
         hdr = ""
         hdr += SOH
         hdr += chr(num)
@@ -179,18 +179,18 @@ class XModem:
     def send_block(self, pipe, block, num):
         self.write_header(pipe, num)
 
-        self.debug("Sending block %i (%i bytes)\n" % (num, len(block)))
+        self.debug("Sending block %i (%i bytes)" % (num, len(block)))
 
         pipe.write(block)
         csum = XModemChecksum()
         csum.process_block(block)
         csum.write(pipe)
 
-        self.debug("Checksum: %s\n" % csum)
+        self.debug("Checksum: %s" % csum)
 
         ack = pipe.read(1)
         if ack == ACK:
-            self.debug("ACK for block %i\n" % num)
+            self.debug("ACK for block %i" % num)
         else:
             
             raise Exception("NAK on block %i (`%s':%i)" % (num, ack, len(ack)))
@@ -215,16 +215,16 @@ class XModem:
         #pipe.write("Start receive now...\n")
 
         for i in range(0,10):
-            self.debug("Waiting for start %i\n" % time.time())
+            self.debug("Waiting for start %i" % time.time())
 
             try:
                 start = pipe.read(1)
             except Exception, e:
-                self.debug("Didn't get start %i\n" % time.time())
+                self.debug("Didn't get start %i" % time.time())
                 self.debug("Exception: %" % str(e))
                 return
 
-            self.debug("Got start: `%s'\n" % start)
+            self.debug("Got start: `%s'" % start)
 
             if start != NAK and start != "C":
                 self.debug("Waiting again...")
@@ -233,10 +233,10 @@ class XModem:
                 break
         
         if start != NAK and start != "C":
-            self.debug("Got !NAK for start\n")
+            self.debug("Got !NAK for start")
             raise Exception("Received 0x%02x instead of NAK" % ord(start))
         else:
-            self.debug("Got '%s' for start\n" % start)
+            self.debug("Got '%s' for start" % start)
 
         data = "aa"
         blockno = 0
@@ -251,12 +251,12 @@ class XModem:
                     data += (128 - len(data)) * " "
             except Exception, e:
                 if debug:
-                    debug.write("Got exception on source read: %s\n" % e)
+                    debug.write("Got exception on source read: %s" % e)
             self.send_block(pipe, data, blockno)
-            self.debug("Sent block %i\n" % blockno)
+            self.debug("Sent block %i" % blockno)
             self.crc = 0
 
-        self.debug("Transfer finished\n")
+        self.debug("Transfer finished")
         
 
 class XModemCRC(XModem):
