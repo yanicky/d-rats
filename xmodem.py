@@ -10,6 +10,7 @@ NAK = chr(21)
 SOH = chr(1)
 ACK = chr(6)
 EOT = chr(4)
+CAN = chr(24)
 
 def hexprint(data):
     col = 0
@@ -46,6 +47,15 @@ def hexprint(data):
         print ""
 
     return csum
+
+class FatalError(Exception):
+    pass
+
+class BlockReadError(Exception):
+    pass
+
+class GenericError(Exception):
+    pass
 
 class XModemChecksum:
     title = "XModem"
@@ -105,7 +115,7 @@ class XModemCRCChecksum(XModemChecksum):
     def read(self, pipe):
         data = pipe.read(2)
         if len(data) != 2:
-            raise Exception("Short CRC read")
+            raise GenericError("Short CRC read")
 
         self.r = (ord(data[0]) << 8) | (ord(data[1]))
 
@@ -117,6 +127,7 @@ class XModem:
     def __init__(self, debug=None):
         self.block_size = 128
         self.start_xfer = NAK
+        self.retries = 10
         self.data = ""
         if debug:
             if debug == "stdout":
@@ -136,23 +147,29 @@ class XModem:
         self._debug.write(str + "\n")
 
     def read_header(self, pipe):
-        next = pipe.read(1)
-        self.debug("Next header: 0x%02x" % ord(next))
+        next = None
+        while next not in [SOH, EOT]:
+            if next:
+                self.debug("Syncing... 0x%02x '%s'" % (ord(next), next))
+            next = pipe.read(1)
+            
+        self.debug("Next header: 0x%02x (%s)" % (ord(next), next))
         if next == EOT:
             self.debug("End of transfer")
             return -1
+        elif next == CAN:
+            raise FatalError("Sender cancelled transfer")
 
         self.debug("Reading header")
         data = pipe.read(2)
         data = next + data
 
-        hexprint(data + " " * 20)
+        #hexprint(data + " " * 20)
 
-        if data[0] != SOH:
-            raise Exception("Bad header: Missing SOH")
-
+        if len(data) != 3:
+            raise GenericError("Bad header: short")
         if ord(data[1]) != (255 - ord(data[2])):
-            raise Exception("Bad header: Invalid block")
+            raise GenericError("Bad header: Invalid block")
 
         return ord(data[1])
 
@@ -165,15 +182,11 @@ class XModem:
 
         pipe.write(hdr)
 
-    def recv_block(self, pipe):
+    def _recv_block(self, pipe):
         csum = self.checksum()
         
-        try:
-            block_num = self.read_header(pipe)
-        except:
-            self.debug("No next header")
-            pipe.write(ACK)
-            return 0, None
+        # Failure to read header bubbles up
+        block_num = self.read_header(pipe)
 
         if block_num == -1:
             pipe.write(ACK)
@@ -186,14 +199,37 @@ class XModem:
         csum.read(pipe)
 
         if not csum.validate():
-            pipe.write(NAK)
             #print "Checksum: 0x%x Received: 0x%x" % (c_csum, ord(r_csum))
-            raise Exception("Block %i checksum mismatch" % block_num)
+            raise GenericError("Block %i checksum mismatch" % block_num)
         else:
             r = pipe.write(ACK)
             self.debug("Recevied block %i (%i)" % (block_num, r))
 
         return (block_num, data)        
+
+    def recv_block(self, pipe):
+        last_error = False
+        for i in range(0, self.retries):
+            try:
+                n, data = self._recv_block(pipe)
+                if data is None and n == -1:
+                    self.debug("Recevied EOT after bad block, retrying")
+                    continue
+                return n, data
+            except FatalError, e:
+                self.debug("Fatal error: %s" % e)
+                raise e
+            except GenericError, e:
+                self.debug("Block read: %s (purging)" % e)
+                last_error = True
+                _ = pipe.read(self.block_size)
+                _ += pipe.read(self.block_size)
+                _ += pipe.read(self.block_size)
+                self.debug("Purged %i" % len(_))
+                self.debug("Failed block (attempt %i/%i)" % (i, self.retries))
+                pipe.write(NAK)
+
+        raise FatalError("Transfer failed (too many retries)")
 
     def send_block(self, pipe, block, num):
         self.write_header(pipe, num)
@@ -212,7 +248,7 @@ class XModem:
             self.debug("ACK for block %i" % num)
         else:
             
-            raise Exception("NAK on block %i (`%s':%i)" % (num, ack, len(ack)))
+            raise GenericError("NAK on block %i (`%s':%i)" % (num, ack, len(ack)))
 
     def recv_xfer(self, pipe):
         blocks = []
@@ -221,11 +257,17 @@ class XModem:
         self.debug("Sent start: 0x%02x" % ord(self.start_xfer))
 
         data = "aa"
-
+        last = 0
         while True:
             n, data = self.recv_block(pipe)
             if data is None:
                 break
+
+            if (n != last) and (n != last + 1):
+                self.debug("Received OOB: %i -> %i" % (last, n))
+                raise FatalError("Out of order block")
+            else:
+                last = n
 
             if n in blocks:
                 self.debug("Received duplicate block %i" % n)
@@ -260,9 +302,9 @@ class XModem:
             if start:
                 self.debug(str(self.checksums.keys()))
                 self.debug(str(e))
-                raise Exception("Unknown transfer type: 0x%02x" % ord(start[0]))
+                raise GenericError("Unknown transfer type: 0x%02x" % ord(start[0]))
             else:
-                raise Exception("Transfer start timed out")
+                raise GenericError("Transfer start timed out")
 
         return True
 
@@ -289,7 +331,7 @@ class XModem:
                 if len(data) == 0:
                     break
             except:
-                raise Exception("IO error reading input file")
+                raise GenericError("IO error reading input file")
 
             self.send_block(pipe, self.pad_data(data), blockno)
             blockno += 1
@@ -305,7 +347,8 @@ if __name__ == "__main__":
     #p = ptyhelper.PtyHelper("python sx.py xmodem.py")
     #p = ptyhelper.PtyHelper("python test.py")
     #p = ptyhelper.PtyHelper("rx -v outputfile")
-    p = ptyhelper.PtyHelper("sx -vvvv xmodem.py")
+    #p = ptyhelper.PtyHelper("sx -vvvv xmodem.py")
+    p = ptyhelper.LossyPtyHelper("sx -vvvv xmodem.py", missing=False)
     
     x = XModemCRC(debug="stdout")
 
