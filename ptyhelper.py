@@ -93,8 +93,9 @@ class PtyHelper:
         return safe_read(self.fd, size, self.timeout)
 
     def write(self, str):
-        #return os.write(self.fd, str)
-        return safe_write(self.fd, str, self.timeout)
+        r = safe_write(self.fd, str, self.timeout)
+        termios.tcdrain(self.fd)
+        return r
 
     def close(self):
         os.close(self.fd)
