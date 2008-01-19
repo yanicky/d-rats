@@ -47,10 +47,11 @@ def hexprint(data):
     return csum
 
 class XModemChecksum:
+    title = "XModem"
+    
     def __init__(self):
         self.c = 0
         self.r = 0
-        self.title = "XModem"
 
     def process_block(self, data):
         for i in data:
@@ -72,10 +73,8 @@ class XModemChecksum:
         return "%s Checksum: 0x%02x,0x%02x" % (self.title, self.c, self.r)
 
 class XModemCRCChecksum(XModemChecksum):
-    def __init__(self):
-        XModemChecksum.__init__(self)
-        self.title = "XModemCRC"
-    
+    title = "XModemCRC"
+
     def update_crc(self, c, crc):
         for _ in range(0,8):
             c <<= 1
@@ -111,7 +110,7 @@ class XModemCRCChecksum(XModemChecksum):
 
     def write(self, pipe):
         data = chr((self.c >> 8) & 0xFF) + chr(self.c & 0xFF)
-        pipe.write(data)
+        return pipe.write(data)
 
 class XModem:
     def __init__(self, debug=None):
@@ -217,53 +216,64 @@ class XModem:
 
         self.debug("Transfer complete (%i bytes)" % len(self.data))
 
-    def send_xfer(self, pipe, source):
-        pipe.write("Start receive now...\n")
+    def detect_start(self, pipe, timeout=10):
+        starttime = time.time()
 
-        for i in range(0,10):
-            self.debug("Waiting for start %i" % time.time())
-
+        while (time.time() - starttime) < timeout:
             try:
                 start = pipe.read(1)
             except Exception, e:
-                self.debug("Didn't get start %i" % time.time())
-                self.debug("Exception: %" % str(e))
-                return
+                self.debug("IO Error while waiting for start")
+                return False
 
-            self.debug("Got start: `%s'" % start)
-
-            if start != NAK and start != "C":
-                self.debug("Waiting again...")
-                time.sleep(1)
+            if start not in self.checksums.keys():
+                self.debug("Waiting for transfer to start...")
             else:
+                self.debug("Start char: %s" % start)
                 break
-        
-        if start != NAK and start != "C":
-            self.debug("Got !NAK for start")
-            raise Exception("Received 0x%02x instead of NAK" % ord(start))
-        else:
-            self.debug("Got '%s' for start" % start)
 
+        try:
+            self.checksum = self.checksums[start]
+            self.debug("Starting transfer (%s)" % self.checksum.title)
+        except Exception, e:
+            if start:
+                self.debug(str(self.checksums.keys()))
+                self.debug(str(e))
+                raise Exception("Unknown transfer type: 0x%02x" % ord(start[0]))
+            else:
+                raise Exception("Transfer start timed out")
+
+        return True
+
+    def pad_data(self, data):
+        pad = self.block_size - len(data)
+        return data + (pad * EOF)
+
+    def data_slice(self, data):
+        if len(data) > self.block_size:
+            return data[:self.block_size], data[self.block_size:]
+
+        return pad_data(data), []
+
+    def send_xfer(self, pipe, source):
+        pipe.write("Start receive now...\n")
+        self.detect_start(pipe)
+        
         data = "aa"
         blockno = 0
 
-        self.checksum = self.checksums[start]
-
-        blocks = len(data) / self.block_size
-
-        for blockno in range(0, 10):
+        while True:
             try:
                 data = source.read(self.block_size)
-                if len(data) < 128:
-                    data += (128 - len(data)) * " "
-            except Exception, e:
-                if debug:
-                    debug.write("Got exception on source read: %s" % e)
-            self.send_block(pipe, data, blockno)
-            self.debug("Sent block %i" % blockno)
-            self.crc = 0
+                if len(data) == 0:
+                    break
+            except:
+                raise Exception("IO error reading input file")
 
-        self.debug("Transfer finished")
+            self.send_block(pipe, self.pad_data(data), blockno)
+            blockno += 1
+
+        self.debug("Transfer finished (%i bytes)" % blockno * self.block_size)
 
 class XModemCRC(XModem):
     def __init__(self, debug=None):
@@ -290,5 +300,3 @@ if __name__ == "__main__":
 
     x.recv_xfer(p)
     print x.data
-    #f = file("testfile")
-    #x.send_xfer(p, f)
