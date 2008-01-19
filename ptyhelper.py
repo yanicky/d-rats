@@ -10,20 +10,45 @@ TERMIOS = termios
 
 from select import select
 
-def safe_read(fd, length):
+def safe_read(fd, length, timeout=None):
     count = 0
     data = ""
     start = time.time()
 
-    while count < len:
-        i, _, _ = select([fd], [], [], 5)
+    while count < length:
+        if timeout:
+            time_left = timeout - (time.time() - start)
+            if time_left < 0:
+                break
+        else:
+            time_left = None
+
+        i, _, _ = select([fd], [], [], time_left)
         if fd in i:
             _data = os.read(fd, length - count)
             data += _data
-        else:
-            break
+            count += len(_data)
 
     return data
+
+def safe_write(fd, buffer, timeout=None):
+    count = 0
+    start = time.time()
+
+    while count < len(buffer):
+        if timeout:
+            time_left = timeout - (time.time() - start)
+            if time_left < 0:
+                break
+        else:
+            time_left = None
+
+        _, o, _ = select([], [fd], [], time_left)
+        if fd in o:
+            r = os.write(fd, buffer[count:])
+            count += r
+
+    return count
 
 class PtyHelper:
     def reconf(self, fd):
@@ -63,37 +88,13 @@ class PtyHelper:
         self.timeout = 2
 
     def read(self, size):
-        count = 0
-        data = ""
-        start = 0
-
-        while count < size:
-            #print "Going for read (%i/%i)" % (count, size)
-            try:
-                buf = os.read(self.fd, size - count)
-            except:
-                buf = ""
-                
-            if len(buf) == 0:
-                if not start:
-                    start = time.time()
-                elif (time.time() - start) > self.timeout:
-                    break
-                
-            data += buf
-            count += len(buf)
-            #print "Got %i that cycle" % len(buf)
-
-        print "Returning %i" % count
-        #print data
-        return data
+        return safe_read(self.fd, size, self.timeout)
 
     def write(self, str):
-        os.write(self.fd, str)
-        #self.file.flush()
+        return safe_write(self.fd, str, self.timeout)
 
 if __name__ == "__main__":
     p = PtyHelper("ls")
 
-    print p.read(2000)
+    print p.read(20)
     

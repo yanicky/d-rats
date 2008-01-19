@@ -279,7 +279,6 @@ class XModemCRC(XModem):
     def __init__(self, debug=None):
         XModem.__init__(self, debug)
         self.start_xfer = "C"
-        self.debug("XMODEMCRC")
 
 if __name__ == "__main__":
     p = ptyhelper.PtyHelper("python sx.py xmodem.py")
@@ -299,4 +298,5 @@ if __name__ == "__main__":
         pass
 
     x.recv_xfer(p)
-    print x.data
+    output = file("output", "w")
+    output.write(x.data)
