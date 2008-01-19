@@ -180,6 +180,7 @@ class XModem:
         hdr += chr(num)
         hdr += chr(255 - num)
 
+        hexprint(hdr + " " * 20)
         pipe.write(hdr)
 
     def _recv_block(self, pipe):
@@ -202,8 +203,8 @@ class XModem:
             #print "Checksum: 0x%x Received: 0x%x" % (c_csum, ord(r_csum))
             raise GenericError("Block %i checksum mismatch" % block_num)
         else:
-            r = pipe.write(ACK)
-            self.debug("Recevied block %i (%i)" % (block_num, r))
+            pipe.write(ACK)
+            self.debug("Recevied block %i" % block_num)
 
         return (block_num, data)        
 
@@ -231,7 +232,7 @@ class XModem:
 
         raise FatalError("Transfer failed (too many retries)")
 
-    def send_block(self, pipe, block, num):
+    def _send_block(self, pipe, block, num):
         self.write_header(pipe, num)
 
         self.debug("Sending block %i (%i bytes)" % (num, len(block)))
@@ -246,9 +247,22 @@ class XModem:
         ack = pipe.read(1)
         if ack == ACK:
             self.debug("ACK for block %i" % num)
+        elif len(ack) == 0:
+            raise GenericError("Timeout waiting for ACK of %i" % num)
         else:
             
-            raise GenericError("NAK on block %i (`%s':%i)" % (num, ack, len(ack)))
+            raise GenericError("NAK on block %i (`%s':%i:%i)" % (num, ack, ord(ack), len(ack)))
+
+    def send_block(self, pipe, block, num):
+        for i in range(0, self.retries):
+            try:
+                return self._send_block(pipe, block, num)
+            except GenericError, e:
+                self.debug("NAK on block %i" % num)
+
+        pipe.write(CAN)
+        raise FatalError("Transfer failed (too many retries)")
+                
 
     def recv_xfer(self, pipe):
         blocks = []
@@ -318,12 +332,17 @@ class XModem:
 
         return pad_data(data), []
 
+    def send_eot(self, pipe):
+        pipe.write(EOT)
+
+        self.debug("Sent EOT")
+
     def send_xfer(self, pipe, source):
-        pipe.write("Start receive now...\n")
+        #pipe.write("Start receive now...\n")
         self.detect_start(pipe)
         
         data = "aa"
-        blockno = 0
+        blockno = 1
 
         while True:
             try:
@@ -336,32 +355,44 @@ class XModem:
             self.send_block(pipe, self.pad_data(data), blockno)
             blockno += 1
 
-        self.debug("Transfer finished (%i bytes)" % blockno * self.block_size)
+        self.send_eot(pipe)
+
+        self.debug("Transfer finished (%i bytes)" % (blockno * self.block_size))
 
 class XModemCRC(XModem):
     def __init__(self, debug=None):
         XModem.__init__(self, debug)
         self.start_xfer = "C"
 
-if __name__ == "__main__":
-    #p = ptyhelper.PtyHelper("python sx.py xmodem.py")
-    #p = ptyhelper.PtyHelper("python test.py")
-    #p = ptyhelper.PtyHelper("rx -v outputfile")
+def test_receive(x):
     #p = ptyhelper.PtyHelper("sx -vvvv xmodem.py")
-    p = ptyhelper.LossyPtyHelper("sx -vvvv xmodem.py", percentLoss=10, missing=False)
-    
-    x = XModemCRC(debug="stdout")
+    #p = ptyhelper.LossyPtyHelper("sx -vvvv xmodem.py", percentLoss=10, missing=False)
+    p = ptyhelper.PtyHelper("python sx.py xmodem.py")
 
-    try:
-        # Eat up the buffer
-        #p.write(NAK)
-        foo = p.read(200)
-        print "Skipped %i bytes in buffer" % len(foo)
-        print foo
-    except:
-        pass
+    foo = p.read(200)
+    print "Skipped %i bytes in buffer" % len(foo)
+    print foo
 
     x.recv_xfer(p)
     output = file("output", "w")
     output.write(x.data)
     p.close()
+
+def test_send(x):
+    p = ptyhelper.PtyHelper("rx -vvvvvvvvvvvvvv rxoutput")
+
+    i = file("xmodem.py")
+
+    x.send_xfer(p, i)
+
+if __name__ == "__main__":
+    #p = ptyhelper.PtyHelper("python sx.py xmodem.py")
+    #p = ptyhelper.PtyHelper("python test.py")
+    #p = ptyhelper.PtyHelper("rx -v outputfile")
+    
+    x = XModemCRC(debug="stdout")
+
+    if True:
+        test_receive(x)
+    else:
+        test_send(x)
