@@ -112,8 +112,11 @@ class LossyPtyHelper(PtyHelper):
         isBroken = (random.randint(0,100) <= self.loss)
         if not isBroken:
             return result
-        
-        doGarble = (random.randint(0,10) <= 5)
+
+        if self.garble:
+            doGarble = (random.randint(0,10) <= 5)
+        else:
+            doGarble = False
         amount = random.randint(0, size / 2)
         start = random.randint(0, size - amount)
 
@@ -127,6 +130,8 @@ class LossyPtyHelper(PtyHelper):
             else:
                 if doGarble:
                     broken_result += 'A'
+                elif not self.missing:
+                    broken_result += i
             pos += 1
 
         return broken_result
