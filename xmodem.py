@@ -215,6 +215,7 @@ class XModem:
             raise Exception("NAK on block %i (`%s':%i)" % (num, ack, len(ack)))
 
     def recv_xfer(self, pipe):
+        blocks = []
         self.checksum = self.checksums[self.start_xfer]
         pipe.write(self.start_xfer)
         self.debug("Sent start: 0x%02x" % ord(self.start_xfer))
@@ -225,8 +226,12 @@ class XModem:
             n, data = self.recv_block(pipe)
             if data is None:
                 break
-            
-            self.data += data
+
+            if n in blocks:
+                self.debug("Received duplicate block %i" % n)
+            else:
+                self.data += data
+                blocks.append(n)
 
         self.data = self.data.rstrip(EOF)
 
