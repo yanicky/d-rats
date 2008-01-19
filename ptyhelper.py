@@ -5,6 +5,7 @@ import pty
 import fcntl
 import time
 import sys
+import random
 import termios
 TERMIOS = termios
 
@@ -98,13 +99,49 @@ class PtyHelper:
     def close(self):
         os.close(self.fd)
 
+class LossyPtyHelper(PtyHelper):
+    def __init__(self, cmd, percentLoss=10, garble=True, missing=True):
+        PtyHelper.__init__(self, cmd)
+        self.loss = 10
+        self.garble = garble
+        self.missing = missing
+
+    def read(self, size):
+        result = PtyHelper.read(self, size)
+
+        isBroken = (random.randint(0,100) <= self.loss)
+        if not isBroken:
+            return result
+        
+        doGarble = (random.randint(0,10) <= 5)
+        amount = random.randint(0, size / 2)
+        start = random.randint(0, size - amount)
+
+        pos = 0
+        broken_result = ""
+        for i in result:
+            if pos < start:
+                broken_result += i
+            elif pos > start + amount:
+                broken_result += i
+            else:
+                if doGarble:
+                    broken_result += 'A'
+            pos += 1
+
+        return broken_result
+
 if __name__ == "__main__":
     #p = PtyHelper("ls")
     #print p.read(20)
 
-    p = PtyHelper("ssh localhost ls")
+    #p = PtyHelper("ssh localhost ls")
     #print p.write("foo" * 500)
-    print p.read(20)
-    os.close(p.fd)
+    #print p.read(20)
+    #os.close(p.fd)
+
+    p = LossyPtyHelper("cat xmodem.py")
+    for i in range(0, 20):
+        print "\nData: %s\n" % p.read(20)
 
     
