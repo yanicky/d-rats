@@ -1,3 +1,5 @@
+#!/usr/bin/python
+
 import pygtk
 import gtk
 import serial
@@ -22,12 +24,17 @@ class ChatGUI:
         if text == "":
             return
 
-        self.add_to_main_buffer(text)
+        self.add_to_main_buffer("Me: ", text)
         self.tx_msg(text)
         
         data.set_text("")
 
-    def add_to_main_buffer(self, string):
+    def add_to_main_buffer(self, prefix, string):
+        end = self.main_buffer.get_end_iter()
+        self.main_buffer.insert_with_tags_by_name(end,
+                                                  prefix,
+                                                  "red")
+
         self.main_buffer.insert_at_cursor(string + "\n")
 
         adj = self.scroll.get_vadjustment()
@@ -63,6 +70,7 @@ class ChatGUI:
     def make_main_pane(self):
         vbox = gtk.VBox(False, 0)
         display = gtk.TextView(self.main_buffer)
+        display.Editable = False
         self.scroll = gtk.ScrolledWindow()
         self.scroll.add(display)
 
@@ -84,6 +92,14 @@ class ChatGUI:
         
     def __init__(self):
         self.main_buffer = gtk.TextBuffer()
+
+        tag = gtk.TextTag("red")
+        tag.set_property("foreground", "Red")
+        self.main_buffer.get_tag_table().add(tag)
+
+        tag = gtk.TextTag("blue")
+        tag.set_property("foreground", "Blue")
+        self.main_buffer.get_tag_table().add(tag)
 
         self.setup_serial(port=0, baudrate=115200)
 
@@ -113,12 +129,11 @@ class ChatGUI:
                 data = self.pipe.read(size)
                 print "Got Data: %s" % data
                 gtk.gdk.threads_enter()
-                self.add_to_main_buffer(data)
+                self.add_to_main_buffer("Remote: ", data)
                 gtk.gdk.threads_leave()
                 #self.pending_data += data
                 #gobject.idle_add(self.do_serial)
             else:
-                print "No data this time"
                 time.sleep(1)
 
         return True
