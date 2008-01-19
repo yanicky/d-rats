@@ -5,18 +5,12 @@ import gtk
 import serial
 import gobject
 import time
-from threading import Thread
-
 
 class ChatGUI:
     def ev_delete(self, widget, event, data=None):
         return False
     
     def sig_destroy(self, widget, data=None):
-        self.watching_serial = False
-        print "Waiting for thread to end..."
-        self.sw_thread.join()
-        print "Done"
         gtk.main_quit()
 
     def sig_send_button(self, widget, data=None):
@@ -35,6 +29,8 @@ class ChatGUI:
                                                   prefix,
                                                   "red")
 
+        string = string.rstrip("\r\n")
+
         self.main_buffer.insert_at_cursor(string + "\n")
 
         adj = self.scroll.get_vadjustment()
@@ -42,7 +38,7 @@ class ChatGUI:
         self.scroll.set_vadjustment(adj)
 
     def tx_msg(self, string):
-        self.pipe.write(string + "\n")
+        self.comm.send_text(string + "\n")
 
     def make_entry_box(self):
         hbox = gtk.HBox(False, 0)
@@ -58,7 +54,7 @@ class ChatGUI:
                       entry)
         
         hbox.pack_start(entry, 1, 1, 1)
-        hbox.pack_start(button, 1, 1, 1)
+        hbox.pack_start(button, 0, 0, 1)
         
         entry.show()
         button.show()
@@ -84,13 +80,9 @@ class ChatGUI:
         display.show()
 
         return vbox
-
-    def setup_serial(self, port=None, baudrate=None):
-        self.pending_data = ""
-        self.pipe = serial.Serial(port=port, timeout=2, baudrate=baudrate)
-        self.watching_serial = True
         
-    def __init__(self):
+    def __init__(self, comm):
+        self.comm = comm
         self.main_buffer = gtk.TextBuffer()
 
         tag = gtk.TextTag("red")
@@ -101,13 +93,11 @@ class ChatGUI:
         tag.set_property("foreground", "Blue")
         self.main_buffer.get_tag_table().add(tag)
 
-        self.setup_serial(port=0, baudrate=115200)
-
         pane = self.make_main_pane()
 
         self.window = gtk.Window(gtk.WINDOW_TOPLEVEL)
 
-        self.window.set_title("D-STAR Chat (%s)" % self.pipe.portstr)
+        self.window.set_title("D-STAR Chat")
         self.window.set_border_width(10)
         self.window.add(pane)
         self.window.connect("delete_event", self.ev_delete)
@@ -118,25 +108,8 @@ class ChatGUI:
 
         self.entry.grab_focus()
 
-    def do_serial(self):
-        self.add_to_main_buffer(self.pending_data)
-        self.pending_data = ""
-
-    def watch_serial(self):
-        while self.watching_serial:
-            size = self.pipe.inWaiting()
-            if size > 0:
-                data = self.pipe.read(size)
-                print "Got Data: %s" % data
-                gtk.gdk.threads_enter()
-                self.add_to_main_buffer("Remote: ", data)
-                gtk.gdk.threads_leave()
-                #self.pending_data += data
-                #gobject.idle_add(self.do_serial)
-            else:
-                time.sleep(1)
-
-        return True
+        self.add_to_main_buffer("D-STAR Chat ",
+                                "\n(Copyright 2008 Dan Smith KI4IFW)")
 
     def main(self):
         gtk.gdk.threads_init()
@@ -149,4 +122,7 @@ class ChatGUI:
 
 if __name__ == "__main__":
     gui = ChatGUI()
-    gui.main()
+    try:
+        gui.main()
+    except KeyboardInterrupt:
+        gui.sig_destroy(None)
