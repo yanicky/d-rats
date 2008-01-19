@@ -9,6 +9,7 @@ EOF = chr(26)
 NAK = chr(21)
 SOH = chr(1)
 ACK = chr(6)
+EOT = chr(4)
 
 def hexprint(data):
     col = 0
@@ -135,8 +136,15 @@ class XModem:
         self._debug.write(str + "\n")
 
     def read_header(self, pipe):
+        next = pipe.read(1)
+        self.debug("Next header: 0x%02x" % ord(next))
+        if next == EOT:
+            self.debug("End of transfer")
+            return -1
+
         self.debug("Reading header")
-        data = pipe.read(3)
+        data = pipe.read(2)
+        data = next + data
 
         hexprint(data + " " * 20)
 
@@ -163,6 +171,12 @@ class XModem:
         try:
             block_num = self.read_header(pipe)
         except:
+            self.debug("No next header")
+            pipe.write(ACK)
+            return 0, None
+
+        if block_num == -1:
+            pipe.write(ACK)
             return 0, None
 
         self.debug("Reading block %i" % block_num)
@@ -176,8 +190,8 @@ class XModem:
             #print "Checksum: 0x%x Received: 0x%x" % (c_csum, ord(r_csum))
             raise Exception("Block %i checksum mismatch" % block_num)
         else:
-            self.debug("Recevied block %i" % block_num)
-            pipe.write(ACK)
+            r = pipe.write(ACK)
+            self.debug("Recevied block %i (%i)" % (block_num, r))
 
         return (block_num, data)        
 
@@ -207,12 +221,14 @@ class XModem:
 
         data = "aa"
 
-        while data[-1] != EOF:
+        while True:
             n, data = self.recv_block(pipe)
             if data is None:
                 break
             
             self.data += data
+
+        self.data = self.data.rstrip(EOF)
 
         self.debug("Transfer complete (%i bytes)" % len(self.data))
 
@@ -281,10 +297,10 @@ class XModemCRC(XModem):
         self.start_xfer = "C"
 
 if __name__ == "__main__":
-    p = ptyhelper.PtyHelper("python sx.py xmodem.py")
+    #p = ptyhelper.PtyHelper("python sx.py xmodem.py")
     #p = ptyhelper.PtyHelper("python test.py")
     #p = ptyhelper.PtyHelper("rx -v outputfile")
-    #p = ptyhelper.PtyHelper("sx xmodem.py")
+    p = ptyhelper.PtyHelper("sx -vvvv xmodem.py")
     
     x = XModemCRC(debug="stdout")
 
@@ -300,3 +316,4 @@ if __name__ == "__main__":
     x.recv_xfer(p)
     output = file("output", "w")
     output.write(x.data)
+    p.close()

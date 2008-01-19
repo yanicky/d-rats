@@ -73,6 +73,7 @@ class PtyHelper:
             self.reconf(sys.stdout.fileno())
 
             os.close(2)
+            os.unlink("stderr")
             efd = os.open("stderr", os.O_WRONLY | os.O_CREAT)
             os.execlp(argv[0], *argv)
 
@@ -91,10 +92,19 @@ class PtyHelper:
         return safe_read(self.fd, size, self.timeout)
 
     def write(self, str):
+        #return os.write(self.fd, str)
         return safe_write(self.fd, str, self.timeout)
 
-if __name__ == "__main__":
-    p = PtyHelper("ls")
+    def close(self):
+        os.close(self.fd)
 
+if __name__ == "__main__":
+    #p = PtyHelper("ls")
+    #print p.read(20)
+
+    p = PtyHelper("ssh localhost ls")
+    #print p.write("foo" * 500)
     print p.read(20)
+    os.close(p.fd)
+
     
