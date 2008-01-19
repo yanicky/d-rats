@@ -94,6 +94,7 @@ class XModem:
         self.block_size = 128
         self.start_xfer = NAK
         self.retries = 10
+        self.tstart_to = 60
         self.data = ""
         if debug:
             if debug == "stdout":
@@ -258,10 +259,10 @@ class XModem:
 
         self.debug("Transfer complete (%i bytes)" % len(self.data))
 
-    def detect_start(self, pipe, timeout=10):
+    def detect_start(self, pipe):
         starttime = time.time()
 
-        while (time.time() - starttime) < timeout:
+        while (time.time() - starttime) < self.tstart_to:
             try:
                 start = pipe.read(1)
             except Exception, e:
