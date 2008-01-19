@@ -148,7 +148,7 @@ class XModem:
 
     def read_header(self, pipe):
         next = None
-        while next not in [SOH, EOT]:
+        while next not in [SOH, EOT, CAN]:
             if next:
                 self.debug("Syncing... 0x%02x '%s'" % (ord(next), next))
             next = pipe.read(1)
@@ -348,7 +348,7 @@ if __name__ == "__main__":
     #p = ptyhelper.PtyHelper("python test.py")
     #p = ptyhelper.PtyHelper("rx -v outputfile")
     #p = ptyhelper.PtyHelper("sx -vvvv xmodem.py")
-    p = ptyhelper.LossyPtyHelper("sx -vvvv xmodem.py", missing=False)
+    p = ptyhelper.LossyPtyHelper("sx -vvvv xmodem.py", percentLoss=10, missing=False)
     
     x = XModemCRC(debug="stdout")
 
