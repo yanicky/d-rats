@@ -5,48 +5,14 @@ import os
 import time
 import sys
 
+from utils import hexprint
+
 EOF = chr(26)
 NAK = chr(21)
 SOH = chr(1)
 ACK = chr(6)
 EOT = chr(4)
 CAN = chr(24)
-
-def hexprint(data):
-    col = 0
-
-    line_sz = 8
-    csum = 0
-
-    for i in range(0, (len(data)/line_sz)):
-
-
-        print "%03i: " % (i * line_sz),
-
-        left = len(data) - (i * line_sz)
-        if left < line_sz:
-            limit = left
-        else:
-            limit = line_sz
-            
-        for j in range(0,limit):
-            print "%02x " % ord(data[(i * line_sz) + j]),
-            csum += ord(data[(i * line_sz) + j])
-            csum = csum & 0xFF
-
-        print "  ",
-
-        for j in range(0,limit):
-            char = data[(i * line_sz) + j]
-
-            if ord(char) > ord('A') and ord(char) < ord('z'):
-                print "%s" % char,
-            else:
-                print ".",
-
-        print ""
-
-    return csum
 
 class FatalError(Exception):
     pass
@@ -200,7 +166,6 @@ class XModem:
         csum.read(pipe)
 
         if not csum.validate():
-            #print "Checksum: 0x%x Received: 0x%x" % (c_csum, ord(r_csum))
             raise GenericError("Block %i checksum mismatch" % block_num)
         else:
             pipe.write(ACK)
