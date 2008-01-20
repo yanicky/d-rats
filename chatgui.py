@@ -71,6 +71,7 @@ class ChatGUI:
         button.show()
 
         self.entry = entry
+        self.send_button = button
         
         return hbox
 
@@ -93,15 +94,19 @@ class ChatGUI:
 
         return vbox
 
+    def toggle_sendable(self, state):
+        self.entry.set_sensitive(state)
+        self.send_button.set_sensitive(state)
+        
     def menu_handler(self, _action):
         action = _action.get_name()
         if action == "quit":
             self.sig_destroy(None)
         elif action == "send":
-            xfer = FileTransferGUI()
+            xfer = FileTransferGUI(self)
             xfer.do_send()
         elif action == "recv":
-            xfer = FileTransferGUI()
+            xfer = FileTransferGUI(self)
             xfer.do_recv()
 
     def make_menubar(self):
