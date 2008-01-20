@@ -138,7 +138,14 @@ class FileTransferGUI:
 
     def update(self, status, bytecount, errors, running=True):
         gtk.gdk.threads_enter()
-        self.values["Size"].set_text("%i KB" % (bytecount / 1024))
+
+        if self.total_size:
+            size_str = "%i KB (%i KB total)" % (bytecount / 1024,
+                                                self.total_size / 1024)
+        else:
+            size_str = "%i KB"
+            
+        self.values["Size"].set_text(size_str)
         self.values["Errors"].set_text("%i" % errors)
         self.bar.set_text(status)
         if self.total_size:
