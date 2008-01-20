@@ -22,8 +22,6 @@ class ChatGUI:
         if text == "":
             return
 
-        self.display("Me: ", ("red"))
-        self.display(text + "\n")
         self.tx_msg(text)
         
         data.set_text("")
@@ -42,6 +40,10 @@ class ChatGUI:
         self.scroll.set_vadjustment(adj)
 
     def tx_msg(self, string):
+        call = self.config.config.get("user", "callsign")
+
+        self.display("%s: " % call, "red")
+        self.display(string + "\n")
         self.comm.send_text(string + "\n")
 
     def make_entry_box(self):
@@ -130,8 +132,10 @@ class ChatGUI:
 
         return uim.get_widget("/MenuBar")
         
-    def __init__(self, comm):
+    def __init__(self, comm, config):
         self.comm = comm
+        self.config = config
+        
         self.main_buffer = gtk.TextBuffer()
 
         tag = gtk.TextTag("red")

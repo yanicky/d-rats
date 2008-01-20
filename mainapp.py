@@ -8,6 +8,7 @@ import serial
 import gtk
 
 import chatgui
+import config
 
 class SerialCommunicator:
 
@@ -31,6 +32,14 @@ class SerialCommunicator:
     def send_text(self, text):
         return self.pipe.write(text)
 
+    def incoming_chat(self, data):
+        if ":" in data:
+            call, rest = data.split(":", 1)
+            self.gui.display("%s:" % call, "blue")
+            self.gui.display("%s\n" % rest)
+        else:
+            self.gui.display(data + "\n")
+
     def watch_serial(self):
         while self.enabled:
             size = self.pipe.inWaiting()
@@ -38,9 +47,7 @@ class SerialCommunicator:
                 data = self.pipe.read(size)
                 print "Got Data: %s" % data
                 gtk.gdk.threads_enter()
-                # FIXME
-                self.gui.display("Remote: ", ("red"))
-                self.gui.display(data + "\n")
+                self.incoming_chat(data)
                 gtk.gdk.threads_leave()
             else:
                 time.sleep(1)
@@ -49,23 +56,70 @@ class SerialCommunicator:
         return "%s @ %i baud" % (self.pipe.portstr,
                                  self.pipe.getBaudrate())
 
+class QST:
+    def __init__(self, gui, text=None, freq=None):
+        self.gui = gui
+        self.text = text
+        self.freq = freq
+        self.enabled = False
+
+    def enable(self):
+        self.enabled = True
+        self.thread = Thread(target=self.thread)
+        self.thread.start()
+
+    def disable(self):
+        self.enabled = False
+        self.thread.join()
+
+    def thread(self):
+        while self.enabled:
+            time.sleep(self.freq)
+            gtk.gdk.threads_enter()
+            self.gui.tx_msg(self.text)
+            gtk.gdk.threads_leave()
+        
+
 # FIXME: Need a name
 class MainApp:
+    def setup_autoid(self):
+        idtext = "(ID)"
+            
+        autoid = QST(self.chatgui,
+                     freq=self.config.config.getint("prefs", "autoid_freq"),
+                     text=idtext)
+        autoid.enable()
+        self.qsts.append(autoid)
+
     def __init__(self):
         gtk.gdk.threads_init()
 
-        self.comm = SerialCommunicator()
-        self.chatgui = chatgui.ChatGUI(self.comm)
+        self.config = config.AppConfig()
+
+        self.comm = SerialCommunicator(port=self.config.config.getint("settings",
+                                                                   "port"),
+                                       rate=self.config.config.getint("settings",
+                                                                   "rate"))
+        self.chatgui = chatgui.ChatGUI(self.comm, self.config)
         self.comm.enable(self.chatgui)
 
-        self.chatgui.display("Serial info: " + str(self.comm), ("blue"))
+        self.chatgui.display("Serial info: %s\n" % str(self.comm), ("blue"))
+        self.chatgui.display("My Call: %s\n" % self.config.config.get("user",
+                                                                      "callsign"),
+                             "blue")
 
+        self.qsts = []
+
+        if self.config.config.getboolean("prefs", "autoid"):
+            self.setup_autoid()
+            
     def main(self):
 
         try:
             gtk.gdk.threads_enter()
             gtk.main()
             gtk.gdk.threads_leave()
+            self.config.save()
         except KeyboardInterrupt:
             pass
         
