@@ -98,6 +98,7 @@ class XModem:
         self.retries = 10
         self.tstart_to = 60
         self.total_errors = 0
+        self.total_bytes = 0
         self.data = ""
         if debug:
             if debug == "stdout":
@@ -201,9 +202,11 @@ class XModem:
                     continue
 
                 if data:
-                    self.status_fn("Receiving",
-                                   n * len(data),
-                                   self.total_errors)
+                    self.total_bytes += len(data)
+                    
+                self.status_fn("Receiving",
+                               self.total_bytes,
+                               self.total_errors)
 
                 return n, data
             except FatalError, e:
@@ -223,7 +226,7 @@ class XModem:
         raise FatalError("Transfer failed (too many retries)")
 
     def _send_block(self, pipe, block, num):
-        self.write_header(pipe, num)
+        self.write_header(pipe, num % 256)
 
         self.debug("Sending block %i (%i bytes)" % (num, len(block)))
 
@@ -248,7 +251,7 @@ class XModem:
             try:
                 r = self._send_block(pipe, block, num)
                 self.status_fn("Sending",
-                               num * self.block_size,
+                               self.total_bytes,
                                self.total_errors)
                 return r
             except GenericError, e:
@@ -275,21 +278,24 @@ class XModem:
             if (n != last) and (n != last + 1):
                 self.debug("Received OOB: %i -> %i" % (last, n))
                 raise FatalError("Out of order block")
+            elif n == 255:
+                last = -1
             else:
                 last = n
 
-            if n in blocks:
+            if n == last:
                 self.debug("Received duplicate block %i" % n)
             else:
                 dest.write(data)
+                self.total_bytes += len(data)
                 #self.data += data
-                blocks.append(n)
+                #blocks.append(n)
 
         self.data = self.data.rstrip(EOF)
 
-        self.debug("Transfer complete (%i bytes)" % len(self.data))
+        self.debug("Transfer complete (%i bytes)" % self.total_bytes)
         self.status_fn("Completed",
-                       len(self.data),
+                       self.total_bytes,
                        self.total_errors,
                        running=False)
 
@@ -354,13 +360,14 @@ class XModem:
                 raise GenericError("IO error reading input file")
 
             self.send_block(pipe, self.pad_data(data), blockno)
+            self.total_bytes += len(data)
             blockno += 1
 
         self.send_eot(pipe)
 
-        self.debug("Transfer finished (%i bytes)" % (blockno * self.block_size))
+        self.debug("Transfer finished (%i bytes)" % self.total_bytes)
         self.status_fn("Completed",
-                       blockno * self.block_size,
+                       self.total_bytes,
                        self.total_errors,
                        running=False)
 
