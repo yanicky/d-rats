@@ -278,14 +278,12 @@ class XModem:
             if (n != last) and (n != last + 1):
                 self.debug("Received OOB: %i -> %i" % (last, n))
                 raise FatalError("Out of order block")
+            if n == last:
+                self.debug("Received duplicate block %i" % n)
             elif n == 255:
                 last = -1
             else:
                 last = n
-
-            if n == last:
-                self.debug("Received duplicate block %i" % n)
-            else:
                 dest.write(data)
                 self.total_bytes += len(data)
                 #self.data += data
@@ -377,6 +375,44 @@ class XModemCRC(XModem):
 class XModem1K(XModemCRC):
     SOH = STX
     block_size = 1024
+
+class YModem(XModem1K):
+    def tx_ymodem_header(self, pipe, source):
+        s = os.fstat(source.fileno())
+
+        data = "%s\x00%i " % (os.path.basename(source.name), s.st_size)
+        self.debug("YMODEM Data block:")
+        hexprint(self.pad_data(data))
+
+        self.send_block(pipe, self.pad_data(data), 0)
+
+    def rx_ymodem_header(self, pipe):
+        pipe.write(self.start_xfer)
+        self.debug("Started YMODEM")
+
+        self.checksum = self.checksums[self.start_xfer]
+
+        n, data = self.recv_block(pipe)
+        if n != 0:
+            self.debug("Invalid first block number: %i (%s)" % (n, data))
+            raise FatalError("YMODEM negotiation failed")
+
+        name, info = data.split("\x00", 1)
+        info_bits = info.split(" ")
+
+        self.debug("Name: %s  Size: %s" % (name, info_bits[0]))
+
+        return name, int(info_bits[0])
+        
+
+    def send_xfer(self, pipe, source):
+        pipe.write("Start YMODEM receive now...\n")
+        self.detect_start(pipe)
+
+        self.tx_ymodem_header(pipe, source)
+
+        self.debug("YModem header sent, starting XMODEM")
+        XModem1K.send_xfer(self, pipe, source)
 
 def test_receive(x):
     #p = ptyhelper.PtyHelper("sx -vvvv xmodem.py")
