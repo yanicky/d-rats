@@ -1,6 +1,5 @@
 #!/usr/bin/python
 
-import ptyhelper
 import os
 import time
 import sys
@@ -90,11 +89,12 @@ class XModemCRCChecksum(XModemChecksum):
         return pipe.write(data)
 
 class XModem:
-    def __init__(self, debug=None):
+    def __init__(self, debug=None, status_fn=None):
         self.block_size = 128
         self.start_xfer = NAK
         self.retries = 10
         self.tstart_to = 60
+        self.total_errors = 0
         self.data = ""
         if debug:
             if debug == "stdout":
@@ -104,8 +104,18 @@ class XModem:
         else:
             self._debug = None
 
+        if not status_fn:
+            self.status_fn = self.swallow_status
+        else:
+            self.status_fn = status_fn
+
         self.checksums = {"C" : XModemCRCChecksum,
                           NAK : XModemChecksum}
+
+    def swallow_status(self, status, bytecount, errors):
+        self.debug("Status: [%s] %i bytes, %i errors" % (status,
+                                                         bytecount,
+                                                         errors))
 
     def debug(self, str):
         if not self._debug:
@@ -182,6 +192,11 @@ class XModem:
                 if data is None and n == -1:
                     self.debug("Recevied EOT after bad block, retrying")
                     continue
+
+                self.status_fn("Receiving",
+                               n * self.block_size,
+                               self.total_errors)
+
                 return n, data
             except FatalError, e:
                 self.debug("Fatal error: %s" % e)
@@ -195,6 +210,7 @@ class XModem:
                 self.debug("Purged %i" % len(_))
                 self.debug("Failed block (attempt %i/%i)" % (i, self.retries))
                 pipe.write(NAK)
+                self.total_errors += 1
 
         raise FatalError("Transfer failed (too many retries)")
 
@@ -222,19 +238,24 @@ class XModem:
     def send_block(self, pipe, block, num):
         for i in range(0, self.retries):
             try:
-                return self._send_block(pipe, block, num)
+                r = self._send_block(pipe, block, num)
+                self.status_fn("Sending",
+                               num * self.block_size,
+                               self.total_errors)
+                return r
             except GenericError, e:
                 self.debug("NAK on block %i" % num)
+                self.total_errors += 1
 
         pipe.write(CAN)
         raise FatalError("Transfer failed (too many retries)")
-                
 
     def recv_xfer(self, pipe):
         blocks = []
         self.checksum = self.checksums[self.start_xfer]
         pipe.write(self.start_xfer)
         self.debug("Sent start: 0x%02x" % ord(self.start_xfer))
+        self.status_fn("Starting...", 0, 0)
 
         data = "aa"
         last = 0
@@ -258,6 +279,7 @@ class XModem:
         self.data = self.data.rstrip(EOF)
 
         self.debug("Transfer complete (%i bytes)" % len(self.data))
+        self.status_fn("Completed", len(self.data), self.total_errors)
 
     def detect_start(self, pipe):
         starttime = time.time()
@@ -271,6 +293,7 @@ class XModem:
 
             if start not in self.checksums.keys():
                 self.debug("Waiting for transfer to start...")
+                self.status_fn("Waiting for start", 0, 0)
             else:
                 self.debug("Start char: %s" % start)
                 break
@@ -324,10 +347,11 @@ class XModem:
         self.send_eot(pipe)
 
         self.debug("Transfer finished (%i bytes)" % (blockno * self.block_size))
+        self.status_fn("Completed", blockno * self.block_size, self.total_errors)
 
 class XModemCRC(XModem):
-    def __init__(self, debug=None):
-        XModem.__init__(self, debug)
+    def __init__(self, debug=None, status_fn=None):
+        XModem.__init__(self, debug, status_fn)
         self.start_xfer = "C"
 
 def test_receive(x):
@@ -355,7 +379,8 @@ if __name__ == "__main__":
     #p = ptyhelper.PtyHelper("python sx.py xmodem.py")
     #p = ptyhelper.PtyHelper("python test.py")
     #p = ptyhelper.PtyHelper("rx -v outputfile")
-    
+    import ptyhelper
+ 
     x = XModemCRC(debug="stdout")
 
     if True:
