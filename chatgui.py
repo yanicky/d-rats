@@ -6,6 +6,17 @@ import serial
 import gobject
 import time
 
+from xfergui import FileTransferGUI
+
+#        c = gtk.FileChooserDialog("Select File",
+#                                  None,
+#                                  gtk.FILE_CHOOSER_ACTION_OPEN,
+#                                  (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
+#                                   gtk.STOCK_OPEN, gtk.RESPONSE_OK))
+#        c.run()
+#        print c.get_filename()
+#        c.destroy()
+
 class ChatGUI:
     def ev_delete(self, widget, event, data=None):
         return False
@@ -63,7 +74,7 @@ class ChatGUI:
         
         return hbox
 
-    def make_main_pane(self):
+    def make_main_pane(self, menubar):
         vbox = gtk.VBox(False, 0)
         display = gtk.TextView(self.main_buffer)
         display.Editable = False
@@ -72,6 +83,7 @@ class ChatGUI:
 
         ebox = self.make_entry_box()
 
+        vbox.pack_start(menubar, 0, 1, 0)
         vbox.pack_start(self.scroll, 1, 1, 1)
         vbox.pack_start(ebox, 0, 0, 1)
 
@@ -80,6 +92,52 @@ class ChatGUI:
         display.show()
 
         return vbox
+
+    def menu_handler(self, _action):
+        action = _action.get_name()
+        print "Action: %s" % action
+        if action == "quit":
+            self.sig_destroy(None)
+        elif action == "send":
+            xfer = FileTransferGUI()
+            xfer.do_send()
+        elif action == "recv":
+            xfer = FileTransferGUI()
+            xfer.do_recv()
+
+    def make_menubar(self):
+        menu_xml = """
+        <ui>
+          <menubar name='MenuBar'>
+            <menu action='file'>
+              <menuitem action='send'/>
+              <menuitem action='recv'/>
+              <menuitem action='quit'/>
+            </menu>
+          </menubar>
+        </ui>
+        """
+
+        actions = [('file', None, "File", None, None, self.menu_handler),
+                   ('send', None, "Send File", None, None, self.menu_handler),
+                   ('recv', None, "Receive File", None, None, self.menu_handler),
+                   ('quit', None, "Quit", None, None, self.menu_handler)]
+
+        uim = gtk.UIManager()
+        ag = gtk.ActionGroup("MenuBar")
+
+        ag.add_actions(actions)
+
+        uim.insert_action_group(ag, 0)
+        menuid = uim.add_ui_from_string(menu_xml)
+
+        return uim.get_widget("/MenuBar")
+        
+    def send_file(self):
+        pass
+
+    def recv_file(self):
+        pass
         
     def __init__(self, comm):
         self.comm = comm
@@ -93,9 +151,11 @@ class ChatGUI:
         tag.set_property("foreground", "Blue")
         self.main_buffer.get_tag_table().add(tag)
 
-        pane = self.make_main_pane()
-
         self.window = gtk.Window(gtk.WINDOW_TOPLEVEL)
+
+        menubar = self.make_menubar()
+        menubar.show()
+        pane = self.make_main_pane(menubar)
 
         self.window.set_title("D-STAR Chat")
         self.window.set_border_width(10)
