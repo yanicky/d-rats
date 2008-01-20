@@ -93,12 +93,16 @@ class XModem:
     start_xfer = NAK
     SOH = SOH
     block_size = 128
+
+    def cancel(self):
+        self.running = False
     
     def __init__(self, debug=None, status_fn=None):
         self.retries = 10
         self.tstart_to = 60
         self.total_errors = 0
         self.total_bytes = 0
+        self.running = True
         self.data = ""
         if debug:
             if debug == "stdout":
@@ -139,7 +143,7 @@ class XModem:
             self.debug("End of transfer")
             return -1, 0
         elif next == CAN:
-            raise FatalError("Sender cancelled transfer")
+            raise FatalError("Remote cancelled transfer")
         elif next == STX:
             block_size = 1024
         else:
@@ -240,6 +244,9 @@ class XModem:
         ack = pipe.read(1)
         if ack == ACK:
             self.debug("ACK for block %i" % num)
+        elif ack == CAN:
+            self.debug("Remote cancelled transfer")
+            raise FatalError("Remote cancelled transfer")
         elif len(ack) == 0:
             raise GenericError("Timeout waiting for ACK of %i" % num)
         else:
@@ -270,7 +277,7 @@ class XModem:
 
         data = "aa"
         last = 0
-        while True:
+        while self.running:
             n, data = self.recv_block(pipe)
             if data is None:
                 break
@@ -289,13 +296,20 @@ class XModem:
                 #self.data += data
                 #blocks.append(n)
 
-        self.data = self.data.rstrip(EOF)
-
-        self.debug("Transfer complete (%i bytes)" % self.total_bytes)
-        self.status_fn("Completed",
-                       self.total_bytes,
-                       self.total_errors,
-                       running=False)
+        if not self.running:
+            pipe.write(CAN)
+            self.debug("Cancelled by user")
+            self.status_fn("Cancelled by user",
+                           self.total_bytes,
+                           self.total_errors,
+                           running=False)
+            return
+        else:
+            self.debug("Transfer complete (%i bytes)" % self.total_bytes)
+            self.status_fn("Completed",
+                           self.total_bytes,
+                           self.total_errors,
+                           running=False)
 
     def detect_start(self, pipe):
         starttime = time.time()
@@ -349,7 +363,7 @@ class XModem:
         data = "aa"
         blockno = 1
 
-        while True:
+        while self.running:
             try:
                 data = source.read(self.block_size)
                 if len(data) == 0:
@@ -361,13 +375,21 @@ class XModem:
             self.total_bytes += len(data)
             blockno += 1
 
-        self.send_eot(pipe)
+        if not self.running:
+            pipe.write(CAN)
+            self.debug("Cancelled by user")
+            self.status_fn("Cancelled by user",
+                           self.total_bytes,
+                           self.total_errors,
+                           running=False)
+        else:
+            self.debug("Transfer finished (%i bytes)" % self.total_bytes)
+            self.status_fn("Completed",
+                           self.total_bytes,
+                           self.total_errors,
+                           running=False)
+            self.send_eot(pipe)
 
-        self.debug("Transfer finished (%i bytes)" % self.total_bytes)
-        self.status_fn("Completed",
-                       self.total_bytes,
-                       self.total_errors,
-                       running=False)
 
 class XModemCRC(XModem):
     start_xfer = "C"
