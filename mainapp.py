@@ -23,9 +23,10 @@ class SerialCommunicator:
         self.thread.start()
 
     def disable(self):
-        self.enabled = False
-        print "Waiting for thread..."
-        self.thread.join()
+        if self.enabled:
+            self.enabled = False
+            print "Waiting for thread..."
+            self.thread.join()
 
     def send_text(self, text):
         return self.pipe.write(text)
