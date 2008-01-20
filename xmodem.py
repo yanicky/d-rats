@@ -258,6 +258,14 @@ class XModem:
         pipe.write(CAN)
         raise FatalError("Transfer failed (too many retries)")
 
+    def trim_eof(self, data):
+        trimmed = data.rstrip(EOF)
+        self.total_bytes -= (len(data) - len(trimmed))
+        print "Trimmed %i EOF, adjusted total: %i" % (len(data) - len(trimmed),
+                                                      self.total_bytes)
+
+        return trimmed                                                      
+
     def recv_xfer(self, pipe, dest):
         blocks = []
         self.checksum = self.checksums[self.start_xfer]
@@ -265,12 +273,15 @@ class XModem:
         self.debug("Sent start: 0x%02x" % ord(self.start_xfer))
         self.status_fn("Starting...", 0, 0)
 
-        data = "aa"
+        last_data = None
         last = 0
         while self.running:
             n, data = self.recv_block(pipe)
             if data is None:
+                dest.write(self.trim_eof(last_data))
                 break
+            elif last_data:
+                dest.write(last_data)
 
             if (n != last) and (n != last + 1):
                 self.debug("Received OOB: %i -> %i" % (last, n))
@@ -281,7 +292,7 @@ class XModem:
                 last = -1
             else:
                 last = n
-                dest.write(data)
+                last_data = data
                 self.total_bytes += len(data)
                 self.status_fn("Receiving",
                                self.total_bytes,
