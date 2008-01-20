@@ -52,7 +52,7 @@ class FileTransferGUI:
         self.window.add(box)
 
     def xfer(self):
-        x = xmodem.XModemCRC(debug="stdout", status_fn=self.update)
+        x = xmodem.XModem1K(debug="stdout", status_fn=self.update)
 
         if self.is_send:
             s = os.stat(self.filename)

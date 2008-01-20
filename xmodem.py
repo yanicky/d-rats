@@ -12,6 +12,7 @@ SOH = chr(1)
 ACK = chr(6)
 EOT = chr(4)
 CAN = chr(24)
+STX = chr(2)
 
 class FatalError(Exception):
     pass
@@ -89,9 +90,11 @@ class XModemCRCChecksum(XModemChecksum):
         return pipe.write(data)
 
 class XModem:
+    start_xfer = NAK
+    SOH = SOH
+    block_size = 128
+    
     def __init__(self, debug=None, status_fn=None):
-        self.block_size = 128
-        self.start_xfer = NAK
         self.retries = 10
         self.tstart_to = 60
         self.total_errors = 0
@@ -125,7 +128,7 @@ class XModem:
 
     def read_header(self, pipe):
         next = None
-        while next not in [SOH, EOT, CAN]:
+        while next not in [SOH, EOT, CAN, STX]:
             if next:
                 self.debug("Syncing... 0x%02x '%s'" % (ord(next), next))
             next = pipe.read(1)
@@ -133,9 +136,13 @@ class XModem:
         self.debug("Next header: 0x%02x (%s)" % (ord(next), next))
         if next == EOT:
             self.debug("End of transfer")
-            return -1
+            return -1, 0
         elif next == CAN:
             raise FatalError("Sender cancelled transfer")
+        elif next == STX:
+            block_size = 1024
+        else:
+            block_size = 128
 
         self.debug("Reading header")
         data = pipe.read(2)
@@ -148,12 +155,12 @@ class XModem:
         if ord(data[1]) != (255 - ord(data[2])):
             raise GenericError("Bad header: Invalid block")
 
-        return ord(data[1])
+        return ord(data[1]), block_size
 
     def write_header(self, pipe, num):
         self.debug("Writing header %i" % num)
         hdr = ""
-        hdr += SOH
+        hdr += self.SOH
         hdr += chr(num)
         hdr += chr(255 - num)
 
@@ -164,14 +171,14 @@ class XModem:
         csum = self.checksum()
         
         # Failure to read header bubbles up
-        block_num = self.read_header(pipe)
+        block_num, block_size = self.read_header(pipe)
 
         if block_num == -1:
             pipe.write(ACK)
             return 0, None
 
-        self.debug("Reading block %i" % block_num)
-        data = pipe.read(self.block_size)
+        self.debug("Reading block %i (%i bytes)" % (block_num, block_size))
+        data = pipe.read(block_size)
 
         csum.process_block(data)
         csum.read(pipe)
@@ -193,9 +200,10 @@ class XModem:
                     self.debug("Recevied EOT after bad block, retrying")
                     continue
 
-                self.status_fn("Receiving",
-                               n * self.block_size,
-                               self.total_errors)
+                if data:
+                    self.status_fn("Receiving",
+                                   n * len(data),
+                                   self.total_errors)
 
                 return n, data
             except FatalError, e:
@@ -357,9 +365,11 @@ class XModem:
                        running=False)
 
 class XModemCRC(XModem):
-    def __init__(self, debug=None, status_fn=None):
-        XModem.__init__(self, debug, status_fn)
-        self.start_xfer = "C"
+    start_xfer = "C"
+
+class XModem1K(XModemCRC):
+    SOH = STX
+    block_size = 1024
 
 def test_receive(x):
     #p = ptyhelper.PtyHelper("sx -vvvv xmodem.py")
