@@ -9,7 +9,7 @@ import xmodem
 class FileTransferGUI:
 
     def cancel_xfer(self, widget, data=None):
-        print "Cancel transfer"
+        self.xfer.cancel()
 
     def close_gui(self, widget, data=None):
         self.window.destroy()
@@ -85,6 +85,8 @@ class FileTransferGUI:
 
     def xfer(self):
         xa = self.xfer_agent(debug="stdout", status_fn=self.update)
+
+        self.xfer = xa
 
         if self.is_send:
             s = os.stat(self.filename)
