@@ -9,15 +9,6 @@ import xmodem
 
 from xfergui import FileTransferGUI
 
-#        c = gtk.FileChooserDialog("Select File",
-#                                  None,
-#                                  gtk.FILE_CHOOSER_ACTION_OPEN,
-#                                  (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
-#                                   gtk.STOCK_OPEN, gtk.RESPONSE_OK))
-#        c.run()
-#        print c.get_filename()
-#        c.destroy()
-
 class ChatGUI:
     def ev_delete(self, widget, event, data=None):
         return False
