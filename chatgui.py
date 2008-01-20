@@ -95,7 +95,6 @@ class ChatGUI:
 
     def menu_handler(self, _action):
         action = _action.get_name()
-        print "Action: %s" % action
         if action == "quit":
             self.sig_destroy(None)
         elif action == "send":
@@ -133,12 +132,6 @@ class ChatGUI:
 
         return uim.get_widget("/MenuBar")
         
-    def send_file(self):
-        pass
-
-    def recv_file(self):
-        pass
-        
     def __init__(self, comm):
         self.comm = comm
         self.main_buffer = gtk.TextBuffer()
@@ -158,6 +151,7 @@ class ChatGUI:
         pane = self.make_main_pane(menubar)
 
         self.window.set_title("D-STAR Chat")
+        self.window.set_geometry_hints(None, min_width=640, min_height=480)
         self.window.set_border_width(10)
         self.window.add(pane)
         self.window.connect("delete_event", self.ev_delete)
