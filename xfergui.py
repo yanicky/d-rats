@@ -8,6 +8,12 @@ import xmodem
 
 class FileTransferGUI:
 
+    def cancel_xfer(self, widget, data=None):
+        print "Cancel transfer"
+
+    def close_gui(self, widget, data=None):
+        self.window.destroy()
+
     def make_label_value(self, labeltext):
         box = gtk.HBox(True, 0)
 
@@ -25,6 +31,30 @@ class FileTransferGUI:
         
         return box
 
+    def make_buttons(self):
+        box = gtk.HBox(True, 0)
+
+        self.cancel_btn = gtk.Button("Cancel", gtk.STOCK_CANCEL)
+        self.close_btn = gtk.Button("Close", gtk.STOCK_CLOSE)
+
+        self.close_btn.set_sensitive(False)
+
+        self.cancel_btn.connect("clicked",
+                                self.cancel_xfer,
+                                None)
+        self.close_btn.connect("clicked",
+                               self.close_gui,
+                               None)
+
+        box.pack_start(self.cancel_btn, 1, 1, 0)
+        box.pack_start(self.close_btn, 1, 1, 0)
+
+        self.cancel_btn.show()
+        self.close_btn.show()
+        box.show()
+        
+        return box
+
     def __init__(self, chatgui):
         self.values = {}
         self.chatgui = chatgui
@@ -37,10 +67,11 @@ class FileTransferGUI:
         self.bar.set_text("Waiting...")
         self.bar.set_fraction(0)
         
-        box.pack_start(self.bar)
-        box.pack_start(self.make_label_value("File"))
-        box.pack_start(self.make_label_value("Size"))
-        box.pack_start(self.make_label_value("Errors"))
+        box.pack_start(self.bar, 0, 0, 0)
+        box.pack_start(self.make_label_value("File"), 0, 0, 0)
+        box.pack_start(self.make_label_value("Size"), 0, 0, 0)
+        box.pack_start(self.make_label_value("Errors"), 0, 0, 0)
+        box.pack_start(self.make_buttons(), 0, 0, 0)
 
         self.bar.show()
         box.show()
@@ -48,7 +79,7 @@ class FileTransferGUI:
         self.window = gtk.Window(gtk.WINDOW_TOPLEVEL)
         self.window.set_title("File Transfer")
         self.window.set_resizable(False)
-        self.window.set_geometry_hints(None, min_width=300, min_height=150)
+        self.window.set_geometry_hints(None, min_width=300)
         self.window.add(box)
 
     def xfer(self):
@@ -75,6 +106,9 @@ class FileTransferGUI:
         self.chatgui.toggle_sendable(True)
         gtk.gdk.threads_leave()
         self.chatgui.comm.enable(self.chatgui)
+
+        self.close_btn.set_sensitive(True)
+        self.cancel_btn.set_sensitive(False)
 
     def show_xfer(self):
         self.values["File"].set_text(os.path.basename(self.filename))
@@ -122,3 +156,8 @@ class FileTransferGUI:
         self.is_send = False
 
         self.show_xfer()
+
+if __name__ == "__main__":
+    g = FileTransferGUI(None)
+    g.window.show()
+    gtk.main()
