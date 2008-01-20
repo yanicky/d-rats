@@ -250,7 +250,7 @@ class XModem:
         pipe.write(CAN)
         raise FatalError("Transfer failed (too many retries)")
 
-    def recv_xfer(self, pipe):
+    def recv_xfer(self, pipe, dest):
         blocks = []
         self.checksum = self.checksums[self.start_xfer]
         pipe.write(self.start_xfer)
@@ -273,13 +273,17 @@ class XModem:
             if n in blocks:
                 self.debug("Received duplicate block %i" % n)
             else:
-                self.data += data
+                dest.write(data)
+                #self.data += data
                 blocks.append(n)
 
         self.data = self.data.rstrip(EOF)
 
         self.debug("Transfer complete (%i bytes)" % len(self.data))
-        self.status_fn("Completed", len(self.data), self.total_errors)
+        self.status_fn("Completed",
+                       len(self.data),
+                       self.total_errors,
+                       running=False)
 
     def detect_start(self, pipe):
         starttime = time.time()
@@ -293,7 +297,7 @@ class XModem:
 
             if start not in self.checksums.keys():
                 self.debug("Waiting for transfer to start...")
-                self.status_fn("Waiting for start", 0, 0)
+                self.status_fn("Waiting for remote...", 0, 0)
             else:
                 self.debug("Start char: %s" % start)
                 break
@@ -307,7 +311,7 @@ class XModem:
                 self.debug(str(e))
                 raise GenericError("Unknown transfer type: 0x%02x" % ord(start[0]))
             else:
-                raise GenericError("Transfer start timed out")
+                raise FatalError("Transfer start timed out")
 
         return True
 
@@ -327,7 +331,7 @@ class XModem:
         self.debug("Sent EOT")
 
     def send_xfer(self, pipe, source):
-        #pipe.write("Start receive now...\n")
+        pipe.write("Start receive now...\n")
         self.detect_start(pipe)
         
         data = "aa"
@@ -347,7 +351,10 @@ class XModem:
         self.send_eot(pipe)
 
         self.debug("Transfer finished (%i bytes)" % (blockno * self.block_size))
-        self.status_fn("Completed", blockno * self.block_size, self.total_errors)
+        self.status_fn("Completed",
+                       blockno * self.block_size,
+                       self.total_errors,
+                       running=False)
 
 class XModemCRC(XModem):
     def __init__(self, debug=None, status_fn=None):

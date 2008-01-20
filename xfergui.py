@@ -29,7 +29,7 @@ class FileTransferGUI:
         self.values = {}
         self.chatgui = chatgui
         self.is_send = None
-        self.total_size = 5000
+        self.total_size = None
 
         box = gtk.VBox(False, 0)
 
@@ -55,10 +55,26 @@ class FileTransferGUI:
         x = xmodem.XModemCRC(debug="stdout", status_fn=self.update)
 
         if self.is_send:
-            i = file(self.filename)
-            x.send_xfer(self.chatgui.comm.pipe, i)
+            s = os.stat(self.filename)
+            self.total_size = s.st_size
+            local = file(self.filename)
+            func = x.send_xfer
         else:
-            x.recv_xfer(self.chatgui.comm.pipe)
+            local = file(self.filename, "w")
+            func = x.recv_xfer
+
+        try:
+            func(self.chatgui.comm.pipe, local)
+        except xmodem.FatalError, e:
+            self.update("Failed (%s)" % e,
+                        0,
+                        x.total_errors,
+                        running=False)
+
+        gtk.gdk.threads_enter()
+        self.chatgui.toggle_sendable(True)
+        gtk.gdk.threads_leave()
+        self.chatgui.comm.enable(self.chatgui)
 
     def show_xfer(self):
         self.values["File"].set_text(os.path.basename(self.filename))
@@ -70,7 +86,7 @@ class FileTransferGUI:
         self.xfer_thread = Thread(target=self.xfer)
         self.xfer_thread.start()
 
-    def update(self, status, bytecount, errors):
+    def update(self, status, bytecount, errors, running=True):
         gtk.gdk.threads_enter()
         self.values["Size"].set_text("%i KB" % (bytecount / 1024))
         self.values["Errors"].set_text("%i" % errors)
