@@ -205,13 +205,6 @@ class XModem:
                     self.debug("Recevied EOT after bad block, retrying")
                     continue
 
-                if data:
-                    self.total_bytes += len(data)
-                    
-                self.status_fn("Receiving",
-                               self.total_bytes,
-                               self.total_errors)
-
                 return n, data
             except FatalError, e:
                 self.debug("Fatal error: %s" % e)
@@ -257,9 +250,6 @@ class XModem:
         for i in range(0, self.retries):
             try:
                 r = self._send_block(pipe, block, num)
-                self.status_fn("Sending",
-                               self.total_bytes,
-                               self.total_errors)
                 return r
             except GenericError, e:
                 self.debug("NAK on block %i" % num)
@@ -293,8 +283,9 @@ class XModem:
                 last = n
                 dest.write(data)
                 self.total_bytes += len(data)
-                #self.data += data
-                #blocks.append(n)
+                self.status_fn("Receiving",
+                               self.total_bytes,
+                               self.total_errors)
 
         if not self.running:
             pipe.write(CAN)
@@ -374,6 +365,10 @@ class XModem:
             self.send_block(pipe, self.pad_data(data), blockno)
             self.total_bytes += len(data)
             blockno += 1
+
+            self.status_fn("Sending",
+                           self.total_bytes,
+                           self.total_errors)
 
         if not self.running:
             pipe.write(CAN)
