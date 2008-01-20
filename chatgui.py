@@ -2,6 +2,7 @@
 
 import pygtk
 import gtk
+import pango
 import serial
 import gobject
 import time
@@ -21,20 +22,20 @@ class ChatGUI:
         if text == "":
             return
 
-        self.add_to_main_buffer("Me: ", text)
+        self.display("Me: ", ("red"))
+        self.display(text + "\n")
         self.tx_msg(text)
         
         data.set_text("")
 
-    def add_to_main_buffer(self, prefix, string):
+    def display(self, string, *attrs):
+        #string = string.rstrip("\r")
+
         end = self.main_buffer.get_end_iter()
+
         self.main_buffer.insert_with_tags_by_name(end,
-                                                  prefix,
-                                                  "red")
-
-        string = string.rstrip("\r\n")
-
-        self.main_buffer.insert_at_cursor(string + "\n")
+                                                  string,
+                                                  *attrs)
 
         adj = self.scroll.get_vadjustment()
         adj.value = adj.upper
@@ -141,6 +142,18 @@ class ChatGUI:
         tag.set_property("foreground", "Blue")
         self.main_buffer.get_tag_table().add(tag)
 
+        tag = gtk.TextTag("green")
+        tag.set_property("foreground", "Green")
+        self.main_buffer.get_tag_table().add(tag)
+
+        tag = gtk.TextTag("bold")
+        tag.set_property("weight", pango.WEIGHT_BOLD)
+        self.main_buffer.get_tag_table().add(tag)
+
+        tag = gtk.TextTag("italic")
+        tag.set_property("style", pango.STYLE_ITALIC)
+        self.main_buffer.get_tag_table().add(tag)
+
         self.window = gtk.Window(gtk.WINDOW_TOPLEVEL)
 
         menubar = self.make_menubar()
@@ -148,8 +161,10 @@ class ChatGUI:
         pane = self.make_main_pane(menubar)
 
         self.window.set_title("D-STAR Chat")
-        self.window.set_geometry_hints(None, min_width=640, min_height=480)
-        self.window.set_border_width(10)
+        
+        self.window.set_geometry_hints(None, min_width=400, min_height=200)
+        self.window.set_default_size(640, 480)
+        self.window.set_border_width(1)
         self.window.add(pane)
         self.window.connect("delete_event", self.ev_delete)
         self.window.connect("destroy", self.sig_destroy)
@@ -159,8 +174,8 @@ class ChatGUI:
 
         self.entry.grab_focus()
 
-        self.add_to_main_buffer("D-STAR Chat ",
-                                "\n(Copyright 2008 Dan Smith KI4IFW)")
+        self.display("D-STAR Chat ", ("red"))
+        self.display("(Copyright 2008 Dan Smith KI4IFW)\n", "blue", "italic")
 
     def main(self):
         gtk.gdk.threads_init()

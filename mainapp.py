@@ -39,14 +39,15 @@ class SerialCommunicator:
                 print "Got Data: %s" % data
                 gtk.gdk.threads_enter()
                 # FIXME
-                self.gui.add_to_main_buffer("Remote: ", data)
+                self.gui.display("Remote: ", ("red"))
+                self.gui.display(data + "\n")
                 gtk.gdk.threads_leave()
             else:
                 time.sleep(1)
 
     def __str__(self):
-        return "Port: %s, %i baud" % (self.pipe.portstr,
-                                      self.pipe.getBaudrate())
+        return "%s @ %i baud" % (self.pipe.portstr,
+                                 self.pipe.getBaudrate())
 
 # FIXME: Need a name
 class MainApp:
@@ -57,8 +58,7 @@ class MainApp:
         self.chatgui = chatgui.ChatGUI(self.comm)
         self.comm.enable(self.chatgui)
 
-        self.chatgui.add_to_main_buffer("Serial info: ",
-                                        str(self.comm))
+        self.chatgui.display("Serial info: " + str(self.comm), ("blue"))
 
     def main(self):
 
