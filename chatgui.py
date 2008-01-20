@@ -5,6 +5,7 @@ import gtk
 import serial
 import gobject
 import time
+import xmodem
 
 from xfergui import FileTransferGUI
 
@@ -103,10 +104,10 @@ class ChatGUI:
         if action == "quit":
             self.sig_destroy(None)
         elif action == "send":
-            xfer = FileTransferGUI(self)
+            xfer = FileTransferGUI(self, xmodem.YModem)
             xfer.do_send()
         elif action == "recv":
-            xfer = FileTransferGUI(self)
+            xfer = FileTransferGUI(self, xmodem.YModem)
             xfer.do_recv()
 
     def make_menubar(self):

@@ -55,11 +55,12 @@ class FileTransferGUI:
         
         return box
 
-    def __init__(self, chatgui):
+    def __init__(self, chatgui, xfer_agent):
         self.values = {}
         self.chatgui = chatgui
         self.is_send = None
         self.total_size = None
+        self.xfer_agent = xfer_agent
 
         box = gtk.VBox(False, 0)
 
@@ -83,35 +84,48 @@ class FileTransferGUI:
         self.window.add(box)
 
     def xfer(self):
-        x = xmodem.XModem1K(debug="stdout", status_fn=self.update)
+        xa = self.xfer_agent(debug="stdout", status_fn=self.update)
 
         if self.is_send:
             s = os.stat(self.filename)
             self.total_size = s.st_size
             local = file(self.filename)
-            func = x.send_xfer
+            func = xa.send_xfer
+        elif self.xfer_agent == xmodem.YModem:
+            name, size = xa.rx_ymodem_header(self.chatgui.comm.pipe)
+            self.total_size = size
+
+            self.filename = os.path.join(self.filename, name)
+            print "Target filename: %s" % self.filename
+            local = file(self.filename, "w")
+            func = xa.recv_xfer
         else:
             local = file(self.filename, "w")
-            func = x.recv_xfer
+            func = xa.recv_xfer
+
+        gtk.gdk.threads_enter()
+        self.values["File"].set_text(os.path.basename(self.filename))
+        gtk.gdk.threads_leave()
 
         try:
             func(self.chatgui.comm.pipe, local)
         except xmodem.FatalError, e:
             self.update("Failed (%s)" % e,
                         0,
-                        x.total_errors,
+                        xa.total_errors,
                         running=False)
+
+        local.close()
 
         gtk.gdk.threads_enter()
         self.chatgui.toggle_sendable(True)
+        self.close_btn.set_sensitive(True)
+        self.cancel_btn.set_sensitive(False)
         gtk.gdk.threads_leave()
         self.chatgui.comm.enable(self.chatgui)
 
-        self.close_btn.set_sensitive(True)
-        self.cancel_btn.set_sensitive(False)
 
     def show_xfer(self):
-        self.values["File"].set_text(os.path.basename(self.filename))
         self.window.show()
 
         self.chatgui.toggle_sendable(False)
@@ -144,9 +158,16 @@ class FileTransferGUI:
         self.show_xfer()
 
     def do_recv(self):
-        fc = gtk.FileChooserDialog("Receive file",
+        if self.xfer_agent == xmodem.YModem:
+            title = "Select destination folder"
+            stock = gtk.FILE_CHOOSER_ACTION_SELECT_FOLDER
+        else:
+            title = "Save received file as..."
+            stock = gtk.FILE_CHOOSER_ACTION_SAVE
+            
+        fc = gtk.FileChooserDialog(title,
                                    None,
-                                   gtk.FILE_CHOOSER_ACTION_SAVE,
+                                   stock,
                                    (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
                                     gtk.STOCK_SAVE, gtk.RESPONSE_OK))
         fc.run()
