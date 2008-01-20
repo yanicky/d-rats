@@ -116,6 +116,8 @@ class FileTransferGUI:
                         0,
                         xa.total_errors,
                         running=False)
+        except xmodem.CancelledError, e:
+            self.update(str(e), 0, 0, False)
 
         local.close()
 
