@@ -164,7 +164,7 @@ class ChatGUI:
         menubar.show()
         pane = self.make_main_pane(menubar)
 
-        self.window.set_title("D-STAR Chat")
+        self.window.set_title("D-RATS")
         
         self.window.set_geometry_hints(None, min_width=400, min_height=200)
         self.window.set_default_size(640, 480)
@@ -178,7 +178,7 @@ class ChatGUI:
 
         self.entry.grab_focus()
 
-        self.display("D-STAR Chat ", ("red"))
+        self.display("D-RATS ", ("red"))
         self.display("(Copyright 2008 Dan Smith KI4IFW)\n", "blue", "italic")
 
     def main(self):

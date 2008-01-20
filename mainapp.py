@@ -80,7 +80,6 @@ class QST:
             gtk.gdk.threads_leave()
         
 
-# FIXME: Need a name
 class MainApp:
     def setup_autoid(self):
         idtext = "(ID)"
