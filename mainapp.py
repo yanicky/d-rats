@@ -46,7 +46,7 @@ class SerialCommunicator:
             size = self.pipe.inWaiting()
             if size > 0:
                 data = self.pipe.read(size)
-                print "Got Data: %s" % data
+                #print "Got Data: %s" % data
                 gtk.gdk.threads_enter()
                 self.incoming_chat(data)
                 gtk.gdk.threads_leave()
