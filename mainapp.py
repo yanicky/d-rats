@@ -14,6 +14,7 @@ class SerialCommunicator:
 
     def __init__(self, port=0, rate=9600):
         self.pipe = serial.Serial(port=port, timeout=2, baudrate=rate)
+        self.pipe.setXonXoff(True)
         self.enabled = True
 
     def enable(self, gui):
@@ -88,7 +89,7 @@ class MainApp:
         autoid = QST(self.chatgui,
                      freq=self.config.config.getint("prefs", "autoid_freq"),
                      text=idtext)
-        autoid.enable()
+        #autoid.enable()
         self.qsts.append(autoid)
 
     def __init__(self):
