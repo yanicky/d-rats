@@ -91,7 +91,7 @@ class FileTransferGUI:
         if self.is_send:
             s = os.stat(self.filename)
             self.total_size = s.st_size
-            local = file(self.filename)
+            local = file(self.filename, "rb")
             func = xa.send_xfer
         elif self.xfer_agent == xmodem.YModem:
             name, size = xa.rx_ymodem_header(self.chatgui.comm.pipe)
@@ -99,10 +99,10 @@ class FileTransferGUI:
 
             self.filename = os.path.join(self.filename, name)
             print "Target filename: %s" % self.filename
-            local = file(self.filename, "w")
+            local = file(self.filename, "wb")
             func = xa.recv_xfer
         else:
-            local = file(self.filename, "w")
+            local = file(self.filename, "wb")
             func = xa.recv_xfer
 
         gtk.gdk.threads_enter()
