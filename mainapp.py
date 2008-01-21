@@ -30,7 +30,8 @@ class SerialCommunicator:
             self.thread.join()
 
     def send_text(self, text):
-        return self.pipe.write(text)
+        if self.enabled:
+            return self.pipe.write(text)
 
     def incoming_chat(self, data):
         if ":" in data:
