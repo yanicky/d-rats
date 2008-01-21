@@ -135,9 +135,18 @@ class XModem:
 
         self._debug.write(str + "\n")
 
-    def read_header(self, pipe):
+    def read_header(self, pipe, recovery=False):
         next = None
-        while next not in [SOH, EOT, CAN, STX]:
+
+        if recovery:
+            valid_next = [SOH, STX]
+        else:
+            valid_next = [SOH, EOT, CAN, STX]
+        
+        while next not in valid_next:
+            if not self.running:
+                raise CancelledError("User cancelled transfer")
+            
             if next:
                 self.debug("Syncing... 0x%02x '%s'" % (ord(next), next))
             next = pipe.read(1)
@@ -176,11 +185,11 @@ class XModem:
         hexprint(hdr + " " * 20)
         pipe.write(hdr)
 
-    def _recv_block(self, pipe):
+    def _recv_block(self, pipe, error_on_last=False):
         csum = self.checksum()
         
         # Failure to read header bubbles up
-        block_num, block_size = self.read_header(pipe)
+        block_num, block_size = self.read_header(pipe, error_on_last)
 
         if block_num == -1:
             pipe.write(ACK)
@@ -207,7 +216,7 @@ class XModem:
                 raise CancelledError("Cancelled by user")
                 
             try:
-                n, data = self._recv_block(pipe)
+                n, data = self._recv_block(pipe, last_error)
                 if data is None and n == -1:
                     self.debug("Recevied EOT after bad block, retrying")
                     continue
@@ -240,7 +249,11 @@ class XModem:
 
         self.debug("Checksum: %s" % csum)
 
-        ack = pipe.read(1)
+        ack_start = time.time()
+        ack = ''
+        while (len(ack) != 1) and (time.time() - ack_start) < 10:
+            ack = pipe.read(1)
+            
         if ack == ACK:
             self.debug("ACK for block %i" % num)
         elif ack == CAN:
@@ -260,7 +273,7 @@ class XModem:
                 r = self._send_block(pipe, block, num)
                 return r
             except GenericError, e:
-                self.debug("NAK on block %i" % num)
+                self.debug("NAK on block %i (%s)" % (num, e))
                 self.total_errors += 1
 
         pipe.write(CAN)
