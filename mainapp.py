@@ -1,5 +1,6 @@
 #!/usr/bin/python
 
+import os
 import sys
 import time
 from threading import Thread
@@ -35,12 +36,20 @@ class SerialCommunicator:
             return self.pipe.write(text)
 
     def incoming_chat(self, data):
+        data = data.rstrip("\n")
+        
+        if os.linesep != "\n":
+            data = data.replace("\n", os.linesep)
+
+        stamp = time.strftime("%H:%M:%S")
+
+        self.gui.display("%s " % stamp)
+
         if ":" in data:
-            call, rest = data.split(":", 1)
+            call, msg = data.split(":", 1)
             self.gui.display("%s:" % call, "blue")
-            self.gui.display("%s\n" % rest)
-        else:
-            self.gui.display(data + "\n")
+
+        self.gui.display("%s%s" % (msg, os.linesep))
 
     def watch_serial(self):
         while self.enabled:
@@ -120,7 +129,6 @@ class MainApp:
             gtk.gdk.threads_enter()
             gtk.main()
             gtk.gdk.threads_leave()
-            self.config.save()
         except KeyboardInterrupt:
             pass
         
