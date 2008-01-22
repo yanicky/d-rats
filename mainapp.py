@@ -104,9 +104,14 @@ class MainApp:
     def __init__(self):
         gtk.gdk.threads_init()
 
-        self.config = config.AppConfig()
+        if os.name == "posix":
+            self.config = config.UnixAppConfig()
+        elif os.name == "nt":
+            self.config = config.Win32AppConfig()
+        else:
+            self.config = config.AppConfig()
 
-        self.comm = SerialCommunicator(port=self.config.config.getint("settings",
+        self.comm = SerialCommunicator(port=self.config.config.get("settings",
                                                                    "port"),
                                        rate=self.config.config.getint("settings",
                                                                    "rate"))
