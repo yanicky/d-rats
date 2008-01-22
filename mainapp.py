@@ -16,7 +16,9 @@ class SerialCommunicator:
     def __init__(self, port=0, rate=9600):
         self.pipe = serial.Serial(port=port, timeout=2, baudrate=rate)
         self.pipe.setXonXoff(True)
-        self.enabled = True
+
+    def close(self):
+        self.pipe.close()
 
     def enable(self, gui):
         self.gui = gui
@@ -46,10 +48,10 @@ class SerialCommunicator:
         self.gui.display("%s " % stamp)
 
         if ":" in data:
-            call, msg = data.split(":", 1)
+            call, data = data.split(":", 1)
             self.gui.display("%s:" % call, "blue")
 
-        self.gui.display("%s%s" % (msg, os.linesep))
+        self.gui.display("%s%s" % (data, os.linesep))
 
     def watch_serial(self):
         while self.enabled:
@@ -101,27 +103,39 @@ class MainApp:
         #autoid.enable()
         self.qsts.append(autoid)
 
+    def refresh_config(self):
+        if self.comm:
+            self.comm.disable()
+            self.comm.close()
+
+        rate=self.config.config.get("settings", "rate")
+        port=self.config.config.get("settings", "port")
+        call=self.config.config.get("user", "callsign")
+        self.comm = SerialCommunicator(rate=rate, port=port)
+        self.comm.enable(self.chatgui)
+
+        self.chatgui.comm = self.comm
+
+        self.chatgui.display("Serial info: %s\n" % str(self.comm), ("blue"))
+        self.chatgui.display("My Call: %s\n" % call, "blue")
+
     def __init__(self):
+        self.comm = None
+
         gtk.gdk.threads_init()
 
         if os.name == "posix":
-            self.config = config.UnixAppConfig()
+            self.config = config.UnixAppConfig(self)
         elif os.name == "nt":
-            self.config = config.Win32AppConfig()
+            self.config = config.Win32AppConfig(self)
         else:
-            self.config = config.AppConfig()
+            self.config = config.AppConfig(self)
 
-        self.comm = SerialCommunicator(port=self.config.config.get("settings",
-                                                                   "port"),
-                                       rate=self.config.config.getint("settings",
-                                                                   "rate"))
-        self.chatgui = chatgui.ChatGUI(self.comm, self.config)
+        self.chatgui = chatgui.ChatGUI(self.config)
+
+        self.refresh_config()
+
         self.comm.enable(self.chatgui)
-
-        self.chatgui.display("Serial info: %s\n" % str(self.comm), ("blue"))
-        self.chatgui.display("My Call: %s\n" % self.config.config.get("user",
-                                                                      "callsign"),
-                             "blue")
 
         self.qsts = []
 
@@ -129,7 +143,6 @@ class MainApp:
             self.setup_autoid()
             
     def main(self):
-
         try:
             gtk.gdk.threads_enter()
             gtk.main()
