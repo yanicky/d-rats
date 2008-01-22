@@ -106,6 +106,8 @@ class ChatGUI:
         elif action == "recv":
             xfer = FileTransferGUI(self, xmodem.YModem)
             xfer.do_recv()
+        elif action == "config":
+            self.config.show()
 
     def make_menubar(self):
         menu_xml = """
@@ -114,6 +116,7 @@ class ChatGUI:
             <menu action='file'>
               <menuitem action='send'/>
               <menuitem action='recv'/>
+              <menuitem action='config'/>
               <menuitem action='quit'/>
             </menu>
           </menubar>
@@ -123,6 +126,7 @@ class ChatGUI:
         actions = [('file', None, "File", None, None, self.menu_handler),
                    ('send', None, "Send File", None, None, self.menu_handler),
                    ('recv', None, "Receive File", None, None, self.menu_handler),
+                   ('config', None, "Settings", None, None, self.menu_handler),
                    ('quit', None, "Quit", None, None, self.menu_handler)]
 
         uim = gtk.UIManager()
