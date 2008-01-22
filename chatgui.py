@@ -139,8 +139,8 @@ class ChatGUI:
 
         return uim.get_widget("/MenuBar")
         
-    def __init__(self, comm, config):
-        self.comm = comm
+    def __init__(self, config):
+        self.comm = None
         self.config = config
         
         self.main_buffer = gtk.TextBuffer()
