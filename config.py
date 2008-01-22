@@ -95,6 +95,7 @@ class AppConfig:
         self.sync_gui(load=False)
         self.save()
         self.window.hide()
+        self.mainapp.refresh_config()
 
     def cancel_button(self, widget, data=None):
         self.sync_gui(load=True)
@@ -170,7 +171,9 @@ class AppConfig:
             else:
                 self.config.set(s, k, self.fields[k].child.get_text())
 
-    def __init__(self, _file=None):
+    def __init__(self, mainapp, _file=None):
+        self.mainapp = mainapp
+
         if not _file:
             _file = self.default_filename()
 
