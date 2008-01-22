@@ -35,6 +35,8 @@ class ChatGUI:
                                                   string,
                                                   *attrs)
 
+        #print "Displaying: %s" % list(string)
+
         adj = self.scroll.get_vadjustment()
         adj.value = adj.upper
         self.scroll.set_vadjustment(adj)
@@ -42,9 +44,10 @@ class ChatGUI:
     def tx_msg(self, string):
         call = self.config.config.get("user", "callsign")
 
+        self.display("%s " % time.strftime("%H:%M:%S"))
         self.display("%s: " % call, "red")
         self.display(string + "\n")
-        self.comm.send_text(string + "\n")
+        self.comm.send_text("%s: %s\n" % (call, string))
 
     def make_entry_box(self):
         hbox = gtk.HBox(False, 0)
