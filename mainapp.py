@@ -12,6 +12,7 @@ import chatgui
 import config
 
 from utils import hexprint
+from qst import QST
 
 class SerialCommunicator:
 
@@ -84,7 +85,28 @@ class SerialCommunicator:
 class MainApp:
     def setup_autoid(self):
         idtext = "(ID)"
-            
+
+    def refresh_qsts(self):
+        for i in self.qsts:
+            print "Disabling QST %s" % i.text
+            i.disable()
+            print "Done"
+
+        self.qsts = []
+
+        sections = self.config.config.sections()
+        qsts = [x for x in sections if x.startswith("qst_")]
+
+        for i in qsts:
+            print "Doing QST %s" % i
+            text = self.config.config.get(i, "content")
+            freq = self.config.config.get(i, "freq")
+            qst = QST(self.chatgui, self.config,
+                      text=text, freq=int(freq))
+            qst.enable()
+
+            self.qsts.append(qst)
+    
     def refresh_config(self):
         if self.comm:
             self.comm.disable()
@@ -101,8 +123,11 @@ class MainApp:
         self.chatgui.display("Serial info: %s\n" % str(self.comm), ("blue"))
         self.chatgui.display("My Call: %s\n" % call, "blue")
 
+        self.refresh_qsts()
+
     def __init__(self):
         self.comm = None
+        self.qsts = []
 
         gtk.gdk.threads_init()
 
@@ -118,11 +143,6 @@ class MainApp:
         self.refresh_config()
 
         self.comm.enable(self.chatgui)
-
-        self.qsts = []
-
-        if self.config.config.getboolean("prefs", "autoid"):
-            self.setup_autoid()
             
     def main(self):
         try:

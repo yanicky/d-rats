@@ -109,6 +109,9 @@ class AppConfig:
         self.window.hide()
         self.mainapp.refresh_config()
 
+    def refresh_app(self):
+        self.mainapp.refresh_config()
+
     def cancel_button(self, widget, data=None):
         self.sync_gui(load=True)
         self.window.hide()

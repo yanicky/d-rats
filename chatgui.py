@@ -9,6 +9,7 @@ import time
 import xmodem
 
 from xfergui import FileTransferGUI
+from qst import QSTGUI
 
 class ChatGUI:
     def ev_delete(self, widget, event, data=None):
@@ -113,6 +114,9 @@ class ChatGUI:
             xfer.do_recv()
         elif action == "config":
             self.config.show()
+        elif action == "qsts":
+            qsts = QSTGUI(self.config)
+            qsts.show()
 
     def make_menubar(self):
         menu_xml = """
@@ -122,6 +126,7 @@ class ChatGUI:
               <menuitem action='send'/>
               <menuitem action='recv'/>
               <menuitem action='config'/>
+              <menuitem action='qsts'/>
               <menuitem action='quit'/>
             </menu>
           </menubar>
@@ -131,7 +136,8 @@ class ChatGUI:
         actions = [('file', None, "File", None, None, self.menu_handler),
                    ('send', None, "Send File", None, None, self.menu_handler),
                    ('recv', None, "Receive File", None, None, self.menu_handler),
-                   ('config', None, "Settings", None, None, self.menu_handler),
+                   ('config', None, "Main Settings", None, None, self.menu_handler),
+                   ('qsts', None, "Auto QST Settings", None, None, self.menu_handler),
                    ('quit', None, "Quit", None, None, self.menu_handler)]
 
         uim = gtk.UIManager()
