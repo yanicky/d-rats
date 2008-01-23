@@ -5,21 +5,28 @@ import pygtk
 
 import ConfigParser
 
+import xmodem
+
 class AppConfig:
     def init_config(self):
-        self.config.add_section("user")
-        self.config.set("user", "name", "A. Mateur")
-        self.config.set("user", "callsign", "W1AW")
+        def mset(section, option, value):
+            if not self.config.has_section(section):
+                self.config.add_section(section)
 
-        self.config.add_section("prefs")
-        self.config.set("prefs", "autoid", "True")
-        self.config.set("prefs", "autoid_freq", "10")
-        self.config.set("prefs", "autoreceive", "False")
-        self.config.set("prefs", "download_dir", "")
+            if not self.config.has_option(section, option):
+                self.config.set(section, option, value)
 
-        self.config.add_section("settings")
-        self.config.set("settings", "port", self.default_port)
-        self.config.set("settings", "rate", "9600")
+        mset("user", "name", "A. Mateur")
+        mset("user", "callsign", "W1AW")
+
+        mset("prefs", "autoid", "True")
+        mset("prefs", "autoid_freq", "10")
+        mset("prefs", "autoreceive", "False")
+        mset("prefs", "download_dir", "")
+
+        mset("settings", "port", self.default_port)
+        mset("settings", "rate", "9600")
+        mset("settings", "xfer", "YModem")
 
     id2label = {"name" : "Name",
                 "callsign" : "Callsign",
@@ -28,7 +35,12 @@ class AppConfig:
                 "autoreceive" : "Auto File Receive",
                 "download_dir" : "Download directory",
                 "port" : "Serial port",
-                "rate" : "Baud rate"}
+                "rate" : "Baud rate",
+                "xfer" : "File transfer protocol"}
+
+    xfers = {"XModem" : xmodem.XModem,
+             "XModemCRC" : xmodem.XModemCRC,
+             "YModem" : xmodem.YModem}
 
     def default_filename(self):
         return "drats.config"
@@ -124,6 +136,8 @@ class AppConfig:
         vbox.pack_start(self.make_sb("autoid_freq", gtk.Entry()))
         vbox.pack_start(self.make_sb("autoreceive", self.make_bool()))
         vbox.pack_start(self.make_sb("download_dir", gtk.Entry()))
+        vbox.pack_start(self.make_sb("xfer",
+                                     self.make_choice(self.xfers.keys())))
 
         vbox.pack_start(self.make_buttons())
 
@@ -139,6 +153,28 @@ class AppConfig:
         self.window.show()
         self.sync_gui(load=True)
 
+    def sync_texts(self, list, load):
+        for s, k in list:
+            if load:
+                self.fields[k].set_text(self.config.get(s, k))
+            else:
+                self.config.set(s, k, self.fields[k].get_text())
+
+    def sync_booleans(self, list, load):
+        for s, k in list:
+            if load:
+                self.fields[k].set_active(self.config.getboolean(s,k))
+            else:
+                self.config.set(s, k, str(self.fields[k].get_active()))
+        
+    def sync_choices(self, list, load):
+        for s, k in list:
+            if load:
+                self.fields[k].child.set_text(self.config.get(s, k))
+            else:
+                self.config.set(s, k, self.fields[k].child.get_text())
+        
+
     def sync_gui(self, load=True):
         text_v = [("user", "callsign"),
                   ("user", "name"),
@@ -148,28 +184,12 @@ class AppConfig:
                   ("prefs", "autoreceive")]
 
         choice_v = [("settings", "port"),
-                    ("settings", "rate")]
+                    ("settings", "rate"),
+                    ("settings", "xfer")]
 
-        # Text
-        for s, k in text_v:
-            if load:
-                self.fields[k].set_text(self.config.get(s, k))
-            else:
-                self.config.set(s, k, self.fields[k].get_text())
-
-        # Booleans
-        for s, k in bool_v:
-            if load:
-                self.fields[k].set_active(self.config.getboolean(s,k))
-            else:
-                self.config.set(s, k, str(self.fields[k].get_active()))
-
-        # Choices
-        for s, k in choice_v:
-            if load:
-                self.fields[k].child.set_text(self.config.get(s, k))
-            else:
-                self.config.set(s, k, self.fields[k].child.get_text())
+        self.sync_texts(text_v, load)
+        self.sync_booleans(bool_v, load)
+        self.sync_choices(choice_v, load)        
 
     def __init__(self, mainapp, _file=None):
         self.mainapp = mainapp
@@ -181,8 +201,7 @@ class AppConfig:
         self.config.read(_file)
         self.fields = {}
 
-        if not self.config.has_section("user"):
-            self.init_config()
+        self.init_config()
 
         self.build_gui()
 
@@ -212,6 +231,6 @@ class Win32AppConfig(AppConfig):
         return ["COM1", "COM2", "COM3", "COM4"]
 
 if __name__ == "__main__":
-    g = UnixAppConfig()
+    g = UnixAppConfig(None)
     g.show()
     gtk.main()
