@@ -11,21 +11,24 @@ import gtk
 import chatgui
 import config
 
+from utils import hexprint
+
 class SerialCommunicator:
 
     def __init__(self, port=0, rate=9600):
         self.pipe = serial.Serial(port=port, timeout=2, baudrate=rate)
         self.pipe.setXonXoff(True)
+        self.enabled = False
 
     def close(self):
         self.pipe.close()
 
     def enable(self, gui):
         self.gui = gui
-        self.enabled = True
-
-        self.thread = Thread(target=self.watch_serial)
-        self.thread.start()
+        if not self.enabled:
+            self.enabled = True
+            self.thread = Thread(target=self.watch_serial)
+            self.thread.start()
 
     def disable(self):
         if self.enabled:
@@ -38,7 +41,8 @@ class SerialCommunicator:
             return self.pipe.write(text)
 
     def incoming_chat(self, data):
-        data = data.rstrip("\n")
+        data = data.replace("\n", "")
+        data = data.replace("\r", "")
         
         if os.linesep != "\n":
             data = data.replace("\n", os.linesep)
@@ -47,22 +51,31 @@ class SerialCommunicator:
 
         self.gui.display("%s " % stamp)
 
-        if ":" in data:
-            call, data = data.split(":", 1)
-            self.gui.display("%s:" % call, "blue")
+        if ">" in data:
+            call, data = data.split(">", 1)
+            self.gui.display("%s>" % call, "blue")
 
         self.gui.display("%s%s" % (data, os.linesep))
 
     def watch_serial(self):
+        data = ""
         while self.enabled:
-            size = self.pipe.inWaiting()
-            if size > 0:
-                data = self.pipe.read(size)
-                #print "Got Data: %s" % data
-                gtk.gdk.threads_enter()
-                self.incoming_chat(data)
-                gtk.gdk.threads_leave()
+            #size = self.pipe.inWaiting()
+            newdata = self.pipe.read(64)
+            
+            if len(newdata) > 0:
+                data += newdata
+                #print "Got Data: %s" % newdata
+                print "Data chunk:"
+                hexprint(newdata)
             else:
+                if data:
+                    print "No more data, writing: %s" % data
+                    gtk.gdk.threads_enter()
+                    self.incoming_chat(data)
+                    gtk.gdk.threads_leave()
+                    data = ""
+                    
                 time.sleep(1)
 
     def __str__(self):
