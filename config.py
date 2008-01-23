@@ -7,6 +7,14 @@ import ConfigParser
 
 import xmodem
 
+def make_choice(options):
+    sel = gtk.combo_box_entry_new_text()
+
+    for o in options:
+        sel.append_text(o)
+
+    return sel
+
 class AppConfig:
     def init_config(self):
         def mset(section, option, value):
@@ -64,14 +72,6 @@ class AppConfig:
     def port_list(self):
         return ["Port1", "Port2"]
 
-    def make_choice(self, options):
-        sel = gtk.combo_box_entry_new_text()
-
-        for o in options:
-            sel.append_text(o)
-
-        return sel
-
     def make_bool(self):
         return gtk.CheckButton("Enabled")
 
@@ -128,16 +128,16 @@ class AppConfig:
         vbox.pack_start(self.make_sb("name", gtk.Entry()))
 
         vbox.pack_start(self.make_sb("port",
-                                     self.make_choice(self.port_list())))
+                                     make_choice(self.port_list())))
         vbox.pack_start(self.make_sb("rate",
-                                     self.make_choice(baud_rates)))
+                                     make_choice(baud_rates)))
 
         vbox.pack_start(self.make_sb("autoid", self.make_bool()))
         vbox.pack_start(self.make_sb("autoid_freq", gtk.Entry()))
         vbox.pack_start(self.make_sb("autoreceive", self.make_bool()))
         vbox.pack_start(self.make_sb("download_dir", gtk.Entry()))
         vbox.pack_start(self.make_sb("xfer",
-                                     self.make_choice(self.xfers.keys())))
+                                     make_choice(self.xfers.keys())))
 
         vbox.pack_start(self.make_buttons())
 
