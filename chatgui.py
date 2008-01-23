@@ -45,9 +45,9 @@ class ChatGUI:
         call = self.config.config.get("user", "callsign")
 
         self.display("%s " % time.strftime("%H:%M:%S"))
-        self.display("%s: " % call, "red")
+        self.display("%s> " % call, "red")
         self.display(string + "\n")
-        self.comm.send_text("%s: %s\n" % (call, string))
+        self.comm.send_text("%s> %s\n" % (call, string))
 
     def make_entry_box(self):
         hbox = gtk.HBox(False, 0)
@@ -77,6 +77,7 @@ class ChatGUI:
         vbox = gtk.VBox(False, 0)
         display = gtk.TextView(self.main_buffer)
         display.Editable = False
+        display.set_wrap_mode(gtk.WRAP_WORD)
         self.scroll = gtk.ScrolledWindow()
         self.scroll.add(display)
 
