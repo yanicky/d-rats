@@ -68,41 +68,10 @@ class SerialCommunicator:
     def __str__(self):
         return "%s @ %i baud" % (self.pipe.portstr,
                                  self.pipe.getBaudrate())
-
-class QST:
-    def __init__(self, gui, text=None, freq=None):
-        self.gui = gui
-        self.text = text
-        self.freq = freq
-        self.enabled = False
-
-    def enable(self):
-        self.enabled = True
-        self.thread = Thread(target=self.thread)
-        self.thread.start()
-
-    def disable(self):
-        self.enabled = False
-        self.thread.join()
-
-    def thread(self):
-        while self.enabled:
-            time.sleep(self.freq)
-            gtk.gdk.threads_enter()
-            self.gui.tx_msg(self.text)
-            gtk.gdk.threads_leave()
-        
-
 class MainApp:
     def setup_autoid(self):
         idtext = "(ID)"
             
-        autoid = QST(self.chatgui,
-                     freq=self.config.config.getint("prefs", "autoid_freq"),
-                     text=idtext)
-        #autoid.enable()
-        self.qsts.append(autoid)
-
     def refresh_config(self):
         if self.comm:
             self.comm.disable()
