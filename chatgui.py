@@ -98,13 +98,17 @@ class ChatGUI:
         
     def menu_handler(self, _action):
         action = _action.get_name()
+
+        xfer_name = self.config.config.get("settings", "xfer")
+        xfer = xmodem.__dict__[xfer_name]
+
         if action == "quit":
             self.sig_destroy(None)
         elif action == "send":
-            xfer = FileTransferGUI(self, xmodem.YModem)
+            xfer = FileTransferGUI(self, xfer)
             xfer.do_send()
         elif action == "recv":
-            xfer = FileTransferGUI(self, xmodem.YModem)
+            xfer = FileTransferGUI(self, xfer)
             xfer.do_recv()
         elif action == "config":
             self.config.show()
