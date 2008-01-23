@@ -4,6 +4,12 @@ def hexprint(data):
     line_sz = 8
     csum = 0
 
+    lines = len(data) / line_sz
+    
+    if (len(data) % line_sz) != 0:
+        lines += 1
+        data += "\x00" * ((lines * line_sz) - len(data))
+        
     for i in range(0, (len(data)/line_sz)):
 
 
