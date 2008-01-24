@@ -101,6 +101,11 @@ class MainApp:
             print "Doing QST %s" % i
             text = self.config.config.get(i, "content")
             freq = self.config.config.get(i, "freq")
+            enab = self.config.config.getboolean(i, "enabled")
+
+            if not enab:
+                continue
+            
             qst = QST(self.chatgui, self.config,
                       text=text, freq=int(freq))
             qst.enable()

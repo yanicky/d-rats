@@ -56,7 +56,7 @@ class SelectGUI:
         tme = int(self.c_tme.child.get_text())
 
         iter = self.list_store.append()
-        self.list_store.set(iter, 0, msg, 1, tme)
+        self.list_store.set(iter, 0, True, 1, tme, 2, msg)
 
         self.e_msg.set_text("")
         
@@ -114,7 +114,11 @@ class SelectGUI:
 
         b_raise = gtk.Button("", gtk.STOCK_GO_UP)
         b_lower = gtk.Button("", gtk.STOCK_GO_DOWN)
-        b_del = gtk.Button("Remove", gtk.STOCK_DISCARD)
+
+        try:
+            b_del = gtk.Button("Remove", gtk.STOCK_DISCARD)
+        except AttributeError:
+            b_del = gtk.Button("Remove")
 
         b_raise.connect("clicked",
                         self.ev_reorder,
@@ -140,18 +144,28 @@ class SelectGUI:
 
         return vbox
 
+    def toggle(self, render, path, data=None):
+        column = data
+        self.list_store[path][column] = not self.list_store[path][column]
+
     def make_display(self, side):
         hbox = gtk.HBox(False, 0)
 
         self.list = gtk.TreeView(self.list_store)
 
-        r = gtk.CellRendererText()
-        col = gtk.TreeViewColumn("Message", r, text=0)
-        col.set_resizable(True)
+        r = gtk.CellRendererToggle()
+        r.set_property("activatable", True)
+        col = gtk.TreeViewColumn("Enabled", r, active=0)
+        r.connect("toggled", self.toggle, 0)
         self.list.append_column(col)
 
         r = gtk.CellRendererText()
         col = gtk.TreeViewColumn("Period (min)", r, text=1)
+        self.list.append_column(col)
+
+        r = gtk.CellRendererText()
+        col = gtk.TreeViewColumn("Message", r, text=2)
+        col.set_resizable(True)
         self.list.append_column(col)
 
         hbox.pack_start(self.list, 1,1,1)
@@ -189,8 +203,9 @@ class SelectGUI:
         self.window.show()
 
     def __init__(self, title="--"):
-        self.list_store = gtk.ListStore(gobject.TYPE_STRING,
-                                        gobject.TYPE_INT)
+        self.list_store = gtk.ListStore(gobject.TYPE_BOOLEAN,
+                                        gobject.TYPE_INT,
+                                        gobject.TYPE_STRING)
 
         self.window = gtk.Window(gtk.WINDOW_TOPLEVEL)
         self.window.set_title(title)
@@ -216,19 +231,21 @@ class QSTGUI(SelectGUI):
     def load_qst(self, section):
         freq = self.config.config.getint(section, "freq")
         content = self.config.config.get(section, "content")
+        enabled = self.config.config.getboolean(section, "enabled")
 
         iter = self.list_store.append()
-        self.list_store.set(iter, 0, content, 1, freq)
+        self.list_store.set(iter, 0, enabled, 1, freq, 2, content)
 
     def save_qst(self, model, path, iter, data=None):
         pos = path[0]
 
-        text, freq = model.get(iter, 0, 1)
+        text, freq, enabled = model.get(iter, 2, 1, 0)
 
         section = "qst_%i" % int(pos)
         self.config.config.add_section(section)
         self.config.config.set(section, "freq", str(freq))
         self.config.config.set(section, "content", text)
+        self.config.config.set(section, "enabled", str(enabled))
 
     def sync_gui(self, load=True):
         sections = self.config.config.sections()
