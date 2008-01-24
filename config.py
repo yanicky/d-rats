@@ -27,10 +27,15 @@ class AppConfig:
         mset("user", "name", "A. Mateur")
         mset("user", "callsign", "W1AW")
 
-        mset("prefs", "autoid", "True")
-        mset("prefs", "autoid_freq", "10")
         mset("prefs", "autoreceive", "False")
         mset("prefs", "download_dir", "")
+        mset("prefs", "blinkmsg", "False")
+        mset("prefs", "noticere", "")
+        mset("prefs", "ignorere", "")
+        mset("prefs", "signon", "Online (D-RATS)")
+        mset("prefs", "signoff", "Going offline (D-RATS)")
+        mset("prefs", "dosignon", "True")
+        mset("prefs", "dosignoff", "True")
 
         mset("settings", "port", self.default_port)
         mset("settings", "rate", "9600")
@@ -38,13 +43,18 @@ class AppConfig:
 
     id2label = {"name" : "Name",
                 "callsign" : "Callsign",
-                "autoid" : "Automatic ID",
-                "autoid_freq": "Freqency",
                 "autoreceive" : "Auto File Receive",
                 "download_dir" : "Download directory",
                 "port" : "Serial port",
                 "rate" : "Baud rate",
-                "xfer" : "File transfer protocol"}
+                "xfer" : "File transfer protocol",
+                "blinkmsg" : "Blink tray on new message",
+                "noticere" : "Notice RegEx",
+                "ignorere" : "Ignore RegEx",
+                "signon" : "",
+                "signoff" : "",
+                "dosignon" : "Sign-on message",
+                "dosignoff" : "Sign-off message"}
 
     xfers = {"XModem" : xmodem.XModem,
              "XModemCRC" : xmodem.XModemCRC,
@@ -135,17 +145,27 @@ class AppConfig:
         vbox.pack_start(self.make_sb("rate",
                                      make_choice(baud_rates)))
 
-        vbox.pack_start(self.make_sb("autoid", self.make_bool()))
-        vbox.pack_start(self.make_sb("autoid_freq", gtk.Entry()))
         vbox.pack_start(self.make_sb("autoreceive", self.make_bool()))
         vbox.pack_start(self.make_sb("download_dir", gtk.Entry()))
         vbox.pack_start(self.make_sb("xfer",
                                      make_choice(self.xfers.keys())))
 
+        # Broken on (at least) win32
+        #vbox.pack_start(self.make_sb("blinkmsg", self.make_bool()))
+
+        vbox.pack_start(self.make_sb("noticere", gtk.Entry()))
+        vbox.pack_start(self.make_sb("ignorere", gtk.Entry()))
+
+        vbox.pack_start(self.make_sb("dosignon", self.make_bool()))
+        vbox.pack_start(self.make_sb("signon", gtk.Entry()))
+
+        vbox.pack_start(self.make_sb("dosignoff", self.make_bool()))
+        vbox.pack_start(self.make_sb("signoff", gtk.Entry()))
+        
         vbox.pack_start(self.make_buttons())
 
         # Disable unsupported functions
-        for i in ("autoid", "autoreceive", "autoid_freq", "download_dir"):
+        for i in ("autoreceive", "download_dir"):
             self.fields[i].set_sensitive(False)
         
         self.window.add(vbox)
@@ -181,10 +201,15 @@ class AppConfig:
     def sync_gui(self, load=True):
         text_v = [("user", "callsign"),
                   ("user", "name"),
-                  ("prefs", "download_dir")]
+                  ("prefs", "download_dir"),
+                  ("prefs", "noticere"),
+                  ("prefs", "ignorere"),
+                  ("prefs", "signon"),
+                  ("prefs", "signoff")]
 
-        bool_v = [("prefs", "autoid"),
-                  ("prefs", "autoreceive")]
+        bool_v = [("prefs", "autoreceive"),
+                  ("prefs", "dosignon"),
+                  ("prefs", "dosignoff")]
 
         choice_v = [("settings", "port"),
                     ("settings", "rate"),
