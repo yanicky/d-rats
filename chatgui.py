@@ -16,6 +16,9 @@ class ChatGUI:
         return False
     
     def sig_destroy(self, widget, data=None):
+        if self.config.config.getboolean("prefs", "dosignoff"):
+            self.tx_msg(self.config.config.get("prefs", "signoff"))
+
         gtk.main_quit()
 
     def sig_send_button(self, widget, data=None):
@@ -26,6 +29,10 @@ class ChatGUI:
         self.tx_msg(text)
         
         data.set_text("")
+
+    def ev_focus(self, widget, event, data=None):
+        if self.window.get_urgency_hint():
+            self.window.set_urgency_hint(False)
 
     def display(self, string, *attrs):
         #string = string.rstrip("\r")
@@ -49,6 +56,9 @@ class ChatGUI:
         self.display("%s> " % call, "red")
         self.display(string + "\n")
         self.comm.send_text("%s> %s\n" % (call, string))
+
+        if self.config.config.getboolean("prefs", "blinkmsg"):
+            self.window.set_urgency_hint(True)
 
     def make_entry_box(self):
         hbox = gtk.HBox(False, 0)
@@ -168,6 +178,10 @@ class ChatGUI:
         tag.set_property("foreground", "Green")
         self.main_buffer.get_tag_table().add(tag)
 
+        tag = gtk.TextTag("grey")
+        tag.set_property("foreground", "Grey")
+        self.main_buffer.get_tag_table().add(tag)
+
         tag = gtk.TextTag("bold")
         tag.set_property("weight", pango.WEIGHT_BOLD)
         self.main_buffer.get_tag_table().add(tag)
@@ -190,6 +204,7 @@ class ChatGUI:
         self.window.add(pane)
         self.window.connect("delete_event", self.ev_delete)
         self.window.connect("destroy", self.sig_destroy)
+        self.window.connect("focus", self.ev_focus)
 
         pane.show()
         self.window.show()
