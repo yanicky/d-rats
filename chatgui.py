@@ -127,6 +127,8 @@ class ChatGUI:
         elif action == "qsts":
             qsts = QSTGUI(self.config)
             qsts.show()
+        elif action == "clear":
+            self.main_buffer.set_text("")
 
     def make_menubar(self):
         menu_xml = """
@@ -135,20 +137,29 @@ class ChatGUI:
             <menu action='file'>
               <menuitem action='send'/>
               <menuitem action='recv'/>
+              <separator/>
               <menuitem action='config'/>
               <menuitem action='qsts'/>
+              <separator/>
               <menuitem action='quit'/>
+            </menu>
+            <menu action='view'>
+              <menuitem action='clear'/>
+              <menuitem action='advanced'/>
             </menu>
           </menubar>
         </ui>
         """
 
-        actions = [('file', None, "File", None, None, self.menu_handler),
-                   ('send', None, "Send File", None, None, self.menu_handler),
-                   ('recv', None, "Receive File", None, None, self.menu_handler),
-                   ('config', None, "Main Settings", None, None, self.menu_handler),
-                   ('qsts', None, "Auto QST Settings", None, None, self.menu_handler),
-                   ('quit', None, "Quit", None, None, self.menu_handler)]
+        actions = [('file', None, "_File", None, None, self.menu_handler),
+                   ('send', None, "_Send File", None, None, self.menu_handler),
+                   ('recv', None, "_Receive File", None, None, self.menu_handler),
+                   ('config', None, "_Main Settings", None, None, self.menu_handler),
+                   ('qsts', None, "_Auto QST Settings", None, None, self.menu_handler),
+                   ('quit', None, "_Quit", None, None, self.menu_handler),
+                   ('view', None, "_View", None, None, self.menu_handler),
+                   ('clear', None, '_Clear', None, None, self.menu_handler),
+                   ('advanced', None, '_Advanced', None, None, self.menu_handler)]
 
         uim = gtk.UIManager()
         ag = gtk.ActionGroup("MenuBar")
