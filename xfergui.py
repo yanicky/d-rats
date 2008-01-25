@@ -1,5 +1,7 @@
 import os
 from threading import Thread
+import tempfile
+import base64
 
 import pygtk
 import gtk
@@ -83,26 +85,47 @@ class FileTransferGUI:
         self.window.set_geometry_hints(None, min_width=300)
         self.window.add(box)
 
+    def encoded_file(self, filename):
+        i = file(filename)
+        o = file(tempfile.gettempdir() + os.path.sep + "dratsencode", "w")
+
+        base64.encode(i, o)
+
+        i.close()
+        o.close()
+
+        return file(o.name)
+
+    def decode_file(self, tempfile):
+        i = file(tempfile)
+        o = file(self.filename, "w")
+
+        base64.decode(i, o)
+
+        i.close()
+        o.close()
+
     def xfer(self):
         xa = self.xfer_agent(debug="stdout", status_fn=self.update)
 
         self.xfer = xa
 
         if self.is_send:
-            s = os.stat(self.filename)
+            local = self.encoded_file(self.filename)
+            s = os.stat(local.name)
             self.total_size = s.st_size
-            local = file(self.filename, "rb")
             func = xa.send_xfer
+            xa.filename = os.path.basename(self.filename)
         elif self.xfer_agent == xmodem.YModem:
             name, size = xa.rx_ymodem_header(self.chatgui.comm.pipe)
             self.total_size = size
 
             self.filename = os.path.join(self.filename, name)
             print "Target filename: %s" % self.filename
-            local = file(self.filename, "wb")
+            local = file(tempfile.gettempdir() + os.path.sep + "dratsdecode", "w")
             func = xa.recv_xfer
         else:
-            local = file(self.filename, "wb")
+            local = file(tempfile.gettempdir() + os.path.sep + "dratsdecode", "w")
             func = xa.recv_xfer
 
         gtk.gdk.threads_enter()
@@ -120,6 +143,8 @@ class FileTransferGUI:
             self.update(str(e), 0, 0, False)
 
         local.close()
+        if not self.is_send:
+            self.decode_file(local.name)
 
         gtk.gdk.threads_enter()
         self.chatgui.toggle_sendable(True)

@@ -420,10 +420,15 @@ class XModem1K(XModemCRC):
     block_size = 1024
 
 class YModem(XModem1K):
+    filename = None
+    
     def tx_ymodem_header(self, pipe, source):
         s = os.fstat(source.fileno())
 
-        data = "%s\x00%i " % (os.path.basename(source.name), s.st_size)
+        if self.filename:
+            data = "%s\x00%i " % (self.filename, s.st_size)
+        else:
+            data = "%s\x00%i " % (os.path.basename(source.name), s.st_size)
         self.debug("YMODEM Data block:")
         hexprint(self.pad_data(data))
 
