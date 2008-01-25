@@ -6,7 +6,7 @@ import sys
 
 from utils import hexprint
 
-EOF = chr(26)
+EOF = chr(4)
 NAK = chr(21)
 SOH = chr(1)
 ACK = chr(6)
@@ -42,9 +42,8 @@ class XModemChecksum:
         data = pipe.read(1)
         self.r = ord(data)
 
-    def write(self, pipe):
-        data = chr(self.c)
-        pipe.write(data)
+    def write(self):
+        return chr(self.c)
 
     def validate(self):
         return self.c == self.r
@@ -88,9 +87,8 @@ class XModemCRCChecksum(XModemChecksum):
 
         self.r = (ord(data[0]) << 8) | (ord(data[1]))
 
-    def write(self, pipe):
-        data = chr((self.c >> 8) & 0xFF) + chr(self.c & 0xFF)
-        return pipe.write(data)
+    def write(self):
+        return chr((self.c >> 8) & 0xFF) + chr(self.c & 0xFF)
 
 class XModem:
     start_xfer = NAK
@@ -175,15 +173,8 @@ class XModem:
 
         return ord(data[1]), block_size
 
-    def write_header(self, pipe, num):
-        self.debug("Writing header %i" % num)
-        hdr = ""
-        hdr += self.SOH
-        hdr += chr(num)
-        hdr += chr(255 - num)
-
-        hexprint(hdr + " " * 20)
-        pipe.write(hdr)
+    def make_header(self, pipe, num):
+        return self.SOH + chr(num) + chr(255 - num)
 
     def _recv_block(self, pipe, error_on_last=False):
         csum = self.checksum()
@@ -197,6 +188,8 @@ class XModem:
 
         self.debug("Reading block %i (%i bytes)" % (block_num, block_size))
         data = pipe.read(block_size)
+
+        self.debug("Read %i bytes for block %i" % (len(data), block_num))
 
         csum.process_block(data)
         csum.read(pipe)
@@ -238,20 +231,23 @@ class XModem:
         raise FatalError("Transfer failed (too many retries)")
 
     def _send_block(self, pipe, block, num):
-        self.write_header(pipe, num % 256)
-
-        self.debug("Sending block %i (%i bytes)" % (num, len(block)))
-
-        pipe.write(block)
+        data = self.make_header(pipe, num % 256)
+        data += block
         csum = self.checksum()
         csum.process_block(block)
-        csum.write(pipe)
+        data += csum.write()
 
+        self.debug("Sending block %i (%i bytes)" % (num, len(block)))
         self.debug("Checksum: %s" % csum)
+
+        #hexprint(data)
+        pipe.write(data)
+        print "Wrote %i bytes" % len(data)
 
         ack_start = time.time()
         ack = ''
-        while (len(ack) != 1) and (time.time() - ack_start) < 10:
+        while (len(ack) != 1) and (time.time() - ack_start) < 20:
+            print "Looking for ACK/NAK"
             ack = pipe.read(1)
             
         if ack == ACK:
@@ -299,10 +295,13 @@ class XModem:
         while self.running:
             n, data = self.recv_block(pipe)
             if data is None:
-                dest.write(self.trim_eof(last_data))
+                trimmed = self.trim_eof(last_data)
+                dest.write(trimmed)
+                self.total_bytes += len(trimmed)
                 break
             elif last_data:
                 dest.write(last_data)
+                self.total_bytes += len(last_data)
 
             if (n != last) and (n != last + 1):
                 self.debug("Received OOB: %i -> %i" % (last, n))
@@ -314,7 +313,6 @@ class XModem:
             else:
                 last = n
                 last_data = data
-                self.total_bytes += len(data)
                 self.status_fn("Receiving",
                                self.total_bytes,
                                self.total_errors)
@@ -378,8 +376,9 @@ class XModem:
 
         self.debug("Sent EOT")
 
-    def send_xfer(self, pipe, source):
-        pipe.write("Start receive now...\n")
+    def send_xfer(self, pipe, source, announce=True):
+        if announce:
+            pipe.write("Start receive now...\n")
         self.detect_start(pipe)
         
         data = "aa"
@@ -455,7 +454,7 @@ class YModem(XModem1K):
         self.tx_ymodem_header(pipe, source)
 
         self.debug("YModem header sent, starting XMODEM")
-        XModem1K.send_xfer(self, pipe, source)
+        XModem1K.send_xfer(self, pipe, source, announce=False)
 
 def test_receive(x):
     #p = ptyhelper.PtyHelper("sx -vvvv xmodem.py")

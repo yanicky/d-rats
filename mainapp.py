@@ -18,8 +18,8 @@ from qst import QST
 class SerialCommunicator:
 
     def __init__(self, port=0, rate=9600):
-        self.pipe = serial.Serial(port=port, timeout=2, baudrate=rate)
-        self.pipe.setXonXoff(True)
+        self.pipe = serial.Serial(port=port, timeout=2, baudrate=rate,
+                                  xonxoff=1)
         self.enabled = False
 
     def close(self):

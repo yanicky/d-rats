@@ -31,7 +31,7 @@ def hexprint(data):
         for j in range(0,limit):
             char = data[(i * line_sz) + j]
 
-            if ord(char) > ord('A') and ord(char) < ord('z'):
+            if ord(char) > 0x20 and ord(char) < 0x7E:
                 print "%s" % char,
             else:
                 print ".",
