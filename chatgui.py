@@ -231,7 +231,7 @@ class ChatGUI:
 
         self.entry.grab_focus()
 
-        self.display("D-RATS v0.1.2 ", ("red"))
+        self.display("D-RATS v0.1.3 ", ("red"))
         self.display("(Copyright 2008 Dan Smith KI4IFW)\n", "blue", "italic")
 
     def main(self):
