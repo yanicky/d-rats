@@ -37,6 +37,15 @@ class ChatGUI:
     def display(self, string, *attrs):
         #string = string.rstrip("\r")
 
+        # Filter incoming to just ASCII-printable
+        c = '?'
+        xlate = ([c] * 10) +    \
+                ['\n', '\r'] +  \
+                ([c] * 20) +    \
+                [chr(x) for x in range(32,126)] + \
+                ([c] * 130)
+        string = string.translate("".join(xlate))
+
         end = self.main_buffer.get_end_iter()
 
         self.main_buffer.insert_with_tags_by_name(end,
