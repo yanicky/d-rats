@@ -52,13 +52,14 @@ class SelectGUI:
         self.window.hide()
 
     def ev_add(self, widget, data=None):
-        msg = self.e_msg.get_text()
+        msg = self.msg.get_text(self.msg.get_start_iter(),
+                                self.msg.get_end_iter())
         tme = int(self.c_tme.child.get_text())
 
         iter = self.list_store.append()
         self.list_store.set(iter, 0, True, 1, tme, 2, msg)
 
-        self.e_msg.set_text("")
+        self.msg.set_text("")
         
     def ev_delete(self, widget, data=None):
         (list, iter) = self.list.get_selection().get_selected()
@@ -67,28 +68,39 @@ class SelectGUI:
     def make_b_controls(self):
         times = ["1", "5", "10", "20", "30", "60"]
 
-        self.e_msg = gtk.Entry()
+        self.msg = gtk.TextBuffer()
+        self.entry = gtk.TextView(self.msg)
         self.c_tme = make_choice(times)
+        self.c_tme.set_size_request(80,-1)
         b_add = gtk.Button("Add", gtk.STOCK_ADD)
+
+        self.tips.set_tip(self.entry, "Enter new QST text")
+        self.tips.set_tip(b_add, "Add new QST")
+        self.tips.set_tip(self.c_tme, "Minutes between transmissions")
+
+        vbox = gtk.VBox(True, 5)
+
+        vbox.pack_start(self.c_tme)
+        vbox.pack_start(b_add)
 
         b_add.connect("clicked",
                       self.ev_add,
                       None)
-        self.e_msg.connect("activate",
-                           self.ev_add,
-                           None)
+#        self.e_msg.connect("activate",
+#                           self.ev_add,
+#                           None)
 
-        hbox = gtk.HBox(False, 0)
+        hbox = gtk.HBox(False, 5)
 
-        hbox.pack_start(self.e_msg, 0,0,0)
-        hbox.pack_start(self.c_tme, 0,0,0)
-        hbox.pack_start(b_add, 0,0,0)
+        hbox.pack_start(self.entry, 1,1,0)
+        hbox.pack_start(vbox, 0,0,0)
 
         self.c_tme.child.set_text("60")
 
-        self.e_msg.show()
+        self.entry.show()
         self.c_tme.show()
         b_add.show()
+        vbox.show()
         hbox.show()
 
         return hbox        
@@ -120,6 +132,8 @@ class SelectGUI:
         except AttributeError:
             b_del = gtk.Button("Remove")
 
+        b_del.set_size_request(80, -1)
+
         b_raise.connect("clicked",
                         self.ev_reorder,
                         1)
@@ -131,6 +145,10 @@ class SelectGUI:
         b_del.connect("clicked",
                       self.ev_delete,
                       None)
+
+        self.tips.set_tip(b_raise, "Move item up in list")
+        self.tips.set_tip(b_lower, "Move item down in list")
+        self.tips.set_tip(b_del, "Discard item from list")
 
         vbox.pack_start(b_raise, 0,0,0)
         vbox.pack_start(b_del, 0,0,0)
@@ -149,7 +167,7 @@ class SelectGUI:
         self.list_store[path][column] = not self.list_store[path][column]
 
     def make_display(self, side):
-        hbox = gtk.HBox(False, 0)
+        hbox = gtk.HBox(False, 5)
 
         self.list = gtk.TreeView(self.list_store)
 
@@ -192,6 +210,9 @@ class SelectGUI:
         hbox.pack_end(cancel, 0,0,0)
         hbox.pack_end(okay, 0,0,0)
 
+        okay.set_size_request(100, -1)
+        cancel.set_size_request(100, -1)
+        
         okay.show()
         cancel.show()
         hbox.show()
@@ -203,6 +224,7 @@ class SelectGUI:
         self.window.show()
 
     def __init__(self, title="--"):
+        self.tips = gtk.Tooltips()
         self.list_store = gtk.ListStore(gobject.TYPE_BOOLEAN,
                                         gobject.TYPE_INT,
                                         gobject.TYPE_STRING)
@@ -214,10 +236,15 @@ class SelectGUI:
 
         vbox.pack_start(self.make_display(self.make_s_controls()),1,1,1)
         vbox.pack_start(self.make_b_controls(), 0,0,0)
+
+        rule = gtk.HSeparator()
+        rule.show()
+        vbox.pack_start(rule, 0,0,0)
+        
         vbox.pack_start(self.make_action_buttons(), 0,0,0)
         vbox.show()
 
-        self.e_msg.grab_focus()
+        self.entry.grab_focus()
 
         self.window.add(vbox)
 
