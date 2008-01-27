@@ -131,21 +131,31 @@ class MainApp:
             qst.enable()
 
             self.qsts.append(qst)
-    
-    def refresh_config(self):
+
+    def refresh_comm(self, rate, port):
         if self.comm:
             self.comm.disable()
             self.comm.close()
-
-        rate=self.config.config.get("settings", "rate")
-        port=self.config.config.get("settings", "port")
-        call=self.config.config.get("user", "callsign")
+            
         self.comm = SerialCommunicator(rate=rate, port=port)
         self.comm.enable(self.chatgui)
-
         self.chatgui.comm = self.comm
 
         self.chatgui.display("Serial info: %s\n" % str(self.comm), ("blue"))
+    
+    def refresh_config(self):
+        rate=self.config.config.getint("settings", "rate")
+        port=self.config.config.get("settings", "port")
+        call=self.config.config.get("user", "callsign")
+
+        if self.comm:
+            if self.comm.pipe.baudrate != rate or \
+                self.comm.pipe.portstr != port:
+                print "Serial config changed"
+                self.refresh_comm(rate, port)
+        else:
+            self.refresh_comm(rate, port)
+
         self.chatgui.display("My Call: %s\n" % call, "blue")
 
         self.refresh_qsts()
