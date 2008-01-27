@@ -41,6 +41,10 @@ class ChatGUI:
         if text == "":
             return
 
+        # FIXME: Need to limit this number
+        iter = self.history.append()
+        self.history.set(iter, 0, text)
+
         self.tx_msg(text)
         
         data.set_text("")
@@ -87,9 +91,16 @@ class ChatGUI:
     def make_entry_box(self):
         hbox = gtk.HBox(False, 0)
         
-        entry = gtk.Entry()
         button = gtk.Button("Send")
-        
+        entry = gtk.Entry()
+
+        self.history = gtk.ListStore(gobject.TYPE_STRING)
+        completion = gtk.EntryCompletion()
+        completion.set_model(self.history)
+        completion.set_text_column(0)
+        completion.set_minimum_key_length(1)
+        entry.set_completion(completion)
+
         button.connect("clicked",
                        self.sig_send_button,
                        entry)
