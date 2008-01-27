@@ -22,8 +22,11 @@ import ConfigParser
 
 import xmodem
 
-def make_choice(options):
-    sel = gtk.combo_box_entry_new_text()
+def make_choice(options, editable=True):
+    if editable:
+        sel = gtk.combo_box_entry_new_text()
+    else:
+        sel = gtk.combo_box_new_text()
 
     for o in options:
         sel.append_text(o)
@@ -182,12 +185,12 @@ class AppConfig:
         vbox.pack_start(self.make_sb("port",
                                      make_choice(self.port_list())), 0,0,0)
         vbox.pack_start(self.make_sb("rate",
-                                     make_choice(baud_rates)), 0,0,0)
+                                     make_choice(baud_rates, False)), 0,0,0)
 
         vbox.pack_start(self.make_sb("autoreceive", self.make_bool()), 0,0,0)
         vbox.pack_start(self.make_sb("download_dir", gtk.Entry()), 0,0,0)
         vbox.pack_start(self.make_sb("xfer",
-                                     make_choice(self.xfers.keys())), 0,0,0)
+                                     make_choice(self.xfers.keys(), False)), 0,0,0)
 
         # Broken on (at least) win32
         #vbox.pack_start(self.make_sb("blinkmsg", self.make_bool()))
@@ -244,7 +247,7 @@ class AppConfig:
             else:
                 self.config.set(s, k, str(self.fields[k].get_active()))
         
-    def sync_choices(self, list, load):
+    def sync_choicetexts(self, list, load):
         for s, k in list:
             if load:
                 self.fields[k].child.set_text(self.config.get(s, k))
@@ -258,6 +261,23 @@ class AppConfig:
             else:
                 self.config.set(s, k, self.fields[k].get_color().to_string())
 
+    def set_active_if(self, model, path, iter, data):
+        widget, tval = data
+        if model.get_value(iter, 0) == tval:
+            widget.set_active_iter(iter)
+
+    def sync_choices(self, list, load):
+        for s, k in list:
+            box = self.fields[k]
+            model = box.get_model()
+
+            if load:
+                val = self.config.get(s, k)
+                model.foreach(self.set_active_if, (box, val))
+            else:
+                index = box.get_active()
+                self.config.set(s, k, model[index][0])
+                
     def sync_gui(self, load=True):
         text_v = [("user", "callsign"),
                   ("user", "name"),
@@ -271,8 +291,9 @@ class AppConfig:
                   ("prefs", "dosignon"),
                   ("prefs", "dosignoff")]
 
-        choice_v = [("settings", "port"),
-                    ("settings", "rate"),
+        choicetext_v = [("settings", "port")]
+
+        choice_v = [("settings", "rate"),
                     ("settings", "xfer")]
 
         color_v = [("prefs", "incomingcolor"),
@@ -282,6 +303,7 @@ class AppConfig:
 
         self.sync_texts(text_v, load)
         self.sync_booleans(bool_v, load)
+        self.sync_choicetexts(choicetext_v, load)
         self.sync_choices(choice_v, load)
         self.sync_colors(color_v, load)
 
