@@ -168,8 +168,6 @@ class ChatGUI:
         elif action == "quickmsg":
             qm = QuickMsgGUI(self.config)
             qm.show()
-        elif action == "advanced":
-            self.show_advanced()
 
     def make_menubar(self):
         menu_xml = """
@@ -254,6 +252,10 @@ class ChatGUI:
             tag = gtk.TextTag(i)
             tag.set_property("foreground", self.config.config.get("prefs", i))
             tags.add(tag)
+
+    def refresh_advanced(self):
+        if self.advpane.visible:
+            self.advpane.refresh()
 
     def show_advanced(self, action, data=None):
         w, h = self.window.get_size()
@@ -346,6 +348,8 @@ class QuickMessageControl:
 
         self.gui.tips.set_tip(self.list, "Double-click to send")
 
+        self.visible = False
+
     def send(self, widget, data=None):
         (list, iter) = self.list.get_selection().get_selected()
 
@@ -369,9 +373,11 @@ class QuickMessageControl:
     def show(self):
         self.refresh()
         self.root.show()
+        self.visible = True
 
     def hide(self):
-        self.root.hide()        
+        self.root.hide()
+        self.visible = False
 
 if __name__ == "__main__":
     gui = ChatGUI()

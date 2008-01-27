@@ -160,6 +160,7 @@ class MainApp:
 
         self.refresh_qsts()
         self.chatgui.refresh_colors()
+        self.chatgui.refresh_advanced()
 
     def __init__(self):
         self.comm = None
