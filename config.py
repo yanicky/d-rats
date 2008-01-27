@@ -194,9 +194,9 @@ class AppConfig:
                                     gtk.FILE_CHOOSER_ACTION_SELECT_FOLDER,
                                     (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
                                      gtk.STOCK_OPEN, gtk.RESPONSE_OK))
-
-        vbox.pack_start(self.make_sb("download_dir",
-                                     gtk.FileChooserButton(dlg)), 0,0,0)
+        fcb = gtk.FileChooserButton(dlg)
+        vbox.pack_start(self.make_sb("download_dir", fcb,
+                                     ), 0,0,0)
         vbox.pack_start(self.make_sb("xfer",
                                      make_choice(self.xfers.keys(), False)), 0,0,0)
 
@@ -292,9 +292,7 @@ class AppConfig:
             
             if load:
                 d = self.config.get(s, k)
-                print "Setting value to %s" % d
-                # FIXME: This blows up
-                # button.set_current_folder(d)
+                button.set_current_folder(d)
             else:
                 d = button.get_current_folder()
                 self.config.set(s, k, d)

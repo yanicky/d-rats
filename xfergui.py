@@ -202,7 +202,14 @@ class FileTransferGUI:
                                    gtk.FILE_CHOOSER_ACTION_OPEN,
                                    (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
                                     gtk.STOCK_OPEN, gtk.RESPONSE_OK))
-        fc.run()
+        d = self.chatgui.config.config.get("prefs", "download_dir")
+        fc.set_current_folder(d)
+
+        result = fc.run()
+        if result == gtk.RESPONSE_CANCEL:
+            fc.destroy()
+            return
+        
         self.filename = fc.get_filename()
         fc.destroy()
 
@@ -223,7 +230,14 @@ class FileTransferGUI:
                                    stock,
                                    (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
                                     gtk.STOCK_SAVE, gtk.RESPONSE_OK))
-        fc.run()
+        d = self.chatgui.config.config.get("prefs", "download_dir")
+        fc.set_current_folder(d)
+
+        result = fc.run()
+        if result == gtk.RESPONSE_CANCEL:
+            fc.destroy()
+            return
+        
         self.filename = fc.get_filename()
         fc.destroy()
 
