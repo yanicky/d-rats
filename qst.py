@@ -68,59 +68,12 @@ class SelectGUI:
         self.sync_gui(load=False)
         self.window.hide()
 
-    def ev_add(self, widget, data=None):
-        msg = self.msg.get_text(self.msg.get_start_iter(),
-                                self.msg.get_end_iter())
-        tme = int(self.c_tme.child.get_text())
-
-        iter = self.list_store.append()
-        self.list_store.set(iter, 0, True, 1, tme, 2, msg)
-
-        self.msg.set_text("")
-        
     def ev_delete(self, widget, data=None):
         (list, iter) = self.list.get_selection().get_selected()
         list.remove(iter)
 
-    def make_b_controls(self):
-        times = ["1", "5", "10", "20", "30", "60"]
-
-        self.msg = gtk.TextBuffer()
-        self.entry = gtk.TextView(self.msg)
-        self.c_tme = make_choice(times)
-        self.c_tme.set_size_request(80,-1)
-        b_add = gtk.Button("Add", gtk.STOCK_ADD)
-
-        self.tips.set_tip(self.entry, "Enter new QST text")
-        self.tips.set_tip(b_add, "Add new QST")
-        self.tips.set_tip(self.c_tme, "Minutes between transmissions")
-
-        vbox = gtk.VBox(True, 5)
-
-        vbox.pack_start(self.c_tme)
-        vbox.pack_start(b_add)
-
-        b_add.connect("clicked",
-                      self.ev_add,
-                      None)
-#        self.e_msg.connect("activate",
-#                           self.ev_add,
-#                           None)
-
-        hbox = gtk.HBox(False, 5)
-
-        hbox.pack_start(self.entry, 1,1,0)
-        hbox.pack_start(vbox, 0,0,0)
-
-        self.c_tme.child.set_text("60")
-
-        self.entry.show()
-        self.c_tme.show()
-        b_add.show()
-        vbox.show()
-        hbox.show()
-
-        return hbox        
+    def ev_add(self, widget, data=None):
+        print "ADD event"
 
     def ev_reorder(self, widget, data):
         (list, iter) = self.list.get_selection().get_selected()
@@ -137,6 +90,11 @@ class SelectGUI:
 
         if target:
             list.swap(iter, target)
+
+    def make_b_controls(self):
+        b = gtk.Button("Foo")
+        b.show()
+        return b
 
     def make_s_controls(self):
         vbox = gtk.VBox(True, 0)
@@ -187,21 +145,21 @@ class SelectGUI:
         hbox = gtk.HBox(False, 5)
 
         self.list = gtk.TreeView(self.list_store)
+        self.list.set_rules_hint(True)
 
-        r = gtk.CellRendererToggle()
-        r.set_property("activatable", True)
-        col = gtk.TreeViewColumn("Enabled", r, active=0)
-        r.connect("toggled", self.toggle, 0)
-        self.list.append_column(col)
+        i=0
+        for R,c in self.columns:
+            r = R()
+            if R == gtk.CellRendererToggle:
+                r.set_property("activatable", True)
+                r.connect("toggled", self.toggle, i)
+                col = gtk.TreeViewColumn(c, r, active=i)
+            elif R == gtk.CellRendererText:
+                col = gtk.TreeViewColumn(c, r, text=i)
 
-        r = gtk.CellRendererText()
-        col = gtk.TreeViewColumn("Period (min)", r, text=1)
-        self.list.append_column(col)
+            self.list.append_column(col)
 
-        r = gtk.CellRendererText()
-        col = gtk.TreeViewColumn("Message", r, text=2)
-        col.set_resizable(True)
-        self.list.append_column(col)
+            i += 1
 
         hbox.pack_start(self.list, 1,1,1)
         hbox.pack_start(side, 0,0,0)
@@ -242,10 +200,7 @@ class SelectGUI:
 
     def __init__(self, title="--"):
         self.tips = gtk.Tooltips()
-        self.list_store = gtk.ListStore(gobject.TYPE_BOOLEAN,
-                                        gobject.TYPE_INT,
-                                        gobject.TYPE_STRING)
-
+        # SET LIST STORE
         self.window = gtk.Window(gtk.WINDOW_TOPLEVEL)
         self.window.set_title(title)
 
@@ -269,8 +224,67 @@ class SelectGUI:
 
 class QSTGUI(SelectGUI):
     def __init__(self, config):
-        SelectGUI.__init__(self, "QST Configuration")
+        self.columns = [
+            (gtk.CellRendererToggle, "Enabled"),
+            (gtk.CellRendererText, "Period (min)"),
+            (gtk.CellRendererText, "Message")
+            ]
         self.config = config
+        self.list_store = gtk.ListStore(gobject.TYPE_BOOLEAN,
+                                        gobject.TYPE_INT,
+                                        gobject.TYPE_STRING)
+        
+        SelectGUI.__init__(self, "QST Configuration")
+
+    def ev_add(self, widget, data=None):
+        msg = self.msg.get_text(self.msg.get_start_iter(),
+                                self.msg.get_end_iter())
+        tme = int(self.c_tme.child.get_text())
+
+        iter = self.list_store.append()
+        self.list_store.set(iter, 0, True, 1, tme, 2, msg)
+
+        self.msg.set_text("")
+
+    def make_b_controls(self):
+        times = ["1", "5", "10", "20", "30", "60"]
+
+        self.msg = gtk.TextBuffer()
+        self.entry = gtk.TextView(self.msg)
+        self.c_tme = make_choice(times)
+        self.c_tme.set_size_request(80,-1)
+        b_add = gtk.Button("Add", gtk.STOCK_ADD)
+
+        self.tips.set_tip(self.entry, "Enter new QST text")
+        self.tips.set_tip(b_add, "Add new QST")
+        self.tips.set_tip(self.c_tme, "Minutes between transmissions")
+
+        vbox = gtk.VBox(True, 5)
+
+        vbox.pack_start(self.c_tme)
+        vbox.pack_start(b_add)
+
+        b_add.connect("clicked",
+                      self.ev_add,
+                      None)
+#        self.e_msg.connect("activate",
+#                           self.ev_add,
+#                           None)
+
+        hbox = gtk.HBox(False, 5)
+
+        hbox.pack_start(self.entry, 1,1,0)
+        hbox.pack_start(vbox, 0,0,0)
+
+        self.c_tme.child.set_text("60")
+
+        self.entry.show()
+        self.c_tme.show()
+        b_add.show()
+        vbox.show()
+        hbox.show()
+
+        return hbox        
 
     def load_qst(self, section):
         freq = self.config.config.getint(section, "freq")
@@ -307,6 +321,81 @@ class QSTGUI(SelectGUI):
             self.config.save()
             self.config.refresh_app()
 
+class QuickMsgGUI(SelectGUI):
+    def __init__(self, config):
+        self.columns = [(gtk.CellRendererText, "Message")]
+        self.config = config
+        self.list_store = gtk.ListStore(gobject.TYPE_STRING)
+
+        SelectGUI.__init__(self, "Quick Messages")
+
+    def ev_add(self, widget, data=None):
+        msg = self.msg.get_text(self.msg.get_start_iter(),
+                                self.msg.get_end_iter())
+
+        iter = self.list_store.append()
+        self.list_store.set(iter, 0, msg)
+
+        print "Message: %s" % msg
+
+        self.msg.set_text("")
+
+    def make_b_controls(self):
+        self.msg = gtk.TextBuffer()
+        self.entry = gtk.TextView(self.msg)
+
+        b_add = gtk.Button("Add", gtk.STOCK_ADD)
+        b_add.set_size_request(80, -1)
+        b_add.connect("clicked",
+                      self.ev_add,
+                      None)
+
+        self.tips.set_tip(self.entry, "Enter new message text")
+        self.tips.set_tip(b_add, "Add new quick message")
+
+        hbox = gtk.HBox(False, 5)
+
+        hbox.pack_start(self.entry, 1,1,0)
+        hbox.pack_start(b_add, 0,0,0)
+
+        b_add.show()
+        self.entry.show()
+        hbox.show()
+
+        return hbox
+
+    def load_msg(self, id):
+        text = self.config.config.get("quick", id)
+
+        iter = self.list_store.append()
+        self.list_store.set(iter, 0, text)
+
+    def save_msg(self, model, path, iter, data=None):
+        pos = path[0]
+
+        text = model.get(iter, 0)[0]
+
+        self.config.config.set("quick", "msg_%i" % pos, text)
+
+    def sync_gui(self, load=True):
+        if not self.config.config.has_section("quick"):
+            self.config.config.add_section("quick")
+
+        msgs = self.config.config.options("quick")
+        msgs.sort()
+
+        if load:
+            for i in msgs:
+                self.load_msg(i)
+        else:
+            old_msgs = [x for x in msgs if x.startswith("msg_")]
+            for i in old_msgs:
+                self.config.config.remove_option("quick", i)
+
+            self.list_store.foreach(self.save_msg, None)
+            self.config.save()
+            self.config.refresh_app()        
+
 if __name__ == "__main__":
     #g = SelectGUI("Test GUI")
     import config
@@ -315,4 +404,8 @@ if __name__ == "__main__":
     
     g = QSTGUI(c)
     g.show()
+
+    m = QuickMsgGUI(c)
+    m.show()
+    
     gtk.main()
