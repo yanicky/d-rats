@@ -188,7 +188,15 @@ class AppConfig:
                                      make_choice(baud_rates, False)), 0,0,0)
 
         vbox.pack_start(self.make_sb("autoreceive", self.make_bool()), 0,0,0)
-        vbox.pack_start(self.make_sb("download_dir", gtk.Entry()), 0,0,0)
+
+        dlg = gtk.FileChooserDialog("Choose a location",
+                                    None,
+                                    gtk.FILE_CHOOSER_ACTION_SELECT_FOLDER,
+                                    (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
+                                     gtk.STOCK_OPEN, gtk.RESPONSE_OK))
+
+        vbox.pack_start(self.make_sb("download_dir",
+                                     gtk.FileChooserButton(dlg)), 0,0,0)
         vbox.pack_start(self.make_sb("xfer",
                                      make_choice(self.xfers.keys(), False)), 0,0,0)
 
@@ -214,7 +222,7 @@ class AppConfig:
                                      gtk.ColorButton()), 0,0,0)
         
         # Disable unsupported functions
-        for i in ("autoreceive", "download_dir", "noticere"):
+        for i in ("autoreceive", "noticere"):
             self.fields[i].set_sensitive(False)
 
         scroll.show()
@@ -277,11 +285,23 @@ class AppConfig:
             else:
                 index = box.get_active()
                 self.config.set(s, k, model[index][0])
+
+    def sync_paths(self, list, load):
+        for s, k in list:
+            button = self.fields[k]
+            
+            if load:
+                d = self.config.get(s, k)
+                print "Setting value to %s" % d
+                # FIXME: This blows up
+                # button.set_current_folder(d)
+            else:
+                d = button.get_current_folder()
+                self.config.set(s, k, d)
                 
     def sync_gui(self, load=True):
         text_v = [("user", "callsign"),
                   ("user", "name"),
-                  ("prefs", "download_dir"),
                   ("prefs", "noticere"),
                   ("prefs", "ignorere"),
                   ("prefs", "signon"),
@@ -301,11 +321,14 @@ class AppConfig:
                    ("prefs", "noticecolor"),
                    ("prefs", "ignorecolor")]
 
+        path_v =[("prefs", "download_dir")]
+
         self.sync_texts(text_v, load)
         self.sync_booleans(bool_v, load)
         self.sync_choicetexts(choicetext_v, load)
         self.sync_choices(choice_v, load)
         self.sync_colors(color_v, load)
+        self.sync_paths(path_v, load)
 
     def __init__(self, mainapp, _file=None):
         self.mainapp = mainapp
