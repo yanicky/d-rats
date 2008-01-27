@@ -86,7 +86,7 @@ class AppConfig:
         return gtk.CheckButton("Enabled")
 
     def make_buttons(self):
-        hbox = gtk.HBox(True, 0)
+        hbox = gtk.HBox(False, 5)
 
         save = gtk.Button("Save", gtk.STOCK_SAVE)
         save.connect("clicked",
@@ -98,8 +98,11 @@ class AppConfig:
                        self.cancel_button,
                        None)
 
-        hbox.pack_start(cancel, 0, 0, 0)
-        hbox.pack_start(save, 0, 0, 0)
+        hbox.pack_end(cancel, 0, 0, 0)
+        hbox.pack_end(save, 0, 0, 0)
+
+        save.set_size_request(100, -1)
+        cancel.set_size_request(100, -1)
 
         save.show()
         cancel.show()
@@ -129,46 +132,58 @@ class AppConfig:
     def build_gui(self):
         self.window = gtk.Window(gtk.WINDOW_TOPLEVEL)
 
+        self.window.set_default_size(400, 500)
+        self.window.set_title("Main Settings")
+
         self.window.connect("delete_event", self.delete)
         self.window.connect("destroy", self.destroy)
 
         baud_rates = ["300", "1200", "4800", "9600",
                       "19200", "38400", "115200"]
 
-        vbox = gtk.VBox(False, 0)
+        scroll = gtk.ScrolledWindow()
+        scroll.set_policy(gtk.POLICY_NEVER, gtk.POLICY_AUTOMATIC)
 
-        vbox.pack_start(self.make_sb("callsign", gtk.Entry()))
-        vbox.pack_start(self.make_sb("name", gtk.Entry()))
+        vbox = gtk.VBox(False, 2)
+
+        vbox.pack_start(self.make_sb("callsign", gtk.Entry()), 0,0,0)
+        vbox.pack_start(self.make_sb("name", gtk.Entry()), 0,0,0)
 
         vbox.pack_start(self.make_sb("port",
-                                     make_choice(self.port_list())))
+                                     make_choice(self.port_list())), 0,0,0)
         vbox.pack_start(self.make_sb("rate",
-                                     make_choice(baud_rates)))
+                                     make_choice(baud_rates)), 0,0,0)
 
-        vbox.pack_start(self.make_sb("autoreceive", self.make_bool()))
-        vbox.pack_start(self.make_sb("download_dir", gtk.Entry()))
+        vbox.pack_start(self.make_sb("autoreceive", self.make_bool()), 0,0,0)
+        vbox.pack_start(self.make_sb("download_dir", gtk.Entry()), 0,0,0)
         vbox.pack_start(self.make_sb("xfer",
-                                     make_choice(self.xfers.keys())))
+                                     make_choice(self.xfers.keys())), 0,0,0)
 
         # Broken on (at least) win32
         #vbox.pack_start(self.make_sb("blinkmsg", self.make_bool()))
 
-        vbox.pack_start(self.make_sb("noticere", gtk.Entry()))
-        vbox.pack_start(self.make_sb("ignorere", gtk.Entry()))
+        vbox.pack_start(self.make_sb("noticere", gtk.Entry()), 0,0,0)
+        vbox.pack_start(self.make_sb("ignorere", gtk.Entry()), 0,0,0)
 
-        vbox.pack_start(self.make_sb("dosignon", self.make_bool()))
-        vbox.pack_start(self.make_sb("signon", gtk.Entry()))
+        vbox.pack_start(self.make_sb("dosignon", self.make_bool()), 0,0,0)
+        vbox.pack_start(self.make_sb("signon", gtk.Entry()), 0,0,0)
 
-        vbox.pack_start(self.make_sb("dosignoff", self.make_bool()))
-        vbox.pack_start(self.make_sb("signoff", gtk.Entry()))
+        vbox.pack_start(self.make_sb("dosignoff", self.make_bool()), 0,0,0)
+        vbox.pack_start(self.make_sb("signoff", gtk.Entry()), 0,0,0)
         
-        vbox.pack_start(self.make_buttons())
-
         # Disable unsupported functions
-        for i in ("autoreceive", "download_dir"):
+        for i in ("autoreceive", "download_dir", "noticere"):
             self.fields[i].set_sensitive(False)
+
+        scroll.show()
+        scroll.add_with_viewport(vbox)
+
+        mainvbox = gtk.VBox(False, 5)
+        mainvbox.pack_start(scroll, 1,1,1)
+        mainvbox.pack_start(self.make_buttons(), 0,0,0)
+        mainvbox.show()
         
-        self.window.add(vbox)
+        self.window.add(mainvbox)
 
         vbox.show()
 
