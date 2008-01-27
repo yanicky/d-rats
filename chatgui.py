@@ -122,9 +122,10 @@ class ChatGUI:
     def make_main_pane(self, menubar):
         vbox = gtk.VBox(False, 0)
         display = gtk.TextView(self.main_buffer)
-        display.Editable = False
+        display.set_editable(False)
         display.set_wrap_mode(gtk.WRAP_WORD)
         self.scroll = gtk.ScrolledWindow()
+        self.scroll.set_policy(gtk.POLICY_NEVER, gtk.POLICY_AUTOMATIC)
         self.scroll.add(display)
 
         ebox = self.make_entry_box()
