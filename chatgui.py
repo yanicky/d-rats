@@ -167,6 +167,8 @@ class ChatGUI:
         elif action == "quickmsg":
             qm = QuickMsgGUI(self.config)
             qm.show()
+        elif action == "advanced":
+            self.show_advanced()
 
     def make_menubar(self):
         menu_xml = """
@@ -198,13 +200,16 @@ class ChatGUI:
                    ('quickmsg', None, 'Quick _Messages', None, None, self.menu_handler),
                    ('quit', None, "_Quit", None, None, self.menu_handler),
                    ('view', None, "_View", None, None, self.menu_handler),
-                   ('clear', None, '_Clear', None, None, self.menu_handler),
-                   ('advanced', None, '_Advanced', None, None, self.menu_handler)]
+                   ('clear', None, '_Clear', None, None, self.menu_handler)]
+
+        advanced = gtk.ToggleAction("advanced", "_Advanced", None, None)
+        advanced.connect("toggled", self.show_advanced, None)
 
         uim = gtk.UIManager()
         ag = gtk.ActionGroup("MenuBar")
 
         ag.add_actions(actions)
+        ag.add_action(advanced)
 
         uim.insert_action_group(ag, 0)
         menuid = uim.add_ui_from_string(menu_xml)
@@ -248,10 +253,23 @@ class ChatGUI:
             tag = gtk.TextTag(i)
             tag.set_property("foreground", self.config.config.get("prefs", i))
             tags.add(tag)
+
+    def show_advanced(self, action, data=None):
+        w, h = self.window.get_size()
+        height = 200
+
+        if not action.get_active():
+            self.advpane.hide()
+            self.window.resize(w, h-height)
+        else:
+            self.advpane.show()
+            self.window.resize(w, h+height)
+            self.pane.set_position(h)
         
     def __init__(self, config):
         self.comm = None
         self.config = config
+        self.tips = gtk.Tooltips()
         
         self.main_buffer = gtk.TextBuffer()
         self.refresh_colors(first_time=True)
@@ -260,19 +278,27 @@ class ChatGUI:
 
         menubar = self.make_menubar()
         menubar.show()
-        pane = self.make_main_pane(menubar)
+
+        mainpane = self.make_main_pane(menubar)
+        self.advpane = QuickMessageControl(self, self.config)
+
+        mainpane.show()
+
+        self.pane = gtk.VPaned()
+        self.pane.add1(mainpane)
+        self.pane.add2(self.advpane.root)
+        self.pane.show()
 
         self.window.set_title("D-RATS")
         
         self.window.set_geometry_hints(None, min_width=400, min_height=200)
         self.window.set_default_size(640, 480)
         self.window.set_border_width(1)
-        self.window.add(pane)
+        self.window.add(self.pane)
         self.window.connect("delete_event", self.ev_delete)
         self.window.connect("destroy", self.sig_destroy)
         self.window.connect("focus", self.ev_focus)
 
-        pane.show()
         self.window.show()
 
         self.entry.grab_focus()
@@ -288,6 +314,63 @@ class ChatGUI:
         gtk.gdk.threads_enter()
         gtk.main()
         gtk.gdk.threads_leave()
+
+class QuickMessageControl:
+    def __init__(self, gui, config):
+        self.gui = gui
+        self.config = config
+        
+        self.root = gtk.VBox(False, 5)
+
+        self.store = gtk.ListStore(gobject.TYPE_STRING)
+        self.list = gtk.TreeView(self.store)
+        self.list.set_rules_hint(True)
+
+        r = gtk.CellRendererText()
+        col = gtk.TreeViewColumn("Quick messages", r, text=0)
+        self.list.append_column(col)
+
+        self.list.connect("row-activated", self.implicit_send, None)
+
+        self.root.pack_start(self.list, 1,1,1)
+
+        send = gtk.Button("Send")
+        send.set_size_request(100, -1)
+        send.connect("clicked", self.send, None)
+
+        self.root.pack_start(send, 0,0,0)
+
+        self.list.show()
+        send.show()
+
+        self.gui.tips.set_tip(self.list, "Double-click to send")
+
+    def send(self, widget, data=None):
+        (list, iter) = self.list.get_selection().get_selected()
+
+        text = list.get(iter, 0)[0]
+
+        self.gui.tx_msg(text)
+
+    def implicit_send(self, view, path, column, data=None):
+        self.send(self.list)
+
+    def refresh(self):
+        self.store.clear()
+        
+        msgs = self.config.config.options("quick")
+        for msg in msgs:
+            text = self.config.config.get("quick", msg)
+
+            iter = self.store.append()
+            self.store.set(iter, 0, text)
+
+    def show(self):
+        self.refresh()
+        self.root.show()
+
+    def hide(self):
+        self.root.hide()        
 
 if __name__ == "__main__":
     gui = ChatGUI()
