@@ -24,7 +24,7 @@ import time
 import xmodem
 
 from xfergui import FileTransferGUI
-from qst import QSTGUI
+from qst import QSTGUI, QuickMsgGUI
 
 class ChatGUI:
     def ev_delete(self, widget, event, data=None):
@@ -164,6 +164,9 @@ class ChatGUI:
             qsts.show()
         elif action == "clear":
             self.main_buffer.set_text("")
+        elif action == "quickmsg":
+            qm = QuickMsgGUI(self.config)
+            qm.show()
 
     def make_menubar(self):
         menu_xml = """
@@ -175,6 +178,7 @@ class ChatGUI:
               <separator/>
               <menuitem action='config'/>
               <menuitem action='qsts'/>
+              <menuitem action='quickmsg'/>
               <separator/>
               <menuitem action='quit'/>
             </menu>
@@ -189,8 +193,9 @@ class ChatGUI:
         actions = [('file', None, "_File", None, None, self.menu_handler),
                    ('send', None, "_Send File", None, None, self.menu_handler),
                    ('recv', None, "_Receive File", None, None, self.menu_handler),
-                   ('config', None, "_Main Settings", None, None, self.menu_handler),
+                   ('config', None, "Main _Settings", None, None, self.menu_handler),
                    ('qsts', None, "_Auto QST Settings", None, None, self.menu_handler),
+                   ('quickmsg', None, 'Quick _Messages', None, None, self.menu_handler),
                    ('quit', None, "_Quit", None, None, self.menu_handler),
                    ('view', None, "_View", None, None, self.menu_handler),
                    ('clear', None, '_Clear', None, None, self.menu_handler),
