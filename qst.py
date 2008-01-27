@@ -251,6 +251,7 @@ class QSTGUI(SelectGUI):
 
         self.msg = gtk.TextBuffer()
         self.entry = gtk.TextView(self.msg)
+        self.entry.set_wrap_mode(gtk.WRAP_WORD)
         self.c_tme = make_choice(times)
         self.c_tme.set_size_request(80,-1)
         b_add = gtk.Button("Add", gtk.STOCK_ADD)
@@ -273,7 +274,12 @@ class QSTGUI(SelectGUI):
 
         hbox = gtk.HBox(False, 5)
 
-        hbox.pack_start(self.entry, 1,1,0)
+        sw = gtk.ScrolledWindow()
+        sw.set_policy(gtk.POLICY_NEVER, gtk.POLICY_AUTOMATIC)
+        sw.add(self.entry)
+        sw.show()
+
+        hbox.pack_start(sw, 1,1,0)
         hbox.pack_start(vbox, 0,0,0)
 
         self.c_tme.child.set_text("60")
