@@ -205,41 +205,51 @@ class ChatGUI:
         menuid = uim.add_ui_from_string(menu_xml)
 
         return uim.get_widget("/MenuBar")
+
+    def refresh_colors(self, first_time=False):
+
+        tags = self.main_buffer.get_tag_table()
+        
+        if first_time:
+            tag = gtk.TextTag("red")
+            tag.set_property("foreground", "Red")
+            tags.add(tag)
+
+            tag = gtk.TextTag("blue")
+            tag.set_property("foreground", "Blue")
+            tags.add(tag)
+
+            tag = gtk.TextTag("green")
+            tag.set_property("foreground", "Green")
+            tags.add(tag)
+
+            tag = gtk.TextTag("grey")
+            tag.set_property("foreground", "Grey")
+            tags.add(tag)
+
+            tag = gtk.TextTag("bold")
+            tag.set_property("weight", pango.WEIGHT_BOLD)
+            tags.add(tag)
+
+            tag = gtk.TextTag("italic")
+            tag.set_property("style", pango.STYLE_ITALIC)
+            tags.add(tag)
+
+        for i in ["incomingcolor", "outgoingcolor",
+                  "noticecolor", "ignorecolor"]:
+            if tags.lookup(i):
+                tags.remove(tags.lookup(i))
+
+            tag = gtk.TextTag(i)
+            tag.set_property("foreground", self.config.config.get("prefs", i))
+            tags.add(tag)
         
     def __init__(self, config):
         self.comm = None
         self.config = config
         
         self.main_buffer = gtk.TextBuffer()
-
-        tag = gtk.TextTag("red")
-        tag.set_property("foreground", "Red")
-        self.main_buffer.get_tag_table().add(tag)
-
-        tag = gtk.TextTag("blue")
-        tag.set_property("foreground", "Blue")
-        self.main_buffer.get_tag_table().add(tag)
-
-        tag = gtk.TextTag("green")
-        tag.set_property("foreground", "Green")
-        self.main_buffer.get_tag_table().add(tag)
-
-        tag = gtk.TextTag("grey")
-        tag.set_property("foreground", "Grey")
-        self.main_buffer.get_tag_table().add(tag)
-
-        tag = gtk.TextTag("bold")
-        tag.set_property("weight", pango.WEIGHT_BOLD)
-        self.main_buffer.get_tag_table().add(tag)
-
-        tag = gtk.TextTag("italic")
-        tag.set_property("style", pango.STYLE_ITALIC)
-        self.main_buffer.get_tag_table().add(tag)
-
-        for i in ["incomingcolor", "outgoingcolor", "noticecolor"]:
-            tag = gtk.TextTag(i)
-            tag.set_property("foreground", self.config.config.get("prefs", i))
-            self.main_buffer.get_tag_table().add(tag)
+        self.refresh_colors(first_time=True)
 
         self.window = gtk.Window(gtk.WINDOW_TOPLEVEL)
 

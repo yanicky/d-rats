@@ -149,6 +149,7 @@ class MainApp:
         self.chatgui.display("My Call: %s\n" % call, "blue")
 
         self.refresh_qsts()
+        self.chatgui.refresh_colors()
 
     def __init__(self):
         self.comm = None
