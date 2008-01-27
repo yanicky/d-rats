@@ -58,6 +58,7 @@ class AppConfig:
         mset("prefs", "outgoingcolor", "#DDDD44441111")
         mset("prefs", "noticecolor", "#0000660011DD")
         mset("prefs", "ignorecolor", "#BB88BB88BB88")
+        mset("prefs", "logenabled", "False")
 
         mset("settings", "port", self.default_port)
         mset("settings", "rate", "9600")
@@ -81,6 +82,7 @@ class AppConfig:
                 "outgoingcolor" : "Color for outgoing messages",
                 "noticecolor" : "Color for notices",
                 "ignorecolor" : "Color for ignores",
+                "logenabled" : "Enable logging",
                 }
 
     xfers = {"XModem" : xmodem.XModem,
@@ -220,7 +222,10 @@ class AppConfig:
                                      gtk.ColorButton()), 0,0,0)
         vbox.pack_start(self.make_sb("ignorecolor",
                                      gtk.ColorButton()), 0,0,0)
-        
+
+        vbox.pack_start(self.make_sb("logenabled",
+                                     self.make_bool()), 0,0,0)
+
         # Disable unsupported functions
         for i in ("autoreceive", "noticere"):
             self.fields[i].set_sensitive(False)
@@ -307,7 +312,8 @@ class AppConfig:
 
         bool_v = [("prefs", "autoreceive"),
                   ("prefs", "dosignon"),
-                  ("prefs", "dosignoff")]
+                  ("prefs", "dosignoff"),
+                  ("prefs", "logenabled")]
 
         choicetext_v = [("settings", "port")]
 

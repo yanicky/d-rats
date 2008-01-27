@@ -30,12 +30,33 @@ import config
 from utils import hexprint
 from qst import QST
 
+LOGTF = "%m-%d-%Y_%H:%M:%S"
+
 class SerialCommunicator:
 
-    def __init__(self, port=0, rate=9600):
+    def __init__(self, port=0, rate=9600, log=None):
         self.pipe = serial.Serial(port=port, timeout=2, baudrate=rate,
                                   xonxoff=1)
         self.enabled = False
+        self.logfile = log
+        self.log = None
+
+    def write_log(self, text):
+        if not self.log:
+            return
+
+        print >>self.log, "%s: %s" % (time.strftime(LOGTF), text)
+        self.log.flush()
+
+    def open_log(self):
+        if self.logfile:
+            self.log = file(self.logfile, "a")
+            print >>self.log, "*** Log started @ %s ***" % time.strftime(LOGTF)
+
+    def close_log(self):
+        if self.log:
+            print >>self.log, "*** Log closed @ %s ***" % time.strftime(LOGTF)
+            self.log.close()
 
     def close(self):
         self.pipe.close()
@@ -43,18 +64,21 @@ class SerialCommunicator:
     def enable(self, gui):
         self.gui = gui
         if not self.enabled:
+            self.open_log()
             self.enabled = True
             self.thread = Thread(target=self.watch_serial)
             self.thread.start()
 
     def disable(self):
         if self.enabled:
+            self.close_log()
             self.enabled = False
             print "Waiting for thread..."
             self.thread.join()
 
     def send_text(self, text):
         if self.enabled:
+            self.write_log(text)
             return self.pipe.write(text)
 
     def incoming_chat(self, data):
@@ -65,6 +89,8 @@ class SerialCommunicator:
             data = data.replace("\n", os.linesep)
 
         stamp = time.strftime("%H:%M:%S")
+
+        self.write_log("%s%s%s" % (stamp, data, os.linesep))
 
         self.gui.display("%s " % stamp)
 
@@ -132,12 +158,12 @@ class MainApp:
 
             self.qsts.append(qst)
 
-    def refresh_comm(self, rate, port):
+    def refresh_comm(self, rate, port, log=None):
         if self.comm:
             self.comm.disable()
             self.comm.close()
             
-        self.comm = SerialCommunicator(rate=rate, port=port)
+        self.comm = SerialCommunicator(rate=rate, port=port, log=log)
         self.comm.enable(self.chatgui)
         self.chatgui.comm = self.comm
 
@@ -148,13 +174,20 @@ class MainApp:
         port=self.config.config.get("settings", "port")
         call=self.config.config.get("user", "callsign")
 
+        if self.config.config.getboolean("prefs", "logenabled"):
+            base = self.config.config.get("prefs", "download_dir")
+            logfile = "%s%s%s" % (base, os.path.sep, "d-rats.log")
+        else:
+            logfile = None
+
         if self.comm:
             if self.comm.pipe.baudrate != rate or \
                 self.comm.pipe.portstr != port:
                 print "Serial config changed"
-                self.refresh_comm(rate, port)
+                self.refresh_comm(rate, port, logfile)
         else:
-            self.refresh_comm(rate, port)
+            self.refresh_comm(rate, port, logfile)
+
 
         self.chatgui.display("My Call: %s\n" % call, "blue")
 
@@ -165,6 +198,7 @@ class MainApp:
     def __init__(self):
         self.comm = None
         self.qsts = []
+        self.log = None
 
         gtk.gdk.threads_init()
 
