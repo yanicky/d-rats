@@ -55,10 +55,10 @@ class SerialCommunicator:
 
         ignore = self.gui.config.config.get("prefs", "ignorere")
         if ignore and re.search(ignore, data):
-            self.gui.display(data + os.linesep, "grey")
+            self.gui.display(data + os.linesep, "ignorecolor")
         elif ">" in data:
             call, data = data.split(">", 1)
-            self.gui.display("%s>" % call, "blue")
+            self.gui.display("%s>" % call, "incomingcolor")
             self.gui.display("%s%s" % (data, os.linesep))
         else:
             self.gui.display("%s%s" % (data, os.linesep))

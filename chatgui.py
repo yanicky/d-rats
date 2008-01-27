@@ -62,7 +62,7 @@ class ChatGUI:
         call = self.config.config.get("user", "callsign")
 
         self.display("%s " % time.strftime("%H:%M:%S"))
-        self.display("%s> " % call, "red")
+        self.display("%s> " % call, "outgoingcolor")
         self.display(string + "\n")
         self.comm.send_text("%s> %s\n" % (call, string))
 
@@ -209,6 +209,11 @@ class ChatGUI:
         tag = gtk.TextTag("italic")
         tag.set_property("style", pango.STYLE_ITALIC)
         self.main_buffer.get_tag_table().add(tag)
+
+        for i in ["incomingcolor", "outgoingcolor", "noticecolor"]:
+            tag = gtk.TextTag(i)
+            tag.set_property("foreground", self.config.config.get("prefs", i))
+            self.main_buffer.get_tag_table().add(tag)
 
         self.window = gtk.Window(gtk.WINDOW_TOPLEVEL)
 

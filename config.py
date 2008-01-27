@@ -36,6 +36,10 @@ class AppConfig:
         mset("prefs", "signoff", "Going offline (D-RATS)")
         mset("prefs", "dosignon", "True")
         mset("prefs", "dosignoff", "True")
+        mset("prefs", "incomingcolor", "#00004444FFFF")
+        mset("prefs", "outgoingcolor", "#DDDD44441111")
+        mset("prefs", "noticecolor", "#0000660011DD")
+        mset("prefs", "ignorecolor", "#BB88BB88BB88")
 
         mset("settings", "port", self.default_port)
         mset("settings", "rate", "9600")
@@ -54,7 +58,12 @@ class AppConfig:
                 "signon" : "",
                 "signoff" : "",
                 "dosignon" : "Sign-on message",
-                "dosignoff" : "Sign-off message"}
+                "dosignoff" : "Sign-off message",
+                "incomingcolor" : "Color for incoming messages",
+                "outgoingcolor" : "Color for outgoing messages",
+                "noticecolor" : "Color for notices",
+                "ignorecolor" : "Color for ignores",
+                }
 
     xfers = {"XModem" : xmodem.XModem,
              "XModemCRC" : xmodem.XModemCRC,
@@ -78,6 +87,12 @@ class AppConfig:
         hbox.show()
 
         return hbox
+
+    def make_colorpick(self):
+        b = gtk.ColorButton()
+        #b.set_color(gtk.gdk.color_parse(self.config.get("prefs", key)))
+        #b.connect("color-set", self.pick_color, key)
+        return b
 
     def port_list(self):
         return ["Port1", "Port2"]
@@ -170,6 +185,15 @@ class AppConfig:
 
         vbox.pack_start(self.make_sb("dosignoff", self.make_bool()), 0,0,0)
         vbox.pack_start(self.make_sb("signoff", gtk.Entry()), 0,0,0)
+
+        vbox.pack_start(self.make_sb("incomingcolor",
+                                     gtk.ColorButton()), 0,0,0)
+        vbox.pack_start(self.make_sb("outgoingcolor",
+                                     gtk.ColorButton()), 0,0,0)
+        vbox.pack_start(self.make_sb("noticecolor",
+                                     gtk.ColorButton()), 0,0,0)
+        vbox.pack_start(self.make_sb("ignorecolor",
+                                     gtk.ColorButton()), 0,0,0)
         
         # Disable unsupported functions
         for i in ("autoreceive", "download_dir", "noticere"):
@@ -212,6 +236,12 @@ class AppConfig:
             else:
                 self.config.set(s, k, self.fields[k].child.get_text())
         
+    def sync_colors(self, list, load):
+        for s, k in list:
+            if load:
+                self.fields[k].set_color(gtk.gdk.color_parse(self.config.get(s, k)))
+            else:
+                self.config.set(s, k, self.fields[k].get_color().to_string())
 
     def sync_gui(self, load=True):
         text_v = [("user", "callsign"),
@@ -230,9 +260,15 @@ class AppConfig:
                     ("settings", "rate"),
                     ("settings", "xfer")]
 
+        color_v = [("prefs", "incomingcolor"),
+                   ("prefs", "outgoingcolor"),
+                   ("prefs", "noticecolor"),
+                   ("prefs", "ignorecolor")]
+
         self.sync_texts(text_v, load)
         self.sync_booleans(bool_v, load)
-        self.sync_choices(choice_v, load)        
+        self.sync_choices(choice_v, load)
+        self.sync_colors(color_v, load)
 
     def __init__(self, mainapp, _file=None):
         self.mainapp = mainapp
