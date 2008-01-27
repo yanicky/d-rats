@@ -35,11 +35,21 @@ LOGTF = "%m-%d-%Y_%H:%M:%S"
 class SerialCommunicator:
 
     def __init__(self, port=0, rate=9600, log=None):
-        self.pipe = serial.Serial(port=port, timeout=2, baudrate=rate,
-                                  xonxoff=1)
         self.enabled = False
-        self.logfile = log
         self.log = None
+        self.pipe = None
+        
+        self.logfile = log
+        self.port = port
+        self.rate = rate
+
+    def write(self, buf):
+        if self.enabled:
+            return self.pipe.write(buf)
+
+    def read(self, len):
+        if self.enabled:
+            return self.pipe.read(len)
 
     def write_log(self, text):
         if not self.log:
@@ -58,12 +68,18 @@ class SerialCommunicator:
             print >>self.log, "*** Log closed @ %s ***" % time.strftime(LOGTF)
             self.log.close()
 
-    def close(self):
-        self.pipe.close()
-
     def enable(self, gui):
         self.gui = gui
         if not self.enabled:
+            try:
+                self.pipe = serial.Serial(port=self.port,
+                                          baudrate=self.rate,
+                                          timeout=2,
+                                          xonxoff=1)
+            except Exception, e:
+                print "Failed to open serial port: %s" % e
+                return False
+            
             self.open_log()
             self.enabled = True
             self.thread = Thread(target=self.watch_serial)
@@ -71,8 +87,9 @@ class SerialCommunicator:
 
     def disable(self):
         if self.enabled:
-            self.close_log()
             self.enabled = False
+            self.pipe.close()
+            self.close_log()
             print "Waiting for thread..."
             self.thread.join()
 
@@ -126,8 +143,12 @@ class SerialCommunicator:
                 time.sleep(1)
 
     def __str__(self):
-        return "%s @ %i baud" % (self.pipe.portstr,
-                                 self.pipe.getBaudrate())
+        if self.enabled:
+            return "Connected: %s @ %i baud" % (self.pipe.portstr,
+                                                self.pipe.getBaudrate())
+        else:
+            return "Unable to connect to serial port: %s" % self.port
+            
 class MainApp:
     def setup_autoid(self):
         idtext = "(ID)"
@@ -161,13 +182,19 @@ class MainApp:
     def refresh_comm(self, rate, port, log=None):
         if self.comm:
             self.comm.disable()
-            self.comm.close()
             
         self.comm = SerialCommunicator(rate=rate, port=port, log=log)
         self.comm.enable(self.chatgui)
         self.chatgui.comm = self.comm
 
-        self.chatgui.display("Serial info: %s\n" % str(self.comm), ("blue"))
+        if self.comm.enabled:
+            self.chatgui.display("%s%s" % (str(self.comm),
+                                           os.linesep),
+                                 ("blue"))
+        else:
+            self.chatgui.display("%s%s" % (str(self.comm),
+                                           os.linesep),
+                                 ("red"))
     
     def refresh_config(self):
         rate=self.config.config.getint("settings", "rate")
@@ -180,14 +207,13 @@ class MainApp:
         else:
             logfile = None
 
-        if self.comm:
+        if self.comm and self.comm.enabled:
             if self.comm.pipe.baudrate != rate or \
                 self.comm.pipe.portstr != port:
                 print "Serial config changed"
                 self.refresh_comm(rate, port, logfile)
         else:
             self.refresh_comm(rate, port, logfile)
-
 
         self.chatgui.display("My Call: %s\n" % call, "blue")
 
@@ -213,10 +239,8 @@ class MainApp:
 
         self.refresh_config()
 
-        self.comm.enable(self.chatgui)
         if self.config.config.getboolean("prefs", "dosignon"):
             self.chatgui.tx_msg(self.config.config.get("prefs", "signon"))
-
             
     def main(self):
         try:
