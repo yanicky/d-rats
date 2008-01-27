@@ -349,6 +349,7 @@ class QuickMsgGUI(SelectGUI):
     def make_b_controls(self):
         self.msg = gtk.TextBuffer()
         self.entry = gtk.TextView(self.msg)
+        self.entry.set_wrap_mode(gtk.WRAP_WORD)
 
         b_add = gtk.Button("Add", gtk.STOCK_ADD)
         b_add.set_size_request(80, -1)
@@ -361,7 +362,12 @@ class QuickMsgGUI(SelectGUI):
 
         hbox = gtk.HBox(False, 5)
 
-        hbox.pack_start(self.entry, 1,1,0)
+        sw = gtk.ScrolledWindow()
+        sw.set_policy(gtk.POLICY_NEVER, gtk.POLICY_AUTOMATIC)
+        sw.add(self.entry)
+        sw.show()
+
+        hbox.pack_start(sw, 1,1,0)
         hbox.pack_start(b_add, 0,0,0)
 
         b_add.show()
