@@ -155,6 +155,7 @@ class SelectGUI:
                 r.connect("toggled", self.toggle, i)
                 col = gtk.TreeViewColumn(c, r, active=i)
             elif R == gtk.CellRendererText:
+                r.set_property("editable", True)
                 col = gtk.TreeViewColumn(c, r, text=i)
 
             self.list.append_column(col)
