@@ -21,15 +21,17 @@ import gobject
 import time
 
 from threading import Thread
+from commands import getstatusoutput as run
 
 from config import make_choice
 
-class QST:
+class QSTText:
     def __init__(self, gui, config, text=None, freq=None):
         self.gui = gui
         self.config = config
 
-        self.text = "[QST] %s" % text
+        self.prefix = "[QST]"
+        self.text = text
         self.freq = freq
         self.enabled = False
 
@@ -43,17 +45,44 @@ class QST:
         self.enabled = False
         self.thread.join()
 
-    def thread(self):
-        while self.enabled:
-            for i in range(0, 60 * self.freq):
-                if not self.enabled:
-                    return
-                time.sleep(1)
+    def interruptible_sleep(self):
+        if self.freq > 0:
+            ticks = self.freq * 60
+        else:
+            tick = self.freq * -1
+            
+        for i in range(0, ticks):
+            if not self.enabled:
+                return
+            time.sleep(1)
 
+    def do_qst(self, text):
+        gtk.gdk.threads_enter()
+        self.gui.tx_msg("%s %s" % (self.prefix, text))
+        gtk.gdk.threads_leave()
+
+    def thread(self):
+        while True:
+            self.interruptible_sleep()
+            if not self.enabled:
+                break
             print "Tick: %s" % self.text
-            gtk.gdk.threads_enter()
-            self.gui.tx_msg(self.text)
-            gtk.gdk.threads_leave()
+            self.do_qst(self.text)
+
+class QSTExec(QSTText):
+    size_limit = 256
+
+    def do_qst(self, cmd):
+        s, o = run(cmd)
+        if s:
+            print "Command failed with status %i" % status
+
+        if o and len(o) <= self.size_limit:
+            print "Sending command output: %s" % o
+            QSTText.do_qst(self, o)
+        else:
+            print "Command output length %i exceeds limit of %i" % (len(o),
+                                                                    self.size_limit)
 
 class SelectGUI:
     def sync_gui(self, load=True):
@@ -224,15 +253,22 @@ class SelectGUI:
         self.window.set_geometry_hints(None, min_width=450, min_height=300)
 
 class QSTGUI(SelectGUI):
+    column_bool = 0
+    column_time = 1
+    column_type = 2
+    column_text = 3
+    
     def __init__(self, config):
         self.columns = [
             (gtk.CellRendererToggle, "Enabled"),
             (gtk.CellRendererText, "Period (min)"),
-            (gtk.CellRendererText, "Message")
+            (gtk.CellRendererText, "Type"),
+            (gtk.CellRendererText, "Message"),
             ]
         self.config = config
         self.list_store = gtk.ListStore(gobject.TYPE_BOOLEAN,
                                         gobject.TYPE_INT,
+                                        gobject.TYPE_STRING,
                                         gobject.TYPE_STRING)
         
         SelectGUI.__init__(self, "QST Configuration")
@@ -242,19 +278,34 @@ class QSTGUI(SelectGUI):
                                 self.msg.get_end_iter())
         tme = int(self.c_tme.child.get_text())
 
+        
+        model = self.c_typ.get_model()
+        typ = model[self.c_typ.get_active()][0]
+        
         iter = self.list_store.append()
-        self.list_store.set(iter, 0, True, 1, tme, 2, msg)
+        self.list_store.set(iter,
+                            self.column_bool, True,
+                            self.column_time, tme,
+                            self.column_type, typ,
+                            self.column_text, msg)
 
         self.msg.set_text("")
 
     def make_b_controls(self):
         times = ["1", "5", "10", "20", "30", "60"]
+        types = ["Text", "Exec", "File"]
 
         self.msg = gtk.TextBuffer()
         self.entry = gtk.TextView(self.msg)
         self.entry.set_wrap_mode(gtk.WRAP_WORD)
+
         self.c_tme = make_choice(times)
-        self.c_tme.set_size_request(80,-1)
+        self.c_tme.set_size_request(80, -1)
+
+        self.c_typ = make_choice(types, False)
+        self.c_typ.set_size_request(80, -1)
+        self.c_typ.set_active(0)
+
         b_add = gtk.Button("Add", gtk.STOCK_ADD)
 
         self.tips.set_tip(self.entry, "Enter new QST text")
@@ -264,6 +315,7 @@ class QSTGUI(SelectGUI):
         vbox = gtk.VBox(True, 5)
 
         vbox.pack_start(self.c_tme)
+        vbox.pack_start(self.c_typ)
         vbox.pack_start(b_add)
 
         b_add.connect("clicked",
@@ -287,6 +339,7 @@ class QSTGUI(SelectGUI):
 
         self.entry.show()
         self.c_tme.show()
+        self.c_typ.show()
         b_add.show()
         vbox.show()
         hbox.show()
@@ -297,20 +350,30 @@ class QSTGUI(SelectGUI):
         freq = self.config.config.getint(section, "freq")
         content = self.config.config.get(section, "content")
         enabled = self.config.config.getboolean(section, "enabled")
+        qsttype = self.config.config.get(section, "type")
 
         iter = self.list_store.append()
-        self.list_store.set(iter, 0, enabled, 1, freq, 2, content)
+        self.list_store.set(iter,
+                            self.column_bool, enabled,
+                            self.column_time, freq,
+                            self.column_type, qsttype,
+                            self.column_text, content)
 
     def save_qst(self, model, path, iter, data=None):
         pos = path[0]
 
-        text, freq, enabled = model.get(iter, 2, 1, 0)
+        text, freq, enabled, qsttype = model.get(iter,
+                                              self.column_text,
+                                              self.column_time,
+                                              self.column_bool,
+                                              self.column_type)
 
         section = "qst_%i" % int(pos)
         self.config.config.add_section(section)
         self.config.config.set(section, "freq", str(freq))
         self.config.config.set(section, "content", text)
         self.config.config.set(section, "enabled", str(enabled))
+        self.config.config.set(section, "type", qsttype)
 
     def sync_gui(self, load=True):
         sections = self.config.config.sections()
@@ -319,7 +382,10 @@ class QSTGUI(SelectGUI):
 
         if load:
             for sec in qsts:
-                self.load_qst(sec)
+                try:
+                    self.load_qst(sec)
+                except Exception, e:
+                    print "Failed to load QST %s: %s" % (sec, e)
         else:
             for sec in qsts:
                 self.config.config.remove_section(sec)
@@ -408,6 +474,14 @@ class QuickMsgGUI(SelectGUI):
             self.list_store.foreach(self.save_msg, None)
             self.config.save()
             self.config.refresh_app()        
+
+def get_qst_class(typestr):
+    if typestr == "Text":
+        return QSTText
+    elif typestr == "Exec":
+        return QSTExec
+    else:
+        return None
 
 if __name__ == "__main__":
     #g = SelectGUI("Test GUI")

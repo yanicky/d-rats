@@ -28,7 +28,7 @@ import chatgui
 import config
 
 from utils import hexprint
-from qst import QST
+import qst
 
 LOGTF = "%m-%d-%Y_%H:%M:%S"
 
@@ -168,16 +168,22 @@ class MainApp:
             print "Doing QST %s" % i
             text = self.config.config.get(i, "content")
             freq = self.config.config.get(i, "freq")
+            qtyp = self.config.config.get(i, "type")
             enab = self.config.config.getboolean(i, "enabled")
 
             if not enab:
                 continue
             
-            qst = QST(self.chatgui, self.config,
-                      text=text, freq=int(freq))
-            qst.enable()
+            qstclass = qst.get_qst_class(qtyp)
+            if not qstclass:
+                print "Unknown QST type: %s" % qtyp
+                continue
+            
+            qstinst = qstclass(self.chatgui, self.config,
+                               text=text, freq=int(freq))
+            qstinst.enable()
 
-            self.qsts.append(qst)
+            self.qsts.append(qstinst)
 
     def refresh_comm(self, rate, port, log=None):
         if self.comm:
