@@ -127,7 +127,10 @@ class SerialCommunicator:
         data = ""
         while self.enabled:
             #size = self.pipe.inWaiting()
-            newdata = self.pipe.read(64)
+            try:
+                newdata = self.pipe.read(64)
+            except Exception, e:
+                print "Serial read failed: %s" % e
             
             if len(newdata) > 0:
                 data += newdata
