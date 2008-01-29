@@ -327,6 +327,7 @@ class QSTGUI(SelectGUI):
         self.tips.set_tip(self.entry, "Enter new QST text")
         self.tips.set_tip(b_add, "Add new QST")
         self.tips.set_tip(self.c_tme, "Minutes between transmissions")
+        self.tips.set_tip(self.c_typ, "`Text' sends a message, `Exec' runs a program, `File' sends the contents of a text file")
 
         vbox = gtk.VBox(True, 5)
 
