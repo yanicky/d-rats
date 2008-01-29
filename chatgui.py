@@ -21,6 +21,8 @@ import pango
 import serial
 import gobject
 import time
+import os
+
 import xmodem
 
 from xfergui import FileTransferGUI
@@ -88,6 +90,39 @@ class ChatGUI:
         if self.config.config.getboolean("prefs", "blinkmsg"):
             self.window.set_urgency_hint(True)
 
+    def tx_file(self, filename):
+        try:
+            f = file(filename)
+        except:
+            self.display("Unable to open file `%s'" % filename,
+                         "red", "italic")
+            return
+
+        filedata = f.read()
+        f.close()
+
+        self.display("Sending file %s%s" % (filename, os.linesep),
+                     "blue", "italic")
+        self.tx_msg(filedata)
+
+    def send_text_file(self):
+        fc = gtk.FileChooserDialog("Select a text file to send",
+                                   None,
+                                   gtk.FILE_CHOOSER_ACTION_OPEN,
+                                   (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
+                                    gtk.STOCK_OPEN, gtk.RESPONSE_OK))
+        d = self.config.config.get("prefs", "download_dir")
+        fc.set_current_folder(d)
+
+        result = fc.run()
+        if result == gtk.RESPONSE_CANCEL:
+            fc.destroy()
+            return
+        else:
+            filename = fc.get_filename()
+            fc.destroy()
+            self.tx_file(filename)
+  
     def make_entry_box(self):
         hbox = gtk.HBox(False, 0)
         
@@ -168,12 +203,15 @@ class ChatGUI:
         elif action == "quickmsg":
             qm = QuickMsgGUI(self.config)
             qm.show()
+        elif action == "sendtext":
+            self.send_text_file()
 
     def make_menubar(self):
         menu_xml = """
         <ui>
           <menubar name='MenuBar'>
             <menu action='file'>
+              <menuitem action='sendtext'/>
               <menuitem action='send'/>
               <menuitem action='recv'/>
               <separator/>
@@ -198,6 +236,7 @@ class ChatGUI:
                    ('qsts', None, "_Auto QST Settings", None, None, self.menu_handler),
                    ('quickmsg', None, 'Quick _Messages', None, None, self.menu_handler),
                    ('quit', None, "_Quit", None, None, self.menu_handler),
+                   ('sendtext', None, 'Send _Text File', None, None, self.menu_handler),
                    ('view', None, "_View", None, None, self.menu_handler),
                    ('clear', None, '_Clear', None, None, self.menu_handler)]
 
