@@ -7,4 +7,4 @@ opts = {
     }
     }
 
-setup(windows=["mainapp.py"], options=opts)
+setup(windows=["d-rats.py"], options=opts)
