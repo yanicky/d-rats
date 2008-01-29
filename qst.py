@@ -120,6 +120,18 @@ class SelectGUI:
         if target:
             list.swap(iter, target)
 
+    def ev_edited_text(self, renderer, path, new_text, colnum):
+        iter = self.list_store.get_iter(path)
+        self.list_store.set(iter, colnum, new_text)
+
+    def ev_edited_int(self, renderer, path, new_text, colnum):
+        try:
+            val = int(new_text)
+            iter = self.list_store.get_iter(path)
+            self.list_store.set(iter, colnum, val)
+        except:
+            print "Non-integral new text: %s" % new_text
+
     def make_b_controls(self):
         b = gtk.Button("Foo")
         b.show()
@@ -177,7 +189,7 @@ class SelectGUI:
         self.list.set_rules_hint(True)
 
         i=0
-        for R,c in self.columns:
+        for R,c,t in self.columns:
             r = R()
             if R == gtk.CellRendererToggle:
                 r.set_property("activatable", True)
@@ -185,6 +197,10 @@ class SelectGUI:
                 col = gtk.TreeViewColumn(c, r, active=i)
             elif R == gtk.CellRendererText:
                 r.set_property("editable", True)
+                if t == int:
+                    r.connect("edited", self.ev_edited_int, i)
+                elif t == str:
+                    r.connect("edited", self.ev_edited_text, i)
                 col = gtk.TreeViewColumn(c, r, text=i)
 
             self.list.append_column(col)
@@ -260,10 +276,10 @@ class QSTGUI(SelectGUI):
     
     def __init__(self, config):
         self.columns = [
-            (gtk.CellRendererToggle, "Enabled"),
-            (gtk.CellRendererText, "Period (min)"),
-            (gtk.CellRendererText, "Type"),
-            (gtk.CellRendererText, "Message"),
+            (gtk.CellRendererToggle, "Enabled", bool),
+            (gtk.CellRendererText, "Period (min)", int),
+            (gtk.CellRendererText, "Type", str),
+            (gtk.CellRendererText, "Message", str),
             ]
         self.config = config
         self.list_store = gtk.ListStore(gobject.TYPE_BOOLEAN,
@@ -396,7 +412,7 @@ class QSTGUI(SelectGUI):
 
 class QuickMsgGUI(SelectGUI):
     def __init__(self, config):
-        self.columns = [(gtk.CellRendererText, "Message")]
+        self.columns = [(gtk.CellRendererText, "Message", str)]
         self.config = config
         self.list_store = gtk.ListStore(gobject.TYPE_STRING)
 
