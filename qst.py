@@ -84,6 +84,19 @@ class QSTExec(QSTText):
             print "Command output length %i exceeds limit of %i" % (len(o),
                                                                     self.size_limit)
 
+class QSTFile(QSTText):
+    def do_qst(self, filename):
+        try:
+            f = file(filename)
+        except:
+            print "Unable to open file `%s'" % filename
+            return
+
+        text = f.read()
+        f.close()
+
+        QSTText.do_qst(self, text)        
+
 class SelectGUI:
     def sync_gui(self, load=True):
         pass
@@ -497,6 +510,8 @@ def get_qst_class(typestr):
         return QSTText
     elif typestr == "Exec":
         return QSTExec
+    elif typestr == "File":
+        return QSTFile
     else:
         return None
 
