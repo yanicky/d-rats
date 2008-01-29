@@ -22,6 +22,12 @@ import ConfigParser
 
 import xmodem
 
+def color_string(color):
+    try:
+        return color.to_string()
+    except:
+        return "#%04x%04x%04x" % (color.red, color.green, color.blue)
+
 def make_choice(options, editable=True):
     if editable:
         sel = gtk.combo_box_entry_new_text()
@@ -276,7 +282,7 @@ class AppConfig:
             if load:
                 self.fields[k].set_color(gtk.gdk.color_parse(self.config.get(s, k)))
             else:
-                self.config.set(s, k, self.fields[k].get_color().to_string())
+                self.config.set(s, k, color_string(self.fields[k].get_color()))
 
     def set_active_if(self, model, path, iter, data):
         widget, tval = data
