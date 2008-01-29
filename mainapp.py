@@ -125,6 +125,8 @@ class SerialCommunicator:
 
     def watch_serial(self):
         data = ""
+        newdata = ""
+        
         while self.enabled:
             #size = self.pipe.inWaiting()
             try:
