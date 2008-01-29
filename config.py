@@ -59,6 +59,7 @@ class AppConfig:
         mset("prefs", "noticecolor", "#0000660011DD")
         mset("prefs", "ignorecolor", "#BB88BB88BB88")
         mset("prefs", "logenabled", "False")
+        mset("prefs", "eolstrip", "True")
 
         mset("settings", "port", self.default_port)
         mset("settings", "rate", "9600")
@@ -83,6 +84,7 @@ class AppConfig:
                 "noticecolor" : "Color for notices",
                 "ignorecolor" : "Color for ignores",
                 "logenabled" : "Enable logging",
+                "eolstrip" : "End-of-line stripping",
                 }
 
     xfers = {"XModem" : xmodem.XModem,
@@ -225,6 +227,8 @@ class AppConfig:
 
         vbox.pack_start(self.make_sb("logenabled",
                                      self.make_bool()), 0,0,0)
+        vbox.pack_start(self.make_sb("eolstrip",
+                                     self.make_bool()), 0,0,0)
 
         # Disable unsupported functions
         for i in ("autoreceive", "noticere"):
@@ -313,6 +317,7 @@ class AppConfig:
         bool_v = [("prefs", "autoreceive"),
                   ("prefs", "dosignon"),
                   ("prefs", "dosignoff"),
+                  ("prefs", "eolstrip"),
                   ("prefs", "logenabled")]
 
         choicetext_v = [("settings", "port")]

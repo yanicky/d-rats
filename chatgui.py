@@ -101,9 +101,10 @@ class ChatGUI:
         filedata = f.read()
         f.close()
 
-        self.display("Sending file %s%s" % (filename, os.linesep),
+        notice = "Sending file %s" % filename
+        self.display(notice + os.linesep,
                      "blue", "italic")
-        self.tx_msg(filedata)
+        self.tx_msg("%s\n%s" % (notice, filedata))
 
     def send_text_file(self):
         fc = gtk.FileChooserDialog("Select a text file to send",

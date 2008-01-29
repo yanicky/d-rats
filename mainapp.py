@@ -99,11 +99,13 @@ class SerialCommunicator:
             return self.pipe.write(text)
 
     def incoming_chat(self, data):
-        data = data.replace("\n", "")
-        data = data.replace("\r", "")
-        
-        if os.linesep != "\n":
-            data = data.replace("\n", os.linesep)
+        if self.gui.config.config.getboolean("prefs", "eolstrip"):
+            data = data.replace("\n", "")
+            data = data.replace("\r", "")
+        else:
+            data = data.rstrip("\n")
+            if os.linesep != "\n":
+                data = data.replace("\n", os.linesep)
 
         stamp = time.strftime("%H:%M:%S")
 
