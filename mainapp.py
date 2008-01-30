@@ -38,6 +38,7 @@ class SerialCommunicator:
         self.enabled = False
         self.log = None
         self.pipe = None
+        self.opened = False
         
         self.logfile = log
         self.port = port
@@ -68,27 +69,48 @@ class SerialCommunicator:
             print >>self.log, "*** Log closed @ %s ***" % time.strftime(LOGTF)
             self.log.close()
 
+    def close(self):
+        if self.opened:
+            self.pipe.close()
+            self.opened = False
+            return True
+        else:
+            return False
+
+    def open(self):
+        if self.opened:
+            return self.opened
+
+        try:
+            self.pipe = serial.Serial(port=self.port,
+                                      baudrate=self.rate,
+                                      timeout=2,
+                                      xonxoff=1)
+            self.opened = True
+        except Exception, e:
+            print "Failed to open serial port: %s" % e
+            self.opened = False
+
+        return self.opened
+
     def enable(self, gui):
+        if not self.opened:
+            print "Attempt to enable a non-opened serial line"
+            return False
+
         self.gui = gui
         if not self.enabled:
-            try:
-                self.pipe = serial.Serial(port=self.port,
-                                          baudrate=self.rate,
-                                          timeout=2,
-                                          xonxoff=1)
-            except Exception, e:
-                print "Failed to open serial port: %s" % e
-                return False
-            
             self.open_log()
             self.enabled = True
             self.thread = Thread(target=self.watch_serial)
             self.thread.start()
+            return True
+        else:
+            return False
 
     def disable(self):
         if self.enabled:
             self.enabled = False
-            self.pipe.close()
             self.close_log()
             print "Waiting for thread..."
             self.thread.join()
@@ -197,18 +219,13 @@ class MainApp:
             self.comm.disable()
             
         self.comm = SerialCommunicator(rate=rate, port=port, log=log)
-        self.comm.enable(self.chatgui)
+        if self.comm.open():
+            self.comm.enable(self.chatgui)
+            
+        self.chatgui.display("%s%s" % (str(self.comm), os.linesep))
+
         self.chatgui.comm = self.comm
 
-        if self.comm.enabled:
-            self.chatgui.display("%s%s" % (str(self.comm),
-                                           os.linesep),
-                                 ("blue"))
-        else:
-            self.chatgui.display("%s%s" % (str(self.comm),
-                                           os.linesep),
-                                 ("red"))
-    
     def refresh_config(self):
         rate=self.config.config.getint("settings", "rate")
         port=self.config.config.get("settings", "port")
