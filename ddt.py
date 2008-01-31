@@ -240,15 +240,14 @@ class DDTTransfer:
         self.pipe = pipe
 
     def _send_block(self, data):
+        #print "RAW FRAME: |%s|" % data
         self.pipe.write(data)
-
-        print "RAW FRAME: |%s|" % data
 
         ack = DDTAckFrame()
 
         result = ""
         to = Timeout(self.limit_timeout)
-        while not result.endswith("=\n") and not to.expired():
+        while not result.endswith("\n") and not to.expired():
             result += self.pipe.read(32)
             print "Read %i bytes for result so far" % len(result)
 
@@ -292,11 +291,11 @@ class DDTTransfer:
         data = ""
 
         to = Timeout(self.limit_timeout)
-        while not data.endswith("=\n") and not to.expired():
+        while not data.endswith("\n") and not to.expired():
             data += self.pipe.read(128)
-            print "Read.. data: %s" % data
+            #print "Read.. data: %s" % data
 
-        if not data.endswith("=\n") and to.expired():
+        if not data.endswith("\n") and to.expired():
             print "Timeout waiting for block"
             return None
 
@@ -388,8 +387,13 @@ class DDTTransfer:
     def recv_file(self, filename):
         (name, size) = self.recv_start_file()
 
+        if os.path.isdir(filename):
+            filename = "%s%s%s" % (filename, os.path.sep, name)
+
+        print "Output file is: %s" % filename
         f = file(filename, "wb")
         
+        last_block = -1
         while True:
             frame = self.recv_block()
             if frame is None:
@@ -397,13 +401,21 @@ class DDTTransfer:
 
             if frame.__class__ == DDTEndFrame:
                 print "Transfer complete"
-                break
+                return True
             elif frame.__class__ == DDTEncodedFrame:
+                seq = frame.get_seq()
+                if seq == last_block:
+                    print "Received duplicate block %i" % seq
+                    continue
+                elif seq != last_block + 1:
+                    print "Fatal Error: Received out-of-order block"
+                    return False
+
                 f.write(frame.get_data())
+                last_block = seq
             else:
                 print "Failed, bad frame type: %s" % frame.__class__
-                break
-
+                return False
 
 if __name__ == "__main__":
     time.sleep(2)
@@ -416,6 +428,6 @@ if __name__ == "__main__":
     else:
         s = serial.Serial(port="/dev/ttyUSB1", baudrate=4800, timeout=1)
         x = DDTTransfer(s)
-        x.recv_file("outfile")
+        x.recv_file("tmp")
 
         
