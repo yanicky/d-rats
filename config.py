@@ -66,6 +66,7 @@ class AppConfig:
         mset("prefs", "ignorecolor", "#BB88BB88BB88")
         mset("prefs", "logenabled", "False")
         mset("prefs", "eolstrip", "True")
+        mset("prefs", "font", "Sans 12")
 
         mset("settings", "port", self.default_port)
         mset("settings", "rate", "9600")
@@ -91,6 +92,7 @@ class AppConfig:
                 "ignorecolor" : "Color for ignores",
                 "logenabled" : "Enable logging",
                 "eolstrip" : "End-of-line stripping",
+                "font" : "Chat font",
                 }
 
     xfers = {"XModem" : xmodem.XModem,
@@ -236,6 +238,9 @@ class AppConfig:
         vbox.pack_start(self.make_sb("eolstrip",
                                      self.make_bool()), 0,0,0)
 
+        vbox.pack_start(self.make_sb("font",
+                                     gtk.FontButton()), 0,0,0)
+
         # Disable unsupported functions
         for i in ("autoreceive", "noticere"):
             self.fields[i].set_sensitive(False)
@@ -311,7 +316,16 @@ class AppConfig:
             else:
                 d = button.get_current_folder()
                 self.config.set(s, k, d)
-                
+
+    def sync_fonts(self, list, load):
+        for s, k in list:
+            fb = self.fields[k]
+
+            if load:
+                fb.set_font_name(self.config.get(s, k))
+            else:
+                self.config.set(s, k, fb.get_font_name())
+
     def sync_gui(self, load=True):
         text_v = [("user", "callsign"),
                   ("user", "name"),
@@ -336,7 +350,9 @@ class AppConfig:
                    ("prefs", "noticecolor"),
                    ("prefs", "ignorecolor")]
 
-        path_v =[("prefs", "download_dir")]
+        path_v = [("prefs", "download_dir")]
+
+        font_v = [("prefs", "font")]
 
         self.sync_texts(text_v, load)
         self.sync_booleans(bool_v, load)
@@ -344,6 +360,7 @@ class AppConfig:
         self.sync_choices(choice_v, load)
         self.sync_colors(color_v, load)
         self.sync_paths(path_v, load)
+        self.sync_fonts(font_v, load)
 
     def __init__(self, mainapp, _file=None):
         self.mainapp = mainapp

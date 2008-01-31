@@ -158,6 +158,7 @@ class ChatGUI:
     def make_main_pane(self, menubar):
         vbox = gtk.VBox(False, 0)
         display = gtk.TextView(self.main_buffer)
+        self.textview = display
         display.set_editable(False)
         display.set_wrap_mode(gtk.WRAP_WORD)
         self.scroll = gtk.ScrolledWindow()
@@ -257,6 +258,10 @@ class ChatGUI:
 
     def refresh_colors(self, first_time=False):
 
+        fontname = self.config.config.get("prefs", "font")
+        font = pango.FontDescription(fontname)
+        self.textview.modify_font(font)
+
         tags = self.main_buffer.get_tag_table()
         
         if first_time:
@@ -315,7 +320,6 @@ class ChatGUI:
         self.tips = gtk.Tooltips()
         
         self.main_buffer = gtk.TextBuffer()
-        self.refresh_colors(first_time=True)
 
         self.window = gtk.Window(gtk.WINDOW_TOPLEVEL)
 
@@ -324,6 +328,8 @@ class ChatGUI:
 
         mainpane = self.make_main_pane(menubar)
         self.advpane = QuickMessageControl(self, self.config)
+
+        self.refresh_colors(first_time=True)
 
         mainpane.show()
 
