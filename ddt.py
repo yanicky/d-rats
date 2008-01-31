@@ -233,7 +233,7 @@ class Timeout:
         return time.time() > self.expire
 
 class DDTTransfer:
-    def __init__(self, pipe):
+    def __init__(self, pipe, status_fn=None):
         self.limit_tries = 10
         self.limit_timeout = 10
 
@@ -244,6 +244,26 @@ class DDTTransfer:
         self.total_size = 0
         self.transfer_size = 0
         self.wire_size = 0
+
+        if status_fn is None:
+            self.status_cb = self.status_to_stdout
+        else:
+            self.status_cb = status_fn
+
+    def status_to_stdout(self, msg, stats):
+        print ">> %s" % msg
+        
+        for k, v in stats.items():
+            print "  %s: %s" % (k, v)
+
+    def status(self, msg):
+        vals = {
+            "transferred" : self.transfer_size,
+            "wiresize" : self.wire_size,
+            "errors" : self.total_errors,
+            }
+
+        self.status_cb(msg, vals)
 
     def cancel(self):
         self.enabled = False
@@ -365,6 +385,8 @@ class DDTTransfer:
             if not self.enabled:
                 break
 
+            self.status("Waiting for remote to acknowledge start")
+
             print "Sending XferStart"
             ack = self._send_block(frame.pack())
             if ack.is_ack():
@@ -375,6 +397,8 @@ class DDTTransfer:
     def recv_start_file(self):
         frame = self._recv_block()
 
+        self.status("Waiting for transfer to start")
+
         print "Got file: %s (%i bytes)" % (frame.get_filename(),
                                            frame.get_size())
         
@@ -384,6 +408,7 @@ class DDTTransfer:
         frame = DDTEndFrame()
 
         for i in range(1, self.limit_tries):
+            self.status("Waiting for remote to acknowledge finish")
             if not self.enabled:
                 break
             if self._send_block(frame.pack()):
@@ -411,6 +436,9 @@ class DDTTransfer:
                 return False
             self.transfer_size += len(block)
             i += 1
+            self.status("Sending")
+
+        self.status("Transfer complete")
 
         return True
 
@@ -431,6 +459,7 @@ class DDTTransfer:
 
             if frame.__class__ == DDTEndFrame:
                 print "Transfer complete"
+                self.status("Transfer complete")
                 return True
             elif frame.__class__ == DDTEncodedFrame:
                 seq = frame.get_seq()
@@ -444,6 +473,7 @@ class DDTTransfer:
                 f.write(frame.get_data())
                 last_block = seq
                 self.transfer_size += len(frame.get_data())
+                self.status("Receiving")
             else:
                 print "Failed, bad frame type: %s" % frame.__class__
                 return False
