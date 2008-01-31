@@ -238,16 +238,29 @@ class DDTTransfer:
         self.limit_timeout = 10
 
         self.pipe = pipe
+        self.enabled = True
+
+        self.total_errors = 0
+        self.total_size = 0
+        self.transfer_size = 0
+        self.wire_size = 0
+
+    def cancel(self):
+        self.enabled = False
 
     def _send_block(self, data):
         #print "RAW FRAME: |%s|" % data
         self.pipe.write(data)
 
+        self.wire_size += len(data)
+
         ack = DDTAckFrame()
 
         result = ""
         to = Timeout(self.limit_timeout)
-        while not result.endswith("\n") and not to.expired():
+        while self.enabled and \
+                not result.endswith("\n") and \
+                not to.expired():
             result += self.pipe.read(32)
             print "Read %i bytes for result so far" % len(result)
 
@@ -269,12 +282,16 @@ class DDTTransfer:
         print "Sending block %i" % num
 
         for i in range(1, self.limit_tries):
+            if not self.enabled:
+                break
+
             result = self._send_block(packed)
             print "Sent data, waiting for ack"
             if result.is_ack():
                 print "Sent block %i" % num
                 return True
             else:
+                self.total_errors += 1
                 print "Failed to send block %i" % num
 
         return False
@@ -291,7 +308,9 @@ class DDTTransfer:
         data = ""
 
         to = Timeout(self.limit_timeout)
-        while not data.endswith("\n") and not to.expired():
+        while self.enabled and \
+                not data.endswith("\n") and \
+                not to.expired():
             data += self.pipe.read(128)
             #print "Read.. data: %s" % data
 
@@ -300,6 +319,7 @@ class DDTTransfer:
             return None
 
         print "Got frame"
+        self.wire_size += len(data)
 
         type = detect_frame_type(data)
         if type is None:
@@ -324,11 +344,15 @@ class DDTTransfer:
 
     def recv_block(self):
         for i in range(1, self.limit_tries):
+            if not self.enabled:
+                break
+
             print "Reading block..."
             result = self._recv_block()
             if result is not None:
                 break
             else:
+                self.total_errors += 1
                 print "Failed to receive block"
         
         print "Got block"
@@ -338,6 +362,9 @@ class DDTTransfer:
         frame = DDTXferStartFrame(filename)
 
         for i in range(1, self.limit_tries):
+            if not self.enabled:
+                break
+
             print "Sending XferStart"
             ack = self._send_block(frame.pack())
             if ack.is_ack():
@@ -357,6 +384,8 @@ class DDTTransfer:
         frame = DDTEndFrame()
 
         for i in range(1, self.limit_tries):
+            if not self.enabled:
+                break
             if self._send_block(frame.pack()):
                 return True
 
@@ -370,7 +399,7 @@ class DDTTransfer:
         f = file(filename)
 
         i = 0
-        while True:
+        while self.enabled:
             block = f.read(512)
             if len(block) <= 0:
                 print "EOF"
@@ -380,6 +409,7 @@ class DDTTransfer:
             if not self.send_block(i, block):
                 print "Failed"
                 return False
+            self.transfer_size += len(block)
             i += 1
 
         return True
@@ -394,7 +424,7 @@ class DDTTransfer:
         f = file(filename, "wb")
         
         last_block = -1
-        while True:
+        while self.enabled:
             frame = self.recv_block()
             if frame is None:
                 continue
@@ -413,6 +443,7 @@ class DDTTransfer:
 
                 f.write(frame.get_data())
                 last_block = seq
+                self.transfer_size += len(frame.get_data())
             else:
                 print "Failed, bad frame type: %s" % frame.__class__
                 return False
@@ -430,4 +461,6 @@ if __name__ == "__main__":
         x = DDTTransfer(s)
         x.recv_file("tmp")
 
-        
+    print "Sent: %i bytes" % x.transfer_size
+    print "Wire: %i bytes" % x.wire_size
+    print "Errors: %i" % x.total_errors
