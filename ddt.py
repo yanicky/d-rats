@@ -261,6 +261,7 @@ class DDTTransfer:
             "transferred" : self.transfer_size,
             "wiresize" : self.wire_size,
             "errors" : self.total_errors,
+            "totalsize" : self.total_size,
             }
 
         self.status_cb(msg, vals)
@@ -381,6 +382,8 @@ class DDTTransfer:
     def send_start_file(self, filename):
         frame = DDTXferStartFrame(filename)
 
+        self.total_size = frame.get_size()
+
         for i in range(1, self.limit_tries):
             if not self.enabled:
                 break
@@ -402,6 +405,8 @@ class DDTTransfer:
         print "Got file: %s (%i bytes)" % (frame.get_filename(),
                                            frame.get_size())
         
+        self.total_size = frame.get_size()
+
         return (frame.get_filename(), frame.get_size())
 
     def send_eof(self):
