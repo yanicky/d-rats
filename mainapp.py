@@ -112,7 +112,7 @@ class SerialCommunicator:
         if self.enabled:
             self.enabled = False
             self.close_log()
-            print "Waiting for thread..."
+            print "Waiting for chat watch thread..."
             self.thread.join()
 
     def send_text(self, text):
@@ -149,6 +149,8 @@ class SerialCommunicator:
         data = ""
         newdata = ""
         
+        print "Starting chat watch thread"
+
         while self.enabled:
             #size = self.pipe.inWaiting()
             try:
