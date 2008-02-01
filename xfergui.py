@@ -210,9 +210,9 @@ class FileTransferGUI:
         tot = vals["totalsize"]
 
         if tot and wire:
-            size_str = "%i / %i (%.2f%%)" % (sent,
+            size_str = "%i / %i (%2.0f%%)" % (sent,
                                              tot,
-                                             sent / float(wire))
+                                             (sent / float(wire)) * 100.0)
         else:
             size_str = "%i" % sent
 
