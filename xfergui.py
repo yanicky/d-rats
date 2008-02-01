@@ -24,6 +24,7 @@ import pygtk
 import gtk
 
 import xmodem
+import ddt
 
 class FileTransferGUI:
 
@@ -122,7 +123,7 @@ class FileTransferGUI:
         i.close()
         o.close()
 
-    def xfer(self):
+    def xymodem_xfer(self):
         xa = self.xfer_agent(debug="stdout", status_fn=self.update)
 
         self.xfer = xa
@@ -168,8 +169,20 @@ class FileTransferGUI:
         self.close_btn.set_sensitive(True)
         self.cancel_btn.set_sensitive(False)
         gtk.gdk.threads_leave()
-        self.chatgui.comm.enable(self.chatgui)
 
+    def ddt_xfer(self):
+        x = self.xfer_agent(self.chatgui.comm.pipe, status_fn=self.update)
+        
+        if self.is_send:
+            x.send_file(self.filename)
+        else:
+            x.recv_file(self.filename)
+
+        gtk.gdk.threads_enter()
+        self.chatgui.toggle_sendable(True)
+        self.close_btn.set_sensitive(True)
+        self.cancel_btn.set_sensitive(False)
+        gtk.gdk.threads_leave()        
 
     def show_xfer(self):
         self.window.show()
@@ -177,7 +190,15 @@ class FileTransferGUI:
         self.chatgui.toggle_sendable(False)
         self.chatgui.comm.disable()
 
-        self.xfer_thread = Thread(target=self.xfer)
+        # Legacy support for X/YModem
+        # This needs to be fixed up
+        if self.xfer_agent == xmodem.XModem or \
+                self.xfer_agent == xmodem.XModemCRC or \
+                self.xfer_agent == xmodem.YModem:
+            self.xfer_thread = Thread(target=self.xymodem_xfer)
+        elif self.xfer_agent == ddt.DDTTransfer:
+            self.xfer_thread = Thread(target=self.ddt_xfer)
+
         self.xfer_thread.start()
 
     def update(self, status, vals):
@@ -200,7 +221,8 @@ class FileTransferGUI:
         self.values["Size"].set_text(size_str)
         self.values["Errors"].set_text(err_str)
         self.bar.set_text(status)
-        self.bar.set_fraction(float(sent) / tot)
+        if tot:
+            self.bar.set_fraction(float(sent) / tot)
 
         gtk.gdk.threads_leave()
 
@@ -226,7 +248,8 @@ class FileTransferGUI:
         self.show_xfer()
 
     def do_recv(self):
-        if self.xfer_agent == xmodem.YModem:
+        if self.xfer_agent == xmodem.YModem or \
+                self.xfer_agent == ddt.DDTTransfer:
             title = "Select destination folder"
             stock = gtk.FILE_CHOOSER_ACTION_SELECT_FOLDER
         else:
