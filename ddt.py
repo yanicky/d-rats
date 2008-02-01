@@ -452,7 +452,7 @@ class DDTTransfer:
             print "Transfer start timed out"
             return False
 
-        f = file(filename)
+        f = file(filename, "rb")
 
         i = 0
         while self.enabled:
