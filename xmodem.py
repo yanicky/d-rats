@@ -130,17 +130,28 @@ class XModem:
             self._debug = None
 
         if not status_fn:
-            self.status_fn = self.swallow_status
+            self.status_cb = self.swallow_status
         else:
-            self.status_fn = status_fn
+            self.status_cb = status_fn
 
         self.checksums = {"C" : XModemCRCChecksum,
                           NAK : XModemChecksum}
 
-    def swallow_status(self, status, bytecount, errors):
-        self.debug("Status: [%s] %i bytes, %i errors" % (status,
-                                                         bytecount,
-                                                         errors))
+    def swallow_status(self, msg, vals):
+        print ">> %s" % msg
+
+        for k, v in vals.items():
+            print "  %s: %s" % (k, v)
+
+    def status_fn(self, msg, b, e):
+        vals = {
+            "transferred" : self.total_bytes,
+            "wiresize" : self.total_bytes+1,
+            "errors" : self.total_errors,
+            "totalsize" : 1,
+            }
+
+        self.status_cb(msg, vals)
 
     def debug(self, str):
         if not self._debug:

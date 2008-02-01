@@ -180,20 +180,28 @@ class FileTransferGUI:
         self.xfer_thread = Thread(target=self.xfer)
         self.xfer_thread.start()
 
-    def update(self, status, bytecount, errors, running=True):
+    def update(self, status, vals):
         gtk.gdk.threads_enter()
 
-        if self.total_size:
-            size_str = "%i KB (%i KB total)" % (bytecount / 1024,
-                                                self.total_size / 1024)
+        sent = vals["transferred"]
+        wire = vals["wiresize"]
+        err = vals["errors"]
+        tot = vals["totalsize"]
+
+        if tot and wire:
+            size_str = "%i / %i (%.2f%%)" % (sent,
+                                             tot,
+                                             sent / float(wire))
         else:
-            size_str = "%i KB"
-            
+            size_str = "%i" % sent
+
+        err_str = "%i" % err
+
         self.values["Size"].set_text(size_str)
-        self.values["Errors"].set_text("%i" % errors)
+        self.values["Errors"].set_text(err_str)
         self.bar.set_text(status)
-        if self.total_size:
-            self.bar.set_fraction(float(bytecount) / self.total_size)
+        self.bar.set_fraction(float(sent) / tot)
+
         gtk.gdk.threads_leave()
 
     def do_send(self):
