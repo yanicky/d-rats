@@ -24,6 +24,7 @@ import time
 import os
 
 import xmodem
+import ddt
 
 from xfergui import FileTransferGUI
 from qst import QSTGUI, QuickMsgGUI
@@ -180,12 +181,15 @@ class ChatGUI:
     def toggle_sendable(self, state):
         self.entry.set_sensitive(state)
         self.send_button.set_sensitive(state)
+        if state:
+            self.comm.enable(self)
+        else:
+            self.comm.disable()
         
     def menu_handler(self, _action):
         action = _action.get_name()
 
-        xfer_name = self.config.config.get("settings", "xfer")
-        xfer = xmodem.__dict__[xfer_name]
+        xfer = self.config.xfer()
 
         if action == "quit":
             self.sig_destroy(None)

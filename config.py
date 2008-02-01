@@ -21,6 +21,7 @@ import pygtk
 import ConfigParser
 
 import xmodem
+import ddt
 
 def color_string(color):
     try:
@@ -97,7 +98,13 @@ class AppConfig:
 
     xfers = {"XModem" : xmodem.XModem,
              "XModemCRC" : xmodem.XModemCRC,
-             "YModem" : xmodem.YModem}
+             "YModem" : xmodem.YModem,
+             "DDT" : ddt.DDTTransfer}
+
+    def xfer(self):
+        name = self.config.get("settings", "xfer")
+
+        return self.xfers[name]
 
     def default_filename(self):
         return "drats.config"
