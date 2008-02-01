@@ -15,6 +15,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import os
+
 import gtk
 import pygtk
 
@@ -401,9 +403,20 @@ class UnixAppConfig(AppConfig):
 class Win32AppConfig(AppConfig):
     default_port = "COM1"
 
+    def migrate_old_config(self, new):
+        if os.path.isfile("c:\drats.config"):
+            print "Migrating old config to %s" % new
+            os.rename("c:\drats.config", new)
+
     def default_filename(self):
-        # FIXME!
-        return "c:\drats.config"
+        base = os.path.join(os.getenv("APPDATA"), "D-RATS")
+        config = os.path.join(base, "d-rats.config")
+        if not os.path.isdir(base):
+            print "Creating `%s'" % base
+            os.mkdir(base)
+            self.migrate_old_config(config)
+
+        return config        
 
     def port_list(self):
         return ["COM1", "COM2", "COM3", "COM4"]
