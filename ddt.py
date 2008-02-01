@@ -415,9 +415,18 @@ class DDTTransfer:
         return False
 
     def recv_start_file(self):
-        frame = self._recv_block()
+        for i in range(1, self.limit_tries):
+            if not self.enabled:
+                break
 
-        self.status("Waiting for transfer to start")
+            self.status("Waiting for transfer to start")
+
+            frame = self._recv_block()
+            if frame:
+                break
+
+        if not frame:
+            return (None, None)
 
         print "Got file: %s (%i bytes)" % (frame.get_filename(),
                                            frame.get_size())
@@ -466,6 +475,10 @@ class DDTTransfer:
 
     def recv_file(self, filename):
         (name, size) = self.recv_start_file()
+
+        if not name or not size:
+            self.status("Timed out waiting for transfer start")
+            return False
 
         if os.path.isdir(filename):
             filename = "%s%s%s" % (filename, os.path.sep, name)
