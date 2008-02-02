@@ -183,25 +183,51 @@ class AppConfig:
         self.sync_gui(load=True)
         self.window.hide()
 
-    def build_gui(self):
-        self.window = gtk.Window(gtk.WINDOW_TOPLEVEL)
-
-        self.window.set_default_size(400, 500)
-        self.window.set_title("Main Settings")
-
-        self.window.connect("delete_event", self.delete)
-        self.window.connect("destroy", self.destroy)
-
-        baud_rates = ["300", "1200", "4800", "9600",
-                      "19200", "38400", "115200"]
-
-        scroll = gtk.ScrolledWindow()
-        scroll.set_policy(gtk.POLICY_NEVER, gtk.POLICY_AUTOMATIC)
-
+    def build_user(self):
         vbox = gtk.VBox(False, 2)
 
         vbox.pack_start(self.make_sb("callsign", gtk.Entry()), 0,0,0)
         vbox.pack_start(self.make_sb("name", gtk.Entry()), 0,0,0)
+        vbox.pack_start(self.make_sb("dosignon", self.make_bool()), 0,0,0)
+        vbox.pack_start(self.make_sb("signon", gtk.Entry()), 0,0,0)
+
+        vbox.pack_start(self.make_sb("dosignoff", self.make_bool()), 0,0,0)
+        vbox.pack_start(self.make_sb("signoff", gtk.Entry()), 0,0,0)
+        vbox.pack_start(self.make_sb("logenabled",
+                                     self.make_bool()), 0,0,0)
+
+        vbox.show()
+        return vbox
+
+    def build_appearance(self):
+        vbox = gtk.VBox(False, 2)
+
+        vbox.pack_start(self.make_sb("noticere", gtk.Entry()), 0,0,0)
+        vbox.pack_start(self.make_sb("ignorere", gtk.Entry()), 0,0,0)
+
+        vbox.pack_start(self.make_sb("incomingcolor",
+                                     gtk.ColorButton()), 0,0,0)
+        vbox.pack_start(self.make_sb("outgoingcolor",
+                                     gtk.ColorButton()), 0,0,0)
+        vbox.pack_start(self.make_sb("noticecolor",
+                                     gtk.ColorButton()), 0,0,0)
+        vbox.pack_start(self.make_sb("ignorecolor",
+                                     gtk.ColorButton()), 0,0,0)
+
+        vbox.pack_start(self.make_sb("eolstrip",
+                                     self.make_bool()), 0,0,0)
+
+        vbox.pack_start(self.make_sb("font",
+                                     gtk.FontButton()), 0,0,0)
+        
+        vbox.show()
+        return vbox
+
+    def build_data(self):
+        vbox = gtk.VBox(False, 2)
+
+        baud_rates = ["300", "1200", "4800", "9600",
+                      "19200", "38400", "115200"]
 
         vbox.pack_start(self.make_sb("port",
                                      make_choice(self.port_list())), 0,0,0)
@@ -221,50 +247,37 @@ class AppConfig:
         vbox.pack_start(self.make_sb("xfer",
                                      make_choice(self.xfers.keys(), False)), 0,0,0)
 
-        # Broken on (at least) win32
-        #vbox.pack_start(self.make_sb("blinkmsg", self.make_bool()))
 
-        vbox.pack_start(self.make_sb("noticere", gtk.Entry()), 0,0,0)
-        vbox.pack_start(self.make_sb("ignorere", gtk.Entry()), 0,0,0)
+        vbox.show()
+        return vbox
 
-        vbox.pack_start(self.make_sb("dosignon", self.make_bool()), 0,0,0)
-        vbox.pack_start(self.make_sb("signon", gtk.Entry()), 0,0,0)
+    def build_gui(self):
+        self.window = gtk.Window(gtk.WINDOW_TOPLEVEL)
 
-        vbox.pack_start(self.make_sb("dosignoff", self.make_bool()), 0,0,0)
-        vbox.pack_start(self.make_sb("signoff", gtk.Entry()), 0,0,0)
+        self.window.set_default_size(400, 500)
+        self.window.set_title("Main Settings")
 
-        vbox.pack_start(self.make_sb("incomingcolor",
-                                     gtk.ColorButton()), 0,0,0)
-        vbox.pack_start(self.make_sb("outgoingcolor",
-                                     gtk.ColorButton()), 0,0,0)
-        vbox.pack_start(self.make_sb("noticecolor",
-                                     gtk.ColorButton()), 0,0,0)
-        vbox.pack_start(self.make_sb("ignorecolor",
-                                     gtk.ColorButton()), 0,0,0)
+        self.window.connect("delete_event", self.delete)
+        self.window.connect("destroy", self.destroy)
 
-        vbox.pack_start(self.make_sb("logenabled",
-                                     self.make_bool()), 0,0,0)
-        vbox.pack_start(self.make_sb("eolstrip",
-                                     self.make_bool()), 0,0,0)
+        nb = gtk.Notebook()
 
-        vbox.pack_start(self.make_sb("font",
-                                     gtk.FontButton()), 0,0,0)
+        nb.append_page(self.build_user(), gtk.Label("User"))
+        nb.append_page(self.build_appearance(), gtk.Label("Appearance"))
+        nb.append_page(self.build_data(), gtk.Label("Data"))
+
+        nb.show()
 
         # Disable unsupported functions
         for i in ("autoreceive", "noticere"):
             self.fields[i].set_sensitive(False)
 
-        scroll.show()
-        scroll.add_with_viewport(vbox)
-
         mainvbox = gtk.VBox(False, 5)
-        mainvbox.pack_start(scroll, 1,1,1)
+        mainvbox.pack_start(nb, 1,1,1)
         mainvbox.pack_start(self.make_buttons(), 0,0,0)
         mainvbox.show()
         
         self.window.add(mainvbox)
-
-        vbox.show()
 
     def show(self):
         self.window.show()
