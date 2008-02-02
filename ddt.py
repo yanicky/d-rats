@@ -29,6 +29,8 @@ FILE_XFER_BLOCK = 2
 FILE_XFER_ACK   = 3
 FILE_XFER_DONE  = 4
 
+ENCODED_TRAILER = "--(EOB)--"
+
 def detect_frame_type(data):
     frame = DDTEncodedFrame()
     try:
@@ -155,10 +157,10 @@ class DDTEncodedFrame(DDTFrame):
     def pack(self):
         raw = DDTFrame.pack(self)
 
-        return base64.encodestring(raw)
+        return base64.encodestring(raw) + ENCODED_TRAILER
 
     def unpack(self, value):
-        raw = base64.decodestring(value)
+        raw = base64.decodestring(value.rstrip(ENCODED_TRAILER))
 
         return DDTFrame.unpack(self, raw)
 
@@ -287,7 +289,6 @@ class DDTTransfer:
         self.enabled = False
 
     def _send_block(self, data):
-        #print "RAW FRAME: |%s|" % data
         self.pipe.write(data)
 
         self.wire_size += len(data)
@@ -295,11 +296,11 @@ class DDTTransfer:
         ack = DDTAckFrame()
 
         result = ""
-        to = Timeout(self.limit_timeout)
+        to = Timeout(self.limit_timeout + 10)
         while self.enabled and \
-                not result.endswith("\n") and \
+                not result.endswith(ENCODED_TRAILER) and \
                 not to.expired():
-            result += self.pipe.read(32)
+            result += self.pipe.read(128)
             print "Read %i bytes for result so far" % len(result)
 
         try:
@@ -347,13 +348,17 @@ class DDTTransfer:
 
         to = Timeout(self.limit_timeout)
         while self.enabled and \
-                not data.endswith("\n") and \
+                not data.endswith(ENCODED_TRAILER) and \
                 not to.expired():
-            data += self.pipe.read(128)
-            #print "Read.. data: %s" % data
+            _data = self.pipe.read(512)
+            if len(_data) > 0:
+                to = Timeout(self.limit_timeout)
+            #print "Read.. data: \n%s\n" % _data
+            data += _data
 
-        if not data.endswith("\n") and to.expired():
-            print "Timeout waiting for block"
+        if not data.endswith(ENCODED_TRAILER):
+            print "Block doesn't have proper trailer"
+            hexprint(data)
             return None
 
         print "Got frame"
@@ -377,6 +382,7 @@ class DDTTransfer:
             return frame
         else:
             print "NAK"
+            #print "RAW FRAME: |%s|" % data
             self.send_ack(frame.get_seq(), False)
             return None
 
@@ -456,7 +462,7 @@ class DDTTransfer:
 
         i = 0
         while self.enabled:
-            block = f.read(512)
+            block = f.read(1024)
             if len(block) <= 0:
                 print "EOF"
                 if not self.send_eof():
