@@ -48,7 +48,7 @@ class AppConfig:
             if not self.config.has_section(section):
                 self.config.add_section(section)
 
-            if not self.config.has_option(section, option):
+            if option and not self.config.has_option(section, option):
                 self.config.set(section, option, value)
 
         mset("user", "name", "A. Mateur")
@@ -74,6 +74,8 @@ class AppConfig:
         mset("settings", "port", self.default_port)
         mset("settings", "rate", "9600")
         mset("settings", "xfer", "YModem")
+
+        mset("quick", None, None)
 
     id2label = {"name" : "Name",
                 "callsign" : "Callsign",
