@@ -34,7 +34,8 @@ class QSTText:
         self.text = text
         self.freq = freq
         self.enabled = False
-        self.remaining = freq
+        self.remaining = freq * 60
+        self.reset = False
 
     def enable(self):
         self.enabled = True
@@ -46,15 +47,21 @@ class QSTText:
         self.enabled = False
         self.thread.join()
 
+    def reset_timer(self):
+        self.reset = True
+
     def interruptible_sleep(self):
         if self.freq > 0:
             ticks = self.freq * 60
         else:
-            tick = self.freq * -1
+            ticks = self.freq * -1
             
         for i in range(0, ticks):
             if not self.enabled:
                 return
+            if self.reset:
+                self.reset = False
+                break
             self.remaining = ticks - i
             time.sleep(1)
 
