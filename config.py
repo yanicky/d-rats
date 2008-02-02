@@ -73,7 +73,7 @@ class AppConfig:
 
         mset("settings", "port", self.default_port)
         mset("settings", "rate", "9600")
-        mset("settings", "xfer", "YModem")
+        mset("settings", "xfer", "DDT")
 
         mset("quick", None, None)
 
