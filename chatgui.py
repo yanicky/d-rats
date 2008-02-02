@@ -63,11 +63,13 @@ class ChatGUI:
 
         # Filter incoming to just ASCII-printable
         c = '?'
-        xlate = ([c] * 10) +    \
-                ['\n', '\r'] +  \
-                ([c] * 20) +    \
+        xlate = ([c] * 32) +    \
                 [chr(x) for x in range(32,126)] + \
                 ([c] * 130)
+
+        xlate[ord('\n')] = '\n'
+        xlate[ord('\r')] = '\r'
+
         string = string.translate("".join(xlate))
 
         end = self.main_buffer.get_end_iter()
