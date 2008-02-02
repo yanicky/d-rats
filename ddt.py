@@ -460,8 +460,13 @@ class DDTTransfer:
 
     def send_file(self, filename):
         if not self.send_start_file(filename):
-            print "Transfer start timed out"
+            if self.enabled:
+                self.status("Timed out waiting for transfer start")
+            else:
+                self.status("Cancelled")
             return False
+
+        self.status("Negotiation Complete")
 
         f = file(filename, "rb")
 
@@ -472,10 +477,17 @@ class DDTTransfer:
                 print "EOF"
                 if not self.send_eof():
                     print "Transfer failed (EOT not ACKed)"
+                    self.status("Failed: Remote did not acknowledge EOT")
+                    return False
+
                 break
             if not self.send_block(i, block):
-                print "Failed"
+                if not self.enabled:
+                    self.status("Cancelled")
+                else:
+                    self.status("Failed: Too many retries")
                 return False
+
             self.transfer_size += len(block)
             i += 1
             self.status("Sending")
@@ -488,8 +500,13 @@ class DDTTransfer:
         (name, size) = self.recv_start_file()
 
         if not name or not size:
-            self.status("Timed out waiting for transfer start")
+            if self.enabled:
+                self.status("Timed out waiting for transfer start")
+            else:
+                self.status("Cancelled")
             return False
+
+        self.status("Negotiation Complete")
 
         if os.path.isdir(filename):
             filename = "%s%s%s" % (filename, os.path.sep, name)
@@ -522,7 +539,13 @@ class DDTTransfer:
                 self.status("Receiving")
             else:
                 print "Failed, bad frame type: %s" % frame.__class__
+                self.status("ERROR: Bad frame type returned from recv_block()")
                 return False
+
+        if not self.enabled:
+            self.status("Cancelled")
+        else:
+            self.status("ERROR: Invalid state in recv_file()")
 
 if __name__ == "__main__":
     time.sleep(2)
