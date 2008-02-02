@@ -269,7 +269,7 @@ class AppConfig:
         nb.show()
 
         # Disable unsupported functions
-        for i in ("autoreceive", "noticere"):
+        for i in ("autoreceive",):
             self.fields[i].set_sensitive(False)
 
         mainvbox = gtk.VBox(False, 5)

@@ -136,8 +136,12 @@ class SerialCommunicator:
         self.gui.display("%s " % stamp)
 
         ignore = self.gui.config.config.get("prefs", "ignorere")
+        notice = self.gui.config.config.get("prefs", "noticere")
+
         if ignore and re.search(ignore, data):
             self.gui.display(data + os.linesep, "ignorecolor")
+        elif notice and re.search(notice, data):
+            self.gui.display(data + os.linesep, "noticecolor")
         elif ">" in data:
             call, data = data.split(">", 1)
             self.gui.display("%s>" % call, "incomingcolor")
