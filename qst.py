@@ -34,6 +34,7 @@ class QSTText:
         self.text = text
         self.freq = freq
         self.enabled = False
+        self.remaining = freq
 
     def enable(self):
         self.enabled = True
@@ -54,6 +55,7 @@ class QSTText:
         for i in range(0, ticks):
             if not self.enabled:
                 return
+            self.remaining = ticks - i
             time.sleep(1)
 
     def do_qst(self, text):
