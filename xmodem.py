@@ -149,6 +149,7 @@ class XModem:
             "wiresize" : self.total_bytes+1,
             "errors" : self.total_errors,
             "totalsize" : 1,
+            "filename" : "--",
             }
 
         self.status_cb(msg, vals)
