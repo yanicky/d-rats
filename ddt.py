@@ -367,6 +367,7 @@ class DDTTransfer:
         type = detect_frame_type(data)
         if type is None:
             print "Unknown frame type"
+            self.send_ack(0, False)
             return None
 
         frame = type()
