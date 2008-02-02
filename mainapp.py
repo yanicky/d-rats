@@ -271,7 +271,7 @@ class MainApp:
         else:
             self.config = config.AppConfig(self)
 
-        self.chatgui = chatgui.ChatGUI(self.config)
+        self.chatgui = chatgui.ChatGUI(self.config, self)
 
         self.refresh_config()
 

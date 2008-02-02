@@ -26,6 +26,8 @@ import os
 import xmodem
 import ddt
 
+from threading import Thread
+
 from xfergui import FileTransferGUI
 from qst import QSTGUI, QuickMsgGUI
 
@@ -303,8 +305,8 @@ class ChatGUI:
             tags.add(tag)
 
     def refresh_advanced(self):
-        if self.advpane.visible:
-            self.advpane.refresh()
+        for i in self.adv_controls:
+            i.refresh()
 
     def show_advanced(self, action, data=None):
         w, h = self.window.get_size()
@@ -314,13 +316,33 @@ class ChatGUI:
             self.advpane.hide()
             self.window.resize(w, h-height)
         else:
+            print "Showing advpane"
             self.advpane.show()
             self.window.resize(w, h+height)
             self.pane.set_position(h)
         
-    def __init__(self, config):
+    def make_advanced(self):
+        nb = gtk.Notebook()
+        nb.set_tab_pos(gtk.POS_BOTTOM)
+
+        self.adv_controls = []
+
+        qm = QuickMessageControl(self, self.config)
+        qm.show()
+        nb.append_page(qm.root, gtk.Label("Quick Messages"))
+        self.adv_controls.append(qm)
+
+        qm = QSTMonitor(self, self.mainapp)
+        qm.show()
+        nb.append_page(qm.root, gtk.Label("QST Monitor"))
+        self.adv_controls.append(qm)
+
+        return nb
+
+    def __init__(self, config, mainapp):
         self.comm = None
         self.config = config
+        self.mainapp = mainapp
         self.tips = gtk.Tooltips()
         
         self.main_buffer = gtk.TextBuffer()
@@ -331,7 +353,7 @@ class ChatGUI:
         menubar.show()
 
         mainpane = self.make_main_pane(menubar)
-        self.advpane = QuickMessageControl(self, self.config)
+        self.advpane = self.make_advanced()
 
         self.refresh_colors(first_time=True)
 
@@ -339,7 +361,7 @@ class ChatGUI:
 
         self.pane = gtk.VPaned()
         self.pane.add1(mainpane)
-        self.pane.add2(self.advpane.root)
+        self.pane.add2(self.advpane)
         self.pane.show()
 
         self.window.set_title("D-RATS")
@@ -428,6 +450,102 @@ class QuickMessageControl:
     def hide(self):
         self.root.hide()
         self.visible = False
+
+class QSTMonitor:
+    def make_display(self):
+
+        self.store = gtk.ListStore(gobject.TYPE_INT,
+                                   gobject.TYPE_INT,
+                                   gobject.TYPE_INT,
+                                   gobject.TYPE_STRING)
+        self.view = gtk.TreeView(self.store)
+
+        self.tips.set_tip(self.view,
+                          "Double-click on a row to reset the timer " +
+                          "and send now")
+
+        self.view.connect("row-activated", self.reset_qst, None)
+
+        r = gtk.CellRendererText()
+        c = gtk.TreeViewColumn("Period", r, text=1)
+        self.view.append_column(c)
+
+        r = gtk.CellRendererProgress()
+        c = gtk.TreeViewColumn("Remaining", r, value=2)
+        self.view.append_column(c)
+
+        r = gtk.CellRendererText()
+        c = gtk.TreeViewColumn("Message", r, text=3)
+        self.view.append_column(c)
+
+        return self.view
+
+    def reset_qst(self, view, path, col, data=None):
+        iter = self.store.get_iter(path)
+
+        index = self.store.get(iter, 0)[0]
+
+        self.mainapp.qsts[index].reset_timer()
+
+    def update(self, model, path, iter, data=None):
+        index = model.get(iter, 0)[0]
+
+        qst = self.mainapp.qsts[index]
+
+        max = qst.freq * 60
+        rem = qst.remaining
+
+        val = (float(rem) / float(max)) * 100.0
+
+        self.store.set(iter, 2, val)
+
+    def update_thread(self):
+        while self.enabled:
+            self.store.foreach(self.update, None)
+            time.sleep(1)
+
+    def add_qst(self, index, qst):
+
+        max = qst.freq * 60
+        rem = qst.remaining
+        msg = qst.text
+
+        iter = self.store.append()
+        self.store.set(iter,
+                       0, index,
+                       1, max / 60,
+                       2, (rem / max) * 100,
+                       3, msg)
+        
+
+    def refresh(self):
+        if self.thread:
+            self.enabled = False
+            self.thread.join()
+
+        self.store.clear()
+
+        for i in range(0, len(self.mainapp.qsts)):
+            self.add_qst(i, self.mainapp.qsts[i])
+
+        self.enabled = True
+        self.thread = Thread(target=self.update_thread)
+        self.thread.start()
+
+    def __init__(self, gui, mainapp):
+        self.gui = gui
+        self.mainapp = mainapp
+        self.thread = None
+
+        self.tips = gtk.Tooltips()
+
+        self.root = self.make_display()
+
+    def show(self):
+        self.root.show()
+    
+    def hide(self):
+        self.root.hide()
 
 if __name__ == "__main__":
     gui = ChatGUI()
