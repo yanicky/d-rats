@@ -206,15 +206,30 @@ class FileTransferGUI:
     def update(self, status, vals):
         gtk.gdk.threads_enter()
 
+        file = vals["filename"]
         sent = vals["transferred"]
         wire = vals["wiresize"]
         err = vals["errors"]
         tot = vals["totalsize"]
 
         if tot and wire:
-            size_str = "%i / %i (%2.0f%%)" % (sent,
-                                             tot,
-                                             (sent / float(wire)) * 100.0)
+            eff = (sent / float(wire)) * 100.0
+
+        if tot and tot > 2048:
+            tot /= 1024
+            sent /= 1024
+            wire /= 1024
+            units = "KB"
+        else:
+            units = ""
+
+        self.values["File"].set_text(file)
+
+        if tot and wire:
+            size_str = "%i / %i %s (%2.0f%%)" % (sent,
+                                                 tot,
+                                                 units,
+                                                 eff)
         else:
             size_str = "%i" % sent
 

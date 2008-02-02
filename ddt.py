@@ -264,6 +264,8 @@ class DDTTransfer:
         self.transfer_size = 0
         self.wire_size = 0
 
+        self.filename = "--"
+
         if status_fn is None:
             self.status_cb = self.status_to_stdout
         else:
@@ -281,6 +283,7 @@ class DDTTransfer:
             "wiresize" : self.wire_size,
             "errors" : self.total_errors,
             "totalsize" : self.total_size,
+            "filename" : self.filename,
             }
 
         self.status_cb(msg, vals)
@@ -301,7 +304,6 @@ class DDTTransfer:
                 not result.endswith(ENCODED_TRAILER) and \
                 not to.expired():
             result += self.pipe.read(128)
-            print "Read %i bytes for result so far" % len(result)
 
         try:
             ack.unpack(result)
@@ -406,6 +408,7 @@ class DDTTransfer:
     def send_start_file(self, filename):
         frame = DDTXferStartFrame(filename)
 
+        self.filename = frame.get_filename()
         self.total_size = frame.get_size()
 
         for i in range(1, self.limit_tries):
@@ -439,6 +442,7 @@ class DDTTransfer:
                                            frame.get_size())
         
         self.total_size = frame.get_size()
+        self.filename = frame.get_filename()
 
         return (frame.get_filename(), frame.get_size())
 
