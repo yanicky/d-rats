@@ -171,7 +171,7 @@ class SerialCommunicator:
                     gtk.gdk.threads_leave()
                     data = ""
                     
-                time.sleep(1)
+                time.sleep(0.25)
 
     def __str__(self):
         if self.enabled:
