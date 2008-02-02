@@ -84,7 +84,7 @@ class SerialCommunicator:
         try:
             self.pipe = serial.Serial(port=self.port,
                                       baudrate=self.rate,
-                                      timeout=2,
+                                      timeout=0.25,
                                       xonxoff=1)
             self.opened = True
         except Exception, e:
