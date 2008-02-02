@@ -173,6 +173,8 @@ class FileTransferGUI:
     def ddt_xfer(self):
         x = self.xfer_agent(self.chatgui.comm.pipe, status_fn=self.update)
         
+        self.xfer = x
+
         if self.is_send:
             x.send_file(self.filename)
         else:
