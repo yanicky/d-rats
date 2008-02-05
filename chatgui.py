@@ -467,9 +467,6 @@ class MainChatGUI(ChatGUI):
 
     def main(self):
         gtk.gdk.threads_init()
-        self.sw_thread = Thread(target=self.watch_serial)
-        self.sw_thread.start()
-        print "Started thread"
         gtk.gdk.threads_enter()
         gtk.main()
         gtk.gdk.threads_leave()
