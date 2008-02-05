@@ -236,6 +236,14 @@ class ChatGUI:
        
 class MainChatGUI(ChatGUI):
     
+    def display(self, string, *attrs):
+        for s, w in self.filters:
+            if s in string:
+                print "Found match: %s" % s
+                w.display(string, *attrs)
+
+        ChatGUI.display(self, string, *attrs)                
+
     def sig_destroy(self, widget, data=None):
         if self.config.config.getboolean("prefs", "dosignoff"):
             self.tx_msg(self.config.config.get("prefs", "signoff"))
@@ -425,11 +433,38 @@ class MainChatGUI(ChatGUI):
 
         self.entry.grab_focus()
 
+    def activate_filter(self, _, text):
+        new_window = ChatGUI(self.config, self.mainapp)
+        new_window.window.set_title("D-RATS (Filter on `%s')" % text)
+
+        self.filters.append((text, new_window))
+
+    def popup(self, view, menu, data=None):
+        filter_item = gtk.MenuItem(label="Filter on this string")
+        
+        bounds = self.main_buffer.get_selection_bounds()
+        if not bounds:
+            return
+
+        text = self.main_buffer.get_text(bounds[0], bounds[1])
+        filter_item.connect("activate",
+                            self.activate_filter,
+                            text)
+
+        filter_item.show()
+        menu.prepend(filter_item)
+
     def __init__(self, config, mainapp):
         ChatGUI.__init__(self, config, mainapp)
+        self.filters = []
+
         self.display("D-RATS v0.1.5 ", ("red"))
         self.display("(Copyright 2008 Dan Smith KI4IFW)\n", "blue", "italic")
         
+        self.textview.connect("populate-popup",
+                              self.popup,
+                              None)
+
     def main(self):
         gtk.gdk.threads_init()
         self.sw_thread = Thread(target=self.watch_serial)
