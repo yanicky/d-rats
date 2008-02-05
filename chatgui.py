@@ -456,9 +456,16 @@ class QuickMessageControl:
 class QSTMonitor:
     def make_display(self):
 
+        self.col_index  = 0
+        self.col_period = 1
+        self.col_remain = 2
+        self.col_status = 3
+        self.col_msg    = 4
+
         self.store = gtk.ListStore(gobject.TYPE_INT,
                                    gobject.TYPE_INT,
                                    gobject.TYPE_INT,
+                                   gobject.TYPE_STRING,
                                    gobject.TYPE_STRING)
         self.view = gtk.TreeView(self.store)
 
@@ -469,15 +476,16 @@ class QSTMonitor:
         self.view.connect("row-activated", self.reset_qst, None)
 
         r = gtk.CellRendererText()
-        c = gtk.TreeViewColumn("Period", r, text=1)
+        c = gtk.TreeViewColumn("Period", r, text=self.col_period)
         self.view.append_column(c)
 
         r = gtk.CellRendererProgress()
-        c = gtk.TreeViewColumn("Remaining", r, value=2)
+        c = gtk.TreeViewColumn("Remaining", r,
+                               value=self.col_remain, text=self.col_status)
         self.view.append_column(c)
 
         r = gtk.CellRendererText()
-        c = gtk.TreeViewColumn("Message", r, text=3)
+        c = gtk.TreeViewColumn("Message", r, text=self.col_msg)
         self.view.append_column(c)
 
         return self.view
@@ -485,21 +493,28 @@ class QSTMonitor:
     def reset_qst(self, view, path, col, data=None):
         iter = self.store.get_iter(path)
 
-        index = self.store.get(iter, 0)[0]
+        index = self.store.get(iter, self.col_index)[0]
 
         self.mainapp.qsts[index].reset_timer()
 
     def update(self, model, path, iter, data=None):
-        index = model.get(iter, 0)[0]
+        index = model.get(iter, self.col_index)[0]
 
         qst = self.mainapp.qsts[index]
 
         max = qst.freq * 60
         rem = qst.remaining
 
+        if rem < 90:
+            status = "%i sec" % rem
+        else:
+            status = "%i min" % (rem / 60)
+
         val = (float(rem) / float(max)) * 100.0
 
-        self.store.set(iter, 2, val)
+        self.store.set(iter,
+                       self.col_remain, val,
+                       self.col_status, status)
 
     def update_thread(self):
         while self.enabled:
@@ -512,12 +527,18 @@ class QSTMonitor:
         rem = qst.remaining
         msg = qst.text
 
+        if rem < 90:
+            status = "%i sec" % rem
+        else:
+            status = "%i min" % (rem / 60)
+
         iter = self.store.append()
         self.store.set(iter,
-                       0, index,
-                       1, max / 60,
-                       2, (rem / max) * 100,
-                       3, msg)
+                       self.col_index, index,
+                       self.col_period, max / 60,
+                       self.col_remain, (rem / max) * 100,
+                       self.col_status, status,
+                       self.col_msg, msg)
         
 
     def refresh(self):
