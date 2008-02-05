@@ -135,7 +135,7 @@ class FileTransferGUI:
             func = xa.send_xfer
             xa.filename = os.path.basename(self.filename)
         elif self.xfer_agent == xmodem.YModem:
-            name, size = xa.rx_ymodem_header(self.chatgui.comm.pipe)
+            name, size = xa.rx_ymodem_header(self.chatgui.mainapp.comm.pipe)
             self.total_size = size
 
             self.filename = os.path.join(self.filename, name)
@@ -151,7 +151,7 @@ class FileTransferGUI:
         gtk.gdk.threads_leave()
 
         try:
-            func(self.chatgui.comm.pipe, local)
+            func(self.chatgui.mainapp.comm.pipe, local)
         except xmodem.FatalError, e:
             self.update("Failed (%s)" % e,
                         0,
@@ -171,7 +171,8 @@ class FileTransferGUI:
         gtk.gdk.threads_leave()
 
     def ddt_xfer(self):
-        x = self.xfer_agent(self.chatgui.comm.pipe, status_fn=self.update)
+        x = self.xfer_agent(self.chatgui.mainapp.comm.pipe,
+                            status_fn=self.update)
         
         self.xfer = x
 
@@ -190,7 +191,6 @@ class FileTransferGUI:
         self.window.show()
 
         self.chatgui.toggle_sendable(False)
-        self.chatgui.comm.disable()
 
         # Legacy support for X/YModem
         # This needs to be fixed up

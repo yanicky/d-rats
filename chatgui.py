@@ -34,12 +34,9 @@ from qst import QSTGUI, QuickMsgGUI
 class ChatGUI:
     def ev_delete(self, widget, event, data=None):
         return False
-    
-    def sig_destroy(self, widget, data=None):
-        if self.config.config.getboolean("prefs", "dosignoff"):
-            self.tx_msg(self.config.config.get("prefs", "signoff"))
 
-        gtk.main_quit()
+    def sig_destroy(self, widget, data=None):
+        print "Window destroyed"
 
     def sig_send_button(self, widget, data=None):
         text = data.get_text()
@@ -90,10 +87,160 @@ class ChatGUI:
         self.display("%s " % time.strftime("%H:%M:%S"))
         self.display("%s> " % call, "outgoingcolor")
         self.display(string + "\n")
-        self.comm.send_text("%s> %s\n" % (call, string))
+        self.mainapp.comm.send_text("%s> %s\n" % (call, string))
 
         if self.config.config.getboolean("prefs", "blinkmsg"):
             self.window.set_urgency_hint(True)
+
+    def make_entry_box(self):
+        hbox = gtk.HBox(False, 0)
+        
+        button = gtk.Button("Send")
+        entry = gtk.Entry()
+
+        self.history = gtk.ListStore(gobject.TYPE_STRING)
+        completion = gtk.EntryCompletion()
+        completion.set_model(self.history)
+        completion.set_text_column(0)
+        completion.set_minimum_key_length(1)
+        entry.set_completion(completion)
+
+        button.connect("clicked",
+                       self.sig_send_button,
+                       entry)
+        entry.connect("activate",
+                      self.sig_send_button,
+                      entry)
+        
+        hbox.pack_start(entry, 1, 1, 1)
+        hbox.pack_start(button, 0, 0, 1)
+        
+        entry.show()
+        button.show()
+
+        self.entry = entry
+        self.send_button = button
+        
+        return hbox
+
+    def make_display(self):
+        self.textview = gtk.TextView(self.main_buffer)
+        self.textview.set_editable(False)
+        self.textview.set_wrap_mode(gtk.WRAP_WORD)
+
+        self.scroll = gtk.ScrolledWindow()
+        self.scroll.set_policy(gtk.POLICY_NEVER, gtk.POLICY_AUTOMATIC)
+        self.scroll.add(self.textview)
+
+        self.textview.show()
+
+        return self.scroll
+
+    def toggle_sendable(self, state):
+        self.entry.set_sensitive(state)
+        self.send_button.set_sensitive(state)
+        if state:
+            self.mainapp.comm.enable(self)
+        else:
+            self.mainapp.comm.disable()
+        
+    def make_main_pane(self,):
+        vbox = gtk.VBox(False, 0)
+        disp = self.make_display()
+        ebox = self.make_entry_box()
+
+        vbox.pack_start(disp, 1, 1, 1)
+        vbox.pack_start(ebox, 0, 0, 1)
+
+        disp.show()
+        ebox.show()
+
+        return vbox
+
+    def refresh_colors(self, first_time=False):
+
+        fontname = self.config.config.get("prefs", "font")
+        font = pango.FontDescription(fontname)
+        self.textview.modify_font(font)
+
+        tags = self.main_buffer.get_tag_table()
+        
+        if first_time:
+            tag = gtk.TextTag("red")
+            tag.set_property("foreground", "Red")
+            tags.add(tag)
+
+            tag = gtk.TextTag("blue")
+            tag.set_property("foreground", "Blue")
+            tags.add(tag)
+
+            tag = gtk.TextTag("green")
+            tag.set_property("foreground", "Green")
+            tags.add(tag)
+
+            tag = gtk.TextTag("grey")
+            tag.set_property("foreground", "Grey")
+            tags.add(tag)
+
+            tag = gtk.TextTag("bold")
+            tag.set_property("weight", pango.WEIGHT_BOLD)
+            tags.add(tag)
+
+            tag = gtk.TextTag("italic")
+            tag.set_property("style", pango.STYLE_ITALIC)
+            tags.add(tag)
+
+        for i in ["incomingcolor", "outgoingcolor",
+                  "noticecolor", "ignorecolor"]:
+            if tags.lookup(i):
+                tags.remove(tags.lookup(i))
+
+            tag = gtk.TextTag(i)
+            tag.set_property("foreground", self.config.config.get("prefs", i))
+            tags.add(tag)
+
+    def set_window_defaults(self, window):
+        window.set_geometry_hints(None, min_width=400, min_height=200)
+        window.set_default_size(640, 480)
+        window.set_border_width(1)
+        window.set_title("D-RATS")
+
+    def make_window(self):
+        self.window = gtk.Window(gtk.WINDOW_TOPLEVEL)
+
+        mainpane = self.make_main_pane()
+        mainpane.show()
+
+        self.set_window_defaults(self.window)
+
+        self.window.add(mainpane)
+
+        self.window.connect("delete_event", self.ev_delete)
+        self.window.connect("destroy", self.sig_destroy)
+        self.window.connect("focus", self.ev_focus)
+        self.window.show()
+
+        self.entry.grab_focus()
+
+    def __init__(self, config, mainapp):
+        self.config = config
+        self.mainapp = mainapp
+        self.tips = gtk.Tooltips()
+
+        self.main_buffer = gtk.TextBuffer()
+
+        self.make_window()
+
+        self.refresh_colors(first_time=True)
+
+       
+class MainChatGUI(ChatGUI):
+    
+    def sig_destroy(self, widget, data=None):
+        if self.config.config.getboolean("prefs", "dosignoff"):
+            self.tx_msg(self.config.config.get("prefs", "signoff"))
+
+        gtk.main_quit()
 
     def tx_file(self, filename):
         try:
@@ -129,67 +276,20 @@ class ChatGUI:
             fc.destroy()
             self.tx_file(filename)
   
-    def make_entry_box(self):
-        hbox = gtk.HBox(False, 0)
-        
-        button = gtk.Button("Send")
-        entry = gtk.Entry()
-
-        self.history = gtk.ListStore(gobject.TYPE_STRING)
-        completion = gtk.EntryCompletion()
-        completion.set_model(self.history)
-        completion.set_text_column(0)
-        completion.set_minimum_key_length(1)
-        entry.set_completion(completion)
-
-        button.connect("clicked",
-                       self.sig_send_button,
-                       entry)
-        entry.connect("activate",
-                      self.sig_send_button,
-                      entry)
-        
-        hbox.pack_start(entry, 1, 1, 1)
-        hbox.pack_start(button, 0, 0, 1)
-        
-        entry.show()
-        button.show()
-
-        self.entry = entry
-        self.send_button = button
-        
-        return hbox
-
     def make_main_pane(self, menubar):
         vbox = gtk.VBox(False, 0)
-        display = gtk.TextView(self.main_buffer)
-        self.textview = display
-        display.set_editable(False)
-        display.set_wrap_mode(gtk.WRAP_WORD)
-        self.scroll = gtk.ScrolledWindow()
-        self.scroll.set_policy(gtk.POLICY_NEVER, gtk.POLICY_AUTOMATIC)
-        self.scroll.add(display)
-
+        disp = self.make_display()
         ebox = self.make_entry_box()
 
         vbox.pack_start(menubar, 0, 1, 0)
-        vbox.pack_start(self.scroll, 1, 1, 1)
+        vbox.pack_start(disp, 1, 1, 1)
         vbox.pack_start(ebox, 0, 0, 1)
 
+        disp.show()
         ebox.show()
-        self.scroll.show()
-        display.show()
 
         return vbox
 
-    def toggle_sendable(self, state):
-        self.entry.set_sensitive(state)
-        self.send_button.set_sensitive(state)
-        if state:
-            self.comm.enable(self)
-        else:
-            self.comm.disable()
-        
     def menu_handler(self, _action):
         action = _action.get_name()
 
@@ -264,48 +364,6 @@ class ChatGUI:
 
         return uim.get_widget("/MenuBar")
 
-    def refresh_colors(self, first_time=False):
-
-        fontname = self.config.config.get("prefs", "font")
-        font = pango.FontDescription(fontname)
-        self.textview.modify_font(font)
-
-        tags = self.main_buffer.get_tag_table()
-        
-        if first_time:
-            tag = gtk.TextTag("red")
-            tag.set_property("foreground", "Red")
-            tags.add(tag)
-
-            tag = gtk.TextTag("blue")
-            tag.set_property("foreground", "Blue")
-            tags.add(tag)
-
-            tag = gtk.TextTag("green")
-            tag.set_property("foreground", "Green")
-            tags.add(tag)
-
-            tag = gtk.TextTag("grey")
-            tag.set_property("foreground", "Grey")
-            tags.add(tag)
-
-            tag = gtk.TextTag("bold")
-            tag.set_property("weight", pango.WEIGHT_BOLD)
-            tags.add(tag)
-
-            tag = gtk.TextTag("italic")
-            tag.set_property("style", pango.STYLE_ITALIC)
-            tags.add(tag)
-
-        for i in ["incomingcolor", "outgoingcolor",
-                  "noticecolor", "ignorecolor"]:
-            if tags.lookup(i):
-                tags.remove(tags.lookup(i))
-
-            tag = gtk.TextTag(i)
-            tag.set_property("foreground", self.config.config.get("prefs", i))
-            tags.add(tag)
-
     def refresh_advanced(self):
         for i in self.adv_controls:
             i.refresh()
@@ -341,48 +399,37 @@ class ChatGUI:
 
         return nb
 
-    def __init__(self, config, mainapp):
-        self.comm = None
-        self.config = config
-        self.mainapp = mainapp
-        self.tips = gtk.Tooltips()
-        
-        self.main_buffer = gtk.TextBuffer()
-
+    def make_window(self):
         self.window = gtk.Window(gtk.WINDOW_TOPLEVEL)
 
         menubar = self.make_menubar()
         menubar.show()
 
         mainpane = self.make_main_pane(menubar)
-        self.advpane = self.make_advanced()
-
-        self.refresh_colors(first_time=True)
-
         mainpane.show()
+
+        self.advpane = self.make_advanced()
 
         self.pane = gtk.VPaned()
         self.pane.add1(mainpane)
         self.pane.add2(self.advpane)
         self.pane.show()
 
-        self.window.set_title("D-RATS")
-        
-        self.window.set_geometry_hints(None, min_width=400, min_height=200)
-        self.window.set_default_size(640, 480)
-        self.window.set_border_width(1)
+        self.set_window_defaults(self.window)
+
         self.window.add(self.pane)
         self.window.connect("delete_event", self.ev_delete)
         self.window.connect("destroy", self.sig_destroy)
         self.window.connect("focus", self.ev_focus)
-
         self.window.show()
 
         self.entry.grab_focus()
 
+    def __init__(self, config, mainapp):
+        ChatGUI.__init__(self, config, mainapp)
         self.display("D-RATS v0.1.5 ", ("red"))
         self.display("(Copyright 2008 Dan Smith KI4IFW)\n", "blue", "italic")
-
+        
     def main(self):
         gtk.gdk.threads_init()
         self.sw_thread = Thread(target=self.watch_serial)

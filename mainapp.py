@@ -230,8 +230,6 @@ class MainApp:
             
         self.chatgui.display("%s%s" % (str(self.comm), os.linesep))
 
-        self.chatgui.comm = self.comm
-
     def refresh_config(self):
         rate=self.config.config.getint("settings", "rate")
         port=self.config.config.get("settings", "port")
@@ -271,7 +269,7 @@ class MainApp:
         else:
             self.config = config.AppConfig(self)
 
-        self.chatgui = chatgui.ChatGUI(self.config, self)
+        self.chatgui = chatgui.MainChatGUI(self.config, self)
 
         self.refresh_config()
 
