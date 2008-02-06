@@ -55,7 +55,7 @@ class AppConfig:
         mset("user", "callsign", "W1AW")
 
         mset("prefs", "autoreceive", "False")
-        mset("prefs", "download_dir", "")
+        mset("prefs", "download_dir", self.default_directory())
         mset("prefs", "blinkmsg", "False")
         mset("prefs", "noticere", "")
         mset("prefs", "ignorere", "")
@@ -112,6 +112,9 @@ class AppConfig:
 
     def default_filename(self):
         return "drats.config"
+
+    def default_directory(self):
+        return os.path.abspath(".")
 
     def make_sb(self, id, child):
         hbox = gtk.HBox(True, 0)
