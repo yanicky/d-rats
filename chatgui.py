@@ -144,7 +144,7 @@ class ChatGUI:
         else:
             self.mainapp.comm.disable()
         
-    def make_main_pane(self,):
+    def make_main_pane(self):
         vbox = gtk.VBox(False, 0)
         disp = self.make_display()
         ebox = self.make_entry_box()
@@ -208,12 +208,11 @@ class ChatGUI:
     def make_window(self):
         self.window = gtk.Window(gtk.WINDOW_TOPLEVEL)
 
-        mainpane = self.make_main_pane()
-        mainpane.show()
-
         self.set_window_defaults(self.window)
 
-        self.window.add(mainpane)
+        self.window.add(self.mainpane)
+
+        self.root = mainpane
 
         self.window.connect("delete_event", self.ev_delete)
         self.window.connect("destroy", self.sig_destroy)
@@ -229,18 +228,29 @@ class ChatGUI:
 
         self.main_buffer = gtk.TextBuffer()
 
-        self.make_window()
+        self.mainpane = self.make_main_pane()
+        self.mainpane.show()
+
+        self.window = None
 
         self.refresh_colors(first_time=True)
 
+    def show(self):
+        if not self.window:
+            self.make_window()
+
+        self.window.show()
+
+class ChatFilter:
+    pass
        
 class MainChatGUI(ChatGUI):
     
     def display(self, string, *attrs):
-        for s, w in self.filters:
-            if s in string:
-                print "Found match: %s" % s
-                w.display(string, *attrs)
+        for f in self.filters:
+            if f.text in string:
+                f.root.display(string, *attrs)
+                f.label.set_markup("<span foreground='red'>%s</span>" % f.text)
 
         ChatGUI.display(self, string, *attrs)                
 
@@ -284,19 +294,37 @@ class MainChatGUI(ChatGUI):
             fc.destroy()
             self.tx_file(filename)
   
-    def make_main_pane(self, menubar):
-        vbox = gtk.VBox(False, 0)
+    def select_page(self, tabs, page, page_num, data=None):
+        page = tabs.get_nth_page(page_num)
+        label = tabs.get_tab_label(page)
+        label.set_markup(label.get_text())
+
+    def make_main_pane(self,):
+        vbox1 = gtk.VBox(False, 0)
+        vbox2 = gtk.VBox(False, 0)
         disp = self.make_display()
         ebox = self.make_entry_box()
 
-        vbox.pack_start(menubar, 0, 1, 0)
-        vbox.pack_start(disp, 1, 1, 1)
-        vbox.pack_start(ebox, 0, 0, 1)
+        vbox2.pack_start(disp, 1, 1, 1)
+        vbox2.pack_start(ebox, 0, 0, 1)
+
+        self.tabs = gtk.Notebook()
+        self.tabs.set_property("show-tabs", False)
+        self.tabs.append_page(vbox2, gtk.Label("Main"))
+        self.tabs.connect("switch-page",
+                          self.select_page,
+                          None)
+
+        vbox1.pack_start(self.menubar, 0, 1, 0)
+        vbox1.pack_start(self.tabs, 1, 1, 1)
 
         disp.show()
         ebox.show()
+        self.tabs.show()
+        vbox1.show()
+        vbox2.show()
 
-        return vbox
+        return vbox1
 
     def menu_handler(self, _action):
         action = _action.get_name()
@@ -410,16 +438,10 @@ class MainChatGUI(ChatGUI):
     def make_window(self):
         self.window = gtk.Window(gtk.WINDOW_TOPLEVEL)
 
-        menubar = self.make_menubar()
-        menubar.show()
-
-        mainpane = self.make_main_pane(menubar)
-        mainpane.show()
-
         self.advpane = self.make_advanced()
 
         self.pane = gtk.VPaned()
-        self.pane.add1(mainpane)
+        self.pane.add1(self.mainpane)
         self.pane.add2(self.advpane)
         self.pane.show()
 
@@ -434,10 +456,16 @@ class MainChatGUI(ChatGUI):
         self.entry.grab_focus()
 
     def activate_filter(self, _, text):
-        new_window = ChatGUI(self.config, self.mainapp)
-        new_window.window.set_title("D-RATS (Filter on `%s')" % text)
+        filter = ChatFilter()
 
-        self.filters.append((text, new_window))
+        filter.root = ChatGUI(self.config, self.mainapp)
+        filter.label = gtk.Label(text)
+        filter.text = text
+
+        self.tabs.append_page(filter.root.mainpane, filter.label)
+        self.tabs.set_property("show-tabs", True)
+
+        self.filters.append(filter)
 
     def popup(self, view, menu, data=None):
         filter_item = gtk.MenuItem(label="Filter on this string")
@@ -455,6 +483,9 @@ class MainChatGUI(ChatGUI):
         menu.prepend(filter_item)
 
     def __init__(self, config, mainapp):
+        self.menubar = self.make_menubar()
+        self.menubar.show()
+
         ChatGUI.__init__(self, config, mainapp)
         self.filters = []
 
@@ -464,6 +495,8 @@ class MainChatGUI(ChatGUI):
         self.textview.connect("populate-popup",
                               self.popup,
                               None)
+
+        self.show()
 
     def main(self):
         gtk.gdk.threads_init()
