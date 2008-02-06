@@ -326,6 +326,18 @@ class MainChatGUI(ChatGUI):
 
         return vbox1
 
+    def show_about(self):
+        d = gtk.AboutDialog()
+
+        d.set_name("D-RATS")
+        d.set_version("0.1.5")
+        d.set_copyright("Copyright 2008 Dan Smith (KI4IFW)")
+        d.set_website("http://d-rats.danplanet.com")
+        d.set_authors(("Dan Smith <dsmith@danplanet.com>",))
+        
+        d.run()
+        d.destroy()
+
     def menu_handler(self, _action):
         action = _action.get_name()
 
@@ -351,6 +363,8 @@ class MainChatGUI(ChatGUI):
             qm.show()
         elif action == "sendtext":
             self.send_text_file()
+        elif action == "about":
+            self.show_about()
 
     def make_menubar(self):
         menu_xml = """
@@ -371,6 +385,9 @@ class MainChatGUI(ChatGUI):
               <menuitem action='clear'/>
               <menuitem action='advanced'/>
             </menu>
+            <menu action='help'>
+              <menuitem action='about'/>
+            </menu>
           </menubar>
         </ui>
         """
@@ -384,7 +401,9 @@ class MainChatGUI(ChatGUI):
                    ('quit', None, "_Quit", None, None, self.menu_handler),
                    ('sendtext', None, 'Send _Text File', None, None, self.menu_handler),
                    ('view', None, "_View", None, None, self.menu_handler),
-                   ('clear', None, '_Clear', None, None, self.menu_handler)]
+                   ('clear', None, '_Clear', None, None, self.menu_handler),
+                   ('help', None, '_Help', None, None, self.menu_handler),
+                   ('about', None, '_About', None, None, self.menu_handler)]
 
         advanced = gtk.ToggleAction("advanced", "_Advanced", None, None)
         advanced.connect("toggled", self.show_advanced, None)
