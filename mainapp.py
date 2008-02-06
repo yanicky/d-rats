@@ -255,6 +255,17 @@ class MainApp:
         self.chatgui.refresh_colors()
         self.chatgui.refresh_advanced()
 
+    def config_upgrade_fixdownloaddir(self):
+        """Fix the 'download_dir = None' problem, if present in an
+        existing config"""
+
+        dir = self.config.config.get("prefs", "download_dir")
+        if not os.path.isdir(dir):
+            self.config.config.set("prefs",
+                                   "download_dir",
+                                   self.config.default_directory())
+            print "Fixed broken default_dir"
+
     def __init__(self):
         self.comm = None
         self.qsts = []
@@ -270,6 +281,9 @@ class MainApp:
             self.config = config.AppConfig(self)
 
         self.chatgui = chatgui.MainChatGUI(self.config, self)
+
+        # Upgrade config issues and/or fix known issues
+        self.config_upgrade_fixdownloaddir()
 
         self.refresh_config()
 
