@@ -524,6 +524,7 @@ class MainChatGUI(ChatGUI):
         filter.text = text
 
         self.tabs.append_page(filter.tab_child, filter.label)
+        self.tabs.set_tab_reorderable(filter.tab_child, True)
         self.tabs.set_property("show-tabs", True)
 
         self.filters.append(filter)
