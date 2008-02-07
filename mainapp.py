@@ -30,6 +30,7 @@ import config
 from utils import hexprint
 import qst
 
+DRATS_VERSION = "0.1.5"
 LOGTF = "%m-%d-%Y_%H:%M:%S"
 
 class SerialCommunicator:

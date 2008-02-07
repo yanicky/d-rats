@@ -31,6 +31,7 @@ from threading import Thread
 
 from xfergui import FileTransferGUI
 from qst import QSTGUI, QuickMsgGUI
+import mainapp
 
 class ChatGUI:
     def ev_delete(self, widget, event, data=None):
@@ -346,7 +347,7 @@ class MainChatGUI(ChatGUI):
         d = gtk.AboutDialog()
 
         d.set_name("D-RATS")
-        d.set_version("0.1.5")
+        d.set_version(mainapp.DRATS_VERSION)
         d.set_copyright("Copyright 2008 Dan Smith (KI4IFW)")
         d.set_website("http://d-rats.danplanet.com")
         d.set_authors(("Dan Smith <dsmith@danplanet.com>",))
@@ -517,14 +518,14 @@ class MainChatGUI(ChatGUI):
         filter_item.show()
         menu.prepend(filter_item)
 
-    def __init__(self, config, mainapp):
+    def __init__(self, config, _mainapp):
         self.menubar = self.make_menubar()
         self.menubar.show()
 
-        ChatGUI.__init__(self, config, mainapp)
+        ChatGUI.__init__(self, config, _mainapp)
         self.filters = []
 
-        self.display("D-RATS v0.1.5 ", "red")
+        self.display("D-RATS v%s " % mainapp.DRATS_VERSION, "red")
         self.display("(Copyright 2008 Dan Smith KI4IFW)\n",
                      "blue", "italic")
         
