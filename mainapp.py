@@ -282,6 +282,7 @@ class MainApp:
             gtk.gdk.threads_enter()
             gtk.main()
             gtk.gdk.threads_leave()
+            self.config.save()
         except KeyboardInterrupt:
             pass
         

@@ -35,6 +35,7 @@ import mainapp
 
 class ChatGUI:
     def ev_delete(self, widget, event, data=None):
+        self.window.set_default_size(*self.window.get_size())
         return False
 
     def sig_destroy(self, widget, data=None):
@@ -215,7 +216,14 @@ class ChatGUI:
 
     def set_window_defaults(self, window):
         window.set_geometry_hints(None, min_width=400, min_height=200)
-        window.set_default_size(640, 480)
+
+        try:
+            h = self.config.config.getint("state", "main_size_x")
+            w = self.config.config.getint("state", "main_size_y")
+            window.set_default_size(h, w)
+        except Exception, e:
+            print "Failed to set window size: %s" % e
+
         window.set_border_width(1)
         window.set_title("D-RATS")
 
@@ -291,6 +299,11 @@ class MainChatGUI(ChatGUI):
     def sig_destroy(self, widget, data=None):
         if self.config.config.getboolean("prefs", "dosignoff"):
             self.tx_msg(self.config.config.get("prefs", "signoff"))
+
+        h, w = self.window.get_size()
+        print "Setting %s size to %i,%i" % (self.window.get_title(), h,w)
+        self.config.config.set("state", "main_size_x", h)
+        self.config.config.set("state", "main_size_y", w)
 
         gtk.main_quit()
 

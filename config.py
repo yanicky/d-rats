@@ -77,6 +77,10 @@ class AppConfig:
 
         mset("quick", None, None)
 
+        mset("state", "main_size_x", "640")
+        mset("state", "main_size_y", "400")
+        mset("state", "main_advanced", "False")
+
     id2label = {"name" : "Name",
                 "callsign" : "Callsign",
                 "autoreceive" : "Auto File Receive",
