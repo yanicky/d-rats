@@ -461,8 +461,8 @@ class MainChatGUI(ChatGUI):
 
         advanced = gtk.ToggleAction("advanced", "_Advanced", None, None)
         try:
-            advanced.set_active(self.config.config.getboolean("state",
-                                                              "main_advanced"))
+            advanced.set_active(self.config.config.getint("state",
+                                                          "main_advanced") != 0)
         except Exception, e:
             print "Unable to get advanced state: %s" % e
 
@@ -497,12 +497,12 @@ class MainChatGUI(ChatGUI):
         if not action.get_active():
             self.advpane.hide()
             self.window.resize(w, self.pane.get_position())
-            self.config.config.set("state", "main_advanced", "False")
+            self.config.config.set("state", "main_advanced", 0)
         else:
             self.advpane.show()
             self.window.resize(w, h+height_delta)
             self.pane.set_position(h)
-            self.config.config.set("state", "main_advanced", "True")
+            self.config.config.set("state", "main_advanced", h)
         
         print "New window size: %ix%i" % self.window.get_size()
 
@@ -535,11 +535,11 @@ class MainChatGUI(ChatGUI):
         self.pane.show()
         
         try:
-            if self.config.config.getboolean("state", "main_advanced"):
+            ph = self.config.config.getint("state", "main_advanced")
+            if ph > 0:
                 self.advpane.show()
-                h = self.config.config.getint("state", "main_size_y")
-                self.pane.set_position(h-200)
-                print "height: %i height-200: %i" % (h, h-200)
+                print "Pane Height: %i" % ph
+                self.pane.set_position(ph)
         except Exception, e:
             print "Unable to get advanced state: %s" % e
 

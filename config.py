@@ -79,7 +79,7 @@ class AppConfig:
 
         mset("state", "main_size_x", "640")
         mset("state", "main_size_y", "400")
-        mset("state", "main_advanced", "False")
+        mset("state", "main_advanced", "0")
 
     id2label = {"name" : "Name",
                 "callsign" : "Callsign",
