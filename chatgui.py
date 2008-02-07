@@ -460,6 +460,12 @@ class MainChatGUI(ChatGUI):
                    ('about', None, '_About', None, None, self.menu_handler)]
 
         advanced = gtk.ToggleAction("advanced", "_Advanced", None, None)
+        try:
+            advanced.set_active(self.config.config.getboolean("state",
+                                                              "main_advanced"))
+        except Exception, e:
+            print "Unable to get advanced state: %s" % e
+
         advanced.connect("toggled", self.show_advanced, None)
 
         uim = gtk.UIManager()
@@ -491,10 +497,12 @@ class MainChatGUI(ChatGUI):
         if not action.get_active():
             self.advpane.hide()
             self.window.resize(w, self.pane.get_position())
+            self.config.config.set("state", "main_advanced", "False")
         else:
             self.advpane.show()
             self.window.resize(w, h+height_delta)
             self.pane.set_position(h)
+            self.config.config.set("state", "main_advanced", "True")
         
         print "New window size: %ix%i" % self.window.get_size()
 
@@ -525,6 +533,15 @@ class MainChatGUI(ChatGUI):
         self.pane.add1(self.mainpane)
         self.pane.add2(self.advpane)
         self.pane.show()
+        
+        try:
+            if self.config.config.getboolean("state", "main_advanced"):
+                self.advpane.show()
+                h = self.config.config.getint("state", "main_size_y")
+                self.pane.set_position(h-200)
+                print "height: %i height-200: %i" % (h, h-200)
+        except Exception, e:
+            print "Unable to get advanced state: %s" % e
 
         self.set_window_defaults(self.window)
 
@@ -566,6 +583,8 @@ class MainChatGUI(ChatGUI):
         menu.prepend(filter_item)
 
     def __init__(self, config, _mainapp):
+        self.config = config # Set early for make_menubar()
+
         self.menubar = self.make_menubar()
         self.menubar.show()
         self.filters = []
