@@ -22,6 +22,7 @@ import serial
 import gobject
 import time
 import os
+import re
 
 import xmodem
 import ddt
@@ -81,13 +82,25 @@ class ChatGUI:
         adj.value = adj.upper
         self.scroll.set_vadjustment(adj)
 
+    def display_line(self, text, *attrs):
+        stamp = time.strftime("%H:%M:%S: ")
+
+        ignore = self.config.config.get("prefs", "ignorere")
+        notice = self.config.config.get("prefs", "noticere")
+
+        if ignore and re.search(ignore, text):
+            attrs += ("ignorecolor", )
+        elif notice and re.search(notice, text):
+            attrs += ("noticecolor", )
+
+        self.display(stamp + text + os.linesep, *attrs)
+
     def tx_msg(self, string):
         call = self.config.config.get("user", "callsign")
+        message = "%s> %s" % (call, string)
 
-        self.display("%s " % time.strftime("%H:%M:%S"))
-        self.display("%s> " % call, "outgoingcolor")
-        self.display(string + "\n")
-        self.mainapp.comm.send_text("%s> %s\n" % (call, string))
+        self.display_line(message, "outgoingcolor")
+        self.mainapp.comm.send_text(message)
 
         if self.config.config.getboolean("prefs", "blinkmsg"):
             self.window.set_urgency_hint(True)
@@ -242,17 +255,20 @@ class ChatGUI:
         self.window.show()
 
 class ChatFilter:
-    pass
+    def __init__(self):
+        self.exclusive = True
        
 class MainChatGUI(ChatGUI):
     
-    def display(self, string, *attrs):
+    def display_line(self, string, *attrs):
         for f in self.filters:
             if f.text in string:
-                f.root.display(string, *attrs)
+                f.root.display_line(string, *attrs)
                 f.label.set_markup("<span foreground='red'>%s</span>" % f.text)
+                if f.exclusive:
+                    return
 
-        ChatGUI.display(self, string, *attrs)                
+        ChatGUI.display_line(self, string, *attrs)                
 
     def sig_destroy(self, widget, data=None):
         if self.config.config.getboolean("prefs", "dosignoff"):
@@ -264,16 +280,16 @@ class MainChatGUI(ChatGUI):
         try:
             f = file(filename)
         except:
-            self.display("Unable to open file `%s'" % filename,
-                         "red", "italic")
+            self.display_line("Unable to open file `%s'" % filename,
+                              "red", "italic")
             return
 
         filedata = f.read()
         f.close()
 
         notice = "Sending file %s" % filename
-        self.display(notice + os.linesep,
-                     "blue", "italic")
+        self.display_line(notice + os.linesep,
+                          "blue", "italic")
         self.tx_msg("%s\n%s" % (notice, filedata))
 
     def send_text_file(self):
@@ -508,8 +524,9 @@ class MainChatGUI(ChatGUI):
         ChatGUI.__init__(self, config, mainapp)
         self.filters = []
 
-        self.display("D-RATS v0.1.5 ", ("red"))
-        self.display("(Copyright 2008 Dan Smith KI4IFW)\n", "blue", "italic")
+        self.display("D-RATS v0.1.5 ", "red")
+        self.display("(Copyright 2008 Dan Smith KI4IFW)\n",
+                     "blue", "italic")
         
         self.textview.connect("populate-popup",
                               self.popup,

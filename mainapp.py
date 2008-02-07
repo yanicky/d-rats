@@ -133,21 +133,7 @@ class SerialCommunicator:
 
         self.write_log("%s%s%s" % (stamp, data, os.linesep))
 
-        self.gui.display("%s " % stamp)
-
-        ignore = self.gui.config.config.get("prefs", "ignorere")
-        notice = self.gui.config.config.get("prefs", "noticere")
-
-        if ignore and re.search(ignore, data):
-            self.gui.display(data + os.linesep, "ignorecolor")
-        elif notice and re.search(notice, data):
-            self.gui.display(data + os.linesep, "noticecolor")
-        elif ">" in data:
-            call, data = data.split(">", 1)
-            self.gui.display("%s>" % call, "incomingcolor")
-            self.gui.display("%s%s" % (data, os.linesep))
-        else:
-            self.gui.display("%s%s" % (data, os.linesep))
+        self.gui.display_line(data, "incomingcolor")
 
     def watch_serial(self):
         data = ""
@@ -228,7 +214,7 @@ class MainApp:
         if self.comm.open():
             self.comm.enable(self.chatgui)
             
-        self.chatgui.display("%s%s" % (str(self.comm), os.linesep))
+        self.chatgui.display_line(str(self.comm), "italic")
 
     def refresh_config(self):
         rate=self.config.config.getint("settings", "rate")
@@ -249,7 +235,7 @@ class MainApp:
         else:
             self.refresh_comm(rate, port, logfile)
 
-        self.chatgui.display("My Call: %s\n" % call, "blue")
+        self.chatgui.display("My Call: %s\n" % call, "blue", "italic")
 
         self.refresh_qsts()
         self.chatgui.refresh_colors()
