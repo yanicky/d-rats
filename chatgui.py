@@ -256,20 +256,37 @@ class ChatGUI:
         self.window.show()
 
 class ChatFilter:
-    def __init__(self):
+    def __init__(self, tabs):
         self.exclusive = True
-       
+        self.tabs = tabs
+      
+    def is_active(self):
+        current = self.tabs.get_current_page()
+        me = self.tabs.page_num(self.tab_child)
+
+        print "current: %i me: %i" % (current, me)
+
+        return current == me
+ 
+    def set_waiting(self, state):
+        if state and not self.is_active():
+            self.label.set_markup("<span foreground='red'>%s</span>" % \
+                                      self.label.get_text())
+        else:
+            self.label.set_markup(self.label.get_text())
+
 class MainChatGUI(ChatGUI):
     
     def display_line(self, string, *attrs):
         for f in self.filters:
-            if f.text in string:
+            if f.text and f.text in string:
                 f.root.display_line(string, *attrs)
-                f.label.set_markup("<span foreground='red'>%s</span>" % f.text)
+                f.set_waiting(True)
                 if f.exclusive:
                     return
 
-        ChatGUI.display_line(self, string, *attrs)                
+        ChatGUI.display_line(self, string, *attrs)
+        self.filters[0].set_waiting(True)
 
     def sig_destroy(self, widget, data=None):
         if self.config.config.getboolean("prefs", "dosignoff"):
@@ -327,10 +344,17 @@ class MainChatGUI(ChatGUI):
 
         self.tabs = gtk.Notebook()
         self.tabs.set_property("show-tabs", False)
-        self.tabs.append_page(vbox2, gtk.Label("Main"))
+        tab_label = gtk.Label("Main")
+        self.tabs.append_page(vbox2, tab_label)
         self.tabs.connect("switch-page",
                           self.select_page,
                           None)
+
+        main_filter = ChatFilter(self.tabs)
+        main_filter.text = None
+        main_filter.label = tab_label
+        main_filter.tab_child = vbox2
+        self.filters.append(main_filter)
 
         vbox1.pack_start(self.menubar, 0, 1, 0)
         vbox1.pack_start(self.tabs, 1, 1, 1)
@@ -492,13 +516,14 @@ class MainChatGUI(ChatGUI):
         self.entry.grab_focus()
 
     def activate_filter(self, _, text):
-        filter = ChatFilter()
+        filter = ChatFilter(self.tabs)
 
         filter.root = ChatGUI(self.config, self.mainapp)
+        filter.tab_child = filter.root.mainpane
         filter.label = gtk.Label(text)
         filter.text = text
 
-        self.tabs.append_page(filter.root.mainpane, filter.label)
+        self.tabs.append_page(filter.tab_child, filter.label)
         self.tabs.set_property("show-tabs", True)
 
         self.filters.append(filter)
@@ -521,9 +546,9 @@ class MainChatGUI(ChatGUI):
     def __init__(self, config, _mainapp):
         self.menubar = self.make_menubar()
         self.menubar.show()
+        self.filters = []
 
         ChatGUI.__init__(self, config, _mainapp)
-        self.filters = []
 
         self.display("D-RATS v%s " % mainapp.DRATS_VERSION, "red")
         self.display("(Copyright 2008 Dan Smith KI4IFW)\n",
