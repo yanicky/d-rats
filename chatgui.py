@@ -479,17 +479,25 @@ class MainChatGUI(ChatGUI):
 
     def show_advanced(self, action, data=None):
         w, h = self.window.get_size()
-        height = 200
+
+        screen_height = gtk.gdk.screen_height()
+        ypos = self.window.get_position()[1]
+        max_y = screen_height - 60
+        height_delta = 200
+
+        if h+ypos+height_delta > max_y:
+            height_delta = max_y - (h + ypos)
 
         if not action.get_active():
             self.advpane.hide()
-            self.window.resize(w, h-height)
+            self.window.resize(w, self.pane.get_position())
         else:
-            print "Showing advpane"
             self.advpane.show()
-            self.window.resize(w, h+height)
+            self.window.resize(w, h+height_delta)
             self.pane.set_position(h)
         
+        print "New window size: %ix%i" % self.window.get_size()
+
     def make_advanced(self):
         nb = gtk.Notebook()
         nb.set_tab_pos(gtk.POS_BOTTOM)
