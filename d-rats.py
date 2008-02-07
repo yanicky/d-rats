@@ -18,7 +18,15 @@
 import sys
 import mainapp
 
+from optparse import OptionParser
+
 if __name__ == "__main__":
-    app = mainapp.MainApp()
+    o = OptionParser()
+    o.add_option("-s", "--safe",
+                 dest="safe",
+                 action="store_true",
+                 help="Safe mode (ignore configuration)")
+    (opts, args) = o.parse_args()
+    app = mainapp.MainApp(opts.safe)
     sys.exit(app.main())
 

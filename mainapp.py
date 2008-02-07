@@ -266,7 +266,7 @@ class MainApp:
                                    self.config.default_directory())
             print "Fixed broken default_dir"
 
-    def __init__(self):
+    def __init__(self, bypass_config=False):
         self.comm = None
         self.qsts = []
         self.log = None
@@ -274,9 +274,9 @@ class MainApp:
         gtk.gdk.threads_init()
 
         if os.name == "posix":
-            self.config = config.UnixAppConfig(self)
+            self.config = config.UnixAppConfig(self, safe=bypass_config)
         elif os.name == "nt":
-            self.config = config.Win32AppConfig(self)
+            self.config = config.Win32AppConfig(self, safe=bypass_config)
         else:
             self.config = config.AppConfig(self)
 
@@ -300,6 +300,3 @@ class MainApp:
         
         self.comm.disable()
 
-if __name__ == "__main__":
-    app = MainApp()
-    sys.exit(app.main())

@@ -286,6 +286,15 @@ class AppConfig:
 
     def show(self):
         self.window.show()
+        if self.safe:
+            d = gtk.MessageDialog(buttons=gtk.BUTTONS_OK)
+            d.set_property("text", "Safe Mode")
+            d.set_property("secondary-text",
+                           """
+D-RATS has been started in safe mode, which means the configuration file has not been loaded until now.  Clicking the 'Save' button in the settings dialog will make those settings active and exit safe mode.""")
+            d.run()
+            d.destroy()
+            self.load_config(self.default_filename())
         self.sync_gui(load=True)
 
     def sync_texts(self, list, load):
@@ -389,14 +398,19 @@ class AppConfig:
         self.sync_paths(path_v, load)
         self.sync_fonts(font_v, load)
 
-    def __init__(self, mainapp, _file=None):
+    def load_config(self, file):
+        self.config.read(file)
+
+    def __init__(self, mainapp, _file=None, safe=False):
         self.mainapp = mainapp
+        self.safe = safe
 
         if not _file:
             _file = self.default_filename()
 
         self.config = ConfigParser.ConfigParser()
-        self.config.read(_file)
+        if not self.safe:
+            self.load_config(_file)
         self.fields = {}
 
         self.init_config()
@@ -410,6 +424,8 @@ class AppConfig:
         f = file(_file, "w")
         self.config.write(f)
         f.close()
+
+        self.safe = False
 
 class UnixAppConfig(AppConfig):
     default_port = "/dev/ttyS0"
