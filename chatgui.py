@@ -347,6 +347,9 @@ class MainChatGUI(ChatGUI):
         label = tabs.get_tab_label(page)
         label.set_markup(label.get_text())
 
+        mi = self.menu_ag.get_action("unfilter")
+        mi.set_sensitive(page_num != 0)
+
     def make_main_pane(self,):
         vbox1 = gtk.VBox(False, 0)
         vbox2 = gtk.VBox(False, 0)
@@ -502,12 +505,12 @@ class MainChatGUI(ChatGUI):
         advanced.connect("toggled", self.show_advanced, None)
 
         uim = gtk.UIManager()
-        ag = gtk.ActionGroup("MenuBar")
+        self.menu_ag = gtk.ActionGroup("MenuBar")
 
-        ag.add_actions(actions)
-        ag.add_action(advanced)
+        self.menu_ag.add_actions(actions)
+        self.menu_ag.add_action(advanced)
 
-        uim.insert_action_group(ag, 0)
+        uim.insert_action_group(self.menu_ag, 0)
         menuid = uim.add_ui_from_string(menu_xml)
 
         return uim.get_widget("/MenuBar")
