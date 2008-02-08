@@ -31,6 +31,7 @@ from threading import Thread
 
 from xfergui import FileTransferGUI
 from qst import QSTGUI, QuickMsgGUI
+from inputdialog import TextInputDialog
 import mainapp
 
 class ChatGUI:
@@ -392,6 +393,30 @@ class MainChatGUI(ChatGUI):
         d.run()
         d.destroy()
 
+    def filter_view(self):
+        d = TextInputDialog("Create filter")
+        d.label.set_text("Enter a regular expression to define the filter:")
+        
+        res = d.run()
+        if res == gtk.RESPONSE_OK:
+            self.activate_filter(None, d.text.get_text())            
+
+        d.destroy()
+
+    def filter_kill(self):
+        tab = self.tabs.get_nth_page(self.tabs.get_current_page())
+
+        for i in range(0, len(self.filters)):
+            f = self.filters[i]
+            if f.tab_child == tab and \
+                    f.text is not None:
+                del self.filters[i]
+                self.tabs.remove_page(i)
+                break
+
+        if len(self.filters) == 1:
+            self.tabs.set_show_tabs(False)
+
     def menu_handler(self, _action):
         action = _action.get_name()
 
@@ -419,6 +444,10 @@ class MainChatGUI(ChatGUI):
             self.send_text_file()
         elif action == "about":
             self.show_about()
+        elif action == "filter":
+            self.filter_view()
+        elif action == "unfilter":
+            self.filter_kill()
 
     def make_menubar(self):
         menu_xml = """
@@ -437,6 +466,8 @@ class MainChatGUI(ChatGUI):
             </menu>
             <menu action='view'>
               <menuitem action='clear'/>
+              <menuitem action='filter'/>
+              <menuitem action='unfilter'/>
               <menuitem action='advanced'/>
             </menu>
             <menu action='help'>
@@ -456,6 +487,8 @@ class MainChatGUI(ChatGUI):
                    ('sendtext', None, 'Send _Text File', None, None, self.menu_handler),
                    ('view', None, "_View", None, None, self.menu_handler),
                    ('clear', None, '_Clear', None, None, self.menu_handler),
+                   ('filter', None, '_Filter by string', None, None, self.menu_handler),
+                   ('unfilter', None, '_Remove current filter', None, None, self.menu_handler),
                    ('help', None, '_Help', None, None, self.menu_handler),
                    ('about', None, '_About', None, None, self.menu_handler)]
 
