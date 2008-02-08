@@ -102,7 +102,7 @@ class ChatGUI:
         call = self.config.config.get("user", "callsign")
         message = "%s> %s" % (call, string)
 
-        self.display_line(message, "outgoingcolor")
+        ChatGUI.display_line(self, message, "outgoingcolor")
         self.mainapp.comm.send_text(message)
 
         if self.config.config.getboolean("prefs", "blinkmsg"):
