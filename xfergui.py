@@ -182,8 +182,12 @@ class FileTransferGUI:
 
             d = self.chatgui.config.config.get("settings", "chunk_delay")
             x.chunk_delay = float(d)
+
+            s = self.chatgui.config.config.get("settings", "ddt_block_size")
+            x.block_size = int(s)
         except Exception, e:
             print "Failed to set chunk values: %s" % e
+            raise
 
         if self.is_send:
             x.send_file(self.filename)

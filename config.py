@@ -76,6 +76,7 @@ class AppConfig:
         mset("settings", "xfer", "DDT")
         mset("settings", "write_chunk", "0")
         mset("settings", "chunk_delay", "1.5")
+        mset("settings", "ddt_block_size", "1024")
 
         mset("quick", None, None)
 
@@ -104,9 +105,15 @@ class AppConfig:
                 "logenabled" : "Enable logging",
                 "eolstrip" : "End-of-line stripping",
                 "font" : "Chat font",
-                "write_chunk" : "(W) Write chunk size (bytes)",
-                "chunk_delay" : "(W) Chunk delay (sec)",
+                "write_chunk" : "<span foreground='red'>Write chunk size (bytes)</span>",
+                "chunk_delay" : "<span foreground='red'>Chunk delay (sec)</span>",
+                "ddt_block_size" : "Outgoing block size (KB)",
                 }
+
+    id2tip = {"write_chunk" : "Stage DDT blocks into small chunks of this many bytes",
+              "chunk_delay" : "Delay this many seconds between chunks",
+              "ddt_block_size" : "Size (in KB) of data blocks to send with DDT"
+              }
 
     xfers = {"XModem" : xmodem.XModem,
              "XModemCRC" : xmodem.XModemCRC,
@@ -127,8 +134,9 @@ class AppConfig:
     def make_sb(self, id, child):
         hbox = gtk.HBox(True, 0)
 
-        label = gtk.Label(self.id2label[id])
-
+        label = gtk.Label()
+        label.set_markup(self.id2label[id])
+        
         hbox.pack_start(label, 0, 0, 0)
         hbox.pack_end(child, 1, 1, 0)
 
@@ -138,6 +146,10 @@ class AppConfig:
         child.show()
         hbox.show()
 
+        if self.id2tip.has_key(id):
+            self.tips.set_tip(label, self.id2tip[id])
+            self.tips.set_tip(child, self.id2tip[id])
+        
         return hbox
 
     def make_colorpick(self):
@@ -269,14 +281,25 @@ class AppConfig:
         vbox.pack_start(self.make_sb("xfer",
                                      make_choice(self.xfers.keys(), False)), 0,0,0)
 
+        vbox.show()
+        return vbox
+
+    def build_ddt(self):
+        vbox = gtk.VBox(False, 2)
+
+        block_sizes = [str(pow(2,x)) for x in range(6, 13)]
+
+        vbox.pack_start(self.make_sb("ddt_block_size",
+                                     make_choice(block_sizes, False)), 0,0,0)
         vbox.pack_start(self.make_sb("write_chunk",
                                      self.make_spin(32, 0, 512)), 0,0,0)
         vbox.pack_start(self.make_sb("chunk_delay",
                                      self.make_spin(0.1, 0.1, 3.0)), 0,0,0)
 
-
         vbox.show()
+
         return vbox
+
 
     def build_gui(self):
         self.window = gtk.Window(gtk.WINDOW_TOPLEVEL)
@@ -292,6 +315,7 @@ class AppConfig:
         nb.append_page(self.build_user(), gtk.Label("User"))
         nb.append_page(self.build_appearance(), gtk.Label("Appearance"))
         nb.append_page(self.build_data(), gtk.Label("Data"))
+        nb.append_page(self.build_ddt(), gtk.Label("DDT"))
 
         nb.show()
 
@@ -393,7 +417,7 @@ D-RATS has been started in safe mode, which means the configuration file has not
                     val = float(self.config.get(s, k))
                     sb.set_value(val)
                 else:
-                    self.config.set(s, k, sb.get_value())
+                    self.config.set(s, k, str(sb.get_value()))
             except Exception, e:
                 print "Failed to sync %s,%s: %s" % (s,k,e)
 
@@ -414,7 +438,8 @@ D-RATS has been started in safe mode, which means the configuration file has not
         choicetext_v = [("settings", "port")]
 
         choice_v = [("settings", "rate"),
-                    ("settings", "xfer")]
+                    ("settings", "xfer"),
+                    ("settings", "ddt_block_size")]
 
         color_v = [("prefs", "incomingcolor"),
                    ("prefs", "outgoingcolor"),
@@ -443,6 +468,8 @@ D-RATS has been started in safe mode, which means the configuration file has not
     def __init__(self, mainapp, _file=None, safe=False):
         self.mainapp = mainapp
         self.safe = safe
+
+        self.tips = gtk.Tooltips()
 
         if not _file:
             _file = self.default_filename()

@@ -269,7 +269,8 @@ class DDTTransfer:
 
         # Tuning parameters
         self.write_chunk = 0
-        self.chunk_delay = 1.5        
+        self.chunk_delay = 1.5 
+        self.block_size = 1024
 
         if status_fn is None:
             self.status_cb = self.status_to_stdout
@@ -299,7 +300,7 @@ class DDTTransfer:
     def _send_block(self, data):
         print "Sending %i-byte block" % len(data)
 
-        if self.write_chunk == 0:
+        if self.write_chunk > len(data):
             self.pipe.write(data)
             self.pipe.flush()
         else:
@@ -489,7 +490,7 @@ class DDTTransfer:
 
         i = 0
         while self.enabled:
-            block = f.read(1024)
+            block = f.read(self.block_size)
             if len(block) <= 0:
                 print "EOF"
                 if not self.send_eof():
