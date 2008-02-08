@@ -74,6 +74,8 @@ class AppConfig:
         mset("settings", "port", self.default_port)
         mset("settings", "rate", "9600")
         mset("settings", "xfer", "DDT")
+        mset("settings", "write_chunk", "0")
+        mset("settings", "chunk_delay", "1.5")
 
         mset("quick", None, None)
 
@@ -102,6 +104,8 @@ class AppConfig:
                 "logenabled" : "Enable logging",
                 "eolstrip" : "End-of-line stripping",
                 "font" : "Chat font",
+                "write_chunk" : "(W) Write chunk size (bytes)",
+                "chunk_delay" : "(W) Chunk delay (sec)",
                 }
 
     xfers = {"XModem" : xmodem.XModem,
@@ -172,6 +176,15 @@ class AppConfig:
         hbox.show()
 
         return hbox
+
+    def make_spin(self, incr, min, max):
+        if (incr - int(incr)) != 0:
+            digits = 1
+        else:
+            digits = 0
+        a = gtk.Adjustment(0, min, max, incr, 0, 0)
+        b = gtk.SpinButton(adjustment=a, digits=digits)
+        return b
 
     def destroy(self, widget, data=None):
         self.window.hide()
@@ -255,6 +268,11 @@ class AppConfig:
                                      ), 0,0,0)
         vbox.pack_start(self.make_sb("xfer",
                                      make_choice(self.xfers.keys(), False)), 0,0,0)
+
+        vbox.pack_start(self.make_sb("write_chunk",
+                                     self.make_spin(32, 0, 512)), 0,0,0)
+        vbox.pack_start(self.make_sb("chunk_delay",
+                                     self.make_spin(0.1, 0.1, 3.0)), 0,0,0)
 
 
         vbox.show()
@@ -366,6 +384,19 @@ D-RATS has been started in safe mode, which means the configuration file has not
             else:
                 self.config.set(s, k, fb.get_font_name())
 
+    def sync_spins(self, list, load):
+        for s, k in list:
+            sb = self.fields[k]
+
+            try:
+                if load:
+                    val = float(self.config.get(s, k))
+                    sb.set_value(val)
+                else:
+                    self.config.set(s, k, sb.get_value())
+            except Exception, e:
+                print "Failed to sync %s,%s: %s" % (s,k,e)
+
     def sync_gui(self, load=True):
         text_v = [("user", "callsign"),
                   ("user", "name"),
@@ -394,6 +425,9 @@ D-RATS has been started in safe mode, which means the configuration file has not
 
         font_v = [("prefs", "font")]
 
+        spin_v = [("settings", "write_chunk"),
+                  ("settings", "chunk_delay")]
+
         self.sync_texts(text_v, load)
         self.sync_booleans(bool_v, load)
         self.sync_choicetexts(choicetext_v, load)
@@ -401,6 +435,7 @@ D-RATS has been started in safe mode, which means the configuration file has not
         self.sync_colors(color_v, load)
         self.sync_paths(path_v, load)
         self.sync_fonts(font_v, load)
+        self.sync_spins(spin_v, load)
 
     def load_config(self, file):
         self.config.read(file)

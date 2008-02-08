@@ -253,18 +253,23 @@ class Timeout:
 
 class DDTTransfer:
     def __init__(self, pipe, status_fn=None):
+        self.pipe = pipe
+        self.enabled = True
+        self.filename = "--"
+
+        # Limits
         self.limit_tries = 10
         self.limit_timeout = 10
 
-        self.pipe = pipe
-        self.enabled = True
-
+        # Stats
         self.total_errors = 0
         self.total_size = 0
         self.transfer_size = 0
         self.wire_size = 0
 
-        self.filename = "--"
+        # Tuning parameters
+        self.write_chunk = 0
+        self.chunk_delay = 1.5        
 
         if status_fn is None:
             self.status_cb = self.status_to_stdout
@@ -292,7 +297,19 @@ class DDTTransfer:
         self.enabled = False
 
     def _send_block(self, data):
-        self.pipe.write(data)
+        print "Sending %i-byte block" % len(data)
+
+        if self.write_chunk == 0:
+            self.pipe.write(data)
+            self.pipe.flush()
+        else:
+            pos = 0
+            while pos < len(data):
+                print "  Chunk %i-%i" % (pos, pos+self.write_chunk)
+                self.pipe.write(data[pos:pos+self.write_chunk])
+                self.pipe.flush()
+                time.sleep(self.chunk_delay)
+                pos += self.write_chunk
 
         self.wire_size += len(data)
 

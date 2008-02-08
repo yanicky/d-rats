@@ -176,6 +176,15 @@ class FileTransferGUI:
         
         self.xfer = x
 
+        try:
+            c = self.chatgui.config.config.get("settings", "write_chunk")
+            x.write_chunk = int(float(c))
+
+            d = self.chatgui.config.config.get("settings", "chunk_delay")
+            x.chunk_delay = float(d)
+        except Exception, e:
+            print "Failed to set chunk values: %s" % e
+
         if self.is_send:
             x.send_file(self.filename)
         else:
