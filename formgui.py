@@ -242,7 +242,7 @@ class ChoiceWidget(FieldWidget):
             return
 
         try:
-            self.choices.append(node.childNodes[0].nodeValue)
+            self.choices.append(node.childNodes[0].nodeValue.strip())
         except:
             pass
 
@@ -250,11 +250,15 @@ class ChoiceWidget(FieldWidget):
         FieldWidget.__init__(self, node)
         
         self.choices = []
+        value = ""
 
         for child in node.childNodes:
-            self.parse_choice(child)
+            if child.nodeType == Node.ELEMENT_NODE:
+                self.parse_choice(child)
+            elif child.nodeType == Node.TEXT_NODE:
+                value += child.nodeValue.strip()
 
-        self.widget = make_choice(self.choices, False)
+        self.widget = make_choice(self.choices, False, value)
         self.widget.show()
 
     def get_value(self):
