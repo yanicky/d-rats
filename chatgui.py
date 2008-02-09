@@ -519,6 +519,11 @@ class MainChatGUI(ChatGUI):
         for i in self.adv_controls:
             i.refresh()
 
+    def refresh_window(self, size):
+        self.advpane.show()
+        self.pane.set_position(size)
+        self.window.queue_draw()
+
     def show_advanced(self, action, data=None):
         w, h = self.window.get_size()
 
@@ -535,12 +540,14 @@ class MainChatGUI(ChatGUI):
             self.window.resize(w, self.pane.get_position())
             self.config.config.set("state", "main_advanced", 0)
         else:
-            self.advpane.show()
             self.window.resize(w, h+height_delta)
-            self.pane.set_position(h)
             self.config.config.set("state", "main_advanced", h)
         
         print "New window size: %ix%i" % self.window.get_size()
+
+        # No idea why, but Win32 has some issue such that doing the resize
+        # and the pane show at the same time causes a missed refresh
+        gobject.idle_add(self.refresh_window, h)
 
     def make_advanced(self):
         nb = gtk.Notebook()
@@ -822,7 +829,8 @@ class QSTMonitor:
         self.root.hide()
 
 if __name__ == "__main__":
-    gui = ChatGUI()
+    import config
+    gui = MainChatGUI(config.UnixAppConfig(None, safe=True), None)
     try:
         gui.main()
     except KeyboardInterrupt:
