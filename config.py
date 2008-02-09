@@ -31,7 +31,7 @@ def color_string(color):
     except:
         return "#%04x%04x%04x" % (color.red, color.green, color.blue)
 
-def make_choice(options, editable=True):
+def make_choice(options, editable=True, default=None):
     if editable:
         sel = gtk.combo_box_entry_new_text()
     else:
@@ -39,6 +39,13 @@ def make_choice(options, editable=True):
 
     for o in options:
         sel.append_text(o)
+
+    if default:
+        try:
+            idx = options.index(default)
+            sel.set_active(idx)
+        except:
+            pass
 
     return sel
 
