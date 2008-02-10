@@ -253,6 +253,15 @@ class MainApp:
                                    self.config.default_directory())
             print "Fixed broken default_dir"
 
+    def maybe_redirect_stdout(self):
+        try:
+            if self.config.config.getboolean("prefs", "debuglog"):
+                dir = self.config.config.get("prefs", "download_dir")
+                logfile = os.path.join(dir, "debug.log")
+                sys.stdout = file(logfile, "w")
+        except Exception, e:
+            print "Unable to open debug log: %s" % e
+            
     def __init__(self, bypass_config=False):
         self.comm = None
         self.qsts = []
@@ -266,6 +275,8 @@ class MainApp:
             self.config = config.Win32AppConfig(self, safe=bypass_config)
         else:
             self.config = config.AppConfig(self)
+
+        self.maybe_redirect_stdout()
 
         self.chatgui = chatgui.MainChatGUI(self.config, self)
 

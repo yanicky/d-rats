@@ -75,6 +75,7 @@ class AppConfig:
         mset("prefs", "noticecolor", "#0000660011DD")
         mset("prefs", "ignorecolor", "#BB88BB88BB88")
         mset("prefs", "logenabled", "False")
+        mset("prefs", "debuglog", "False")
         mset("prefs", "eolstrip", "True")
         mset("prefs", "font", "Sans 12")
 
@@ -109,7 +110,8 @@ class AppConfig:
                 "outgoingcolor" : "Color for outgoing messages",
                 "noticecolor" : "Color for notices",
                 "ignorecolor" : "Color for ignores",
-                "logenabled" : "Enable logging",
+                "logenabled" : "Enable chat logging",
+                "debuglog" : "Enable debug logging",
                 "eolstrip" : "End-of-line stripping",
                 "font" : "Chat font",
                 "write_chunk" : "<span foreground='red'>Write chunk size (bytes)</span>",
@@ -119,7 +121,8 @@ class AppConfig:
 
     id2tip = {"write_chunk" : "Stage DDT blocks into small chunks of this many bytes",
               "chunk_delay" : "Delay this many seconds between chunks",
-              "ddt_block_size" : "Size (in KB) of data blocks to send with DDT"
+              "ddt_block_size" : "Size (in KB) of data blocks to send with DDT",
+              "debuglog" : "Requires D-RATS restart to take effect",
               }
 
     xfers = {"XModem" : xmodem.XModem,
@@ -235,6 +238,8 @@ class AppConfig:
         vbox.pack_start(self.make_sb("dosignoff", self.make_bool()), 0,0,0)
         vbox.pack_start(self.make_sb("signoff", gtk.Entry()), 0,0,0)
         vbox.pack_start(self.make_sb("logenabled",
+                                     self.make_bool()), 0,0,0)
+        vbox.pack_start(self.make_sb("debuglog",
                                      self.make_bool()), 0,0,0)
 
         vbox.show()
@@ -440,7 +445,8 @@ D-RATS has been started in safe mode, which means the configuration file has not
                   ("prefs", "dosignon"),
                   ("prefs", "dosignoff"),
                   ("prefs", "eolstrip"),
-                  ("prefs", "logenabled")]
+                  ("prefs", "logenabled"),
+                  ("prefs", "debuglog")]
 
         choicetext_v = [("settings", "port")]
 
