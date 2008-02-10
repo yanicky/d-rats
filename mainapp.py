@@ -291,7 +291,10 @@ class MainApp:
     def main(self):
         try:
             gtk.gdk.threads_enter()
-            gtk.main()
+            try:
+                gtk.main()
+            except gtk.GTKWarning:
+                pass
             gtk.gdk.threads_leave()
             self.config.save()
         except KeyboardInterrupt:
