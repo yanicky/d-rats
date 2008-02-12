@@ -23,6 +23,7 @@ import gobject
 import time
 import os
 import re
+import glob
 
 import xmodem
 import ddt
@@ -861,8 +862,15 @@ class FormManager:
         return self.view
 
     def new(self, widget, data=None):
-        forms = ["memo.xml", "ics213.xml"]
-        d = ChoiceDialog(forms, "Choose a form")
+        form_files = glob.glob(os.path.join(self.form_source_dir,
+                                            "*.xml"))
+
+        forms = {}
+        for i in form_files:
+            id = os.path.basename(i).rstrip(".xml")
+            forms[id] = i
+
+        d = ChoiceDialog(forms.keys(), "Choose a form")
         d.label.set_text("Select a form type to create")
         r = d.run()
         formid = d.choice.get_active_text()
@@ -870,10 +878,11 @@ class FormManager:
         if r == gtk.RESPONSE_CANCEL:
             return
 
-        newfn = time.strftime("form_%m%d%Y_%H%M%S.xml")
+        newfn = time.strftime(os.path.join(self.form_store_dir,
+                                           "form_%m%d%Y_%H%M%S.xml"))
 
         form = formgui.FormFile("New %s form" % formid,
-                                "forms/%s" % formid)
+                                forms[formid])
         r = form.run_auto(newfn)
         form.destroy()
         if r == gtk.RESPONSE_CANCEL:
@@ -979,6 +988,15 @@ class FormManager:
     def __init__(self, gui):
         self.gui = gui
         self.config = gui.config
+
+        downloads = self.config.config.get("prefs", "download_dir")
+        self.form_source_dir = os.path.join(downloads, "Form_Templates")
+        if not os.path.isdir(self.form_source_dir):
+            os.mkdir(self.form_source_dir)
+
+        self.form_store_dir = os.path.join(downloads, "Saved_Forms")
+        if not os.path.isdir(self.form_store_dir):
+            os.mkdir(self.form_store_dir)
 
         box = gtk.HBox(False, 2)
 
