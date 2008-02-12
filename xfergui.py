@@ -19,14 +19,18 @@ import os
 from threading import Thread
 import tempfile
 import base64
+import time
 
 import pygtk
 import gtk
 
 import xmodem
 import ddt
+import formgui
 
 class FileTransferGUI:
+
+    title = "File Transfer"
 
     def cancel_xfer(self, widget, data=None):
         self.xfer.cancel()
@@ -75,12 +79,20 @@ class FileTransferGUI:
         
         return box
 
+    def register_cb(self, cb, data=None):
+        self.cb = cb
+        self.cb_data = data
+
     def __init__(self, chatgui, xfer_agent):
         self.values = {}
         self.chatgui = chatgui
         self.is_send = None
         self.total_size = None
         self.xfer_agent = xfer_agent
+
+        self.cb = None
+        self.cb_data = None
+        self._real_filename = None
 
         box = gtk.VBox(False, 0)
 
@@ -98,7 +110,7 @@ class FileTransferGUI:
         box.show()
 
         self.window = gtk.Window(gtk.WINDOW_TOPLEVEL)
-        self.window.set_title("File Transfer")
+        self.window.set_title(self.title)
         self.window.set_resizable(False)
         self.window.set_geometry_hints(None, min_width=300)
         self.window.add(box)
@@ -198,6 +210,12 @@ class FileTransferGUI:
         self.chatgui.toggle_sendable(True)
         self.close_btn.set_sensitive(True)
         self.cancel_btn.set_sensitive(False)
+
+        if self.cb:
+            self.cb(self.cb_data,
+                    True,
+                    self._real_filename) #Change this to report real success
+
         gtk.gdk.threads_leave()        
 
     def show_xfer(self):
@@ -237,6 +255,7 @@ class FileTransferGUI:
             units = ""
 
         self.values["File"].set_text(file)
+        self._real_filename = file
 
         if tot and wire:
             size_str = "%i / %i %s (%2.0f%%)" % (sent,
@@ -306,7 +325,26 @@ class FileTransferGUI:
 
         self.show_xfer()
 
+    def wait_for_completion(self):
+        self.xfer_thread.join()
+
+class FormTransferGUI(FileTransferGUI):
+
+    title = "Form Transfer"
+
+    def do_send(self, form_fn):
+        self.filename = form_fn
+        self.is_send = True
+
+        self.show_xfer()
+
+    def do_recv(self):
+        self.filename = self.chatgui.config.config.get("prefs",
+                                                       "download_dir")
+
+        self.show_xfer()
+
 if __name__ == "__main__":
-    g = FileTransferGUI(None)
+    g = FormTransferGUI(None)
     g.window.show()
     gtk.main()
