@@ -30,7 +30,7 @@ import config
 from utils import hexprint
 import qst
 
-DRATS_VERSION = "0.1.5"
+DRATS_VERSION = "0.1.6"
 LOGTF = "%m-%d-%Y_%H:%M:%S"
 
 class SerialCommunicator:
@@ -293,7 +293,7 @@ class MainApp:
             gtk.gdk.threads_enter()
             try:
                 gtk.main()
-            except gtk.GTKWarning:
+            except gtk.exceptions.GTKWarning:
                 pass
             gtk.gdk.threads_leave()
             self.config.save()
