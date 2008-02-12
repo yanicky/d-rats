@@ -378,6 +378,27 @@ class Form(gtk.Dialog):
 
         self.build_gui()
         
+class FormFile(Form):
+    def __init__(self, title, filename, buttons=None):
+        self._filename = filename
+        f = file(self._filename)
+        data = f.read()
+        f.close()
+
+        Form.__init__(self, title, data, buttons)
+
+    def run_auto(self, save_file=None):
+        if not save_file:
+            save_file = self._filename
+
+        r = Form.run(self)
+        if r == gtk.RESPONSE_OK:
+            f = file(save_file, "w")
+            print >>f, self.get_xml()
+            f.close()
+
+        return r
+
 if __name__ == "__main__":
     f = file(sys.argv[1])
     xml = f.read()
