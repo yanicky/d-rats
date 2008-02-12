@@ -900,8 +900,6 @@ class FormManager:
         elif action == "recvform":
             ft.do_recv()
 
-
-
     def send(self, widget, data=None):
         ft = FormTransferGUI(self.gui, self.config.xfer())
 
@@ -945,29 +943,34 @@ class FormManager:
         box = gtk.VBox(False, 2)
 
         newb = gtk.Button("New")
+        newb.set_size_request(75, 30)
         newb.connect("clicked", self.new, None)
         newb.show()
         box.pack_start(newb, 0,0,0)
 
         edit = gtk.Button("Edit")
+        edit.set_size_request(75, 30)
         edit.connect("clicked", self.edit, None)
         edit.show()
         box.pack_start(edit, 0,0,0)
 
-        delb = gtk.Button("Delete")
+        delb = gtk.Button("Delete") 
+        delb.set_size_request(75, 30)
         delb.connect("clicked", self.delete, None)
         delb.show()
         box.pack_start(delb, 0,0,0)
 
         sendb = gtk.Button("Send")
+        sendb.set_size_request(75, 30)
         sendb.connect("clicked", self.send, None)
         sendb.show()
-        box.pack_start(sendb)
+        box.pack_start(sendb, 0,0,0)
 
         recvb = gtk.Button("Receive")
+        recvb.set_size_request(75, 30)
         recvb.connect("clicked", self.recv, None)
         recvb.show()
-        box.pack_start(recvb)
+        box.pack_start(recvb, 0,0,0)
 
         box.show()
 
