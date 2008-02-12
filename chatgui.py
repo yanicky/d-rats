@@ -29,10 +29,11 @@ import ddt
 
 from threading import Thread
 
-from xfergui import FileTransferGUI
+from xfergui import FileTransferGUI, FormTransferGUI
 from qst import QSTGUI, QuickMsgGUI
-from inputdialog import TextInputDialog
+from inputdialog import TextInputDialog, ChoiceDialog
 import mainapp
+import formgui
 
 class ChatGUI:
     def ev_delete(self, widget, event, data=None):
@@ -565,6 +566,11 @@ class MainChatGUI(ChatGUI):
         nb.append_page(qm.root, gtk.Label("QST Monitor"))
         self.adv_controls.append(qm)
 
+        fm = FormManager(self)
+        fm.show()
+        nb.append_page(fm.root, gtk.Label("Form Manager"))
+        self.adv_controls.append(fm)
+
         return nb
 
     def make_window(self):
@@ -827,6 +833,165 @@ class QSTMonitor:
     
     def hide(self):
         self.root.hide()
+
+class FormManager:
+    def make_display(self):
+        self.col_index = 0
+        self.col_ident = 1
+        self.col_stamp = 2
+        self.col_filen = 3
+
+        self.store = gtk.ListStore(gobject.TYPE_INT,
+                                   gobject.TYPE_STRING,
+                                   gobject.TYPE_STRING,
+                                   gobject.TYPE_STRING)
+
+        self.view = gtk.TreeView(self.store)
+
+        r = gtk.CellRendererText()
+        c = gtk.TreeViewColumn("ID", r, text=self.col_ident)
+        self.view.append_column(c)
+
+        r = gtk.CellRendererText()
+        c = gtk.TreeViewColumn("Created", r, text=self.col_stamp)
+        self.view.append_column(c)
+
+        self.view.show()
+
+        return self.view
+
+    def new(self, widget, data=None):
+        forms = ["memo.xml", "ics213.xml"]
+        d = ChoiceDialog(forms, "Choose a form")
+        d.label.set_text("Select a form type to create")
+        r = d.run()
+        formid = d.choice.get_active_text()
+        d.destroy()
+        if r == gtk.RESPONSE_CANCEL:
+            return
+
+        newfn = time.strftime("form_%m%d%Y_%H%M%S.xml")
+
+        form = formgui.FormFile("New %s form" % formid,
+                                "forms/%s" % formid)
+        r = form.run_auto(newfn)
+        form.destroy()
+        if r == gtk.RESPONSE_CANCEL:
+            return
+
+        iter = self.store.append()
+        self.store.set(iter,
+                       self.col_index, 0,
+                       self.col_ident, formid,
+                       self.col_stamp, time.strftime("%m/%d/%Y %H:%M:%S"),
+                       self.col_filen, newfn)
+
+    def delete(self, widget, data=None):
+        (list, iter) = self.view.get_selection().get_selected()
+        list.remove(iter)
+
+    def form_menu_handler(self, _action):
+        action = _action.get_name()
+
+        ft = FormTransferGUI(self, self.config.xfer())
+
+        if action == "sendform":
+            ft.form_glue("forms/memo.xml")
+        elif action == "recvform":
+            ft.do_recv()
+
+
+
+    def send(self, widget, data=None):
+        ft = FormTransferGUI(self.gui, self.config.xfer())
+
+        (list, iter) = self.view.get_selection().get_selected()
+
+        (filename, ) = self.store.get(iter, self.col_filen)
+
+        ft.do_send(filename)
+
+    def recv_cb(self, data, success, filename):
+        print "Receive Callback"
+
+        iter = self.store.append()
+        self.store.set(iter,
+                       self.col_index, 0,
+                       self.col_ident, "Unknown",
+                       self.col_stamp, time.strftime("%m/%d/%Y %H:%M:%S"),
+                       self.col_filen, filename)
+        
+    def recv(self, widget, data=None):
+        ft = FormTransferGUI(self.gui, self.config.xfer())
+        ft.register_cb(self.recv_cb, None)
+        ft.do_recv()
+
+    def edit(self, widget, data=None):
+        (list, iter) = self.view.get_selection().get_selected()
+
+        (filename,) = self.store.get(iter, self.col_filen)
+
+        print "Editing %s" % filename
+
+        form = formgui.FormFile("Edit Form", filename)
+        r = form.run_auto()
+        form.destroy()
+        if r == gtk.RESPONSE_CANCEL:
+            return
+
+        # FIXME: Update stamp
+
+    def make_buttons(self):
+        box = gtk.VBox(False, 2)
+
+        newb = gtk.Button("New")
+        newb.connect("clicked", self.new, None)
+        newb.show()
+        box.pack_start(newb, 0,0,0)
+
+        edit = gtk.Button("Edit")
+        edit.connect("clicked", self.edit, None)
+        edit.show()
+        box.pack_start(edit, 0,0,0)
+
+        delb = gtk.Button("Delete")
+        delb.connect("clicked", self.delete, None)
+        delb.show()
+        box.pack_start(delb, 0,0,0)
+
+        sendb = gtk.Button("Send")
+        sendb.connect("clicked", self.send, None)
+        sendb.show()
+        box.pack_start(sendb)
+
+        recvb = gtk.Button("Receive")
+        recvb.connect("clicked", self.recv, None)
+        recvb.show()
+        box.pack_start(recvb)
+
+        box.show()
+
+        return box
+
+    def __init__(self, gui):
+        self.gui = gui
+        self.config = gui.config
+
+        box = gtk.HBox(False, 2)
+
+        box.pack_start(self.make_display(), 1,1,1)
+        box.pack_start(self.make_buttons(), 0,0,0)
+
+        self.root = box
+
+    def show(self):
+        self.root.show()
+
+    def hide(self):
+        self.root.hide()
+
+    def refresh(self):
+        pass
 
 if __name__ == "__main__":
     import config
