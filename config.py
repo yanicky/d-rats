@@ -85,6 +85,7 @@ class AppConfig:
         mset("settings", "write_chunk", "0")
         mset("settings", "chunk_delay", "1.5")
         mset("settings", "ddt_block_size", "1024")
+        mset("settings", "swflow", "False")
 
         mset("quick", None, None)
 
@@ -117,12 +118,14 @@ class AppConfig:
                 "write_chunk" : "<span foreground='red'>Write chunk size (bytes)</span>",
                 "chunk_delay" : "<span foreground='red'>Chunk delay (sec)</span>",
                 "ddt_block_size" : "Outgoing block size (KB)",
+                "swflow" : "Software Flow Control",
                 }
 
     id2tip = {"write_chunk" : "Stage DDT blocks into small chunks of this many bytes",
               "chunk_delay" : "Delay this many seconds between chunks",
               "ddt_block_size" : "Size (in KB) of data blocks to send with DDT",
               "debuglog" : "Requires D-RATS restart to take effect",
+              "swflow" : "Try this if using a USB-to-serial adapter",
               }
 
     xfers = {"XModem" : xmodem.XModem,
@@ -292,6 +295,7 @@ class AppConfig:
                                      ), 0,0,0)
         vbox.pack_start(self.make_sb("xfer",
                                      make_choice(self.xfers.keys(), False)), 0,0,0)
+        vbox.pack_start(self.make_sb("swflow", self.make_bool()), 0,0,0)
 
         vbox.show()
         return vbox
@@ -446,7 +450,8 @@ D-RATS has been started in safe mode, which means the configuration file has not
                   ("prefs", "dosignoff"),
                   ("prefs", "eolstrip"),
                   ("prefs", "logenabled"),
-                  ("prefs", "debuglog")]
+                  ("prefs", "debuglog"),
+                  ("settings", "swflow")]
 
         choicetext_v = [("settings", "port")]
 

@@ -39,6 +39,7 @@ LOGTF = "%m-%d-%Y_%H:%M:%S"
 
 class SWFSerial(serial.Serial):
     def __init__(self, **kwargs):
+        print "Software XON/XOFF control initialized"
         serial.Serial.__init__(self, **kwargs)
 
         self.state = True
@@ -78,7 +79,7 @@ class SWFSerial(serial.Serial):
 
 class SerialCommunicator:
 
-    def __init__(self, port=0, rate=9600, log=None):
+    def __init__(self, port=0, rate=9600, log=None, swf=False):
         self.enabled = False
         self.log = None
         self.pipe = None
@@ -87,6 +88,7 @@ class SerialCommunicator:
         self.logfile = log
         self.port = port
         self.rate = rate
+        self.swf = swf
 
         self.state = True
 
@@ -128,14 +130,16 @@ class SerialCommunicator:
             return self.opened
 
         try:
-#            self.pipe = serial.Serial(port=self.port,
-#                                      baudrate=self.rate,
-#                                      timeout=0.25,
-#                                      xonxoff=0)
-            self.pipe = SWFSerial(port=self.port,
-                                  baudrate=self.rate,
-                                  timeout=0.25,
-                                  xonxoff=0)
+            if self.swf:
+                self.pipe = SWFSerial(port=self.port,
+                                      baudrate=self.rate,
+                                      timeout=0.25,
+                                      xonxoff=0)
+            else:
+                self.pipe = serial.Serial(port=self.port,
+                                          baudrate=self.rate,
+                                          timeout=0.25,
+                                          xonxoff=0)
             self.opened = True
         except Exception, e:
             print "Failed to open serial port: %s" % e
@@ -260,7 +264,12 @@ class MainApp:
         if self.comm:
             self.comm.disable()
             
-        self.comm = SerialCommunicator(rate=rate, port=port, log=log)
+        try:
+            swf = self.config.config.getboolean("settings", "swflow")
+        except:
+            swf = False
+
+        self.comm = SerialCommunicator(rate=rate, port=port, log=log, swf=swf)
         if self.comm.open():
             self.comm.enable(self.chatgui)
             
