@@ -886,7 +886,12 @@ class FormManager:
 
         self.view.show()
 
-        return self.view
+        sw = gtk.ScrolledWindow()
+        sw.add(self.view)
+        sw.show()
+        sw.set_policy(gtk.POLICY_NEVER, gtk.POLICY_AUTOMATIC)
+
+        return sw
 
     def list_add_form(self, index, ident, filen, stamp=None):
         if not stamp:
