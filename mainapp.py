@@ -72,7 +72,7 @@ class SWFSerial(serial.Serial):
             pos += chunk
             while not self.is_xon():
                 print "We're XOFF, waiting"
-                time.sleep(0.1)
+                time.sleep(0.01)
 
     def read(self, len):
         return serial.Serial.read(self, len)
