@@ -300,7 +300,8 @@ class DDTTransfer:
     def _send_block(self, data):
         print "Sending %i-byte block" % len(data)
 
-        if self.write_chunk > len(data):
+        if self.write_chunk == 0 or \
+                self.write_chunk > len(data):
             self.pipe.write(data)
             self.pipe.flush()
         else:
