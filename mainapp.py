@@ -20,6 +20,7 @@ import sys
 import time
 import re
 from threading import Thread
+from select import select
 
 import serial
 import gtk
@@ -30,8 +31,50 @@ import config
 from utils import hexprint
 import qst
 
+ASCII_XON = chr(17)
+ASCII_XOFF = chr(19)
+
 DRATS_VERSION = "0.1.6"
 LOGTF = "%m-%d-%Y_%H:%M:%S"
+
+class SWFSerial(serial.Serial):
+    def __init__(self, **kwargs):
+        serial.Serial.__init__(self, **kwargs)
+
+        self.state = True
+
+    def is_xon(self):
+        (r, _, _) = select([self.fd], [], [], 0.01)
+        if self.fd in r:
+            char = os.read(self.fd, 1)
+            if char == ASCII_XOFF:
+                print "************* Got XOFF"
+                self.state = False
+            elif char == ASCII_XON:
+                print "------------- Got XON"
+                self.state = True
+            else:
+                print "Aiee! Read a non-XOFF char: 0x%02x `%s`" % (ord(char),
+                                                                   char)
+        else:
+            print "Got nothing for XOFF"
+
+        return self.state
+
+    def write(self, data):
+        chunk = 8
+        pos = 0
+        while pos < len(data):
+            print "Sending %i-%i of %i" % (pos, pos+chunk, len(data))
+            serial.Serial.write(self, data[pos:pos+chunk])
+            self.flush()
+            pos += chunk
+            while not self.is_xon():
+                print "We're XOFF, waiting"
+                time.sleep(0.1)
+
+    def read(self, len):
+        return serial.Serial.read(self, len)
 
 class SerialCommunicator:
 
@@ -44,6 +87,8 @@ class SerialCommunicator:
         self.logfile = log
         self.port = port
         self.rate = rate
+
+        self.state = True
 
     def write(self, buf):
         if self.enabled:
@@ -83,10 +128,14 @@ class SerialCommunicator:
             return self.opened
 
         try:
-            self.pipe = serial.Serial(port=self.port,
-                                      baudrate=self.rate,
-                                      timeout=0.25,
-                                      xonxoff=1)
+#            self.pipe = serial.Serial(port=self.port,
+#                                      baudrate=self.rate,
+#                                      timeout=0.25,
+#                                      xonxoff=0)
+            self.pipe = SWFSerial(port=self.port,
+                                  baudrate=self.rate,
+                                  timeout=0.25,
+                                  xonxoff=0)
             self.opened = True
         except Exception, e:
             print "Failed to open serial port: %s" % e
@@ -119,7 +168,7 @@ class SerialCommunicator:
     def send_text(self, text):
         if self.enabled:
             self.write_log(text)
-            return self.pipe.write(text)
+        return self.pipe.write(text)
 
     def incoming_chat(self, data):
         if self.gui.config.config.getboolean("prefs", "eolstrip"):
