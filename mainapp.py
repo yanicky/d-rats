@@ -38,6 +38,8 @@ DRATS_VERSION = "0.1.6"
 LOGTF = "%m-%d-%Y_%H:%M:%S"
 
 class SWFSerial(serial.Serial):
+    __swf_debug = False
+
     def __init__(self, **kwargs):
         print "Software XON/XOFF control initialized"
         serial.Serial.__init__(self, **kwargs)
@@ -49,16 +51,16 @@ class SWFSerial(serial.Serial):
         if self.fd in r:
             char = os.read(self.fd, 1)
             if char == ASCII_XOFF:
-                print "************* Got XOFF"
+                if self.__swf_debug:
+                    print "************* Got XOFF"
                 self.state = False
             elif char == ASCII_XON:
-                print "------------- Got XON"
+                if self.__swf_debug:
+                    print "------------- Got XON"
                 self.state = True
             else:
                 print "Aiee! Read a non-XOFF char: 0x%02x `%s`" % (ord(char),
                                                                    char)
-        else:
-            print "Got nothing for XOFF"
 
         return self.state
 
@@ -66,12 +68,14 @@ class SWFSerial(serial.Serial):
         chunk = 8
         pos = 0
         while pos < len(data):
-            print "Sending %i-%i of %i" % (pos, pos+chunk, len(data))
+            if self.__swf_debug:
+                print "Sending %i-%i of %i" % (pos, pos+chunk, len(data))
             serial.Serial.write(self, data[pos:pos+chunk])
             self.flush()
             pos += chunk
             while not self.is_xon():
-                print "We're XOFF, waiting"
+                if self.__swf_debug:
+                    print "We're XOFF, waiting"
                 time.sleep(0.01)
 
     def read(self, len):
