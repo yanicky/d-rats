@@ -1100,7 +1100,7 @@ class FormManager:
                 self.reg.remove_section(i)
 
     def get_stamp(self):
-        return time.strftime("%b-%m-%Y %H:%M:%S")
+        return time.strftime("%b-%d-%Y %H:%M:%S")
 
     def __init__(self, gui):
         self.gui = gui
