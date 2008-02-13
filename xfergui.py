@@ -214,6 +214,7 @@ class FileTransferGUI:
         if self.cb:
             self.cb(self.cb_data,
                     True,
+                    self.filename,
                     self._real_filename) #Change this to report real success
 
         gtk.gdk.threads_leave()        
@@ -338,10 +339,8 @@ class FormTransferGUI(FileTransferGUI):
 
         self.show_xfer()
 
-    def do_recv(self):
-        self.filename = self.chatgui.config.config.get("prefs",
-                                                       "download_dir")
-
+    def do_recv(self, dest_dir):
+        self.filename = dest_dir
         self.show_xfer()
 
 if __name__ == "__main__":

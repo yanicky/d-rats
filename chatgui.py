@@ -879,7 +879,7 @@ class FormManager:
 
     def list_add_form(self, index, ident, filen, stamp=None):
         if not stamp:
-            stamp = time.strftime("%b-%d-%Y %H:%M:%S")
+            stamp = self.get_stamp()
 
         iter = self.store.append()
         self.store.set(iter,
@@ -924,7 +924,7 @@ class FormManager:
         if r == gtk.RESPONSE_CANCEL:
             return
 
-        stamp = time.strftime("%b-%d-%Y %H:%M:%S")
+        stamp = self.get_stamp()
 
         self.list_add_form(0, formid, newfn, stamp)
         self.reg_form(formid, newfn, stamp)
@@ -958,15 +958,21 @@ class FormManager:
 
         ft.do_send(filename)
 
-    def recv_cb(self, data, success, filename):
-        print "Receive Callback"
+    def recv_cb(self, data, success, filename, actual):
+        print "Receive Callback for: %s" % filename
 
-        self.list_add_form(0, "Received Form", filename)
+        fqfn = os.path.join(self.form_store_dir, filename)
+
+        self.list_add_form(0, "Received Form", fqfn)
+        self.reg_form("Received Form", fqfn, self.get_stamp())
 
     def recv(self, widget, data=None):
         ft = FormTransferGUI(self.gui, self.config.xfer())
         ft.register_cb(self.recv_cb, None)
-        ft.do_recv()
+
+        newfn = time.strftime(os.path.join(self.form_store_dir,
+                                           "form_%m%d%Y_%H%M%S.xml"))
+        ft.do_recv(newfn)
 
     def edit(self, widget, data=None):
         (list, iter) = self.view.get_selection().get_selected()
@@ -1064,6 +1070,9 @@ class FormManager:
             except Exception, e:
                 print "Failed to load form: %s" % e
                 self.reg.remove_section(i)
+
+    def get_stamp(self):
+        return time.strftime("%b-%m-%Y %H:%M:%S")
 
     def __init__(self, gui):
         self.gui = gui
