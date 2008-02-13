@@ -867,6 +867,8 @@ class FormManager:
 
         r = gtk.CellRendererText()
         c = gtk.TreeViewColumn("ID", r, text=self.col_ident)
+        c.set_resizable(True)
+        c.set_sort_column_id(self.col_ident)
         self.view.append_column(c)
 
         r.set_property("editable", True)
@@ -874,10 +876,12 @@ class FormManager:
 
         r = gtk.CellRendererText()
         c = gtk.TreeViewColumn("Last Edited", r, text=self.col_stamp)
+        c.set_sort_column_id(self.col_stamp)
         self.view.append_column(c)
 
         r = gtk.CellRendererText()
         c = gtk.TreeViewColumn("Last Transferred", r, text=self.col_xfert)
+        c.set_sort_column_id(self.col_xfert)
         self.view.append_column(c)
 
         self.view.show()
