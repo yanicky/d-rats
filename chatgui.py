@@ -743,15 +743,19 @@ class QSTMonitor:
 
         r = gtk.CellRendererText()
         c = gtk.TreeViewColumn("Period", r, text=self.col_period)
+        c.set_sort_column_id(self.col_period)
         self.view.append_column(c)
 
         r = gtk.CellRendererProgress()
         c = gtk.TreeViewColumn("Remaining", r,
                                value=self.col_remain, text=self.col_status)
+        c.set_sort_column_id(self.col_status)
         self.view.append_column(c)
 
         r = gtk.CellRendererText()
         c = gtk.TreeViewColumn("Message", r, text=self.col_msg)
+        c.set_sort_column_id(self.col_msg)
+        c.set_resizable(True)
         self.view.append_column(c)
 
         return self.view
