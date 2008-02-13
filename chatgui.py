@@ -892,6 +892,15 @@ class FormManager:
         form_files = glob.glob(os.path.join(self.form_source_dir,
                                             "*.xml"))
 
+        if not form_files:
+            d = gtk.MessageDialog(buttons=gtk.BUTTONS_OK)
+            d.set_property("text", "No template forms available")
+            d.format_secondary_text("Please place the template forms in %s" % \
+                                        os.path.abspath(self.form_source_dir))
+            d.run()
+            d.destroy()
+            return            
+
         forms = {}
         for i in form_files:
             id = os.path.basename(i).rstrip(".xml")
@@ -952,7 +961,7 @@ class FormManager:
     def recv_cb(self, data, success, filename):
         print "Receive Callback"
 
-        self.list_add_form(0, "Unknown", filename)
+        self.list_add_form(0, "Received Form", filename)
 
     def recv(self, widget, data=None):
         ft = FormTransferGUI(self.gui, self.config.xfer())
