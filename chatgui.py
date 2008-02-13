@@ -863,6 +863,7 @@ class FormManager:
                                    gobject.TYPE_STRING)
 
         self.view = gtk.TreeView(self.store)
+        self.view.set_rules_hint(True)
 
         r = gtk.CellRendererText()
         c = gtk.TreeViewColumn("ID", r, text=self.col_ident)
