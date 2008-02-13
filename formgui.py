@@ -63,9 +63,25 @@ def tree2string(node, indent=0):
 class FieldWidget:
     def __init__(self, node):
         self.node = node
+        self.caption = "Untitled Field"
+
+    def set_caption(self, caption):
+        self.caption = caption
+
+    def make_container(self):
+        hbox = gtk.HBox(True, 2)
+
+        label = gtk.Label(self.caption)
+        hbox.pack_start(label, 0,0,0)
+        hbox.pack_start(self.widget, 1,1,0)
+
+        label.show()
+        hbox.show()
+
+        return hbox
 
     def get_widget(self):
-        return self.widget
+        return self.make_container()
 
     def get_value(self):
         pass
@@ -131,7 +147,20 @@ class MultilineWidget(FieldWidget):
         self.buffer.set_text(text)
         self.widget = gtk.TextView(self.buffer)
         self.widget.show()
-        self.widget.set_size_request(-1, 50)
+        self.widget.set_size_request(175, 200)
+        self.widget.set_wrap_mode(gtk.WRAP_WORD)
+
+    def make_container(self):
+        vbox = gtk.VBox(False, 2)
+
+        label = gtk.Label(self.caption)
+        vbox.pack_start(label, 0,0,0)
+        vbox.pack_start(self.widget, 0,0,0)
+
+        label.show()
+        vbox.show()
+
+        return vbox
 
     def get_value(self):
         return self.buffer.get_text(self.buffer.get_start_iter(),
@@ -275,19 +304,18 @@ class FormField:
     "choice" : ChoiceWidget,
     }
 
-    def build_caption(self, node):
-        text = node.childNodes[0].nodeValue.strip()
-        label = gtk.Label(text) 
-        label.show()
+    def get_caption_string(self, node):
+        return node.childNodes[0].nodeValue.strip()
 
-        return label
-
-    def build_entry(self, node):
+    def build_entry(self, node, caption):
         type = node.getAttribute("type")
 
         wtype = self.widget_types[type]
 
-        return wtype(node)
+        field = wtype(node)
+        field.set_caption(caption)
+
+        return field        
 
     def build_gui(self, node):
         self.caption = None
@@ -295,15 +323,13 @@ class FormField:
         
         for i in node.childNodes:
             if i.nodeName == "caption":
-                self.caption = self.build_caption(i)
+                cap_node = i
             elif i.nodeName == "entry":
-                self.entry = self.build_entry(i)
+                ent_node = i
 
-        self.widget = gtk.HBox(True, 2)
-
-        self.widget.pack_start(self.caption, 0, 0, 0)
-        self.widget.pack_start(self.entry.get_widget(), 1, 1, 1)
-
+        caption = self.get_caption_string(cap_node)
+        self.entry = self.build_entry(ent_node, caption)
+        self.widget = self.entry.get_widget()
         self.widget.show()
 
     def __init__(self, field):
@@ -365,6 +391,8 @@ class Form(gtk.Dialog):
                        gtk.STOCK_OK, gtk.RESPONSE_OK)
 
         gtk.Dialog.__init__(self, title=title, buttons=buttons)
+
+        self.vbox.set_spacing(5)
 
         self.fields = []
 
