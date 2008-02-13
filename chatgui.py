@@ -24,6 +24,7 @@ import time
 import os
 import re
 import glob
+import ConfigParser
 
 import xmodem
 import ddt
@@ -836,6 +837,18 @@ class QSTMonitor:
         self.root.hide()
 
 class FormManager:
+    def id_edited(self, r, path, new_text, colnum):
+        iter = self.store.get_iter(path)
+
+        (index, filename, stamp) = self.store.get(iter,
+                                                  self.col_index,
+                                                  self.col_filen,
+                                                  self.col_stamp)
+
+        self.store.set(iter, self.col_ident, new_text)
+
+        self.reg_form(new_text, filename, stamp)
+    
     def make_display(self):
         self.col_index = 0
         self.col_ident = 1
@@ -853,6 +866,9 @@ class FormManager:
         c = gtk.TreeViewColumn("ID", r, text=self.col_ident)
         self.view.append_column(c)
 
+        r.set_property("editable", True)
+        r.connect("edited", self.id_edited, None)
+
         r = gtk.CellRendererText()
         c = gtk.TreeViewColumn("Created", r, text=self.col_stamp)
         self.view.append_column(c)
@@ -860,6 +876,17 @@ class FormManager:
         self.view.show()
 
         return self.view
+
+    def list_add_form(self, index, ident, filen, stamp=None):
+        if not stamp:
+            stamp = time.strftime("%b-%d-%Y %H:%M:%S")
+
+        iter = self.store.append()
+        self.store.set(iter,
+                       self.col_index, index,
+                       self.col_ident, ident,
+                       self.col_stamp, stamp,
+                       self.col_filen, filen)
 
     def new(self, widget, data=None):
         form_files = glob.glob(os.path.join(self.form_source_dir,
@@ -888,16 +915,20 @@ class FormManager:
         if r == gtk.RESPONSE_CANCEL:
             return
 
-        iter = self.store.append()
-        self.store.set(iter,
-                       self.col_index, 0,
-                       self.col_ident, formid,
-                       self.col_stamp, time.strftime("%m/%d/%Y %H:%M:%S"),
-                       self.col_filen, newfn)
+        stamp = time.strftime("%b-%d-%Y %H:%M:%S")
+
+        self.list_add_form(0, formid, newfn, stamp)
+        self.reg_form(formid, newfn, stamp)
 
     def delete(self, widget, data=None):
         (list, iter) = self.view.get_selection().get_selected()
+
+        (filename, id) = self.store.get(iter, self.col_filen, self.col_ident)
+
         list.remove(iter)
+
+        self.unreg_form(filename)
+        os.remove(filename)
 
     def form_menu_handler(self, _action):
         action = _action.get_name()
@@ -921,13 +952,8 @@ class FormManager:
     def recv_cb(self, data, success, filename):
         print "Receive Callback"
 
-        iter = self.store.append()
-        self.store.set(iter,
-                       self.col_index, 0,
-                       self.col_ident, "Unknown",
-                       self.col_stamp, time.strftime("%m/%d/%Y %H:%M:%S"),
-                       self.col_filen, filename)
-        
+        self.list_add_form(0, "Unknown", filename)
+
     def recv(self, widget, data=None):
         ft = FormTransferGUI(self.gui, self.config.xfer())
         ft.register_cb(self.recv_cb, None)
@@ -936,7 +962,10 @@ class FormManager:
     def edit(self, widget, data=None):
         (list, iter) = self.view.get_selection().get_selected()
 
-        (filename,) = self.store.get(iter, self.col_filen)
+        (filename, id, stamp) = self.store.get(iter,
+                                               self.col_filen,
+                                               self.col_ident,
+                                               self.col_stamp)
 
         print "Editing %s" % filename
 
@@ -945,6 +974,8 @@ class FormManager:
         form.destroy()
         if r == gtk.RESPONSE_CANCEL:
             return
+
+        self.reg_form(id, filename, stamp)
 
         # FIXME: Update stamp
 
@@ -985,6 +1016,46 @@ class FormManager:
 
         return box
 
+    def reg_save(self):
+        f = file(self.reg_file, "w")
+        self.reg.write(f)
+        f.close()
+
+    def reg_form(self, id, file, editstamp):
+        sec = os.path.basename(file)
+
+        if not self.reg.has_section(sec):
+            self.reg.add_section(sec)
+
+        try :
+            self.reg.set(sec, "id", id)
+            self.reg.set(sec, "filename", file)
+            self.reg.set(sec, "editstamp", editstamp)
+            self.reg_save()
+        except Exception, e:
+            print "Failed to register new form: %s" % e
+
+    def unreg_form(self, file):
+        sec = os.path.basename(file)
+
+        if self.reg.has_section(sec):
+            try:
+                self.reg.remove_section(sec)
+                self.reg_save()
+            except Exception, e:
+                print "Failed to unregister form: %s" % e
+
+    def load_forms(self):
+        for i in self.reg.sections():
+            try:
+                id = self.reg.get(i, "id")
+                filename = self.reg.get(i, "filename")
+                stamp = self.reg.get(i, "editstamp")
+                self.list_add_form(0, id, filename, stamp)
+            except Exception, e:
+                print "Failed to load form: %s" % e
+                self.reg.remove_section(i)
+
     def __init__(self, gui):
         self.gui = gui
         self.config = gui.config
@@ -998,10 +1069,18 @@ class FormManager:
         if not os.path.isdir(self.form_store_dir):
             os.mkdir(self.form_store_dir)
 
+        self.reg_file = os.path.join(self.form_store_dir,
+                                     "form_reg.conf")
+
+        self.reg = ConfigParser.ConfigParser()
+        self.reg.read(self.reg_file)
+
         box = gtk.HBox(False, 2)
 
         box.pack_start(self.make_display(), 1,1,1)
         box.pack_start(self.make_buttons(), 0,0,0)
+
+        self.load_forms()
 
         self.root = box
 
