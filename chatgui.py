@@ -854,8 +854,10 @@ class FormManager:
         self.col_ident = 1
         self.col_stamp = 2
         self.col_filen = 3
+        self.col_xfert = 4
 
         self.store = gtk.ListStore(gobject.TYPE_INT,
+                                   gobject.TYPE_STRING,
                                    gobject.TYPE_STRING,
                                    gobject.TYPE_STRING,
                                    gobject.TYPE_STRING)
@@ -870,7 +872,11 @@ class FormManager:
         r.connect("edited", self.id_edited, None)
 
         r = gtk.CellRendererText()
-        c = gtk.TreeViewColumn("Created", r, text=self.col_stamp)
+        c = gtk.TreeViewColumn("Last Edited", r, text=self.col_stamp)
+        self.view.append_column(c)
+
+        r = gtk.CellRendererText()
+        c = gtk.TreeViewColumn("Last Transferred", r, text=self.col_xfert)
         self.view.append_column(c)
 
         self.view.show()
@@ -886,7 +892,9 @@ class FormManager:
                        self.col_index, index,
                        self.col_ident, ident,
                        self.col_stamp, stamp,
-                       self.col_filen, filen)
+                       self.col_filen, filen,
+                       self.col_xfert, "Never")
+        return iter
 
     def new(self, widget, data=None):
         form_files = glob.glob(os.path.join(self.form_source_dir,
@@ -956,6 +964,9 @@ class FormManager:
 
         (filename, ) = self.store.get(iter, self.col_filen)
 
+        #FIXME: Only update if successful
+        self.store.set(iter, self.col_xfert, self.get_stamp())
+
         ft.do_send(filename)
 
     def recv_cb(self, data, success, filename, actual):
@@ -963,8 +974,11 @@ class FormManager:
 
         fqfn = os.path.join(self.form_store_dir, filename)
 
-        self.list_add_form(0, "Received Form", fqfn)
-        self.reg_form("Received Form", fqfn, self.get_stamp())
+        stamp = self.get_stamp()
+
+        iter = self.list_add_form(0, "Received Form", fqfn)
+        self.store.set(iter, self.col_xfert, stamp)
+        self.reg_form("Received Form", fqfn, stamp)
 
     def recv(self, widget, data=None):
         ft = FormTransferGUI(self.gui, self.config.xfer())
@@ -990,9 +1004,9 @@ class FormManager:
         if r == gtk.RESPONSE_CANCEL:
             return
 
+        stamp = self.get_stamp()
+        self.store.set(iter, self.col_stamp, stamp)
         self.reg_form(id, filename, stamp)
-
-        # FIXME: Update stamp
 
     def make_buttons(self):
         box = gtk.VBox(False, 2)
