@@ -467,6 +467,7 @@ class DDTTransfer:
 
     def send_eof(self):
         frame = DDTEndFrame()
+        frame.set_data("EOF")
 
         for i in range(1, self.limit_tries):
             self.status("Waiting for remote to acknowledge finish")
@@ -476,6 +477,16 @@ class DDTTransfer:
                 return True
 
         return False
+
+    def send_cancel(self):
+        frame = DDTEndFrame()
+        frame.set_data("CAN")
+
+        self.status("Sending Cancel")
+        time.sleep(2)
+
+        print "Sending cancel notice"
+        self._send_block(frame.pack())
 
     def send_file(self, filename):
         if not self.send_start_file(filename):
@@ -501,6 +512,7 @@ class DDTTransfer:
 
                 break
             if not self.send_block(i, block):
+                self.send_cancel()
                 if not self.enabled:
                     self.status("Cancelled")
                 else:
@@ -540,9 +552,18 @@ class DDTTransfer:
                 continue
 
             if frame.__class__ == DDTEndFrame:
-                print "Transfer complete"
-                self.status("Transfer complete")
-                return True
+                end_data = frame.get_data()
+                if end_data == "EOF":
+                    print "Got >0.1.6 EOT"
+                    self.status("Transfer complete")
+                    return True
+                elif end_data == "CAN":
+                    self.status("Transfer cancelled by remote")
+                    return False
+                else:
+                    self.status("Transfer complete")
+                    print "Got <0.1.6 EOT"
+                    return True
             elif frame.__class__ == DDTEncodedFrame:
                 seq = frame.get_seq()
                 if seq == last_block:
