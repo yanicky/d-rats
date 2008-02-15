@@ -932,7 +932,7 @@ class FormManager:
 
         forms = {}
         for i in form_files:
-            id = os.path.basename(i).rstrip(".xml")
+            id = os.path.basename(i).replace(".xml", "")
             forms[id] = i
 
         d = ChoiceDialog(forms.keys(), "Choose a form")
