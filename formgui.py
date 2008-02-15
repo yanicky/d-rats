@@ -64,9 +64,14 @@ class FieldWidget:
     def __init__(self, node):
         self.node = node
         self.caption = "Untitled Field"
+        self.id = "unknown"
+        self.type = (self.__class__.__name__.replace("Widget", "")).lower()
 
     def set_caption(self, caption):
         self.caption = caption
+
+    def set_id(self, id):
+        self.id = id
 
     def make_container(self):
         hbox = gtk.HBox(True, 2)
@@ -314,6 +319,7 @@ class FormField:
 
         field = wtype(node)
         field.set_caption(caption)
+        field.set_id(self.id)
 
         return field        
 
@@ -327,8 +333,8 @@ class FormField:
             elif i.nodeName == "entry":
                 ent_node = i
 
-        caption = self.get_caption_string(cap_node)
-        self.entry = self.build_entry(ent_node, caption)
+        self.caption = self.get_caption_string(cap_node)
+        self.entry = self.build_entry(ent_node, self.caption)
         self.widget = self.entry.get_widget()
         self.widget.show()
 
