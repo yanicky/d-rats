@@ -492,7 +492,7 @@ class MainChatGUI(ChatGUI):
                    ('qsts', None, "_Auto QST Settings", None, None, self.menu_handler),
                    ('quickmsg', None, 'Quick _Messages', None, None, self.menu_handler),
                    ('quit', None, "_Quit", None, None, self.menu_handler),
-                   ('sendtext', None, 'Send _Text File', None, None, self.menu_handler),
+                   ('sendtext', None, 'Broadcast _Text File', None, None, self.menu_handler),
                    ('view', None, "_View", None, None, self.menu_handler),
                    ('clear', None, '_Clear', None, None, self.menu_handler),
                    ('filter', None, '_Filter by string', None, None, self.menu_handler),
