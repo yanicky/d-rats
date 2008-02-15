@@ -96,7 +96,8 @@ class FieldWidget:
 
     def update_node(self):
         for child in self.node.childNodes:
-            self.node.removeChild(child)
+            if child.nodeType == Node.TEXT_NODE:
+                self.node.removeChild(child)
 
         value = self.get_value()
         if value:
