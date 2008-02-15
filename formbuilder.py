@@ -16,49 +16,46 @@ import formgui
 
 class FormElementEditor(gtk.Dialog):
     def make_entry_editor(self, id):
-        box = gtk.VBox(False, 2)
-
-        l = gtk.Label("Initial value:")
-        box.pack_start(l, 1,1,1)
-
         entry = gtk.Entry()
-        box.pack_start(entry, 0,0,0)
-
-        l.show()
         entry.show()
 
+        f = gtk.Frame("Initial value:")
+        f.add(entry)
+        
         self.entries[id] = entry
 
-        return box
+        return f
 
     def make_null_editor(self, id):
         return gtk.Label("(There are no options for this type)")
 
     def make_toggle_editor(self, id):
         cb = gtk.CheckButton("True")
+        cb.show()
+
+        f = gtk.Frame("Default value")
+        f.add(cb)
 
         self.entries[id] = cb
 
-        return cb
+        return f
 
     def make_choice_editor(self, id):
         self._choice_buffer = gtk.TextBuffer()
         entry = gtk.TextView(self._choice_buffer)
         entry.show()
 
+        sw = gtk.ScrolledWindow()
+        sw.set_policy(gtk.POLICY_NEVER, gtk.POLICY_AUTOMATIC)
+        sw.add(entry)
+        sw.show()
+
+        f = gtk.Frame("Options (one per line, first is default)")
+        f.add(sw)
+
         self.entries[id] = entry
 
-        box = gtk.VBox(False, 2)
-
-        l = gtk.Label("Choices (one per line, first is default)")
-        l.show()
-
-        box.pack_start(l, 1,1,1)
-        box.pack_start(entry, 0,0,0)
-        
-        box.show()
-
-        return box
+        return f
 
     def type_changed(self, box, data=None):
         sel = box.get_active_text()
@@ -79,6 +76,8 @@ class FormElementEditor(gtk.Dialog):
 
         self.entries = {}
 
+        self.set_default_size(150,150)
+
         self.vals = {
             "text"      : self.make_entry_editor("text"),
             "multiline" : self.make_entry_editor("multiline"),
@@ -91,10 +90,14 @@ class FormElementEditor(gtk.Dialog):
 
         self.type_sel = make_choice(self.vals.keys(), False, "text")
         self.type_sel.connect("changed", self.type_changed, None)
+        self.type_sel.show()
         self.vals["text"].show()
         
-        self.type_sel.show()
-        self.vbox.pack_start(self.type_sel, 0,0,0)
+        self.ts_frame = gtk.Frame("Field Type")
+        self.ts_frame.show()
+        self.ts_frame.add(self.type_sel)
+
+        self.vbox.pack_start(self.ts_frame, 0,0,0)
 
         for t,w in self.vals.items():
             self.vbox.pack_start(w, 1,1,1)
