@@ -36,6 +36,7 @@ from qst import QSTGUI, QuickMsgGUI
 from inputdialog import TextInputDialog, ChoiceDialog
 import mainapp
 import formgui
+import formbuilder
 
 class ChatGUI:
     def ev_delete(self, widget, event, data=None):
@@ -456,6 +457,8 @@ class MainChatGUI(ChatGUI):
             self.filter_view()
         elif action == "unfilter":
             self.filter_kill()
+        elif action == "manageform":
+            formbuilder.FormManagerGUI(self.config.form_source_dir())
 
     def make_menubar(self):
         menu_xml = """
@@ -469,6 +472,7 @@ class MainChatGUI(ChatGUI):
               <menuitem action='config'/>
               <menuitem action='qsts'/>
               <menuitem action='quickmsg'/>
+              <menuitem action='manageform'/>
               <separator/>
               <menuitem action='quit'/>
             </menu>
@@ -491,6 +495,7 @@ class MainChatGUI(ChatGUI):
                    ('config', None, "Main _Settings", None, None, self.menu_handler),
                    ('qsts', None, "_Auto QST Settings", None, None, self.menu_handler),
                    ('quickmsg', None, 'Quick _Messages', None, None, self.menu_handler),
+                   ('manageform', None, '_Manage Forms', None, None, self.menu_handler),
                    ('quit', None, "_Quit", None, None, self.menu_handler),
                    ('sendtext', None, 'Broadcast _Text File', None, None, self.menu_handler),
                    ('view', None, "_View", None, None, self.menu_handler),
@@ -963,16 +968,6 @@ class FormManager:
         self.unreg_form(filename)
         os.remove(filename)
 
-    def form_menu_handler(self, _action):
-        action = _action.get_name()
-
-        ft = FormTransferGUI(self, self.config.xfer())
-
-        if action == "sendform":
-            ft.form_glue("forms/memo.xml")
-        elif action == "recvform":
-            ft.do_recv()
-
     def send(self, widget, data=None):
         ft = FormTransferGUI(self.gui, self.config.xfer())
 
@@ -1108,14 +1103,8 @@ class FormManager:
         self.gui = gui
         self.config = gui.config
 
-        downloads = self.config.config.get("prefs", "download_dir")
-        self.form_source_dir = os.path.join(downloads, "Form_Templates")
-        if not os.path.isdir(self.form_source_dir):
-            os.mkdir(self.form_source_dir)
-
-        self.form_store_dir = os.path.join(downloads, "Saved_Forms")
-        if not os.path.isdir(self.form_store_dir):
-            os.mkdir(self.form_store_dir)
+        self.form_source_dir = self.config.form_source_dir()
+        self.form_store_dir = self.config.form_store_dir()
 
         self.reg_file = os.path.join(self.form_store_dir,
                                      "form_reg.conf")

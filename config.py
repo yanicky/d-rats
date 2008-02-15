@@ -144,6 +144,22 @@ class AppConfig:
     def default_directory(self):
         return os.path.abspath(".")
 
+    def form_source_dir(self):
+        d = os.path.join(self.config.get("prefs", "download_dir"),
+                         "Form_Templates")
+        if not os.path.isdir(d):
+            os.mkdir(d)
+
+        return d
+
+    def form_store_dir(self):
+        d = os.path.join(self.config.get("prefs", "download_dir"),
+                         "Saved_forms")
+        if not os.path.isdir(d):
+            os.mkdir(d)
+
+        return d
+
     def make_sb(self, id, child):
         hbox = gtk.HBox(True, 0)
 
