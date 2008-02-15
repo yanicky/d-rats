@@ -392,7 +392,9 @@ class FormBuilderGUI(gtk.Dialog):
         return frame
 
     def show_preview(self, widget, data=None):
-        d = Form("Preview of form", self.get_form_xml())
+        d = Form("Preview of form",
+                 self.get_form_xml(),
+                 buttons=(gtk.STOCK_CLOSE, gtk.RESPONSE_OK))
         d.run()
         d.destroy()
 
