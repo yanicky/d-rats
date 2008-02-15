@@ -154,7 +154,7 @@ class AppConfig:
 
     def form_store_dir(self):
         d = os.path.join(self.config.get("prefs", "download_dir"),
-                         "Saved_forms")
+                         "Saved_Forms")
         if not os.path.isdir(d):
             os.mkdir(d)
 
