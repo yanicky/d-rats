@@ -118,7 +118,7 @@ class AppConfig:
                 "write_chunk" : "<span foreground='red'>Write chunk size (bytes)</span>",
                 "chunk_delay" : "<span foreground='red'>Chunk delay (sec)</span>",
                 "ddt_block_size" : "Outgoing block size (KB)",
-                "swflow" : "Software Flow Control",
+                "swflow" : "D-RATS does flow control",
                 }
 
     id2tip = {"write_chunk" : "Stage DDT blocks into small chunks of this many bytes",
