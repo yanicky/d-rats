@@ -145,7 +145,7 @@ class SerialCommunicator:
                 self.pipe = serial.Serial(port=self.port,
                                           baudrate=self.rate,
                                           timeout=0.25,
-                                          xonxoff=0)
+                                          xonxoff=1)
             self.opened = True
         except Exception, e:
             print "Failed to open serial port: %s" % e
