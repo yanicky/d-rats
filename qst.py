@@ -66,9 +66,7 @@ class QSTText:
             time.sleep(1)
 
     def do_qst(self, text):
-        gtk.gdk.threads_enter()
-        self.gui.tx_msg("%s %s" % (self.prefix, text))
-        gtk.gdk.threads_leave()
+        gobject.idle_add(self.gui.tx_msg, "%s %s" % (self.prefix, text))
 
     def thread(self):
         while True:

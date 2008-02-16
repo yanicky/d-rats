@@ -24,6 +24,7 @@ from select import select
 
 import serial
 import gtk
+import gobject
 
 import chatgui
 import config
@@ -217,9 +218,7 @@ class SerialCommunicator:
             else:
                 if data:
                     print "No more data, writing: %s" % data
-                    gtk.gdk.threads_enter()
-                    self.incoming_chat(data)
-                    gtk.gdk.threads_leave()
+                    gobject.idle_add(self.incoming_chat, data)
                     data = ""
                     
                 time.sleep(0.25)

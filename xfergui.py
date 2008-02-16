@@ -23,6 +23,7 @@ import time
 
 import pygtk
 import gtk
+import gobject
 
 import xmodem
 import ddt
@@ -182,6 +183,17 @@ class FileTransferGUI:
         self.cancel_btn.set_sensitive(False)
         gtk.gdk.threads_leave()
 
+    def ddt_finish(self):
+        self.chatgui.toggle_sendable(True)
+        self.close_btn.set_sensitive(True)
+        self.cancel_btn.set_sensitive(False)
+
+        if self.cb:
+            self.cb(self.cb_data,
+                    True,
+                    self.filename,
+                    self._real_filename) #Change this to report real success
+
     def ddt_xfer(self):
         x = self.xfer_agent(self.chatgui.mainapp.comm.pipe,
                             status_fn=self.update)
@@ -206,18 +218,7 @@ class FileTransferGUI:
         else:
             x.recv_file(self.filename)
 
-        gtk.gdk.threads_enter()
-        self.chatgui.toggle_sendable(True)
-        self.close_btn.set_sensitive(True)
-        self.cancel_btn.set_sensitive(False)
-
-        if self.cb:
-            self.cb(self.cb_data,
-                    True,
-                    self.filename,
-                    self._real_filename) #Change this to report real success
-
-        gtk.gdk.threads_leave()        
+        gobject.idle_add(self.ddt_finish)
 
     def show_xfer(self):
         self.window.show()
@@ -235,9 +236,7 @@ class FileTransferGUI:
 
         self.xfer_thread.start()
 
-    def update(self, status, vals):
-        gtk.gdk.threads_enter()
-
+    def _update(self, status, vals):
         file = vals["filename"]
         sent = vals["transferred"]
         wire = vals["wiresize"]
@@ -274,7 +273,8 @@ class FileTransferGUI:
         if tot:
             self.bar.set_fraction(float(sent) / tot)
 
-        gtk.gdk.threads_leave()
+    def update(self, status, vals):
+        gobject.idle_add(self._update, status, vals)
 
     def do_send(self):
         fc = gtk.FileChooserDialog("Select file to send",

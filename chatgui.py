@@ -660,10 +660,7 @@ class MainChatGUI(ChatGUI):
         self.show()
 
     def main(self):
-        gtk.gdk.threads_init()
-        gtk.gdk.threads_enter()
         gtk.main()
-        gtk.gdk.threads_leave()
 
 class QuickMessageControl:
     def __init__(self, gui, config):
@@ -793,10 +790,13 @@ class QSTMonitor:
                        self.col_remain, val,
                        self.col_status, status)
 
+    def update_at_idle(self):
+        self.store.foreach(self.update, None)
+        
     def update_thread(self):
         while self.enabled:
-            self.store.foreach(self.update, None)
             time.sleep(1)
+            gobject.idle_add(self.update_at_idle)
 
     def add_qst(self, index, qst):
 
