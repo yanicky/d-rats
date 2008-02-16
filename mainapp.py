@@ -178,7 +178,8 @@ class SerialCommunicator:
     def send_text(self, text):
         if self.enabled:
             self.write_log(text)
-        return self.pipe.write(text)
+        if self.pipe:
+            return self.pipe.write(text)
 
     def incoming_chat(self, data):
         if self.gui.config.config.getboolean("prefs", "eolstrip"):
@@ -323,6 +324,15 @@ class MainApp:
                 dir = self.config.config.get("prefs", "download_dir")
                 logfile = os.path.join(dir, "debug.log")
                 sys.stdout = file(logfile, "w")
+            elif os.name == "nt":
+                class Blackhole(object):
+                    softspace=0
+                    def write(self, text):
+                        pass
+
+                sys.stdout = Blackhole()
+                del Blackhole
+
         except Exception, e:
             print "Unable to open debug log: %s" % e
             
