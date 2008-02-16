@@ -128,10 +128,7 @@ class AppConfig:
               "swflow" : "Try this if using a USB-to-serial adapter",
               }
 
-    xfers = {"XModem" : xmodem.XModem,
-             "XModemCRC" : xmodem.XModemCRC,
-             "YModem" : xmodem.YModem,
-             "DDT" : ddt.DDTTransfer}
+    xfers = {"DDT" : ddt.DDTTransfer}
 
     def xfer(self):
         name = self.config.get("settings", "xfer")
