@@ -1,5 +1,6 @@
 import sys
 import time
+import os
 
 from xml.dom.ext.reader import Sax2
 from xml.dom.ext import Print
@@ -59,6 +60,30 @@ def tree2string(node, indent=0):
     
     return string
         
+
+def tree2text(node):
+    if node.nodeName == "caption":
+        return "%-18s: " % node.childNodes[0].nodeValue
+    elif node.nodeName == "entry":
+        try:
+            v = node.childNodes[0].nodeValue
+        except:
+            v = None
+        if not v:
+            return "_____________"
+        else:
+            return v
+    elif node.nodeName in ("field", "form", "xml"):
+        s = ""
+        for n in node.childNodes:
+            s += tree2text(n)
+
+        return s + os.linesep
+    elif node.nodeName == "title":
+        return "### Form: %s ###%s" % (node.childNodes[0].nodeValue,
+                                       os.linesep * 2)
+    else:
+        return ""
 
 class FieldWidget:
     def __init__(self, node):
@@ -351,7 +376,28 @@ class FormField:
         self.entry.update_node()
 
 class Form(gtk.Dialog):
-    def build_gui(self):
+    def but_save(self, widget, data=None):
+        d = gtk.FileChooserDialog(title="Export form as text",
+                                  action=gtk.FILE_CHOOSER_ACTION_SAVE,
+                                  buttons=(gtk.STOCK_SAVE, gtk.RESPONSE_OK,
+                                           gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL))
+        r = d.run()
+        if r != gtk.RESPONSE_CANCEL:
+            try:
+                f = file(d.get_filename(), "w")
+                f.write(self.get_text())
+                f.close()
+            except Exception, e:
+                ed = gtk.MessageDialog(buttons=gtk.BUTTONS_OK)
+                ed.text = "Unable to open file"
+                ed.format_secondary_text("Unable to open %s (%s)" % \
+                                             (d.get_filename(), e))
+                ed.run()
+                ed.destroy()
+
+        d.destroy()
+
+    def build_gui(self, allow_export=True):
         tlabel = gtk.Label()
         tlabel.set_markup("<big><b>%s</b></big>" % self.title_text)
         tlabel.show()
@@ -360,6 +406,12 @@ class Form(gtk.Dialog):
 
         for f in self.fields:
             self.vbox.pack_start(f.get_widget(), 0,0,0)
+
+        if allow_export:
+            save = gtk.Button("Export")
+            save.connect("clicked", self.but_save, None)
+            save.show()
+            self.action_area.pack_start(save, 0,0,0)
 
     def process_fields(self, doc):
         fields = xpath.Evaluate("form/field", doc)
@@ -392,6 +444,12 @@ class Form(gtk.Dialog):
 
         return tree2string(self.doc.documentElement)
 
+    def get_text(self):
+        for f in self.fields:
+            f.update_node()
+
+        return tree2text(self.doc.documentElement)
+
     def __init__(self, title, xmlstr, buttons=None):
         if not buttons:
             buttons = (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
@@ -411,7 +469,7 @@ class Form(gtk.Dialog):
 
         print "Form ID: %s" % self.id
 
-        self.build_gui()
+        self.build_gui(gtk.RESPONSE_CANCEL in buttons)
         
 class FormFile(Form):
     def __init__(self, title, filename, buttons=None):
@@ -445,6 +503,4 @@ if __name__ == "__main__":
     except:
         pass
 
-    out = file("output.xml", "w")
-    print >>out, form.get_xml()
-    out.close()
+    print form.get_text()
