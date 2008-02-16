@@ -495,7 +495,7 @@ class MainChatGUI(ChatGUI):
                    ('config', None, "Main _Settings", None, None, self.menu_handler),
                    ('qsts', None, "_Auto QST Settings", None, None, self.menu_handler),
                    ('quickmsg', None, 'Quick _Messages', None, None, self.menu_handler),
-                   ('manageform', None, '_Manage Forms', None, None, self.menu_handler),
+                   ('manageform', None, '_Manage Form Templates', None, None, self.menu_handler),
                    ('quit', None, "_Quit", None, None, self.menu_handler),
                    ('sendtext', None, 'Broadcast _Text File', None, None, self.menu_handler),
                    ('view', None, "_View", None, None, self.menu_handler),
@@ -924,8 +924,7 @@ class FormManager:
         if not form_files:
             d = gtk.MessageDialog(buttons=gtk.BUTTONS_OK)
             d.set_property("text", "No template forms available")
-            d.format_secondary_text("Please place the template forms in %s" % \
-                                        os.path.abspath(self.form_source_dir))
+            d.format_secondary_text("Please copy in the template forms to %s or create a new template by going to File->Manage Form Templates" % os.path.abspath(self.form_source_dir))
             d.run()
             d.destroy()
             return            
