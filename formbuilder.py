@@ -110,7 +110,7 @@ class FormElementEditor(gtk.Dialog):
         elif sel in ("choice"):
             b = self.entries[sel].get_buffer()
             i = b.get_iter_at_line(1)
-            i.backward_chars(len(os.linesep))
+            i.backward_chars(1)
             return b.get_text(b.get_start_iter(), i)
         elif sel in ("toggle"):
             return str(self.entries[sel].get_active())
@@ -158,20 +158,20 @@ class FormElementEditor(gtk.Dialog):
 class FormBuilderGUI(gtk.Dialog):
 
     def reorder(self, up):
-        (list, iter) = self.view.get_selection().get_selected()
-
-        pos = int(list.get_path(iter)[0])
 
         try:
+            (list, iter) = self.view.get_selection().get_selected()
+            pos = int(list.get_path(iter)[0])
+
             if up:
                 target = list.get_iter(pos - 1)
             else:
                 target = list.get_iter(pos + 1)
+
+            if target:
+                list.swap(iter, target)
         except:
             return
-
-        if target:
-            list.swap(iter, target)
 
     def but_move_up(self, widget, data=None):
         self.reorder(True)
@@ -202,16 +202,22 @@ class FormBuilderGUI(gtk.Dialog):
         d.destroy()
 
     def but_delete(self, widget, data=None):
-        (list, iter) = self.view.get_selection().get_selected()
-        list.remove(iter)
+        try:
+            (list, iter) = self.view.get_selection().get_selected()
+            list.remove(iter)
+        except:
+            return
 
     def but_edit(self, widget, data=None):
-        (list, iter) = self.view.get_selection().get_selected()
-        (t, v, o) = list.get(iter,
-                             self.col_type,
-                             self.col_value,
-                             self.col_opts)
-
+        try:
+            (list, iter) = self.view.get_selection().get_selected()
+            (t, v, o) = list.get(iter,
+                                 self.col_type,
+                                 self.col_value,
+                                 self.col_opts)
+        except:
+            return
+        
         d = FormElementEditor()
         d.set_type(t)
         d.set_initial_value(v)
@@ -464,8 +470,11 @@ class FormManagerGUI:
         d.destroy()
 
     def but_edit(self, widget, data=None):
-        (list, iter) = self.view.get_selection().get_selected()
-        (filename, _id) = list.get(iter, self.col_file, self.col_id)
+        try:
+            (list, iter) = self.view.get_selection().get_selected()
+            (filename, _id) = list.get(iter, self.col_file, self.col_id)
+        except:
+            return
         
         d = FormBuilderGUI()
         d.load_from_file(filename)
@@ -483,12 +492,14 @@ class FormManagerGUI:
         d.destroy()
 
     def but_delete(self, widget, data=None):
-        (list, iter) = self.view.get_selection().get_selected()
+        try:
+            (list, iter) = self.view.get_selection().get_selected()
+            (file, ) = list.get(iter, self.col_file)
 
-        (file, ) = list.get(iter, self.col_file)
-
-        list.remove(iter)
-        os.remove(file)
+            list.remove(iter)
+            os.remove(file)
+        except:
+            return
 
     def but_close(self, widget, data=None):
         self.window.destroy()
