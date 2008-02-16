@@ -3,11 +3,13 @@ import py2exe
 
 opts = {
     "py2exe" : {
-        "includes" : "pango,atk,gobject,cairo,pangocairo",
+        "includes" : "pango,atk,gobject,cairo,pangocairo,xml",
         "compressed" : 1,
-        "optimize" : 2
+        "optimize" : 2,
+        "packages" : "xml.sax.drivers,xml.sax.drivers2"
         }
     }
 
-setup(windows=["d-rats.py"],
+setup(windows=[{'script' : "d-rats.py",
+               'icon_resources': [(0x0004, 'd-rats.ico')]}],
       options=opts)
