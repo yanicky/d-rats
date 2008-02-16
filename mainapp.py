@@ -39,7 +39,7 @@ DRATS_VERSION = "0.1.6"
 LOGTF = "%m-%d-%Y_%H:%M:%S"
 
 class SWFSerial(serial.Serial):
-    __swf_debug = True
+    __swf_debug = False
 
     def __init__(self, **kwargs):
         print "Software XON/XOFF control initialized"
