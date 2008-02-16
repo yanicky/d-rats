@@ -453,7 +453,7 @@ class Form(gtk.Dialog):
     def __init__(self, title, xmlstr, buttons=None):
         if not buttons:
             buttons = (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
-                       gtk.STOCK_OK, gtk.RESPONSE_OK)
+                       gtk.STOCK_SAVE, gtk.RESPONSE_OK)
 
         gtk.Dialog.__init__(self, title=title, buttons=buttons)
 
