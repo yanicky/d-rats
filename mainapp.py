@@ -29,7 +29,7 @@ import gobject
 import chatgui
 import config
 
-from utils import hexprint
+from utils import hexprint,filter_to_ascii
 import qst
 
 ASCII_XON = chr(17)
@@ -217,7 +217,7 @@ class SerialCommunicator:
                 hexprint(newdata)
             else:
                 if data:
-                    print "No more data, writing: %s" % data
+                    print "No more data, writing: %s" % filter_to_ascii(data)
                     gobject.idle_add(self.incoming_chat, data)
                     data = ""
                     

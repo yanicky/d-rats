@@ -34,6 +34,7 @@ from threading import Thread
 from xfergui import FileTransferGUI, FormTransferGUI
 from qst import QSTGUI, QuickMsgGUI
 from inputdialog import TextInputDialog, ChoiceDialog
+from utils import filter_to_ascii
 import mainapp
 import formgui
 import formbuilder
@@ -64,27 +65,14 @@ class ChatGUI:
             self.window.set_urgency_hint(False)
 
     def display(self, string, *attrs):
-        #string = string.rstrip("\r")
-
-        # Filter incoming to just ASCII-printable
-        c = '?'
-        xlate = ([c] * 32) +    \
-                [chr(x) for x in range(32,126)] + \
-                ([c] * 130)
-
-        xlate[ord('\n')] = '\n'
-        xlate[ord('\r')] = '\r'
-
-        string = string.translate("".join(xlate))
+        string = filter_to_ascii(string)
 
         end = self.main_buffer.get_end_iter()
 
         self.main_buffer.insert_with_tags_by_name(end,
                                                   string,
                                                   *attrs)
-
-        #print "Displaying: %s" % list(string)
-
+        
         adj = self.scroll.get_vadjustment()
         adj.value = adj.upper
         self.scroll.set_vadjustment(adj)
