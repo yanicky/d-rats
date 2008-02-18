@@ -35,7 +35,7 @@ import qst
 ASCII_XON = chr(17)
 ASCII_XOFF = chr(19)
 
-DRATS_VERSION = "0.1.6"
+DRATS_VERSION = "0.1.7"
 LOGTF = "%m-%d-%Y_%H:%M:%S"
 
 class SWFSerial(serial.Serial):
