@@ -66,7 +66,9 @@ class QSTText:
             time.sleep(1)
 
     def do_qst(self, text):
-        gobject.idle_add(self.gui.tx_msg, "%s %s" % (self.prefix, text))
+        gtk.gdk.threads_enter()
+        self.gui.tx_msg("%s %s" % (self.prefix, text))
+        gtk.gdk.threads_leave()
 
     def thread(self):
         while True:
@@ -74,7 +76,7 @@ class QSTText:
             if not self.enabled:
                 break
             print "Tick: %s" % self.text
-            self.do_qst(self.text)
+            gobject.idle_add(self.do_qst, self.text)
 
 class QSTExec(QSTText):
     size_limit = 256

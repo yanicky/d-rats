@@ -184,6 +184,7 @@ class FileTransferGUI:
         gtk.gdk.threads_leave()
 
     def ddt_finish(self):
+        gtk.gdk.threads_enter()
         self.chatgui.toggle_sendable(True)
         self.close_btn.set_sensitive(True)
         self.cancel_btn.set_sensitive(False)
@@ -193,6 +194,7 @@ class FileTransferGUI:
                     True,
                     self.filename,
                     self._real_filename) #Change this to report real success
+        gtk.gdk.threads_leave()
 
     def ddt_xfer(self):
         x = self.xfer_agent(self.chatgui.mainapp.comm.pipe,
@@ -237,6 +239,7 @@ class FileTransferGUI:
         self.xfer_thread.start()
 
     def _update(self, status, vals):
+        gtk.gdk.threads_enter()
         file = vals["filename"]
         sent = vals["transferred"]
         wire = vals["wiresize"]
@@ -272,6 +275,7 @@ class FileTransferGUI:
         self.bar.set_text(status)
         if tot:
             self.bar.set_fraction(float(sent) / tot)
+        gtk.gdk.threads_leave()
 
     def update(self, status, vals):
         gobject.idle_add(self._update, status, vals)

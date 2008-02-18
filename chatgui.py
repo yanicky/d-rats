@@ -518,9 +518,11 @@ class MainChatGUI(ChatGUI):
             i.refresh()
 
     def refresh_window(self, size):
+        gtk.gdk.threads_enter()
         self.advpane.show()
         self.pane.set_position(size)
         self.window.queue_draw()
+        gtk.gdk.threads_leave()
 
     def show_advanced(self, action, data=None):
         w, h = self.window.get_size()
@@ -779,7 +781,9 @@ class QSTMonitor:
                        self.col_status, status)
 
     def update_at_idle(self):
+        gtk.gdk.threads_enter()
         self.store.foreach(self.update, None)
+        gtk.gdk.threads_leave()
         
     def update_thread(self):
         while self.enabled:

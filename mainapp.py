@@ -183,6 +183,7 @@ class SerialCommunicator:
             return self.pipe.write(text)
 
     def incoming_chat(self, data):
+        gtk.gdk.threads_enter()
         if self.gui.config.config.getboolean("prefs", "eolstrip"):
             data = data.replace("\n", "")
             data = data.replace("\r", "")
@@ -196,6 +197,7 @@ class SerialCommunicator:
         self.write_log("%s%s%s" % (stamp, data, os.linesep))
 
         self.gui.display_line(data, "incomingcolor")
+        gtk.gdk.threads_leave()
 
     def watch_serial(self):
         data = ""
