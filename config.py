@@ -22,7 +22,6 @@ import pygtk
 
 import ConfigParser
 
-import xmodem
 import ddt
 
 def color_string(color):
@@ -131,7 +130,10 @@ class AppConfig:
     xfers = {"DDT" : ddt.DDTTransfer}
 
     def xfer(self):
-        name = self.config.get("settings", "xfer")
+        try:
+            name = self.config.get("settings", "xfer")
+        except:
+            name = "DDT"
 
         return self.xfers[name]
 

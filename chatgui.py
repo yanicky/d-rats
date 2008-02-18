@@ -26,7 +26,6 @@ import re
 import glob
 import ConfigParser
 
-import xmodem
 import ddt
 
 from threading import Thread

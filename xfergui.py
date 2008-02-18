@@ -25,7 +25,6 @@ import pygtk
 import gtk
 import gobject
 
-import xmodem
 import ddt
 import formgui
 
@@ -136,53 +135,6 @@ class FileTransferGUI:
         i.close()
         o.close()
 
-    def xymodem_xfer(self):
-        xa = self.xfer_agent(debug="stdout", status_fn=self.update)
-
-        self.xfer = xa
-
-        if self.is_send:
-            local = self.encoded_file(self.filename)
-            s = os.stat(local.name)
-            self.total_size = s.st_size
-            func = xa.send_xfer
-            xa.filename = os.path.basename(self.filename)
-        elif self.xfer_agent == xmodem.YModem:
-            name, size = xa.rx_ymodem_header(self.chatgui.mainapp.comm.pipe)
-            self.total_size = size
-
-            self.filename = os.path.join(self.filename, name)
-            print "Target filename: %s" % self.filename
-            local = file(tempfile.gettempdir() + os.path.sep + "dratsdecode", "w")
-            func = xa.recv_xfer
-        else:
-            local = file(tempfile.gettempdir() + os.path.sep + "dratsdecode", "w")
-            func = xa.recv_xfer
-
-        gtk.gdk.threads_enter()
-        self.values["File"].set_text(os.path.basename(self.filename))
-        gtk.gdk.threads_leave()
-
-        try:
-            func(self.chatgui.mainapp.comm.pipe, local)
-        except xmodem.FatalError, e:
-            self.update("Failed (%s)" % e,
-                        0,
-                        xa.total_errors,
-                        running=False)
-        except xmodem.CancelledError, e:
-            self.update(str(e), 0, 0, False)
-
-        local.close()
-        if not self.is_send:
-            self.decode_file(local.name)
-
-        gtk.gdk.threads_enter()
-        self.chatgui.toggle_sendable(True)
-        self.close_btn.set_sensitive(True)
-        self.cancel_btn.set_sensitive(False)
-        gtk.gdk.threads_leave()
-
     def ddt_finish(self):
         gtk.gdk.threads_enter()
         self.chatgui.toggle_sendable(True)
@@ -227,15 +179,7 @@ class FileTransferGUI:
 
         self.chatgui.toggle_sendable(False)
 
-        # Legacy support for X/YModem
-        # This needs to be fixed up
-        if self.xfer_agent == xmodem.XModem or \
-                self.xfer_agent == xmodem.XModemCRC or \
-                self.xfer_agent == xmodem.YModem:
-            self.xfer_thread = Thread(target=self.xymodem_xfer)
-        elif self.xfer_agent == ddt.DDTTransfer:
-            self.xfer_thread = Thread(target=self.ddt_xfer)
-
+        self.xfer_thread = Thread(target=self.ddt_xfer)
         self.xfer_thread.start()
 
     def _update(self, status, vals):
@@ -302,14 +246,8 @@ class FileTransferGUI:
         self.show_xfer()
 
     def do_recv(self):
-        if self.xfer_agent == xmodem.YModem or \
-                self.xfer_agent == ddt.DDTTransfer:
-            title = "Select destination folder"
-            stock = gtk.FILE_CHOOSER_ACTION_SELECT_FOLDER
-        else:
-            title = "Save received file as..."
-            stock = gtk.FILE_CHOOSER_ACTION_SAVE
-            
+        title = "Select destination folder"
+        stock = gtk.FILE_CHOOSER_ACTION_SELECT_FOLDER
         fc = gtk.FileChooserDialog(title,
                                    None,
                                    stock,
