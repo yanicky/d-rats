@@ -79,8 +79,8 @@ class ChatGUI:
     def display_line(self, text, *attrs):
         stamp = time.strftime("%H:%M:%S: ")
 
-        ignore = self.config.config.get("prefs", "ignorere")
-        notice = self.config.config.get("prefs", "noticere")
+        ignore = self.config.get("prefs", "ignorere")
+        notice = self.config.get("prefs", "noticere")
 
         if ignore and re.search(ignore, text):
             attrs += ("ignorecolor", )
@@ -90,13 +90,13 @@ class ChatGUI:
         self.display(stamp + text + os.linesep, *attrs)
 
     def tx_msg(self, string):
-        call = self.config.config.get("user", "callsign")
+        call = self.config.get("user", "callsign")
         message = "%s> %s" % (call, string)
 
         ChatGUI.display_line(self, message, "outgoingcolor")
         self.mainapp.comm.send_text(message)
 
-        if self.config.config.getboolean("prefs", "blinkmsg"):
+        if self.config.getboolean("prefs", "blinkmsg"):
             self.window.set_urgency_hint(True)
 
     def make_entry_box(self):
@@ -166,7 +166,7 @@ class ChatGUI:
 
     def refresh_colors(self, first_time=False):
 
-        fontname = self.config.config.get("prefs", "font")
+        fontname = self.config.get("prefs", "font")
         font = pango.FontDescription(fontname)
         self.textview.modify_font(font)
 
@@ -203,15 +203,15 @@ class ChatGUI:
                 tags.remove(tags.lookup(i))
 
             tag = gtk.TextTag(i)
-            tag.set_property("foreground", self.config.config.get("prefs", i))
+            tag.set_property("foreground", self.config.get("prefs", i))
             tags.add(tag)
 
     def set_window_defaults(self, window):
         window.set_geometry_hints(None, min_width=400, min_height=200)
 
         try:
-            h = self.config.config.getint("state", "main_size_x")
-            w = self.config.config.getint("state", "main_size_y")
+            h = self.config.getint("state", "main_size_x")
+            w = self.config.getint("state", "main_size_y")
             window.set_default_size(h, w)
         except Exception, e:
             print "Failed to set window size: %s" % e
@@ -289,13 +289,13 @@ class MainChatGUI(ChatGUI):
         self.filters[0].set_waiting(True)
 
     def sig_destroy(self, widget, data=None):
-        if self.config.config.getboolean("prefs", "dosignoff"):
-            self.tx_msg(self.config.config.get("prefs", "signoff"))
+        if self.config.getboolean("prefs", "dosignoff"):
+            self.tx_msg(self.config.get("prefs", "signoff"))
 
         h, w = self.window.get_size()
         print "Setting %s size to %i,%i" % (self.window.get_title(), h,w)
-        self.config.config.set("state", "main_size_x", h)
-        self.config.config.set("state", "main_size_y", w)
+        self.config.set("state", "main_size_x", h)
+        self.config.set("state", "main_size_y", w)
 
         gtk.main_quit()
 
@@ -321,7 +321,7 @@ class MainChatGUI(ChatGUI):
                                    gtk.FILE_CHOOSER_ACTION_OPEN,
                                    (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
                                     gtk.STOCK_OPEN, gtk.RESPONSE_OK))
-        d = self.config.config.get("prefs", "download_dir")
+        d = self.config.get("prefs", "download_dir")
         fc.set_current_folder(d)
 
         result = fc.run()
@@ -494,8 +494,8 @@ class MainChatGUI(ChatGUI):
 
         advanced = gtk.ToggleAction("advanced", "_Advanced", None, None)
         try:
-            advanced.set_active(self.config.config.getint("state",
-                                                          "main_advanced") != 0)
+            advanced.set_active(self.config.getint("state",
+                                                   "main_advanced") != 0)
         except Exception, e:
             print "Unable to get advanced state: %s" % e
 
@@ -537,10 +537,10 @@ class MainChatGUI(ChatGUI):
         if not action.get_active():
             self.advpane.hide()
             self.window.resize(w, self.pane.get_position())
-            self.config.config.set("state", "main_advanced", 0)
+            self.config.set("state", "main_advanced", 0)
         else:
             self.window.resize(w, h+height_delta)
-            self.config.config.set("state", "main_advanced", h)
+            self.config.set("state", "main_advanced", h)
         
         print "New window size: %ix%i" % self.window.get_size()
 
@@ -582,7 +582,7 @@ class MainChatGUI(ChatGUI):
         self.pane.show()
         
         try:
-            ph = self.config.config.getint("state", "main_advanced")
+            ph = self.config.getint("state", "main_advanced")
             if ph > 0:
                 self.advpane.show()
                 print "Pane Height: %i" % ph
@@ -696,9 +696,9 @@ class QuickMessageControl:
     def refresh(self):
         self.store.clear()
         
-        msgs = self.config.config.options("quick")
+        msgs = self.config.options("quick")
         for msg in msgs:
-            text = self.config.config.get("quick", msg)
+            text = self.config.get("quick", msg)
 
             iter = self.store.append()
             self.store.set(iter, 0, text)

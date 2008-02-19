@@ -386,10 +386,10 @@ class QSTGUI(SelectGUI):
         return hbox        
 
     def load_qst(self, section):
-        freq = self.config.config.getint(section, "freq")
-        content = self.config.config.get(section, "content")
-        enabled = self.config.config.getboolean(section, "enabled")
-        qsttype = self.config.config.get(section, "type")
+        freq = self.config.getint(section, "freq")
+        content = self.config.get(section, "content")
+        enabled = self.config.getboolean(section, "enabled")
+        qsttype = self.config.get(section, "type")
 
         iter = self.list_store.append()
         self.list_store.set(iter,
@@ -409,10 +409,10 @@ class QSTGUI(SelectGUI):
 
         section = "qst_%i" % int(pos)
         self.config.config.add_section(section)
-        self.config.config.set(section, "freq", str(freq))
-        self.config.config.set(section, "content", text)
-        self.config.config.set(section, "enabled", str(enabled))
-        self.config.config.set(section, "type", qsttype)
+        self.config.set(section, "freq", str(freq))
+        self.config.set(section, "content", text)
+        self.config.set(section, "enabled", str(enabled))
+        self.config.set(section, "type", qsttype)
 
     def sync_gui(self, load=True):
         sections = self.config.config.sections()
@@ -483,7 +483,7 @@ class QuickMsgGUI(SelectGUI):
         return hbox
 
     def load_msg(self, id):
-        text = self.config.config.get("quick", id)
+        text = self.config.get("quick", id)
 
         iter = self.list_store.append()
         self.list_store.set(iter, 0, text)
@@ -493,7 +493,7 @@ class QuickMsgGUI(SelectGUI):
 
         text = model.get(iter, 0)[0]
 
-        self.config.config.set("quick", "msg_%i" % pos, text)
+        self.config.set("quick", "msg_%i" % pos, text)
 
     def sync_gui(self, load=True):
         if not self.config.config.has_section("quick"):

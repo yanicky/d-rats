@@ -184,7 +184,7 @@ class SerialCommunicator:
 
     def incoming_chat(self, data):
         gtk.gdk.threads_enter()
-        if self.gui.config.config.getboolean("prefs", "eolstrip"):
+        if self.gui.config.getboolean("prefs", "eolstrip"):
             data = data.replace("\n", "")
             data = data.replace("\r", "")
         else:
@@ -249,10 +249,10 @@ class MainApp:
 
         for i in qsts:
             print "Doing QST %s" % i
-            text = self.config.config.get(i, "content")
-            freq = self.config.config.get(i, "freq")
-            qtyp = self.config.config.get(i, "type")
-            enab = self.config.config.getboolean(i, "enabled")
+            text = self.config.get(i, "content")
+            freq = self.config.get(i, "freq")
+            qtyp = self.config.get(i, "type")
+            enab = self.config.getboolean(i, "enabled")
 
             if not enab:
                 continue
@@ -273,7 +273,7 @@ class MainApp:
             self.comm.disable()
             
         try:
-            swf = self.config.config.getboolean("settings", "swflow")
+            swf = self.config.getboolean("settings", "swflow")
         except:
             swf = False
 
@@ -284,12 +284,12 @@ class MainApp:
         self.chatgui.display_line(str(self.comm), "italic")
 
     def refresh_config(self):
-        rate=self.config.config.getint("settings", "rate")
-        port=self.config.config.get("settings", "port")
-        call=self.config.config.get("user", "callsign")
+        rate=self.config.getint("settings", "rate")
+        port=self.config.get("settings", "port")
+        call=self.config.get("user", "callsign")
 
-        if self.config.config.getboolean("prefs", "logenabled"):
-            base = self.config.config.get("prefs", "download_dir")
+        if self.config.getboolean("prefs", "logenabled"):
+            base = self.config.get("prefs", "download_dir")
             logfile = "%s%s%s" % (base, os.path.sep, "d-rats.log")
         else:
             logfile = None
@@ -312,17 +312,17 @@ class MainApp:
         """Fix the 'download_dir = None' problem, if present in an
         existing config"""
 
-        dir = self.config.config.get("prefs", "download_dir")
+        dir = self.config.get("prefs", "download_dir")
         if not os.path.isdir(dir):
-            self.config.config.set("prefs",
+            self.config.set("prefs",
                                    "download_dir",
                                    self.config.default_directory())
             print "Fixed broken default_dir"
 
     def maybe_redirect_stdout(self):
         try:
-            if self.config.config.getboolean("prefs", "debuglog"):
-                dir = self.config.config.get("prefs", "download_dir")
+            if self.config.getboolean("prefs", "debuglog"):
+                dir = self.config.get("prefs", "download_dir")
                 logfile = os.path.join(dir, "debug.log")
                 sys.stdout = file(logfile, "w")
             elif os.name == "nt":
@@ -360,8 +360,8 @@ class MainApp:
 
         self.refresh_config()
 
-        if self.config.config.getboolean("prefs", "dosignon"):
-            self.chatgui.tx_msg(self.config.config.get("prefs", "signon"))
+        if self.config.getboolean("prefs", "dosignon"):
+            self.chatgui.tx_msg(self.config.get("prefs", "signon"))
             
     def main(self):
         try:

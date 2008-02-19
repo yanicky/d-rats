@@ -159,6 +159,25 @@ class AppConfig:
 
         return d
 
+    def get(self, sec, key):
+        return self.config.get(sec, key)
+
+    def set(self, sec, key, val):
+        return self.config.set(sec, key, val)
+
+    def getboolean(self, sec, key):
+        try:
+            return self.config.getboolean(sec, key)
+        except:
+            print "Failed to get boolean: %s:%s" % (sec, key)
+            return False
+
+    def getint(self, sec, key):
+        return self.config.getint(sec, key)
+
+    def options(self, *args):
+        return self.config.options(*args)
+
     def make_sb(self, id, child):
         hbox = gtk.HBox(True, 0)
 

@@ -155,13 +155,13 @@ class FileTransferGUI:
         self.xfer = x
 
         try:
-            c = self.chatgui.config.config.get("settings", "write_chunk")
+            c = self.chatgui.config.get("settings", "write_chunk")
             x.write_chunk = int(float(c))
 
-            d = self.chatgui.config.config.get("settings", "chunk_delay")
+            d = self.chatgui.config.get("settings", "chunk_delay")
             x.chunk_delay = float(d)
 
-            s = self.chatgui.config.config.get("settings", "ddt_block_size")
+            s = self.chatgui.config.get("settings", "ddt_block_size")
             x.block_size = int(s)
         except Exception, e:
             print "Failed to set chunk values: %s" % e
@@ -230,7 +230,7 @@ class FileTransferGUI:
                                    gtk.FILE_CHOOSER_ACTION_OPEN,
                                    (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
                                     gtk.STOCK_OPEN, gtk.RESPONSE_OK))
-        d = self.chatgui.config.config.get("prefs", "download_dir")
+        d = self.chatgui.config.get("prefs", "download_dir")
         fc.set_current_folder(d)
 
         result = fc.run()
@@ -253,7 +253,7 @@ class FileTransferGUI:
                                    stock,
                                    (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
                                     gtk.STOCK_SAVE, gtk.RESPONSE_OK))
-        d = self.chatgui.config.config.get("prefs", "download_dir")
+        d = self.chatgui.config.get("prefs", "download_dir")
         fc.set_current_folder(d)
 
         result = fc.run()
