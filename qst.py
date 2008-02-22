@@ -20,7 +20,6 @@ import pygtk
 import gobject
 import time
 
-from threading import Thread
 from commands import getstatusoutput as run
 
 from config import make_choice
@@ -34,77 +33,72 @@ class QSTText:
         self.text = text
         self.freq = freq
         self.enabled = False
-        self.remaining = freq * 60
-        self.reset = False
+
+        self.reset()        
+
+    def reset(self):
+        self.next = time.time() + (self.freq * 60)
+
+    def remaining(self):
+        delta = int(self.next - time.time())
+        if delta >= 0:
+            return delta
+        else:
+            return 0
 
     def enable(self):
         self.enabled = True
         print "Starting QST `%s'" % self.text
-        self.thread = Thread(target=self.thread)
-        self.thread.start()
+        gobject.timeout_add(1000, self.tick)
 
     def disable(self):
         self.enabled = False
-        self.thread.join()
 
     def reset_timer(self):
         self.reset = True
 
-    def interruptible_sleep(self):
-        if self.freq > 0:
-            ticks = self.freq * 60
-        else:
-            ticks = self.freq * -1
-            
-        for i in range(0, ticks):
-            if not self.enabled:
-                return
-            if self.reset:
-                self.reset = False
-                break
-            self.remaining = ticks - i
-            time.sleep(1)
+    def do_qst(self):
+        return self.text
 
-    def do_qst(self, text):
-        gtk.gdk.threads_enter()
-        self.gui.tx_msg("%s %s" % (self.prefix, text))
-        gtk.gdk.threads_leave()
+    def tick(self):
+        if not self.enabled:
+            return False
 
-    def thread(self):
-        while True:
-            self.interruptible_sleep()
-            if not self.enabled:
-                break
+        if self.remaining() == 0:
             print "Tick: %s" % self.text
-            gobject.idle_add(self.do_qst, self.text)
+            self.gui.tx_msg("%s %s" % (self.prefix, self.do_qst()))
+
+            self.reset()
+
+        return True
 
 class QSTExec(QSTText):
     size_limit = 256
 
-    def do_qst(self, cmd):
-        s, o = run(cmd)
+    def do_qst(self):
+        s, o = run(self.text)
         if s:
             print "Command failed with status %i" % status
 
         if o and len(o) <= self.size_limit:
             print "Sending command output: %s" % o
-            QSTText.do_qst(self, o)
+            return o
         else:
             print "Command output length %i exceeds limit of %i" % (len(o),
                                                                     self.size_limit)
 
 class QSTFile(QSTText):
-    def do_qst(self, filename):
+    def do_qst(self):
         try:
-            f = file(filename)
+            f = file(self.text)
         except:
-            print "Unable to open file `%s'" % filename
+            print "Unable to open file `%s'" % self.text
             return
 
         text = f.read()
         f.close()
 
-        QSTText.do_qst(self, text)        
+        return text
 
 class SelectGUI:
     def sync_gui(self, load=True):

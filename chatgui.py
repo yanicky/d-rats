@@ -28,8 +28,6 @@ import ConfigParser
 
 import ddt
 
-from threading import Thread
-
 from xfergui import FileTransferGUI, FormTransferGUI
 from qst import QSTGUI, QuickMsgGUI
 from inputdialog import TextInputDialog, ChoiceDialog
@@ -770,13 +768,13 @@ class QSTMonitor:
 
         self.mainapp.qsts[index].reset_timer()
 
-    def update(self, model, path, iter, data=None):
+    def _update(self, model, path, iter, data=None):
         index = model.get(iter, self.col_index)[0]
 
         qst = self.mainapp.qsts[index]
 
         max = qst.freq * 60
-        rem = qst.remaining
+        rem = qst.remaining()
 
         if rem < 90:
             status = "%i sec" % rem
@@ -789,20 +787,16 @@ class QSTMonitor:
                        self.col_remain, val,
                        self.col_status, status)
 
-    def update_at_idle(self):
-        gtk.gdk.threads_enter()
-        self.store.foreach(self.update, None)
-        gtk.gdk.threads_leave()
-        
-    def update_thread(self):
-        while self.enabled:
-            time.sleep(1)
-            gobject.idle_add(self.update_at_idle)
+    def update(self):
+        if self.enabled:
+            self.store.foreach(self._update, None)
+
+        return True
 
     def add_qst(self, index, qst):
 
         max = qst.freq * 60
-        rem = qst.remaining
+        rem = qst.remaining()
         msg = qst.text
 
         if rem < 90:
@@ -820,9 +814,7 @@ class QSTMonitor:
         
 
     def refresh(self):
-        if self.thread:
-            self.enabled = False
-            self.thread.join()
+        self.enabled = False
 
         self.store.clear()
 
@@ -830,8 +822,6 @@ class QSTMonitor:
             self.add_qst(i, self.mainapp.qsts[i])
 
         self.enabled = True
-        self.thread = Thread(target=self.update_thread)
-        self.thread.start()
 
     def __init__(self, gui, mainapp):
         self.gui = gui
@@ -841,6 +831,8 @@ class QSTMonitor:
         self.tips = gtk.Tooltips()
 
         self.root = self.make_display()
+        self.enabled = False
+        gobject.timeout_add(1000, self.update)
 
     def show(self):
         self.root.show()
