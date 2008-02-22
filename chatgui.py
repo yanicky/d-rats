@@ -413,6 +413,17 @@ class MainChatGUI(ChatGUI):
         if len(self.filters) == 1:
             self.tabs.set_show_tabs(False)
 
+    def filter_clear_current(self):
+        tab = self.tabs.get_nth_page(self.tabs.get_current_page())
+
+        for i in range(0, len(self.filters)):
+            f = self.filters[i]
+            if f.tab_child == tab and f.text is not None:
+                f.root.main_buffer.set_text("")
+                return
+        
+        self.main_buffer.set_text("")
+
     def menu_handler(self, _action):
         action = _action.get_name()
 
@@ -432,7 +443,7 @@ class MainChatGUI(ChatGUI):
             qsts = QSTGUI(self.config)
             qsts.show()
         elif action == "clear":
-            self.main_buffer.set_text("")
+            self.filter_clear_current()
         elif action == "quickmsg":
             qm = QuickMsgGUI(self.config)
             qm.show()
@@ -525,11 +536,9 @@ class MainChatGUI(ChatGUI):
             i.refresh()
 
     def refresh_window(self, size):
-        gtk.gdk.threads_enter()
         self.advpane.show()
         self.pane.set_position(size)
         self.window.queue_draw()
-        gtk.gdk.threads_leave()
 
     def show_advanced(self, action, data=None):
         w, h = self.window.get_size()
