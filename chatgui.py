@@ -38,6 +38,8 @@ import mainapp
 import formgui
 import formbuilder
 
+from mc_xfergui import MulticastGUI
+
 class ChatGUI:
     def ev_delete(self, widget, event, data=None):
         self.window.set_default_size(*self.window.get_size())
@@ -446,6 +448,12 @@ class MainChatGUI(ChatGUI):
             self.filter_kill()
         elif action == "manageform":
             formbuilder.FormManagerGUI(self.config.form_source_dir())
+        elif action == "msend":
+            self.toggle_sendable(False)
+            d = MulticastGUI("mainapp.py", self.mainapp.comm.pipe)
+            d.run()
+            d.destroy()
+            self.toggle_sendable(True)
 
     def make_menubar(self):
         menu_xml = """
@@ -455,6 +463,7 @@ class MainChatGUI(ChatGUI):
               <menuitem action='sendtext'/>
               <menuitem action='send'/>
               <menuitem action='recv'/>
+              <menuitem action='msend'/>
               <separator/>
               <menuitem action='config'/>
               <menuitem action='qsts'/>
@@ -478,6 +487,7 @@ class MainChatGUI(ChatGUI):
 
         actions = [('file', None, "_File", None, None, self.menu_handler),
                    ('send', None, "_Send File", None, None, self.menu_handler),
+                   ('msend', None, "_Multi Send File", None, None, self.menu_handler),
                    ('recv', None, "_Receive File", None, None, self.menu_handler),
                    ('config', None, "Main _Settings", None, None, self.menu_handler),
                    ('qsts', None, "_Auto QST Settings", None, None, self.menu_handler),
