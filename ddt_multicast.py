@@ -430,7 +430,6 @@ class DDTMulticastTransfer:
     def send_list(self, list):
         frame = DDTMultiACKFrame()
 
-
         if list:
             self.status("Requesting resend of %i blocks" % len(list))
             frame.ack_blocks(list, ack=False)
@@ -466,10 +465,17 @@ class DDTMulticastTransfer:
                     raise Exception("Frame %i has no data?!" % frame.get_seq())
 
             elif frame.get_type() == ddt.FILE_XFER_TOKEN:
-                self.status("Sending report")
-                self.send_list(flist)
-                self.errors += len(flist)
-                return len(flist) == 0
+                frame = DDTJoinFrame()
+                frame.unpack(raw)
+                station = frame.get_station()
+
+                if station == self.station_id:
+                    self.status("Sending report")
+                    self.send_list(flist)
+                    self.errors += len(flist)
+                    return len(flist) == 0
+                else:
+                    self.status("Control checking with station %s" % station)
             else:
                 print "Unexpected frame type %i" % frame.get_type()
 
@@ -480,7 +486,10 @@ class DDTMulticastTransfer:
             self.status("Timed out waiting for start")
             return
 
-        f = file(filename, "wb")
+        if os.path.isdir(filename):
+            self.filename = os.path.join(filename, self.filename)
+            
+        f = file(self.filename, "wb")
 
         self.join_transfer()
 

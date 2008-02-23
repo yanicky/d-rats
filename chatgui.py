@@ -36,7 +36,7 @@ import mainapp
 import formgui
 import formbuilder
 
-from mc_xfergui import MulticastGUI
+from mc_xfergui import MulticastGUI, MulticastRecvGUI
 
 class ChatGUI:
     def ev_delete(self, widget, event, data=None):
@@ -463,6 +463,8 @@ class MainChatGUI(ChatGUI):
             d.run()
             d.destroy()
             self.toggle_sendable(True)
+        elif action == "mrecv":
+            MulticastRecvGUI(self, self.config.xfer()).do_recv()            
 
     def make_menubar(self):
         menu_xml = """
@@ -473,6 +475,7 @@ class MainChatGUI(ChatGUI):
               <menuitem action='send'/>
               <menuitem action='recv'/>
               <menuitem action='msend'/>
+              <menuitem action='mrecv'/>
               <separator/>
               <menuitem action='config'/>
               <menuitem action='qsts'/>
@@ -497,6 +500,7 @@ class MainChatGUI(ChatGUI):
         actions = [('file', None, "_File", None, None, self.menu_handler),
                    ('send', None, "_Send File", None, None, self.menu_handler),
                    ('msend', None, "_Multi Send File", None, None, self.menu_handler),
+                   ('mrecv', None, "_Multi Recv File", None, None, self.menu_handler),
                    ('recv', None, "_Receive File", None, None, self.menu_handler),
                    ('config', None, "Main _Settings", None, None, self.menu_handler),
                    ('qsts', None, "_Auto QST Settings", None, None, self.menu_handler),
