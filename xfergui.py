@@ -183,7 +183,6 @@ class FileTransferGUI:
         self.xfer_thread.start()
 
     def _update(self, status, vals):
-        gtk.gdk.threads_enter()
         file = vals["filename"]
         sent = vals["transferred"]
         wire = vals["wiresize"]
@@ -216,10 +215,10 @@ class FileTransferGUI:
 
         self.values["Size"].set_text(size_str)
         self.values["Errors"].set_text(err_str)
-        self.bar.set_text(status)
+        if status:
+            self.bar.set_text(status)
         if tot:
             self.bar.set_fraction(float(sent) / tot)
-        gtk.gdk.threads_leave()
 
     def update(self, status, vals):
         gobject.idle_add(self._update, status, vals)
