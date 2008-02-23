@@ -16,11 +16,12 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
+import ConfigParser
+import glob
+import shutil
 
 import gtk
 import pygtk
-
-import ConfigParser
 
 import ddt
 
@@ -143,17 +144,27 @@ class AppConfig:
     def default_directory(self):
         return os.path.abspath(".")
 
+    def copy_template_forms(self, dir):
+        if os.path.isdir("forms"):
+            files = glob.glob(os.path.join("forms", "*.xml"))
+            for f in files:
+                dst = os.path.join(dir, os.path.basename(f))
+                print "Copying form template %s to %s" % (f, dst)
+                shutil.copyfile(f, dst)
+
     def form_source_dir(self):
-        d = os.path.join(self.config.get("prefs", "download_dir"),
-                         "Form_Templates")
+        d = os.path.join(self.default_directory(), "Form_Templates")
         if not os.path.isdir(d):
             os.mkdir(d)
+            try:
+                self.copy_template_forms(d)
+            except:
+                raise
 
         return d
 
     def form_store_dir(self):
-        d = os.path.join(self.config.get("prefs", "download_dir"),
-                         "Saved_Forms")
+        d = os.path.join(self.default_directory(), "Saved_Forms")
         if not os.path.isdir(d):
             os.mkdir(d)
 
@@ -560,13 +571,17 @@ class Win32AppConfig(AppConfig):
             print "Migrating old config to %s" % new
             os.rename("c:\drats.config", new)
 
-    def default_filename(self):
+    def default_directory(self):
         base = os.path.join(os.getenv("APPDATA"), "D-RATS")
-        config = os.path.join(base, "d-rats.config")
         if not os.path.isdir(base):
             print "Creating `%s'" % base
             os.mkdir(base)
-            self.migrate_old_config(config)
+
+        return base
+
+    def default_filename(self):
+        config = os.path.join(self.default_directory(), "d-rats.config")
+        self.migrate_old_config(config)
 
         return config        
 
