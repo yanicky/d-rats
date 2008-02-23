@@ -424,6 +424,24 @@ class MainChatGUI(ChatGUI):
         
         self.main_buffer.set_text("")
 
+    def do_mcast_send(self):
+        d = gtk.FileChooserDialog("Select file to send",
+                                  None,
+                                  gtk.FILE_CHOOSER_ACTION_OPEN,
+                                  (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
+                                   gtk.STOCK_OPEN, gtk.RESPONSE_OK))
+        r = d.run()
+        f = d.get_filename()
+        d.destroy()
+        if r == gtk.RESPONSE_CANCEL:
+            return
+        
+        self.toggle_sendable(False)
+        d = MulticastGUI(f, self.mainapp.comm.pipe)
+        d.run()
+        d.destroy()
+        self.toggle_sendable(True)
+        
     def menu_handler(self, _action):
         action = _action.get_name()
 
@@ -458,11 +476,7 @@ class MainChatGUI(ChatGUI):
         elif action == "manageform":
             formbuilder.FormManagerGUI(self.config.form_source_dir())
         elif action == "msend":
-            self.toggle_sendable(False)
-            d = MulticastGUI("mainapp.py", self.mainapp.comm.pipe)
-            d.run()
-            d.destroy()
-            self.toggle_sendable(True)
+            self.do_mcast_send()
         elif action == "mrecv":
             MulticastRecvGUI(self, self.config.xfer()).do_recv()            
 
