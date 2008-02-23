@@ -34,10 +34,13 @@ class QSTText:
         self.freq = freq
         self.enabled = False
 
-        self.reset()        
+        self._reset()        
+
+    def _reset(self):
+        self.next = time.time() + (self.freq * 60)
 
     def reset(self):
-        self.next = time.time() + (self.freq * 60)
+        self.next = 0
 
     def remaining(self):
         delta = int(self.next - time.time())
@@ -54,9 +57,6 @@ class QSTText:
     def disable(self):
         self.enabled = False
 
-    def reset_timer(self):
-        self.reset = True
-
     def do_qst(self):
         return self.text
 
@@ -68,7 +68,7 @@ class QSTText:
             print "Tick: %s" % self.text
             self.gui.tx_msg("%s %s" % (self.prefix, self.do_qst()))
 
-            self.reset()
+            self._reset()
 
         return True
 

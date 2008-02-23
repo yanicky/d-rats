@@ -775,7 +775,7 @@ class QSTMonitor:
 
         index = self.store.get(iter, self.col_index)[0]
 
-        self.mainapp.qsts[index].reset_timer()
+        self.mainapp.qsts[index].reset()
 
     def _update(self, model, path, iter, data=None):
         index = model.get(iter, self.col_index)[0]
