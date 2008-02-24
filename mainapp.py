@@ -19,7 +19,7 @@ import os
 import sys
 import time
 import re
-from threading import Thread
+from threading import Thread, Lock
 from select import select
 
 import serial
@@ -37,6 +37,8 @@ ASCII_XOFF = chr(19)
 
 DRATS_VERSION = "0.1.7"
 LOGTF = "%m-%d-%Y_%H:%M:%S"
+
+gobject.threads_init()
 
 class SWFSerial(serial.Serial):
     __swf_debug = False
@@ -96,6 +98,10 @@ class SerialCommunicator:
         self.port = port
         self.rate = rate
         self.swf = swf
+
+        self.lock = Lock()
+        self.incoming_data = ""
+        self.outgoing_data = ""
 
         self.state = True
 
@@ -179,11 +185,17 @@ class SerialCommunicator:
     def send_text(self, text):
         if self.enabled:
             self.write_log(text)
-        if self.pipe:
-            return self.pipe.write(text)
 
-    def incoming_chat(self, data):
-        gtk.gdk.threads_enter()
+        self.lock.acquire()
+        self.outgoing_data += text
+        self.lock.release()
+
+    def incoming_chat(self):
+        self.lock.acquire()
+        data = self.incoming_data
+        self.incoming_data = ""
+        self.lock.release()
+
         if self.gui.config.getboolean("prefs", "eolstrip"):
             data = data.replace("\n", "")
             data = data.replace("\r", "")
@@ -197,7 +209,6 @@ class SerialCommunicator:
         self.write_log("%s%s%s" % (stamp, data, os.linesep))
 
         self.gui.display_line(data, "incomingcolor")
-        gtk.gdk.threads_leave()
 
     def watch_serial(self):
         data = ""
@@ -206,7 +217,19 @@ class SerialCommunicator:
         print "Starting chat watch thread"
 
         while self.enabled:
-            #size = self.pipe.inWaiting()
+            self.lock.acquire()
+            out = self.outgoing_data
+            self.outgoing_data = ""
+            self.lock.release()
+
+            if out:
+                try:
+                    print "Sending %s" % out
+                    self.pipe.write(out)
+                    print "Done with send"
+                except Exception, e:
+                    print "Exception during write: %s" % e
+
             try:
                 newdata = self.pipe.read(64)
             except Exception, e:
@@ -214,13 +237,16 @@ class SerialCommunicator:
             
             if len(newdata) > 0:
                 data += newdata
-                #print "Got Data: %s" % newdata
-                print "Data chunk:"
-                hexprint(newdata)
+                #print "Data chunk:"
+                #hexprint(newdata)
             else:
                 if data:
-                    print "No more data, writing: %s" % filter_to_ascii(data)
-                    gobject.idle_add(self.incoming_chat, data)
+                    print "No more data, queuing: %s" % filter_to_ascii(data)
+                    self.lock.acquire()
+                    self.incoming_data += data
+                    self.lock.release()
+
+                    gobject.idle_add(self.incoming_chat)
                     data = ""
                     
                 time.sleep(0.25)
@@ -324,7 +350,8 @@ class MainApp:
             if self.config.getboolean("prefs", "debuglog"):
                 dir = self.config.get("prefs", "download_dir")
                 logfile = os.path.join(dir, "debug.log")
-                sys.stdout = file(logfile, "w")
+                sys.stdout = file(logfile, "w", 0)
+                sys.stderr = sys.stdout
             elif os.name == "nt":
                 class Blackhole(object):
                     softspace=0
@@ -341,8 +368,6 @@ class MainApp:
         self.comm = None
         self.qsts = []
         self.log = None
-
-        gtk.gdk.threads_init()
 
         if os.name == "posix":
             self.config = config.UnixAppConfig(self, safe=bypass_config)
@@ -365,12 +390,10 @@ class MainApp:
             
     def main(self):
         try:
-            gtk.gdk.threads_enter()
             try:
                 gtk.main()
             except gtk.exceptions.GTKWarning:
                 pass
-            gtk.gdk.threads_leave()
             self.config.save()
         except KeyboardInterrupt:
             pass
