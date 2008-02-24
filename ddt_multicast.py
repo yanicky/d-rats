@@ -13,8 +13,8 @@ from utils import hexprint
 GROUP_TRAILER = "--(EG)--"
 
 class TransferEnded(Exception):
-    def __init__(msg, error=True):
-        self.__error = error
+    def __init__(self, msg, error=True):
+        self._error = error
         Exception.__init__(self, msg)
 
 def read_blocks(f, s, c):
@@ -161,6 +161,10 @@ class DDTMulticastTransfer:
         self.errors = 0
         self.filename = "--"
 
+    def cancel(self):
+        self.enabled = False
+        self.status("Cancelling...")
+
     def status(self, msg):
         vals = {
             "transferred" : self.transfer_size,
@@ -181,7 +185,7 @@ class DDTMulticastTransfer:
     def send_raw_frames(self, blocks):
         for num, block in blocks:
             if not self.enabled:
-                return -1
+                raise TransferEnded("Cancelled by user")
 
             frame = DDTEncodedFrame()
             frame.set_type(ddt.FILE_XFER_BLOCK)
@@ -218,6 +222,9 @@ class DDTMulticastTransfer:
             self.wire_size += len(_data)
             self.status(None)
 
+        if not self.enabled:
+            raise TransferEnded("Cancelled by user")
+
         try:
             eog = data.rindex(GROUP_TRAILER)
             data = data[0:eog]
@@ -253,7 +260,7 @@ class DDTMulticastTransfer:
         self.pipe.write(frame.pack())
 
     def wait_for_stations(self, joinf):
-        while self.waiting_for_checkins:
+        while self.waiting_for_checkins and self.enabled:
             self.status("Sending advertisement")
             self.send_start_file(self.filename)
             
@@ -265,9 +272,9 @@ class DDTMulticastTransfer:
                 if s and joinf:
                     joinf(s)
 
-            # FIXME: wait once cycle for testing
-            #self.waiting_for_checkins = (len(self.stations) == 0)
-
+        if not self.enabled:
+            raise TransferEnded("Cancelled by user")
+                    
     def read_all_frames(self, filename):
         f = file(filename)
         self.blocks = read_blocks(f, self.block_size, 10000)
@@ -280,6 +287,9 @@ class DDTMulticastTransfer:
 
     def transmit_marked(self):
         for i in range(len(self.blocks)):
+            if not self.enabled:
+                raise TransferEnded("Cancelled by user")
+            
             if not self.acks[i]:
                 self.status("Sending block %i" % i)
                 frame = DDTEncodedFrame()
@@ -350,6 +360,9 @@ class DDTMulticastTransfer:
         time.sleep(2) # FIXME
 
         for station in self.stations.keys():
+            if not self.enabled:
+                raise TransferEnded("Cancelled by user")
+
             _naks = self.ask_station(station, updatef)
             if _naks:
                 for i in _naks:
@@ -375,7 +388,7 @@ class DDTMulticastTransfer:
     def recv_start_file(self):
         for i in range(1, self.limit_tries):
             if not self.enabled:
-                break
+                raise TransferEnded("Cancelled by user")
 
             frames = self.recv_raw_frames(1, True)
             if len(frames) > 0:
@@ -408,7 +421,7 @@ class DDTMulticastTransfer:
     def start_transfer(self):
         self.waiting_for_checkins = False
 
-    def send_file(self, filename, joinf=None, updatef=None):
+    def _send_file(self, filename, joinf=None, updatef=None):
         self.send_start_file(filename)
 
         self.wait_for_stations(joinf)
@@ -422,10 +435,22 @@ class DDTMulticastTransfer:
             self.transmit_marked()
             self.collect_reports(updatef)
 
-        self.status("Transfer complete")
+        if not self.enabled:
+            raise TransferEnded("Cancelled")
+        else:
+            self.status("Transfer Complete")
 
         if False in self.acks:
             print "No more stations, but have marked blocks!"
+
+    def send_file(self, filename, joinf=None, updatef=None):
+        try:
+            self._send_file(filename, joinf, updatef)
+        except TransferEnded, e:
+            self.status(str(e))
+            return e._error
+
+        return True            
 
     def send_list(self, list):
         frame = DDTMultiACKFrame()
@@ -441,6 +466,9 @@ class DDTMulticastTransfer:
 
     def process_blocks(self, flist, raw_frames, f):
         for raw in raw_frames:
+            if not self.enabled:
+                raise TransferEnded("Cancelled by user")
+
             if not raw:
                 continue # skip empty bits resulting from str.split()
 
@@ -481,7 +509,7 @@ class DDTMulticastTransfer:
 
         return False
 
-    def recv_file(self, filename):
+    def _recv_file(self, filename):
         if not self.recv_start_file():
             self.status("Timed out waiting for start")
             return
@@ -500,14 +528,23 @@ class DDTMulticastTransfer:
 
         flist = range((self.total_size / self.block_size) + extra)
 
-        while True:
+        while self.enabled:
             frames = self.recv_raw_frames(2)
             quit = self.process_blocks(flist, frames, f)
             if quit:
                 self.status("Transfer complete")
-                break
+                return
 
+        raise TransferEnded("Cancelled by user")
 
+    def recv_file(self, filename):
+        try:
+            self._recv_file(filename)
+        except TransferEnded, e:
+            self.status(str(e))
+            return e._error
+
+        return True
 
 if __name__ == "__main__":
     import sys

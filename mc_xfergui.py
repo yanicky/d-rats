@@ -99,12 +99,14 @@ class MulticastGUI(gtk.Dialog):
   
     def button_start(self, widget, data=None):
         self.button_start.set_sensitive(False)
-        self.button_stop.set_sensitive(True)
         self.transfer.start_transfer()
 
-    def button_stop(self, widget, data=None):
+    def button_cancel(self, widget, data=None):
         widget.set_sensitive(False)
-        print "Stop"        
+        print "Cancel"        
+        self.transfer.cancel()
+        self.button_start.set_sensitive(False)
+        self.button_cancel.set_sensitive(False)
 
     def update(self, msg, vals):
         if msg:
@@ -152,16 +154,16 @@ class MulticastGUI(gtk.Dialog):
         bstart.set_sensitive(False)
         bstart.show()
 
-        bstop = gtk.Button("Stop")
-        bstop.connect("clicked", self.button_stop, None)
-        bstop.set_sensitive(False)
-        bstop.show()
+        bcancel = gtk.Button("Cancel")
+        bcancel.connect("clicked", self.button_cancel, None)
+        bcancel.set_sensitive(True)
+        bcancel.show()
 
         self.action_area.pack_start(bstart)
-        self.action_area.pack_start(bstop)
+        self.action_area.pack_start(bcancel)
 
         self.button_start = bstart
-        self.button_stop = bstop
+        self.button_cancel = bcancel
 
     def transfer_thread(self):
         print "Thread started"
@@ -183,13 +185,8 @@ class MulticastGUI(gtk.Dialog):
 
         gtk.Dialog.__init__(self, title="Multicast")
 
-        #self.window = gtk.Window(gtk.WINDOW_TOPLEVEL)
         self.set_default_size(500,350)
         
-        #self.vbox = gtk.VBox(False, 2)
-        #self.vbox.show()
-        #self.window.add(self.vbox)
-
         self.build_gui()
         self.build_action()
 
@@ -203,6 +200,8 @@ class MulticastRecvGUI(FileTransferGUI):
         xfer = ddt_multicast.DDTMulticastTransfer(self.chatgui.mainapp.comm.pipe,
                                                   station,
                                                   status_fn=self.update)
+        self.xfer = xfer
+
         xfer.recv_file(self.filename)
 
         gobject.idle_add(self.ddt_finish)
