@@ -74,6 +74,7 @@ class AppConfig:
         mset("prefs", "outgoingcolor", "#DDDD44441111")
         mset("prefs", "noticecolor", "#0000660011DD")
         mset("prefs", "ignorecolor", "#BB88BB88BB88")
+        mset("prefs", "callsigncolor", "#FFDD99CC77CC")
         mset("prefs", "logenabled", "False")
         mset("prefs", "debuglog", "False")
         mset("prefs", "eolstrip", "True")
@@ -111,6 +112,7 @@ class AppConfig:
                 "outgoingcolor" : "Color for outgoing messages",
                 "noticecolor" : "Color for notices",
                 "ignorecolor" : "Color for ignores",
+                "callsigncolor" : "Color to highlight callsigns",
                 "logenabled" : "Enable chat logging",
                 "debuglog" : "Enable debug logging",
                 "eolstrip" : "End-of-line stripping",
@@ -306,6 +308,8 @@ class AppConfig:
         vbox.pack_start(self.make_sb("noticecolor",
                                      gtk.ColorButton()), 0,0,0)
         vbox.pack_start(self.make_sb("ignorecolor",
+                                     gtk.ColorButton()), 0,0,0)
+        vbox.pack_start(self.make_sb("callsigncolor",
                                      gtk.ColorButton()), 0,0,0)
 
         vbox.pack_start(self.make_sb("eolstrip",
@@ -507,7 +511,8 @@ D-RATS has been started in safe mode, which means the configuration file has not
         color_v = [("prefs", "incomingcolor"),
                    ("prefs", "outgoingcolor"),
                    ("prefs", "noticecolor"),
-                   ("prefs", "ignorecolor")]
+                   ("prefs", "ignorecolor"),
+                   ("prefs", "callsigncolor")]
 
         path_v = [("prefs", "download_dir")]
 

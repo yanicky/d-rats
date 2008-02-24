@@ -31,7 +31,7 @@ import ddt
 from xfergui import FileTransferGUI, FormTransferGUI
 from qst import QSTGUI, QuickMsgGUI
 from inputdialog import TextInputDialog, ChoiceDialog
-from utils import filter_to_ascii
+from utils import filter_to_ascii, find_callsigns
 import mainapp
 import formgui
 import formbuilder
@@ -63,14 +63,50 @@ class ChatGUI:
         if self.window.get_urgency_hint():
             self.window.set_urgency_hint(False)
 
+    def highlight_callsigns(self, string, start):
+        try:
+            arrow = string.index(">")
+            string = string[arrow+1:]
+        except:
+            pass
+
+        callsigns = find_callsigns(string)
+
+        for call in callsigns:
+            (b, e) = start.forward_search(call, 0)
+            self.main_buffer.remove_all_tags(b, e)
+            self.main_buffer.apply_tag_by_name("callsigncolor", b, e)
+
+    def highlight_notices(self, string, start):
+        expr = self.config.get("prefs", "noticere")
+        if not expr:
+            return
+
+        notices = re.findall(expr, string)
+
+        for notice in notices:
+            (b, e) = start.forward_search(notice, 0)
+            self.main_buffer.remove_all_tags(b, e)
+            self.main_buffer.apply_tag_by_name("noticecolor", b, e)
+            self.main_buffer.apply_tag_by_name("bold", b, e)
+            
     def display(self, string, *attrs):
         string = filter_to_ascii(string)
 
-        end = self.main_buffer.get_end_iter()
+        (start, end) = self.main_buffer.get_bounds()
+        mark = self.main_buffer.create_mark(None, end, True)
 
         self.main_buffer.insert_with_tags_by_name(end,
                                                   string,
                                                   *attrs)
+
+        pos = self.main_buffer.get_iter_at_mark(mark)
+
+        if "italic" not in attrs:
+            self.highlight_callsigns(string, pos)
+        self.highlight_notices(string, pos)
+
+        self.main_buffer.delete_mark(mark)
         
         adj = self.scroll.get_vadjustment()
         adj.value = adj.upper
@@ -80,12 +116,9 @@ class ChatGUI:
         stamp = time.strftime("%H:%M:%S: ")
 
         ignore = self.config.get("prefs", "ignorere")
-        notice = self.config.get("prefs", "noticere")
 
         if ignore and re.search(ignore, text):
             attrs += ("ignorecolor", )
-        elif notice and re.search(notice, text):
-            attrs += ("noticecolor", )
 
         self.display(stamp + text + os.linesep, *attrs)
 
@@ -197,13 +230,19 @@ class ChatGUI:
             tag.set_property("style", pango.STYLE_ITALIC)
             tags.add(tag)
 
-        for i in ["incomingcolor", "outgoingcolor",
-                  "noticecolor", "ignorecolor"]:
+        regular = ["incomingcolor", "outgoingcolor",
+                  "noticecolor", "ignorecolor"]
+        reverse = ["callsigncolor"]
+
+        for i in regular + reverse:
             if tags.lookup(i):
                 tags.remove(tags.lookup(i))
 
             tag = gtk.TextTag(i)
-            tag.set_property("foreground", self.config.get("prefs", i))
+            if i in regular:
+                tag.set_property("foreground", self.config.get("prefs", i))
+            elif i in reverse:
+                tag.set_property("background", self.config.get("prefs", i))
             tags.add(tag)
 
     def set_window_defaults(self, window):

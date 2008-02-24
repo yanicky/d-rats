@@ -14,6 +14,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import re
+
 def hexprint(data):
     col = 0
 
@@ -66,3 +68,8 @@ def filter_to_ascii(string):
         xlate[ord('\r')] = '\r'
 
         return string.translate("".join(xlate))
+
+def find_callsigns(string):
+    regex = "[aAkKnNwW][A-z]?[0-9][A-z]{1,3}"
+
+    return re.findall(regex, string)
