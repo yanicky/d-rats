@@ -89,14 +89,6 @@ class MulticastGUI(gtk.Dialog):
         display.show()
         stats.show()
 
-#        sep = gtk.HSeparator()
-#        sep.show()
-#        self.vbox.pack_start(sep)
-#
-#        self.action_area = gtk.HBox(False, 2)
-#        self.action_area.show()
-#        self.vbox.pack_start(self.action_area, 0,0,0)
-  
     def button_start(self, widget, data=None):
         self.button_start.set_sensitive(False)
         self.transfer.start_transfer()
@@ -165,11 +157,15 @@ class MulticastGUI(gtk.Dialog):
         self.button_start = bstart
         self.button_cancel = bcancel
 
+    def transfer_finished(self):
+        self.button_cancel.set_sensitive(False)
+
     def transfer_thread(self):
         print "Thread started"
         self.transfer.send_file(self._filename,
                                 self.station_joined,
                                 self.station_update)
+        gobject.idle_add(self.transfer_finished)
        
     def run(self):
         self.thread = Thread(target=self.transfer_thread)

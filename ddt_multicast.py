@@ -291,7 +291,7 @@ class DDTMulticastTransfer:
                 raise TransferEnded("Cancelled by user")
             
             if not self.acks[i]:
-                self.status("Sending block %i" % i)
+                self.status("Sending block %i of %i" % (i+1, self.total_blocks))
                 frame = DDTEncodedFrame()
                 frame.set_type(ddt.FILE_XFER_BLOCK)
                 frame.set_seq(i)
