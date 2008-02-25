@@ -231,16 +231,11 @@ class FileTransferGUI:
         fc.set_current_folder(d)
 
         result = fc.run()
-        if result == gtk.RESPONSE_CANCEL:
-            fc.destroy()
-            return
-        
         self.filename = fc.get_filename()
         fc.destroy()
-
-        self.is_send = True
-
-        self.show_xfer()
+        if result == gtk.RESPONSE_OK:
+            self.is_send = True
+            self.show_xfer()
 
     def do_recv(self):
         title = "Select destination folder"
