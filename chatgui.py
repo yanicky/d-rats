@@ -551,8 +551,8 @@ class MainChatGUI(ChatGUI):
         """
 
         actions = [('file', None, "_File", None, None, self.menu_handler),
-                   ('send', None, "_Send File", None, None, self.menu_handler),
-                   ('msend', None, "_Multi Send File", None, None, self.menu_handler),
+                   ('send', None, "_Send File", "F1", None, self.menu_handler),
+                   ('msend', None, "_Multi Send File", "F2", None, self.menu_handler),
                    ('mrecv', None, "_Multi Recv File", None, None, self.menu_handler),
                    ('recv', None, "_Receive File", None, None, self.menu_handler),
                    ('config', None, "Main _Settings", None, None, self.menu_handler),
@@ -563,8 +563,8 @@ class MainChatGUI(ChatGUI):
                    ('sendtext', None, 'Broadcast _Text File', None, None, self.menu_handler),
                    ('view', None, "_View", None, None, self.menu_handler),
                    ('clear', None, '_Clear', None, None, self.menu_handler),
-                   ('filter', None, '_Filter by string', None, None, self.menu_handler),
-                   ('unfilter', None, '_Remove current filter', None, None, self.menu_handler),
+                   ('filter', None, '_Filter by string', "<Control>f", None, self.menu_handler),
+                   ('unfilter', None, '_Remove current filter', "<Control>k", None, self.menu_handler),
                    ('help', None, '_Help', None, None, self.menu_handler),
                    ('about', None, '_About', None, None, self.menu_handler)]
 
@@ -585,6 +585,8 @@ class MainChatGUI(ChatGUI):
 
         uim.insert_action_group(self.menu_ag, 0)
         menuid = uim.add_ui_from_string(menu_xml)
+
+        self.accel_group = uim.get_accel_group()
 
         return uim.get_widget("/MenuBar")
 
@@ -670,6 +672,7 @@ class MainChatGUI(ChatGUI):
         self.window.connect("delete_event", self.ev_delete)
         self.window.connect("destroy", self.sig_destroy)
         self.window.connect("focus", self.ev_focus)
+        self.window.add_accel_group(self.accel_group)
         self.window.show()
 
         self.entry.grab_focus()
