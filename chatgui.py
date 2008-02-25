@@ -303,8 +303,6 @@ class ChatFilter:
         current = self.tabs.get_current_page()
         me = self.tabs.page_num(self.tab_child)
 
-        print "current: %i me: %i" % (current, me)
-
         return current == me
  
     def set_waiting(self, state):
