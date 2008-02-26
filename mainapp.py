@@ -368,6 +368,7 @@ class MainApp:
         self.comm = None
         self.qsts = []
         self.log = None
+        self.seen_callsigns = {}
 
         if os.name == "posix":
             self.config = config.UnixAppConfig(self, safe=bypass_config)
@@ -383,8 +384,12 @@ class MainApp:
         # Upgrade config issues and/or fix known issues
         self.config_upgrade_fixdownloaddir()
 
+        self.chatgui.display("D-RATS v%s " % DRATS_VERSION, "red")
+        self.chatgui.display("(Copyright 2008 Dan Smith KI4IFW)\n",
+                             "blue", "italic")
+        
         self.refresh_config()
-
+        
         if self.config.getboolean("prefs", "dosignon"):
             self.chatgui.tx_msg(self.config.get("prefs", "signon"))
             

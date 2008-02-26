@@ -63,19 +63,50 @@ class ChatGUI:
         if self.window.get_urgency_hint():
             self.window.set_urgency_hint(False)
 
+    def note_callsigns(self, string):
+        calls = find_callsigns(string)
+        
+        print "Found calls %s in %s" % (calls, string)
+
+        for call in calls:
+            if "%s>" % call in string:
+                stamp = time.strftime("%H:%M:%S %m/%d/%Y")
+            else:
+                stamp = "Never"
+            
+            call = call.upper()
+            if not self.mainapp.seen_callsigns.has_key(call):
+                self.mainapp.seen_callsigns[call] = stamp
+
+        for item in self.mainapp.chatgui.adv_controls:
+            if isinstance(item, CallCatcher):
+                item.refresh()
+
     def highlight_callsigns(self, string, start):
+        callsigns = find_callsigns(string)
+        print "Marking callsigns %s in %s" % (callsigns, string)
+
         try:
-            arrow = string.index(">")
-            string = string[arrow+1:]
-        except:
+            (msg, _) = start.forward_search(">", 0)
+            if msg:
+                print "Starting at the > instead (%i,%i)" % (start.get_offset(),
+                                                             msg.get_offset())
+                start = msg
+        except Exception, e:
             pass
 
-        callsigns = find_callsigns(string)
-
         for call in callsigns:
-            (b, e) = start.forward_search(call, 0)
-            self.main_buffer.remove_all_tags(b, e)
-            self.main_buffer.apply_tag_by_name("callsigncolor", b, e)
+            print "Marking for callsign %s" % call
+            try:
+                (b, e) = start.forward_search(call, 0)
+            except:
+                continue
+            if not self.mainapp.seen_callsigns.has_key(call.upper()):
+                self.main_buffer.remove_all_tags(b, e)
+                self.main_buffer.apply_tag_by_name("callsigncolor", b, e)
+            self.main_buffer.apply_tag_by_name("bold", b, e)
+
+        self.note_callsigns(string)
 
     def highlight_notices(self, string, start):
         expr = self.config.get("prefs", "noticere")
@@ -643,6 +674,11 @@ class MainChatGUI(ChatGUI):
         nb.append_page(fm.root, gtk.Label("Form Manager"))
         self.adv_controls.append(fm)
 
+        cc = CallCatcher(self)
+        cc.show()
+        nb.append_page(cc.root, gtk.Label("Callsigns"))
+        self.adv_controls.append(cc)
+
         return nb
 
     def make_window(self):
@@ -713,14 +749,9 @@ class MainChatGUI(ChatGUI):
 
         ChatGUI.__init__(self, config, _mainapp)
 
-        self.display("D-RATS v%s " % mainapp.DRATS_VERSION, "red")
-        self.display("(Copyright 2008 Dan Smith KI4IFW)\n",
-                     "blue", "italic")
-        
         self.textview.connect("populate-popup",
                               self.popup,
                               None)
-
         self.show()
 
     def main(self):
@@ -1188,6 +1219,55 @@ class FormManager:
 
     def refresh(self):
         pass
+
+class CallCatcher:
+    def make_display(self):
+        self.col_call = 0
+        self.col_time = 1
+
+        self.store = gtk.ListStore(gobject.TYPE_STRING,
+                                   gobject.TYPE_STRING)
+
+        self.view = gtk.TreeView(self.store)
+
+        r = gtk.CellRendererText()
+        c = gtk.TreeViewColumn("Callsign", r, text=self.col_call)
+        self.view.append_column(c)
+
+        r = gtk.CellRendererText()
+        c = gtk.TreeViewColumn("Last Seen", r, text=self.col_time)
+        self.view.append_column(c)
+
+        self.view.show()
+
+        sw = gtk.ScrolledWindow()
+        sw.add(self.view)
+        sw.set_policy(gtk.POLICY_NEVER, gtk.POLICY_AUTOMATIC)
+        sw.show()
+
+        return sw
+
+    def show(self):
+        self.root.show()
+
+    def hide(self):
+        self.root.hide()
+
+    def refresh(self):
+        self.store.clear()
+
+        for c,t in self.mainapp.seen_callsigns.items():
+            iter = self.store.append()
+            self.store.set(iter,
+                           self.col_call, c,
+                           self.col_time, t)
+
+    def __init__(self, gui):
+        self.gui = gui
+        self.mainapp = gui.mainapp
+
+        self.root = self.make_display()
+        
 
 if __name__ == "__main__":
     import config
