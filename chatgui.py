@@ -21,6 +21,7 @@ import pango
 import serial
 import gobject
 import time
+import datetime
 import os
 import re
 import glob
@@ -70,13 +71,12 @@ class ChatGUI:
 
         for call in calls:
             if "%s>" % call in string:
-                stamp = time.strftime("%H:%M:%S %m/%d/%Y")
+                stamp = int(time.time())
             else:
-                stamp = "Never"
+                stamp = 0
             
             call = call.upper()
-            if not self.mainapp.seen_callsigns.has_key(call):
-                self.mainapp.seen_callsigns[call] = stamp
+            self.mainapp.seen_callsigns[call] = stamp
 
         for item in self.mainapp.chatgui.adv_controls:
             if isinstance(item, CallCatcher):
@@ -85,15 +85,6 @@ class ChatGUI:
     def highlight_callsigns(self, string, start):
         callsigns = find_callsigns(string)
         print "Marking callsigns %s in %s" % (callsigns, string)
-
-        try:
-            (msg, _) = start.forward_search(">", 0)
-            if msg:
-                print "Starting at the > instead (%i,%i)" % (start.get_offset(),
-                                                             msg.get_offset())
-                start = msg
-        except Exception, e:
-            pass
 
         for call in callsigns:
             print "Marking for callsign %s" % call
@@ -1223,10 +1214,12 @@ class FormManager:
 class CallCatcher:
     def make_display(self):
         self.col_call = 0
-        self.col_time = 1
+        self.col_disp = 1
+        self.col_time = 2
 
         self.store = gtk.ListStore(gobject.TYPE_STRING,
-                                   gobject.TYPE_STRING)
+                                   gobject.TYPE_STRING,
+                                   gobject.TYPE_INT)
 
         self.view = gtk.TreeView(self.store)
 
@@ -1235,7 +1228,7 @@ class CallCatcher:
         self.view.append_column(c)
 
         r = gtk.CellRendererText()
-        c = gtk.TreeViewColumn("Last Seen", r, text=self.col_time)
+        c = gtk.TreeViewColumn("Last Seen", r, text=self.col_disp)
         self.view.append_column(c)
 
         self.view.show()
@@ -1253,6 +1246,34 @@ class CallCatcher:
     def hide(self):
         self.root.hide()
 
+    def update_time(self, iter):
+        (stamp,) = self.store.get(iter, self.col_time)
+        now = time.time()
+        
+        delta = datetime.datetime.fromtimestamp(now) - \
+            datetime.datetime.fromtimestamp(stamp)
+
+        if stamp == 0:
+            string = "Never"
+        else:
+            string = time.strftime("%H:%M:%S %m/%d/%Y ", time.localtime(stamp))
+
+        since = ""
+        if stamp and delta.days > 1:
+            since = "%i days " % delta.days
+        elif stamp and delta.days == 1:
+            since = "%i day " % delta.days
+
+        if stamp and delta.seconds > 60:
+            since += "%i:%02i" % ((delta.seconds / 3600),
+                                   (delta.seconds % 3600) / 60)
+
+        if since:
+            string += "(%s)" % since
+
+        self.store.set(iter,
+                       self.col_disp, string)
+        
     def refresh(self):
         self.store.clear()
 
@@ -1261,12 +1282,23 @@ class CallCatcher:
             self.store.set(iter,
                            self.col_call, c,
                            self.col_time, t)
+            self.update_time(iter)
+
+    def update_all_times(self):
+        def update(model, path, iter, catcher):
+            catcher.update_time(iter)
+
+        self.store.foreach(update, self)
+
+        return True
 
     def __init__(self, gui):
         self.gui = gui
         self.mainapp = gui.mainapp
 
         self.root = self.make_display()
+
+        gobject.timeout_add(60 * 1000, self.update_all_times)
         
 
 if __name__ == "__main__":
