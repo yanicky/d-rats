@@ -572,17 +572,17 @@ class MainChatGUI(ChatGUI):
 
         actions = [('file', None, "_File", None, None, self.menu_handler),
                    ('send', None, "_Send File", "F1", None, self.menu_handler),
-                   ('msend', None, "_Multi Send File", "F2", None, self.menu_handler),
-                   ('mrecv', None, "_Multi Recv File", None, None, self.menu_handler),
-                   ('recv', None, "_Receive File", None, None, self.menu_handler),
+                   ('recv', None, "_Receive File", "F2", None, self.menu_handler),
+                   ('msend', None, "_Multi Send File", "F3", None, self.menu_handler),
+                   ('mrecv', None, "_Multi Recv File", "F4", None, self.menu_handler),
                    ('config', None, "Main _Settings", None, None, self.menu_handler),
-                   ('qsts', None, "_Auto QST Settings", None, None, self.menu_handler),
-                   ('quickmsg', None, 'Quick _Messages', None, None, self.menu_handler),
+                   ('qsts', None, "_Auto QST Settings", "<Control>q", None, self.menu_handler),
+                   ('quickmsg', None, 'Quick _Messages', "<Control>m", None, self.menu_handler),
                    ('manageform', None, '_Manage Form Templates', None, None, self.menu_handler),
                    ('quit', None, "_Quit", None, None, self.menu_handler),
-                   ('sendtext', None, 'Broadcast _Text File', None, None, self.menu_handler),
+                   ('sendtext', None, 'Broadcast _Text File', "<Control>b", None, self.menu_handler),
                    ('view', None, "_View", None, None, self.menu_handler),
-                   ('clear', None, '_Clear', None, None, self.menu_handler),
+                   ('clear', None, '_Clear', "<Control>l", None, self.menu_handler),
                    ('filter', None, '_Filter by string', "<Control>f", None, self.menu_handler),
                    ('unfilter', None, '_Remove current filter', "<Control>k", None, self.menu_handler),
                    ('help', None, '_Help', None, None, self.menu_handler),
@@ -601,7 +601,7 @@ class MainChatGUI(ChatGUI):
         self.menu_ag = gtk.ActionGroup("MenuBar")
 
         self.menu_ag.add_actions(actions)
-        self.menu_ag.add_action(advanced)
+        self.menu_ag.add_action_with_accel(advanced, "<Control>a")
 
         uim.insert_action_group(self.menu_ag, 0)
         menuid = uim.add_ui_from_string(menu_xml)
