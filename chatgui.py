@@ -1290,6 +1290,13 @@ class CallCatcher:
         reset.show()
         vbox.pack_start(reset, 0,0,0)
 
+        clear = gtk.Button("Clear")
+        clear.set_size_request(75, 30)
+        clear.connect("clicked", self.but_clear)
+        self.gui.tips.set_tip(clear, "Clear all recorded callsigns")
+        clear.show()
+        vbox.pack_start(clear, 0,0,0)
+
         vbox.show()
         
         return vbox
@@ -1322,6 +1329,10 @@ class CallCatcher:
         except:
             pass
 
+        self.refresh()
+
+    def but_clear(self, widget):
+        self.mainapp.seen_callsigns = {}
         self.refresh()
 
     def show(self):
