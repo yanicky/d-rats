@@ -330,6 +330,9 @@ class ChatFilter:
         self.exclusive = True
         self.tabs = tabs
 
+    def set_exclusive(self, exclusive):
+        self.exclusive = exclusive
+
     def is_active(self):
         current = self.tabs.get_current_page()
         me = self.tabs.page_num(self.tab_child)
@@ -346,15 +349,22 @@ class ChatFilter:
 class MainChatGUI(ChatGUI):
     
     def display_line(self, string, *attrs):
-        for f in self.filters:
+        do_main = True
+
+        for f in self.filters[1:]:
             if f.text and f.text in string:
                 f.root.display_line(string, *attrs)
                 f.set_waiting(True)
                 if f.exclusive:
-                    return
+                    do_main = False
+            elif not f.text:
+                # This is the 'all' filter
+                f.root.display_line(string, *attrs)
+                f.set_waiting(True)
 
-        ChatGUI.display_line(self, string, *attrs)
-        self.filters[0].set_waiting(True)
+        if do_main:
+            ChatGUI.display_line(self, string, *attrs)
+            self.filters[0].set_waiting(True)
 
     def sig_destroy(self, widget, data=None):
         if self.config.getboolean("prefs", "dosignoff"):
@@ -472,11 +482,13 @@ class MainChatGUI(ChatGUI):
 
         for i in range(0, len(self.filters)):
             f = self.filters[i]
-            if f.tab_child == tab and \
-                    f.text is not None:
+            if f.tab_child == tab:
                 del self.filters[i]
                 self.save_filters()
                 self.tabs.remove_page(i)
+                if f.label.get_text() == "All":
+                    self.config.set("state", "show_all_filter", False)
+                    self.menu_ag.get_action("allfilter").set_sensitive(True)
                 break
 
         if len(self.filters) == 1:
@@ -571,6 +583,8 @@ class MainChatGUI(ChatGUI):
               <menuitem action='clear'/>
               <menuitem action='filter'/>
               <menuitem action='unfilter'/>
+              <menuitem action='allfilter'/>
+              <separator/>
               <menuitem action='advanced'/>
             </menu>
             <menu action='help'>
@@ -595,6 +609,7 @@ class MainChatGUI(ChatGUI):
                    ('clear', None, '_Clear', "<Control>l", None, self.menu_handler),
                    ('filter', None, '_Filter by string', "<Control>f", None, self.menu_handler),
                    ('unfilter', None, '_Remove current filter', "<Control>k", None, self.menu_handler),
+                   ('allfilter', None, 'Show "_all" filter', None, None, self.show_allfilter),
                    ('help', None, '_Help', None, None, self.menu_handler),
                    ('about', None, '_About', None, None, self.menu_handler)]
 
@@ -653,6 +668,24 @@ class MainChatGUI(ChatGUI):
         # No idea why, but Win32 has some issue such that doing the resize
         # and the pane show at the same time causes a missed refresh
         gobject.idle_add(self.refresh_window, h)
+
+    def show_allfilter(self, action):
+        all_filter = ChatFilter(self.tabs)
+        all_filter.set_exclusive(False)
+        all_filter.root = ChatGUI(self.config, self.mainapp)
+        all_filter.tab_child = all_filter.root.mainpane
+        all_filter.label = gtk.Label("All")
+        all_filter.text = None
+        
+        self.config.set("state", "show_all_filter", True)
+
+        self.tabs.append_page(all_filter.tab_child, all_filter.label)
+        self.tabs.set_tab_reorderable(all_filter.tab_child, True)
+        
+        self.filters.append(all_filter)
+        self.save_filters()
+
+        self.menu_ag.get_action("allfilter").set_sensitive(False)
 
     def make_advanced(self):
         nb = gtk.Notebook()
@@ -757,6 +790,9 @@ class MainChatGUI(ChatGUI):
         for f in filters:
             if f:
                 self.activate_filter(None, f)
+
+        if self.config.getboolean("state", "show_all_filter"):
+            self.show_allfilter(None)
 
         self.tabs.set_current_page(0)
 

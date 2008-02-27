@@ -94,6 +94,7 @@ class AppConfig:
         mset("state", "main_size_y", "400")
         mset("state", "main_advanced", "0")
         mset("state", "filters", "[]")
+        mset("state", "show_all_filter", False)
 
     id2label = {"name" : "Name",
                 "callsign" : "Callsign",
