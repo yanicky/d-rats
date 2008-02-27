@@ -65,8 +65,12 @@ class QSTText:
             return False
 
         if self.remaining() == 0:
-            print "Tick: %s" % self.text
-            self.gui.tx_msg("%s %s" % (self.prefix, self.do_qst()))
+            
+            if self.gui.sendable:
+                print "Tick: %s" % self.text
+                self.gui.tx_msg("%s %s" % (self.prefix, self.do_qst()))
+            else:
+                print "Skipping QST because GUI is not sendable"
 
             self._reset()
 

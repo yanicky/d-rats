@@ -204,12 +204,14 @@ class ChatGUI:
         return self.scroll
 
     def toggle_sendable(self, state):
+        self.sendable = state
         self.entry.set_sensitive(state)
         self.send_button.set_sensitive(state)
         if state:
             self.mainapp.comm.enable(self)
         else:
             self.mainapp.comm.disable()
+
         
     def make_main_pane(self):
         vbox = gtk.VBox(False, 0)
@@ -310,6 +312,8 @@ class ChatGUI:
 
         self.mainpane = self.make_main_pane()
         self.mainpane.show()
+
+        self.sendable = True
 
         self.window = None
 
