@@ -320,7 +320,7 @@ class ChatFilter:
     def __init__(self, tabs):
         self.exclusive = True
         self.tabs = tabs
-      
+
     def is_active(self):
         current = self.tabs.get_current_page()
         me = self.tabs.page_num(self.tab_child)
@@ -466,6 +466,7 @@ class MainChatGUI(ChatGUI):
             if f.tab_child == tab and \
                     f.text is not None:
                 del self.filters[i]
+                self.save_filters()
                 self.tabs.remove_page(i)
                 break
 
@@ -716,6 +717,8 @@ class MainChatGUI(ChatGUI):
 
         self.filters.append(filter)
 
+        self.save_filters()
+
     def popup(self, view, menu, data=None):
         filter_item = gtk.MenuItem(label="Filter on this string")
         
@@ -731,6 +734,23 @@ class MainChatGUI(ChatGUI):
         filter_item.show()
         menu.prepend(filter_item)
 
+    def save_filters(self):
+        f = [x.text for x in self.filters]
+        self.config.set("state", "filters", str(f))
+
+    def load_filters(self):
+        try:
+            filters = eval(self.config.get("state", "filters"))
+        except Exception, e:
+            print "Error loading filters: %s" % e
+            return
+
+        for f in filters:
+            if f:
+                self.activate_filter(None, f)
+
+        self.tabs.set_current_page(0)
+
     def __init__(self, config, _mainapp):
         self.config = config # Set early for make_menubar()
 
@@ -743,6 +763,8 @@ class MainChatGUI(ChatGUI):
         self.textview.connect("populate-popup",
                               self.popup,
                               None)
+
+        self.load_filters()
         self.show()
 
     def main(self):
