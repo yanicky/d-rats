@@ -1231,6 +1231,10 @@ class CallCatcher:
         c = gtk.TreeViewColumn("Last Seen", r, text=self.col_disp)
         self.view.append_column(c)
 
+        def cb(view, path, col, me):
+            me.but_address(None)
+        self.view.connect("row-activated", cb, self)
+
         self.view.show()
 
         sw = gtk.ScrolledWindow()
@@ -1239,6 +1243,64 @@ class CallCatcher:
         sw.show()
 
         return sw
+
+    def make_controls(self):
+        vbox = gtk.VBox(True, 2)
+
+        remove = gtk.Button("Remove")
+        remove.set_size_request(75, 30)
+        remove.connect("clicked", self.but_remove)
+        self.gui.tips.set_tip(remove, "Remove callsign from list")
+        remove.show()
+        vbox.pack_start(remove, 0,0,0)
+
+        address = gtk.Button("Address")
+        address.set_size_request(75, 30)
+        address.connect("clicked", self.but_address)
+        self.gui.tips.set_tip(address, "Address a message to selected call")
+        address.show()
+        vbox.pack_start(address, 0,0,0)
+
+        reset = gtk.Button("Reset")
+        reset.set_size_request(75, 30)
+        reset.connect("clicked", self.but_reset)
+        self.gui.tips.set_tip(reset, "Reset last seen time for selected call")
+        reset.show()
+        vbox.pack_start(reset, 0,0,0)
+
+        vbox.show()
+        
+        return vbox
+
+    def but_remove(self, widget):
+        (list, iter) = self.view.get_selection().get_selected()
+        (call,) = list.get(iter, self.col_call)
+
+        try:
+            del self.mainapp.seen_callsigns[call]
+        except:
+            pass
+
+        list.remove(iter)
+
+    def but_address(self, widget):
+        (list, iter) = self.view.get_selection().get_selected()
+        (call,) = list.get(iter, self.col_call)
+
+        text = self.gui.entry.get_text()
+
+        self.gui.entry.set_text("%s: %s" % (call, text))
+
+    def but_reset(self, widget):
+        (list, iter) = self.view.get_selection().get_selected()
+        (call,) = list.get(iter, self.col_call)
+
+        try:
+            self.mainapp.seen_callsigns[call] = 0
+        except:
+            pass
+
+        self.refresh()
 
     def show(self):
         self.root.show()
@@ -1296,7 +1358,12 @@ class CallCatcher:
         self.gui = gui
         self.mainapp = gui.mainapp
 
-        self.root = self.make_display()
+        box = gtk.HBox(False, 2)
+        box.pack_start(self.make_display(), 1,1,1)
+        box.pack_start(self.make_controls(), 0,0,0)
+        box.show()
+
+        self.root = box
 
         gobject.timeout_add(60 * 1000, self.update_all_times)
         
