@@ -65,6 +65,11 @@ class ChatGUI:
             self.window.set_urgency_hint(False)
 
     def note_callsigns(self, string):
+        if "--(EOB)--" in string:
+            return
+        if "--(EG)--" in string:
+            return
+
         calls = find_callsigns(string)
         
         print "Found calls %s in %s" % (calls, string)
