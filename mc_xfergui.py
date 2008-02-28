@@ -175,7 +175,7 @@ class MulticastGUI(gtk.Dialog):
 
         gtk.Dialog.run(self)
 
-    def __init__(self, filename, pipe):
+    def __init__(self, filename, pipe, block_size=512):
         self._filename = filename
         self._pipe = pipe
 
@@ -186,9 +186,16 @@ class MulticastGUI(gtk.Dialog):
         self.build_gui()
         self.build_action()
 
+        self.station_joined("TEST")
+        self.station_update("TEST", 0, "Waiting")
+
+
         self.transfer = ddt_multicast.DDTMulticastTransfer(self._pipe,
                                                            "Sender",
                                                            self.update)
+
+        self.transfer.block_size = block_size
+
 class MulticastRecvGUI(FileTransferGUI):
     def ddt_xfer(self):
         station = self.chatgui.config.get("user", "callsign")

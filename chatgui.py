@@ -517,8 +517,13 @@ class MainChatGUI(ChatGUI):
         if r == gtk.RESPONSE_CANCEL:
             return
         
+        try:
+            bsize = self.config.getint("settings", "ddt_block_size")
+        except:
+            bsize = 512
+
         self.toggle_sendable(False)
-        d = MulticastGUI(f, self.mainapp.comm.pipe)
+        d = MulticastGUI(f, self.mainapp.comm.pipe, bsize)
         d.run()
         d.destroy()
         self.toggle_sendable(True)
