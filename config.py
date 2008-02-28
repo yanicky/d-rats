@@ -262,9 +262,11 @@ class AppConfig:
 
     def destroy(self, widget, data=None):
         self.window.hide()
+        return True
 
     def delete(self, widget, event, data=None):
         self.window.hide()
+        return True
 
     def save_button(self, widget, data=None):
         self.sync_gui(load=False)
