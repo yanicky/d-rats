@@ -256,16 +256,11 @@ class FileTransferGUI:
         fc.set_current_folder(d)
 
         result = fc.run()
-        if result == gtk.RESPONSE_CANCEL:
-            fc.destroy()
-            return
-        
         self.filename = fc.get_filename()
         fc.destroy()
-
-        self.is_send = False
-
-        self.show_xfer()
+        if result == gtk.RESPONSE_OK:
+            self.is_send = False
+            self.show_xfer()
 
     def wait_for_completion(self):
         self.xfer_thread.join()
