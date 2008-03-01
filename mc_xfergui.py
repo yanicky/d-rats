@@ -186,10 +186,6 @@ class MulticastGUI(gtk.Dialog):
         self.build_gui()
         self.build_action()
 
-        self.station_joined("TEST")
-        self.station_update("TEST", 0, "Waiting")
-
-
         self.transfer = ddt_multicast.DDTMulticastTransfer(self._pipe,
                                                            "Sender",
                                                            self.update)
