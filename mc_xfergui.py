@@ -99,6 +99,10 @@ class MulticastGUI(gtk.Dialog):
         self.transfer.cancel()
         self.button_start.set_sensitive(False)
         self.button_cancel.set_sensitive(False)
+        self.button_close.set_sensitive(True)
+
+    def button_close(self, widget, data=None):
+        self.response(gtk.RESPONSE_OK)
 
     def update(self, msg, vals):
         if msg:
@@ -151,14 +155,22 @@ class MulticastGUI(gtk.Dialog):
         bcancel.set_sensitive(True)
         bcancel.show()
 
+        bclose = gtk.Button("Close")
+        bclose.connect("clicked", self.button_close, None)
+        bclose.set_sensitive(False)
+        bclose.show()
+
         self.action_area.pack_start(bstart)
         self.action_area.pack_start(bcancel)
+        self.action_area.pack_start(bclose)
 
         self.button_start = bstart
         self.button_cancel = bcancel
+        self.button_close = bclose
 
     def transfer_finished(self):
         self.button_cancel.set_sensitive(False)
+        self.button_close.set_sensitive(True)
 
     def transfer_thread(self):
         print "Thread started"
