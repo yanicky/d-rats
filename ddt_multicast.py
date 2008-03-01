@@ -2,6 +2,7 @@ import array
 import struct
 import time
 import os
+import random
 
 import serial
 
@@ -253,24 +254,51 @@ class DDTMulticastTransfer:
 
         self.stations[station] = 0
         self.status("Station `%s' joined" % station)
+        self.pipe.write(frame.pack())
+
         return station
 
     def join_transfer(self):
-        frame = DDTJoinFrame(self.station_id)
-        self.pipe.write(frame.pack())
+        for a in range(10):
+            delay = float(random.randint(0,500) / 100.0)
+
+            self.status("Trying to join transfer (attempt %i) (delay %.1f)" \
+                            % (a, delay))
+            ojframe = DDTJoinFrame(self.station_id)
+
+            time.sleep(delay)
+            self.pipe.write(ojframe.pack())
+
+            frames = self.recv_raw_frames(5, True)
+            for f in frames:
+                ijframe = DDTJoinFrame()
+                try:
+                    ijframe.unpack(f)
+                except:
+                    continue
+                if ijframe.get_data() == self.station_id:
+                    self.status("Joined transfer")
+                    return True
+
+        self.status("Failed to join transfer")
+        return False
 
     def wait_for_stations(self, joinf):
+        checkins = []
+
         while self.waiting_for_checkins and self.enabled:
             self.status("Sending advertisement")
             self.send_start_file(self.filename)
             
             self.status("Waiting for checkins...")
-            raw = self.recv_raw_frames(5)
+            raw = self.recv_raw_frames(5, True)
 
             for d in raw:
                 s = self.process_checkin(d)
                 if s and joinf:
-                    joinf(s)
+                    if s not in checkins:
+                        joinf(s)
+                        checkins.append(s)
 
         if not self.enabled:
             raise TransferEnded("Cancelled by user")
@@ -519,7 +547,8 @@ class DDTMulticastTransfer:
             
         f = file(self.filename, "wb")
 
-        self.join_transfer()
+        if not self.join_transfer():
+            raise TransferEnded("Failed to join transfer")
 
         if self.total_size % self.block_size:
             extra = 1
