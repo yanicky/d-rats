@@ -19,6 +19,7 @@ import gtk
 import pygtk
 import gobject
 import time
+import datetime
 
 from commands import getstatusoutput as run
 
@@ -34,10 +35,28 @@ class QSTText:
         self.freq = freq
         self.enabled = False
 
-        self._reset()        
+        self.reschedule()        
 
-    def _reset(self):
-        self.next = time.time() + (self.freq * 60)
+    def _reschedule(self):
+        if self.freq.startswith(":"):
+            tmins = int(self.freq[1:])
+            nmins = datetime.datetime.now().minute
+
+            delta = tmins - nmins
+            if delta <= 0:
+                delta = 60 + delta
+
+            print "Scheduling %s for %i mins from now" % (self.text, delta)
+            self.next = time.time() + (delta * 60)
+        else:
+            self.next = time.time() + (int(self.freq) * 60)
+
+    def reschedule(self):
+        try:
+            self._reschedule()
+        except Exception, e:
+            print "Failed to reschedule %s: %s" % (self.text, e)
+            self.next = time.time() + 3600
 
     def reset(self):
         self.next = 0
@@ -72,7 +91,7 @@ class QSTText:
             else:
                 print "Skipping QST because GUI is not sendable"
 
-            self._reset()
+            self.reschedule()
 
         return True
 
@@ -297,13 +316,13 @@ class QSTGUI(SelectGUI):
     def __init__(self, config):
         self.columns = [
             (gtk.CellRendererToggle, "Enabled", bool),
-            (gtk.CellRendererText, "Period (min)", int),
+            (gtk.CellRendererText, "Period", str),
             (gtk.CellRendererText, "Type", str),
             (gtk.CellRendererText, "Message", str),
             ]
         self.config = config
         self.list_store = gtk.ListStore(gobject.TYPE_BOOLEAN,
-                                        gobject.TYPE_INT,
+                                        gobject.TYPE_STRING,
                                         gobject.TYPE_STRING,
                                         gobject.TYPE_STRING)
         
@@ -312,7 +331,7 @@ class QSTGUI(SelectGUI):
     def ev_add(self, widget, data=None):
         msg = self.msg.get_text(self.msg.get_start_iter(),
                                 self.msg.get_end_iter())
-        tme = int(self.c_tme.child.get_text())
+        tme = self.c_tme.child.get_text()
 
         
         model = self.c_typ.get_model()
@@ -328,7 +347,7 @@ class QSTGUI(SelectGUI):
         self.msg.set_text("")
 
     def make_b_controls(self):
-        times = ["1", "5", "10", "20", "30", "60"]
+        times = ["1", "5", "10", "20", "30", "60", ":15", ":30", ":45"]
         types = ["Text", "Exec", "File"]
 
         self.msg = gtk.TextBuffer()
@@ -384,7 +403,7 @@ class QSTGUI(SelectGUI):
         return hbox        
 
     def load_qst(self, section):
-        freq = self.config.getint(section, "freq")
+        freq = self.config.get(section, "freq")
         content = self.config.get(section, "content")
         enabled = self.config.getboolean(section, "enabled")
         qsttype = self.config.get(section, "type")
@@ -407,7 +426,7 @@ class QSTGUI(SelectGUI):
 
         section = "qst_%i" % int(pos)
         self.config.config.add_section(section)
-        self.config.set(section, "freq", str(freq))
+        self.config.set(section, "freq", freq)
         self.config.set(section, "content", text)
         self.config.set(section, "enabled", str(enabled))
         self.config.set(section, "type", qsttype)

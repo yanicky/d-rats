@@ -289,7 +289,7 @@ class MainApp:
                 continue
             
             qstinst = qstclass(self.chatgui, self.config,
-                               text=text, freq=int(freq))
+                               text=text, freq=freq)
             qstinst.enable()
 
             self.qsts.append(qstinst)

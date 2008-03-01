@@ -891,7 +891,7 @@ class QSTMonitor:
         self.col_msg    = 4
 
         self.store = gtk.ListStore(gobject.TYPE_INT,
-                                   gobject.TYPE_INT,
+                                   gobject.TYPE_STRING,
                                    gobject.TYPE_INT,
                                    gobject.TYPE_STRING,
                                    gobject.TYPE_STRING)
@@ -934,7 +934,11 @@ class QSTMonitor:
 
         qst = self.mainapp.qsts[index]
 
-        max = qst.freq * 60
+        try:
+            max = int(qst.freq) * 60
+        except:
+            max = 3600
+
         rem = qst.remaining()
 
         if rem < 90:
@@ -956,7 +960,11 @@ class QSTMonitor:
 
     def add_qst(self, index, qst):
 
-        max = qst.freq * 60
+        try:
+            max = int(qst.freq) * 60
+        except:
+            max = 3600
+
         rem = qst.remaining()
         msg = qst.text
 
@@ -968,7 +976,7 @@ class QSTMonitor:
         iter = self.store.append()
         self.store.set(iter,
                        self.col_index, index,
-                       self.col_period, max / 60,
+                       self.col_period, qst.freq,
                        self.col_remain, (rem / max) * 100,
                        self.col_status, status,
                        self.col_msg, msg)
