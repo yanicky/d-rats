@@ -580,6 +580,7 @@ class MainChatGUI(ChatGUI):
               <menuitem action='quickmsg'/>
               <menuitem action='manageform'/>
               <separator/>
+              <menuitem action='connect'/>
               <menuitem action='quit'/>
             </menu>
             <menu action='view'>
@@ -625,11 +626,16 @@ class MainChatGUI(ChatGUI):
 
         advanced.connect("toggled", self.show_advanced, None)
 
+        connected = gtk.ToggleAction("connect", "_Connected", None, None)
+        connected.set_active(True)
+        connected.connect("toggled", self.connect, None)
+
         uim = gtk.UIManager()
         self.menu_ag = gtk.ActionGroup("MenuBar")
 
         self.menu_ag.add_actions(actions)
         self.menu_ag.add_action_with_accel(advanced, "<Control>a")
+        self.menu_ag.add_action_with_accel(connected, "<Control>c")
 
         uim.insert_action_group(self.menu_ag, 0)
         menuid = uim.add_ui_from_string(menu_xml)
@@ -671,6 +677,14 @@ class MainChatGUI(ChatGUI):
         # No idea why, but Win32 has some issue such that doing the resize
         # and the pane show at the same time causes a missed refresh
         gobject.idle_add(self.refresh_window, h)
+
+    def connect(self, action, data=None):
+        connected = action.get_active()
+        self.toggle_sendable(connected)
+        if connected:
+            self.display_line("--- Connected ---", "italic")
+        else:
+            self.display_line("--- Disconnected ---", "italic")
 
     def show_allfilter(self, action):
         all_filter = ChatFilter(self.tabs)
