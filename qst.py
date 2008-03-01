@@ -360,6 +360,7 @@ class QSTGUI(SelectGUI):
         self.c_typ = make_choice(types, False)
         self.c_typ.set_size_request(80, -1)
         self.c_typ.set_active(0)
+        self.c_typ.connect("changed", self.type_changed)
 
         b_add = gtk.Button("Add", gtk.STOCK_ADD)
 
@@ -401,6 +402,15 @@ class QSTGUI(SelectGUI):
         hbox.show()
 
         return hbox        
+
+    def type_changed(self, widget, data=None):
+        if widget.get_active_text() in ["File", "Exec"]:
+            d = gtk.FileChooserDialog("Select QST file",
+                                      buttons=(gtk.STOCK_OPEN, gtk.RESPONSE_OK,
+                                               gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL))
+            if d.run() == gtk.RESPONSE_OK:
+                self.msg.set_text(d.get_filename())
+            d.destroy()            
 
     def load_qst(self, section):
         freq = self.config.get(section, "freq")
