@@ -97,15 +97,19 @@ class FileTransferGUI:
         box = gtk.VBox(False, 0)
 
         self.bar = gtk.ProgressBar()
-        self.bar.set_text("Waiting...")
         self.bar.set_fraction(0)
         
+        self.status = gtk.Label()
+        self.set_status_msg("Initializing...")
+
+        box.pack_start(self.status, 0,0,0)
         box.pack_start(self.bar, 0, 0, 0)
         box.pack_start(self.make_label_value("File"), 0, 0, 0)
         box.pack_start(self.make_label_value("Size"), 0, 0, 0)
         box.pack_start(self.make_label_value("Errors"), 0, 0, 0)
         box.pack_start(self.make_buttons(), 0, 0, 0)
 
+        self.status.show()
         self.bar.show()
         box.show()
 
@@ -114,6 +118,9 @@ class FileTransferGUI:
         self.window.set_resizable(False)
         self.window.set_geometry_hints(None, min_width=300)
         self.window.add(box)
+
+    def set_status_msg(self, status):
+        self.status.set_markup("<big><b>%s</b></big>" % status)
 
     def encoded_file(self, filename):
         i = file(filename)
@@ -214,7 +221,7 @@ class FileTransferGUI:
         self.values["Size"].set_text(size_str)
         self.values["Errors"].set_text(err_str)
         if status:
-            self.bar.set_text(status)
+            self.set_status_msg(status)
         if tot:
             self.bar.set_fraction(float(sent) / tot)
 
