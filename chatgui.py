@@ -70,13 +70,14 @@ class ChatGUI:
         print "Found calls %s in %s" % (calls, string)
 
         for call in calls:
+            ucall = call.upper()
+
             if "%s>" % call in string:
                 stamp = int(time.time())
+                self.mainapp.seen_callsigns[ucall] = stamp
             else:
-                stamp = 0
-            
-            call = call.upper()
-            self.mainapp.seen_callsigns[call] = stamp
+                if ucall not in self.mainapp.seen_callsigns.keys():
+                    self.mainapp.seen_callsigns[ucall] = 0
 
         for item in self.mainapp.chatgui.adv_controls:
             if isinstance(item, CallCatcher):
