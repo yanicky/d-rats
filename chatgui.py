@@ -32,7 +32,8 @@ import ddt
 from xfergui import FileTransferGUI, FormTransferGUI
 from qst import QSTGUI, QuickMsgGUI
 from inputdialog import TextInputDialog, ChoiceDialog
-from utils import filter_to_ascii, find_callsigns
+from utils import filter_to_ascii
+from callsigns import find_callsigns
 import mainapp
 import formgui
 import formbuilder
@@ -65,7 +66,7 @@ class ChatGUI:
             self.window.set_urgency_hint(False)
 
     def note_callsigns(self, string):
-        calls = find_callsigns(string)
+        calls = find_callsigns(self.config, string)
         
         print "Found calls %s in %s" % (calls, string)
 
@@ -89,7 +90,7 @@ class ChatGUI:
         if "--(EG)--" in string:
             return
 
-        callsigns = find_callsigns(string)
+        callsigns = find_callsigns(self.config, string)
         print "Marking callsigns %s in %s" % (callsigns, string)
 
         for call in callsigns:

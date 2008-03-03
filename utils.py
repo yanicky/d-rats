@@ -69,7 +69,3 @@ def filter_to_ascii(string):
 
         return string.translate("".join(xlate))
 
-def find_callsigns(string):
-    regex = "[aAkKnNwW][A-z]?[0-9][A-z]{1,3}"
-
-    return re.findall(regex, string)
