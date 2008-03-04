@@ -690,6 +690,7 @@ class MainChatGUI(ChatGUI):
         connected = action.get_active()
         self.toggle_sendable(connected)
         if connected:
+            self.mainapp.comm.pipe.flushInput()
             self.display_line("--- Connected ---", "italic")
         else:
             self.display_line("--- Disconnected ---", "italic")
