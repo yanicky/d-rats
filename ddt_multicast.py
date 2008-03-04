@@ -172,7 +172,7 @@ class DDTMulticastTransfer:
             "wiresize" : self.wire_size,
             "errors" : self.errors,
             "totalsize" : self.total_size,
-            "filename" : self.filename,
+            "filename" : os.path.basename(self.filename),
             }
 
 #        if msg:
@@ -403,7 +403,7 @@ class DDTMulticastTransfer:
     def send_start_file(self, filename):
         frame = DDTMultiXferStartFrame(filename, self.block_size)
 
-        self.filename = frame.get_filename()
+        self.filename = filename
         self.total_size = frame.get_size()
 
         if self.total_size % self.block_size:
@@ -450,7 +450,7 @@ class DDTMulticastTransfer:
         self.waiting_for_checkins = False
 
     def _send_file(self, filename, joinf=None, updatef=None):
-        self.send_start_file(filename)
+        self.filename = filename
 
         self.wait_for_stations(joinf)
 
