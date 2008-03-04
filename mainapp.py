@@ -147,11 +147,13 @@ class SerialCommunicator:
                 self.pipe = SWFSerial(port=self.port,
                                       baudrate=self.rate,
                                       timeout=0.25,
+                                      writeTimeout=5,
                                       xonxoff=0)
             else:
                 self.pipe = serial.Serial(port=self.port,
                                           baudrate=self.rate,
                                           timeout=0.25,
+                                          writeTimeout=5,
                                           xonxoff=1)
             self.opened = True
         except Exception, e:
