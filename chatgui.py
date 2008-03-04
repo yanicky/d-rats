@@ -42,7 +42,6 @@ from mc_xfergui import MulticastGUI, MulticastRecvGUI
 
 class ChatGUI:
     def ev_delete(self, widget, event, data=None):
-        self.window.set_default_size(*self.window.get_size())
         return False
 
     def sig_destroy(self, widget, data=None):
@@ -368,14 +367,21 @@ class MainChatGUI(ChatGUI):
             ChatGUI.display_line(self, string, *attrs)
             self.filters[0].set_waiting(True)
 
+    def ev_delete(self, widget, event, data=None):
+        self.window.set_default_size(*self.window.get_size())
+        return False
+
     def sig_destroy(self, widget, data=None):
         if self.config.getboolean("prefs", "dosignoff"):
             self.tx_msg(self.config.get("prefs", "signoff"))
 
-        h, w = self.window.get_size()
-        print "Setting %s size to %i,%i" % (self.window.get_title(), h,w)
-        self.config.set("state", "main_size_x", h)
-        self.config.set("state", "main_size_y", w)
+        self.config.set("state", "main_maximized", str(self.is_maximized))
+
+        if not self.is_maximized:
+            h, w = self.window.get_size()
+            print "Setting %s size to %i,%i" % (self.window.get_title(), h,w)
+            self.config.set("state", "main_size_x", h)
+            self.config.set("state", "main_size_y", w)
 
         gtk.main_quit()
 
@@ -734,8 +740,14 @@ class MainChatGUI(ChatGUI):
 
         return nb
 
+    def ev_window(self, window, event):
+        if event.type == gtk.gdk.WINDOW_STATE:
+            max = event.new_window_state & gtk.gdk.WINDOW_STATE_MAXIMIZED
+            self.is_maximized = (max != 0)
+
     def make_window(self):
         self.window = gtk.Window(gtk.WINDOW_TOPLEVEL)
+        self.is_maximized = False
 
         self.advpane = self.make_advanced()
 
@@ -759,8 +771,15 @@ class MainChatGUI(ChatGUI):
         self.window.connect("delete_event", self.ev_delete)
         self.window.connect("destroy", self.sig_destroy)
         self.window.connect("focus", self.ev_focus)
+        self.window.connect("window-state-event", self.ev_window)
         self.window.add_accel_group(self.accel_group)
         self.window.show()
+
+        try:
+            if self.config.getboolean("state", "main_maximized"):
+                self.window.maximize()
+        except:
+            pass
 
         self.entry.grab_focus()
 
