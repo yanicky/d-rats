@@ -397,13 +397,20 @@ class MainApp:
             
     def main(self):
         try:
-            try:
-                gtk.main()
-            except gtk.exceptions.GTKWarning:
-                pass
-            self.config.save()
+            gtk.main()
         except KeyboardInterrupt:
             pass
-        
+        except Exception, e:
+            print "Got exception on close: %s" % e
+
+        print "Saving config..."
+        self.config.save()
+
+        print "Disabling watch thread..."
         self.comm.disable()
+
+        print "Closing serial..."
+        self.comm.close()
+
+        print "Done.  Exit."
 
