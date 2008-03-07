@@ -510,15 +510,13 @@ class DDTMulticastTransfer:
 
             if frame.get_type() == ddt.FILE_XFER_BLOCK:
                 self.status("Received block %i" % frame.get_seq())
-                flist.remove(frame.get_seq())
+                num = frame.get_seq()
                 data = frame.get_data()
-                if data:
+                if num in flist and data:
+                    flist.remove(frame.get_seq())
                     self.transfer_size += len(data)
-                    f.seek(frame.get_seq() * self.block_size)
+                    f.seek(num * self.block_size)
                     f.write(data)
-                else:
-                    hexprint(raw)
-                    raise Exception("Frame %i has no data?!" % frame.get_seq())
 
             elif frame.get_type() == ddt.FILE_XFER_TOKEN:
                 frame = DDTJoinFrame()
@@ -545,7 +543,7 @@ class DDTMulticastTransfer:
         if os.path.isdir(filename):
             self.filename = os.path.join(filename, self.filename)
             
-        f = file(self.filename, "wb")
+        f = file(self.filename, "wb", 0)
 
         if not self.join_transfer():
             raise TransferEnded("Failed to join transfer")
