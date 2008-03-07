@@ -1344,7 +1344,7 @@ class CallCatcher:
 
         r = gtk.CellRendererText()
         c = gtk.TreeViewColumn("Last Seen", r, text=self.col_disp)
-        c.set_sort_column_id(self.col_disp)
+        c.set_sort_column_id(self.col_time)
         self.view.append_column(c)
 
         def cb(view, path, col, me):
