@@ -479,7 +479,7 @@ class MainChatGUI(ChatGUI):
         d.destroy()
 
     def filter_view(self):
-        d = TextInputDialog("Create filter")
+        d = TextInputDialog(title="Create filter", parent=self.window)
         d.label.set_text("Enter a regular expression to define the filter:")
         
         res = d.run()
@@ -1151,7 +1151,9 @@ class FormManager:
             id = os.path.basename(i).replace(".xml", "")
             forms[id] = i
 
-        d = ChoiceDialog(forms.keys(), "Choose a form")
+        d = ChoiceDialog(forms.keys(),
+                         title="Choose a form",
+                         parent=self.gui.window)
         d.label.set_text("Select a form type to create")
         r = d.run()
         formid = d.choice.get_active_text()

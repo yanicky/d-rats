@@ -8,10 +8,10 @@ class TextInputDialog(gtk.Dialog):
     def respond_ok(self, entry, data=None):
         self.response(gtk.RESPONSE_OK)
 
-    def __init__(self, title=None):
+    def __init__(self, **args):
         buttons = (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
                    gtk.STOCK_OK, gtk.RESPONSE_OK)
-        gtk.Dialog.__init__(self, title, buttons=buttons)
+        gtk.Dialog.__init__(self, buttons=buttons, **args)
 
         self.label = gtk.Label()
         self.label.set_size_request(300,100)
@@ -25,10 +25,10 @@ class TextInputDialog(gtk.Dialog):
         self.text.show()
 
 class ChoiceDialog(gtk.Dialog):
-    def __init__(self, choices, title=None):
+    def __init__(self, choices, **args):
         buttons = (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
                    gtk.STOCK_OK, gtk.RESPONSE_OK)
-        gtk.Dialog.__init__(self, title, buttons=buttons)
+        gtk.Dialog.__init__(self, buttons=buttons, **args)
 
         self.label = gtk.Label()
         self.label.set_size_request(300,100)
