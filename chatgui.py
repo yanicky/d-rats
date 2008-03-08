@@ -467,6 +467,7 @@ class MainChatGUI(ChatGUI):
 
     def show_about(self):
         d = gtk.AboutDialog()
+        d.set_transient_for(self.window)
 
         d.set_name("D-RATS")
         d.set_version(mainapp.DRATS_VERSION)
