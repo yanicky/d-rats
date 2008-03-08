@@ -136,6 +136,10 @@ class SelectGUI:
         self.sync_gui(load=False)
         self.window.hide()
 
+    def ev_apply(self, widget, data=None):
+        print "Apply"
+        self.sync_gui(load=False)
+
     def ev_delete(self, widget, data=None):
         (list, iter) = self.list.get_selection().get_selected()
         list.remove(iter)
@@ -259,6 +263,7 @@ class SelectGUI:
 
         okay = gtk.Button("OK", gtk.STOCK_OK)
         cancel = gtk.Button("Cancel", gtk.STOCK_CANCEL)
+        apply = gtk.Button("Apply", gtk.STOCK_APPLY)
 
         okay.connect("clicked",
                      self.ev_okay,
@@ -266,15 +271,21 @@ class SelectGUI:
         cancel.connect("clicked",
                        self.ev_cancel,
                        None)
+        apply.connect("clicked",
+                      self.ev_apply,
+                      None)        
 
         hbox.pack_end(cancel, 0,0,0)
+        hbox.pack_end(apply, 0,0,0)
         hbox.pack_end(okay, 0,0,0)
 
         okay.set_size_request(100, -1)
+        apply.set_size_request(100, -1)
         cancel.set_size_request(100, -1)
         
         okay.show()
         cancel.show()
+        apply.show()
         hbox.show()
 
         return hbox
