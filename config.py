@@ -22,8 +22,10 @@ import shutil
 
 import gtk
 import pygtk
+import gobject
 
 import ddt
+import miscwidgets
 
 def color_string(color):
     try:
@@ -50,6 +52,11 @@ def make_choice(options, editable=True, default=None):
     return sel
 
 class AppConfig:
+    default_call_settings = [
+        (True, "US"),
+        (False, "Australia"),
+        ]
+
     def init_config(self):
         def mset(section, option, value):
             if not self.config.has_section(section):
@@ -79,6 +86,7 @@ class AppConfig:
         mset("prefs", "debuglog", "False")
         mset("prefs", "eolstrip", "True")
         mset("prefs", "font", "Sans 12")
+        mset("prefs", "callsigns", "%s" % self.default_call_settings)
 
         mset("settings", "port", self.default_port)
         mset("settings", "rate", "9600")
@@ -123,6 +131,7 @@ class AppConfig:
                 "chunk_delay" : "<span foreground='red'>Chunk delay (sec)</span>",
                 "ddt_block_size" : "Outgoing block size (KB)",
                 "swflow" : "D-RATS does flow control",
+                "callsigns" : "Mark callsigns by these countries"
                 }
 
     id2tip = {"write_chunk" : "Stage DDT blocks into small chunks of this many bytes",
@@ -130,6 +139,7 @@ class AppConfig:
               "ddt_block_size" : "Size (in KB) of data blocks to send with DDT",
               "debuglog" : "Requires D-RATS restart to take effect",
               "swflow" : "Try this if using a USB-to-serial adapter",
+              "callsigns" : "Mark callsigns by these countries",
               }
 
     xfers = {"DDT" : ddt.DDTTransfer}
@@ -193,6 +203,11 @@ class AppConfig:
     def options(self, *args):
         return self.config.options(*args)
 
+    def make_setting(self, id, child):
+        self.fields[id] = child
+        if self.id2tip.has_key(id):
+            self.tips.set_tip(child, self.id2tip[id])
+
     def make_sb(self, id, child):
         hbox = gtk.HBox(True, 0)
 
@@ -202,15 +217,11 @@ class AppConfig:
         hbox.pack_start(label, 0, 0, 0)
         hbox.pack_end(child, 1, 1, 0)
 
-        self.fields[id] = child
-
         label.show()
         child.show()
         hbox.show()
 
-        if self.id2tip.has_key(id):
-            self.tips.set_tip(label, self.id2tip[id])
-            self.tips.set_tip(child, self.id2tip[id])
+        self.make_setting(id, child)
         
         return hbox
 
@@ -369,6 +380,24 @@ class AppConfig:
 
         return vbox
 
+    def build_callsigns(self):
+        list = miscwidgets.ListWidget([(gobject.TYPE_BOOLEAN, "Mark"),
+                                       (gobject.TYPE_STRING, "Country")])
+
+        self.make_setting("callsigns", list)
+
+        call_settings = eval(self.get("prefs", "callsigns"))
+        known = [y for x,y in call_settings]
+        avail = [y for x,y in self.default_call_settings]
+
+        for i in avail:
+            if i not in known:
+                call_settings.append((False, i))
+
+        self.set("prefs", "callsigns", str(call_settings))
+
+        list.show()
+        return list
 
     def build_gui(self):
         self.window = gtk.Window(gtk.WINDOW_TOPLEVEL)
@@ -385,6 +414,7 @@ class AppConfig:
         nb.append_page(self.build_appearance(), gtk.Label("Appearance"))
         nb.append_page(self.build_data(), gtk.Label("Data"))
         nb.append_page(self.build_ddt(), gtk.Label("DDT"))
+        nb.append_page(self.build_callsigns(), gtk.Label("Callsigns"))
 
         nb.show()
 
@@ -490,6 +520,19 @@ D-RATS has been started in safe mode, which means the configuration file has not
             except Exception, e:
                 print "Failed to sync %s,%s: %s" % (s,k,e)
 
+    def sync_lists(self, list, load):
+        for s, k in list:
+            lw = self.fields[k]
+
+            try:
+                if load:
+                    lw.set_values(eval(self.config.get(s, k)))
+                else:
+                    self.config.set(s, k, str(lw.get_values()))
+            except Exception, e:
+                print "Failed to sync %s,%s list: %s" % (s,k,e)
+                self.config.set(s,k,str([]))
+
     def sync_gui(self, load=True):
         text_v = [("user", "callsign"),
                   ("user", "name"),
@@ -525,6 +568,8 @@ D-RATS has been started in safe mode, which means the configuration file has not
         spin_v = [("settings", "write_chunk"),
                   ("settings", "chunk_delay")]
 
+        list_v = [("prefs", "callsigns")]
+
         self.sync_texts(text_v, load)
         self.sync_booleans(bool_v, load)
         self.sync_choicetexts(choicetext_v, load)
@@ -533,6 +578,7 @@ D-RATS has been started in safe mode, which means the configuration file has not
         self.sync_paths(path_v, load)
         self.sync_fonts(font_v, load)
         self.sync_spins(spin_v, load)
+        self.sync_lists(list_v, load)
 
     def load_config(self, file):
         self.config.read(file)

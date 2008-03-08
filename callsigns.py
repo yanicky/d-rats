@@ -15,14 +15,17 @@ def find_au_callsigns(string):
 
 callsign_functions = {
     "US" : find_us_callsigns,
-    "AU" : find_au_callsigns,
+    "Australia" : find_au_callsigns,
 }
 
 def find_callsigns(config, string):
     list = []
 
+    cs = eval(config.get("prefs", "callsigns"))
+    enabled = [y for x,y in cs if x]
+
     for t in callsign_functions.keys():
-        if callsign_functions.has_key(t):
+        if callsign_functions.has_key(t) and t in enabled:
             print "Matching `%s' callsigns" % t
             list += callsign_functions[t](string)
     
