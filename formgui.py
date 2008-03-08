@@ -239,9 +239,9 @@ class TimeWidget(FieldWidget):
         self.widget.show()
 
     def get_value(self):
-        return "%.0f:%.0f:%.0f" % (self.hour_a.get_value(),
-                                   self.min_a.get_value(),
-                                   self.sec_a.get_value())
+        return "%.0f:%02.0f:%02.0f" % (self.hour_a.get_value(),
+                                       self.min_a.get_value(),
+                                       self.sec_a.get_value())
 
 class NumericWidget(FieldWidget):
     def __init__(self, node):
