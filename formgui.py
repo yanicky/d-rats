@@ -3,10 +3,12 @@ import time
 import os
 
 import libxml2
+import libxslt
 
 import gtk
 
 from config import make_choice
+import mainapp
 
 test = """
 <xml>
@@ -27,6 +29,32 @@ test = """
 </xml>
 
 """
+
+class FormWriter:
+    def write(formxml, outfile):
+        doc = libxml2.parseMemory(formxml, len(formxml))
+        doc.saveFile(outfile)
+        doc.freeDoc()
+
+class HTMLFormWriter(FormWriter):
+    def __init__(self, type):
+        config = mainapp.get_mainapp().config
+        dir = config.form_source_dir()
+
+        self.xslpath = os.path.join(dir, "%s.xsl" % type)
+        if not os.path.exists(self.xslpath):
+            self.xslpath = os.path.join(dir, "default.xsl")
+        
+    def writeDoc(self, doc, outfile):
+        print "Writing to %s" % outfile
+        styledoc = libxml2.parseFile(self.xslpath)
+        style = libxslt.parseStylesheetDoc(styledoc)
+        result = style.applyStylesheet(doc, None)
+        style.saveResultToFilename(outfile, result, 0)
+        #style.freeStylesheet()
+        #styledoc.freeDoc()
+        #doc.freeDoc()
+        #result.freeDoc()
 
 class FieldWidget:
     def __init__(self, node):
@@ -336,9 +364,7 @@ class Form(gtk.Dialog):
         r = d.run()
         if r != gtk.RESPONSE_CANCEL:
             try:
-                f = file(d.get_filename(), "w")
-                f.write(self.get_text())
-                f.close()
+                self.export(d.get_filename())
             except Exception, e:
                 ed = gtk.MessageDialog(buttons=gtk.BUTTONS_OK,
                                        parent=self)
@@ -400,11 +426,12 @@ class Form(gtk.Dialog):
 
         return self.doc.serialize()
 
-    def get_text(self):
+    def export(self, outfile):
         for f in self.fields:
             f.update_node()
 
-        return "BROKEN"
+        w = HTMLFormWriter(self.id)
+        w.writeDoc(self.doc, outfile)
 
     def __init__(self, title, xmlstr, buttons=None):
         if not buttons:
