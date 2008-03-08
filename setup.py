@@ -6,7 +6,7 @@ opts = {
         "includes" : "pango,atk,gobject,cairo,pangocairo,xml",
         "compressed" : 1,
         "optimize" : 2,
-        "packages" : "xml.sax.drivers,xml.sax.drivers2"
+#        "packages" : ""
         }
     }
 
