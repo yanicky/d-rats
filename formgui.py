@@ -397,8 +397,18 @@ class Form(gtk.Dialog):
 
         self.vbox.pack_start(tlabel, 0,0,0)
 
+        field_box = gtk.VBox(False, 2)
+
+        sw = gtk.ScrolledWindow()
+        sw.set_policy(gtk.POLICY_NEVER,
+                      gtk.POLICY_AUTOMATIC)
+        sw.add_with_viewport(field_box)
+        field_box.show()
+        sw.show()
+        self.vbox.pack_start(sw, 1,1,1)
+
         for f in self.fields:
-            self.vbox.pack_start(f.get_widget(), 0,0,0)
+            field_box.pack_start(f.get_widget(), 0,0,0)
 
         if allow_export:
             save = gtk.Button("Export")
@@ -452,12 +462,12 @@ class Form(gtk.Dialog):
         w = HTMLFormWriter(self.id)
         w.writeDoc(self.doc, outfile)
 
-    def __init__(self, title, xmlstr, buttons=None):
+    def __init__(self, title, xmlstr, buttons=None, parent=None):
         if not buttons:
             buttons = (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
                        gtk.STOCK_SAVE, gtk.RESPONSE_OK)
 
-        gtk.Dialog.__init__(self, title=title, buttons=buttons)
+        gtk.Dialog.__init__(self, title=title, buttons=buttons, parent=parent)
 
         self.vbox.set_spacing(5)
 
@@ -468,18 +478,20 @@ class Form(gtk.Dialog):
         self.process_form(self.doc)
         self.process_fields(self.doc)
 
+        self.set_default_size(300,600)
+
         print "Form ID: %s" % self.id
 
         self.build_gui(gtk.RESPONSE_CANCEL in buttons)
         
 class FormFile(Form):
-    def __init__(self, title, filename, buttons=None):
+    def __init__(self, title, filename, buttons=None, parent=None):
         self._filename = filename
         f = file(self._filename)
         data = f.read()
         f.close()
 
-        Form.__init__(self, title, data, buttons)
+        Form.__init__(self, title, data, buttons=buttons, parent=parent)
 
     def run_auto(self, save_file=None):
         if not save_file:
