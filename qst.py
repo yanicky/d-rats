@@ -231,6 +231,11 @@ class SelectGUI:
         self.list = gtk.TreeView(self.list_store)
         self.list.set_rules_hint(True)
 
+        sw = gtk.ScrolledWindow()
+        sw.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
+        sw.add(self.list)
+        sw.show()
+
         i=0
         for R,c,t in self.columns:
             r = R()
@@ -250,7 +255,7 @@ class SelectGUI:
 
             i += 1
 
-        hbox.pack_start(self.list, 1,1,1)
+        hbox.pack_start(sw, 1,1,1)
         hbox.pack_start(side, 0,0,0)
 
         self.list.show()
