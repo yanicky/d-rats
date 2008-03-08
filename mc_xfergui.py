@@ -187,11 +187,11 @@ class MulticastGUI(gtk.Dialog):
 
         gtk.Dialog.run(self)
 
-    def __init__(self, filename, pipe, block_size=512):
+    def __init__(self, filename, pipe, block_size=512, parent=None):
         self._filename = filename
         self._pipe = pipe
 
-        gtk.Dialog.__init__(self, title="Multicast")
+        gtk.Dialog.__init__(self, title="Multicast", parent=parent)
 
         self.set_default_size(500,350)
         
