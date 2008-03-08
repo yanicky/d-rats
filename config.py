@@ -402,7 +402,7 @@ class AppConfig:
     def show(self):
         self.window.show()
         if self.safe:
-            d = gtk.MessageDialog(buttons=gtk.BUTTONS_OK)
+            d = gtk.MessageDialog(buttons=gtk.BUTTONS_OK, parent=self.window)
             d.set_property("text", "Safe Mode")
             d.set_property("secondary-text",
                            """

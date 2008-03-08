@@ -388,7 +388,8 @@ class Form(gtk.Dialog):
                 f.write(self.get_text())
                 f.close()
             except Exception, e:
-                ed = gtk.MessageDialog(buttons=gtk.BUTTONS_OK)
+                ed = gtk.MessageDialog(buttons=gtk.BUTTONS_OK,
+                                       parent=self)
                 ed.text = "Unable to open file"
                 ed.format_secondary_text("Unable to open %s (%s)" % \
                                              (d.get_filename(), e))

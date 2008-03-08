@@ -1139,7 +1139,7 @@ class FormManager:
                                             "*.xml"))
 
         if not form_files:
-            d = gtk.MessageDialog(buttons=gtk.BUTTONS_OK)
+            d = gtk.MessageDialog(buttons=gtk.BUTTONS_OK, parent=self.window)
             d.set_property("text", "No template forms available")
             d.format_secondary_text("Please copy in the template forms to %s or create a new template by going to File->Manage Form Templates" % os.path.abspath(self.form_source_dir))
             d.run()
