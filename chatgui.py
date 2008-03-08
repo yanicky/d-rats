@@ -1419,7 +1419,7 @@ class CallCatcher:
         (call,) = list.get(iter, self.col_call)
 
         try:
-            self.mainapp.seen_callsigns[call] = 0
+            self.mainapp.seen_callsigns[call] = time.time()
         except:
             pass
 
