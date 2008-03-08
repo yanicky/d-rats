@@ -580,7 +580,14 @@ class MainChatGUI(ChatGUI):
         elif action == "msend":
             self.do_mcast_send()
         elif action == "mrecv":
-            MulticastRecvGUI(self, self.config.xfer()).do_recv()            
+            self.toggle_sendable(False)
+            t = MulticastRecvGUI(self,
+                                 self.config.xfer(),
+                                 title="Multicast Receive",
+                                 parent=self.window)
+            t.do_recv()            
+            t.destroy()
+            self.toggle_sendable(True)
 
     def make_menubar(self):
         menu_xml = """
