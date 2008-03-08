@@ -1379,10 +1379,17 @@ class CallCatcher:
 
         reset = gtk.Button("Reset")
         reset.set_size_request(75, 30)
-        reset.connect("clicked", self.but_reset)
+        reset.connect("clicked", self.but_reset, True)
         self.gui.tips.set_tip(reset, "Reset last seen time for selected call")
         reset.show()
         vbox.pack_start(reset, 0,0,0)
+
+        forget = gtk.Button("Forget")
+        forget.set_size_request(75, 30)
+        forget.connect("clicked", self.but_reset, False)
+        self.gui.tips.set_tip(forget, "Forget when this call was last seen")
+        forget.show()
+        vbox.pack_start(forget, 0,0,0)
 
         clear = gtk.Button("Clear All")
         clear.set_size_request(75, 30)
@@ -1414,12 +1421,15 @@ class CallCatcher:
 
         self.gui.entry.set_text("%s: %s" % (call, text))
 
-    def but_reset(self, widget):
+    def but_reset(self, widget, now):
         (list, iter) = self.view.get_selection().get_selected()
         (call,) = list.get(iter, self.col_call)
 
         try:
-            self.mainapp.seen_callsigns[call] = time.time()
+            if now:
+                self.mainapp.seen_callsigns[call] = time.time()
+            else:
+                self.mainapp.seen_callsigns[call] = 0
         except:
             pass
 
