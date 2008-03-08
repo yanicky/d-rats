@@ -136,9 +136,8 @@ class ChatGUI:
 
         self.main_buffer.delete_mark(mark)
         
-        adj = self.scroll.get_vadjustment()
-        adj.value = adj.upper
-        self.scroll.set_vadjustment(adj)
+        endmark = self.main_buffer.get_mark("end")
+        self.textview.scroll_to_mark(endmark, 0.0, True, 0, 1)
 
     def display_line(self, text, *attrs):
         stamp = time.strftime("%H:%M:%S: ")
@@ -310,6 +309,9 @@ class ChatGUI:
         self.tips = gtk.Tooltips()
 
         self.main_buffer = gtk.TextBuffer()
+        self.main_buffer.create_mark("end",
+                                     self.main_buffer.get_end_iter(),
+                                     False)
 
         self.mainpane = self.make_main_pane()
         self.mainpane.show()
