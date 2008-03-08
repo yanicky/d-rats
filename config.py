@@ -150,7 +150,7 @@ class AppConfig:
 
     def copy_template_forms(self, dir):
         if os.path.isdir("forms"):
-            files = glob.glob(os.path.join("forms", "*.xml"))
+            files = glob.glob(os.path.join("forms", "*.x[ms]l"))
             for f in files:
                 dst = os.path.join(dir, os.path.basename(f))
                 print "Copying form template %s to %s" % (f, dst)
