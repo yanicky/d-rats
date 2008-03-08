@@ -1,6 +1,7 @@
 import sys
 import time
 import os
+import tempfile
 
 import libxml2
 import libxslt
@@ -376,6 +377,19 @@ class Form(gtk.Dialog):
 
         d.destroy()
 
+    def but_printable(self, widget, data=None):
+        f = tempfile.NamedTemporaryFile(suffix=".html")
+        name = f.name
+        f.close()
+        self.export(name)
+
+        print "Exported to temporary file: %s" % name
+
+        if os.name == "nt":
+            os.system("explorer %s" % name)
+        else:
+            os.system("firefox %s" % name)
+
     def build_gui(self, allow_export=True):
         tlabel = gtk.Label()
         tlabel.set_markup("<big><b>%s</b></big>" % self.title_text)
@@ -391,6 +405,11 @@ class Form(gtk.Dialog):
             save.connect("clicked", self.but_save, None)
             save.show()
             self.action_area.pack_start(save, 0,0,0)
+
+        printable = gtk.Button("Printable")
+        printable.connect("clicked", self.but_printable, None)
+        printable.show()
+        self.action_area.pack_start(printable, 0,0,0)
 
     def process_fields(self, doc):
         ctx = doc.xpathNewContext()
