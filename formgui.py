@@ -2,11 +2,7 @@ import sys
 import time
 import os
 
-from xml.dom.ext.reader import Sax2
-from xml.dom.ext import Print
-from xml import xpath
-from xml.dom.NodeFilter import NodeFilter
-from xml.dom import Node
+import libxml2
 
 import gtk
 
@@ -31,59 +27,6 @@ test = """
 </xml>
 
 """
-
-def tree2string(node, indent=0):
-    string = ""
-    if node.nodeType == Node.TEXT_NODE:
-        if str(node.nodeValue).strip():
-            string = "%s%s\n" % (" " * indent, node.nodeValue)
-        return string
-
-    attrs = []
-    if node.attributes:
-        for k in node.attributes.keys():
-            (_, name) = k
-            attrs.append("%s='%s'" % (name, node.getAttribute(name)))
-    
-    if attrs:
-        openstring = "%s %s" % (node.nodeName," ".join(attrs))
-    else:
-        openstring = "%s" % node.nodeName
-
-    if node.childNodes:
-        string += "%s<%s>\n" % (" " * indent, openstring)
-        for c in node.childNodes:
-            string += tree2string(c, indent+2)
-        string += "%s</%s>\n" % (" " * indent, node.nodeName)
-    else:
-        string += "%s<%s/>\n" % (" " * indent, openstring)
-    
-    return string
-        
-
-def tree2text(node):
-    if node.nodeName == "caption":
-        return "%-18s: " % node.childNodes[0].nodeValue
-    elif node.nodeName == "entry":
-        try:
-            v = node.childNodes[0].nodeValue
-        except:
-            v = None
-        if not v:
-            return "_____________"
-        else:
-            return v
-    elif node.nodeName in ("field", "form", "xml"):
-        s = ""
-        for n in node.childNodes:
-            s += tree2text(n)
-
-        return s + os.linesep
-    elif node.nodeName == "title":
-        return "### Form: %s ###%s" % (node.childNodes[0].nodeValue,
-                                       os.linesep * 2)
-    else:
-        return ""
 
 class FieldWidget:
     def __init__(self, node):
@@ -120,21 +63,23 @@ class FieldWidget:
         pass
 
     def update_node(self):
-        for child in self.node.childNodes:
-            if child.nodeType == Node.TEXT_NODE:
-                self.node.removeChild(child)
+        child = self.node.children
+        while child:
+            if child.type == "text":
+                child.unlinkNode()
+
+            child = child.next
 
         value = self.get_value()
         if value:
-            newnode = self.node.ownerDocument.createTextNode(value)
-            self.node.appendChild(newnode)
+            self.node.addContent(value)
 
 class TextWidget(FieldWidget):
     def __init__(self, node):
         FieldWidget.__init__(self, node)
 
-        if len(node.childNodes) != 0:
-            text = node.childNodes[0].nodeValue.strip()
+        if node.children:
+            text = node.getContent().strip()
         else:
             text = ""
 
@@ -149,11 +94,11 @@ class ToggleWidget(FieldWidget):
     def __init__(self, node):
         FieldWidget.__init__(self, node)
 
-        if len(node.childNodes) != 0:
+        if node.children:
             try:
-                status = eval(node.childNodes[0].nodeValue.title())
+                status = eval(node.getContent().title())
             except:
-                print "Status of `%s' is invalid" % node.childNodes[0].nodeValue
+                print "Status of `%s' is invalid" % node.getContent()
                 status = False
         else:
             status = False
@@ -169,8 +114,8 @@ class MultilineWidget(FieldWidget):
     def __init__(self, node):
         FieldWidget.__init__(self, node)
 
-        if len(node.childNodes) != 0:
-            text = node.childNodes[0].nodeValue.strip()
+        if node.children:
+            text = node.children.getContent().strip()
         else:
             text = ""
 
@@ -202,7 +147,7 @@ class DateWidget(FieldWidget):
         FieldWidget.__init__(self, node)
 
         try:
-            text = node.childNodes[0].nodeValue.strip()
+            text = node.children.getContent().strip()
             (d, m, y) = text.split("-", 3)
         except:
             y = time.strftime("%Y")
@@ -240,7 +185,7 @@ class TimeWidget(FieldWidget):
         FieldWidget.__init__(self, node)
 
         try:
-            text = node.childNodes[0].nodeValue.strip()
+            text = node.children.getContent().strip()
             (h, m, s) = (int(x) for x in text.split(":", 3))
         except:
             h = int(time.strftime("%H"))
@@ -275,17 +220,17 @@ class NumericWidget(FieldWidget):
         FieldWidget.__init__(self, node)
 
         try:
-            min = float(node.getAttribute("min"))
+            min = float(node.prop("min"))
         except:
             min = 0
 
         try:
-            max = float(node.getAttribute("max"))
+            max = float(node.prop("max"))
         except:
             max = 10000.0
 
         try:
-            initial = float(node.childNodes[0].nodeValue)
+            initial = float(node.children.getContent())
         except:
             initial = 0
 
@@ -298,11 +243,11 @@ class NumericWidget(FieldWidget):
 
 class ChoiceWidget(FieldWidget):
     def parse_choice(self, node):
-        if node.nodeName != "choice":
+        if node.name != "choice":
             return
 
         try:
-            self.choices.append(node.childNodes[0].nodeValue.strip())
+            self.choices.append(node.children.getContent().strip())
         except:
             pass
 
@@ -312,11 +257,14 @@ class ChoiceWidget(FieldWidget):
         self.choices = []
         value = ""
 
-        for child in node.childNodes:
-            if child.nodeType == Node.ELEMENT_NODE:
+        child = node.children
+        while child:
+            if child.type == "element":
                 self.parse_choice(child)
-            elif child.nodeType == Node.TEXT_NODE:
-                value += child.nodeValue.strip()
+            elif child.type == "text":
+                value += child.getContent().strip()
+
+            child = child.next
 
         self.widget = make_choice(self.choices, False, value)
         self.widget.show()
@@ -336,10 +284,10 @@ class FormField:
     }
 
     def get_caption_string(self, node):
-        return node.childNodes[0].nodeValue.strip()
+        return node.getContent().strip()
 
     def build_entry(self, node, caption):
-        type = node.getAttribute("type")
+        type = node.prop("type")
 
         wtype = self.widget_types[type]
 
@@ -353,11 +301,15 @@ class FormField:
         self.caption = None
         self.entry = None
         
-        for i in node.childNodes:
-            if i.nodeName == "caption":
-                cap_node = i
-            elif i.nodeName == "entry":
-                ent_node = i
+        child = node.children
+
+        while child:
+            if child.name == "caption":
+                cap_node = child
+            elif child.name == "entry":
+                ent_node = child
+
+            child = child.next
 
         self.caption = self.get_caption_string(cap_node)
         self.entry = self.build_entry(ent_node, self.caption)
@@ -366,7 +318,7 @@ class FormField:
 
     def __init__(self, field):
         self.node = field
-        self.id = field.getAttribute("id")
+        self.id = field.prop("id")
         self.build_gui(field)
 
     def get_widget(self):
@@ -415,41 +367,44 @@ class Form(gtk.Dialog):
             self.action_area.pack_start(save, 0,0,0)
 
     def process_fields(self, doc):
-        fields = xpath.Evaluate("form/field", doc)
+        ctx = doc.xpathNewContext()
+        fields = ctx.xpathEval("//form/field")
         for f in fields:
             try:
                 self.fields.append(FormField(f))
             except Exception, e:
+                raise
                 print e
 
     def process_form(self, doc):
-        forms = xpath.Evaluate("form", doc)
+        ctx = doc.xpathNewContext()
+        forms = ctx.xpathEval("//form")
         if len(forms) != 1:
             raise Exception("%i forms in document" % len(forms))
 
         form = forms[0]
         
-        self.id = form.getAttribute("id")
+        self.id = form.prop("id")
 
-        titles = xpath.Evaluate("form/title", doc)
+        titles = ctx.xpathEval("//form/title")
         if len(titles) != 1:
             raise Exception("%i titles in document" % len(titles))
 
         title = titles[0]
 
-        self.title_text = title.childNodes[0].nodeValue.strip()
+        self.title_text = title.children.getContent().strip()
 
     def get_xml(self):
         for f in self.fields:
             f.update_node()
 
-        return tree2string(self.doc.documentElement)
+        return self.doc.serialize()
 
     def get_text(self):
         for f in self.fields:
             f.update_node()
 
-        return tree2text(self.doc.documentElement)
+        return "BROKEN"
 
     def __init__(self, title, xmlstr, buttons=None):
         if not buttons:
@@ -462,11 +417,10 @@ class Form(gtk.Dialog):
 
         self.fields = []
 
-        reader = Sax2.Reader()
-        self.doc = reader.fromString(xmlstr)
+        self.doc = libxml2.parseMemory(xmlstr, len(xmlstr))
 
-        self.process_form(self.doc.documentElement)
-        self.process_fields(self.doc.documentElement)
+        self.process_form(self.doc)
+        self.process_fields(self.doc)
 
         print "Form ID: %s" % self.id
 
