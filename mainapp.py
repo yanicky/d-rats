@@ -38,6 +38,8 @@ ASCII_XOFF = chr(19)
 DRATS_VERSION = "0.1.9"
 LOGTF = "%m-%d-%Y_%H:%M:%S"
 
+MAINAPP = None
+
 gobject.threads_init()
 
 class SWFSerial(serial.Serial):
@@ -367,6 +369,9 @@ class MainApp:
             print "Unable to open debug log: %s" % e
             
     def __init__(self, bypass_config=False):
+        global MAINAPP
+        MAINAPP = self
+
         self.comm = None
         self.qsts = []
         self.log = None
@@ -414,3 +419,6 @@ class MainApp:
 
         print "Done.  Exit."
 
+
+def get_mainapp():
+    return MAINAPP
