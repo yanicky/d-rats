@@ -536,19 +536,27 @@ class MainChatGUI(ChatGUI):
             d.destroy()
             self.toggle_sendable(True)
         
+    def do_file_transfer(self, send):
+        xfer = self.config.xfer()
+        
+        self.toggle_sendable(False)
+        xfer = FileTransferGUI(self, xfer, parent=self.window)
+        if send:
+            xfer.do_send()
+        else:
+            xfer.do_recv()
+        xfer.destroy()
+        self.toggle_sendable(True)
+
     def menu_handler(self, _action):
         action = _action.get_name()
-
-        xfer = self.config.xfer()
 
         if action == "quit":
             self.sig_destroy(None)
         elif action == "send":
-            xfer = FileTransferGUI(self, xfer)
-            xfer.do_send()
+            self.do_file_transfer(True)
         elif action == "recv":
-            xfer = FileTransferGUI(self, xfer)
-            xfer.do_recv()
+            self.do_file_transfer(False)
         elif action == "config":
             self.config.show()
         elif action == "qsts":

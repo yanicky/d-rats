@@ -28,7 +28,7 @@ import gobject
 import ddt
 import formgui
 
-class FileTransferGUI:
+class FileTransferGUI(gtk.Dialog):
 
     title = "File Transfer"
 
@@ -36,7 +36,7 @@ class FileTransferGUI:
         self.xfer.cancel()
 
     def close_gui(self, widget, data=None):
-        self.window.destroy()
+        self.response(gtk.RESPONSE_OK)
 
     def make_label_value(self, labeltext):
         box = gtk.HBox(True, 0)
@@ -70,20 +70,18 @@ class FileTransferGUI:
                                self.close_gui,
                                None)
 
-        box.pack_start(self.cancel_btn, 1, 1, 0)
-        box.pack_start(self.close_btn, 1, 1, 0)
+        self.action_area.pack_start(self.cancel_btn, 1, 1, 0)
+        self.action_area.pack_start(self.close_btn, 1, 1, 0)
 
         self.cancel_btn.show()
         self.close_btn.show()
-        box.show()
-        
-        return box
 
     def register_cb(self, cb, data=None):
         self.cb = cb
         self.cb_data = data
 
-    def __init__(self, chatgui, xfer_agent):
+    def __init__(self, chatgui, xfer_agent, title="Transfer", parent=None):
+        gtk.Dialog.__init__(self, title=title, parent=parent)
         self.values = {}
         self.chatgui = chatgui
         self.is_send = None
@@ -94,30 +92,24 @@ class FileTransferGUI:
         self.cb_data = None
         self._real_filename = None
 
-        box = gtk.VBox(False, 0)
-
         self.bar = gtk.ProgressBar()
         self.bar.set_fraction(0)
         
         self.status = gtk.Label()
         self.set_status_msg("Initializing...")
 
-        box.pack_start(self.status, 0,0,0)
-        box.pack_start(self.bar, 0, 0, 0)
-        box.pack_start(self.make_label_value("File"), 0, 0, 0)
-        box.pack_start(self.make_label_value("Size"), 0, 0, 0)
-        box.pack_start(self.make_label_value("Errors"), 0, 0, 0)
-        box.pack_start(self.make_buttons(), 0, 0, 0)
+        self.vbox.pack_start(self.status, 0,0,0)
+        self.vbox.pack_start(self.bar, 0, 0, 0)
+        self.vbox.pack_start(self.make_label_value("File"), 0, 0, 0)
+        self.vbox.pack_start(self.make_label_value("Size"), 0, 0, 0)
+        self.vbox.pack_start(self.make_label_value("Errors"), 0, 0, 0)
+        self.make_buttons()
 
         self.status.show()
         self.bar.show()
-        box.show()
 
-        self.window = gtk.Window(gtk.WINDOW_TOPLEVEL)
-        self.window.set_title(self.title)
-        self.window.set_resizable(False)
-        self.window.set_geometry_hints(None, min_width=300)
-        self.window.add(box)
+        self.set_geometry_hints(None, min_width=300, min_height=150)
+        self.set_resizable(False)
 
     def set_status_msg(self, status):
         self.status.set_markup("<big><b>%s</b></big>" % status)
@@ -143,7 +135,6 @@ class FileTransferGUI:
         o.close()
 
     def ddt_finish(self):
-        self.chatgui.toggle_sendable(True)
         self.close_btn.set_sensitive(True)
         self.cancel_btn.set_sensitive(False)
 
@@ -179,13 +170,10 @@ class FileTransferGUI:
 
         gobject.idle_add(self.ddt_finish)
 
-    def show_xfer(self):
-        self.window.show()
-
-        self.chatgui.toggle_sendable(False)
-
+    def run(self):
         self.xfer_thread = Thread(target=self.ddt_xfer)
         self.xfer_thread.start()
+        gtk.Dialog.run(self)
 
     def _update(self, status, vals):
         file = vals["filename"]
@@ -242,7 +230,7 @@ class FileTransferGUI:
         fc.destroy()
         if result == gtk.RESPONSE_OK:
             self.is_send = True
-            self.show_xfer()
+            self.run()
 
     def do_recv(self):
         title = "Select destination folder"
@@ -260,7 +248,7 @@ class FileTransferGUI:
         fc.destroy()
         if result == gtk.RESPONSE_OK:
             self.is_send = False
-            self.show_xfer()
+            self.run()
 
     def wait_for_completion(self):
         self.xfer_thread.join()
@@ -272,12 +260,11 @@ class FormTransferGUI(FileTransferGUI):
     def do_send(self, form_fn):
         self.filename = form_fn
         self.is_send = True
-
-        self.show_xfer()
+        self.run()
 
     def do_recv(self, dest_dir):
         self.filename = dest_dir
-        self.show_xfer()
+        self.run()
 
 if __name__ == "__main__":
     g = FormTransferGUI(None)
