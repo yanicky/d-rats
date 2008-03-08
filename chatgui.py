@@ -1420,6 +1420,7 @@ class CallCatcher:
         text = self.gui.entry.get_text()
 
         self.gui.entry.set_text("%s: %s" % (call, text))
+        self.gui.entry.grab_focus()
 
     def but_reset(self, widget, now):
         (list, iter) = self.view.get_selection().get_selected()
