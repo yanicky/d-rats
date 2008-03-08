@@ -1361,7 +1361,7 @@ class CallCatcher:
         return sw
 
     def make_controls(self):
-        vbox = gtk.VBox(True, 2)
+        vbox = gtk.VBox(False, 2)
 
         remove = gtk.Button("Remove")
         remove.set_size_request(75, 30)
@@ -1384,7 +1384,7 @@ class CallCatcher:
         reset.show()
         vbox.pack_start(reset, 0,0,0)
 
-        clear = gtk.Button("Clear")
+        clear = gtk.Button("Clear All")
         clear.set_size_request(75, 30)
         clear.connect("clicked", self.but_clear)
         self.gui.tips.set_tip(clear, "Clear all recorded callsigns")
