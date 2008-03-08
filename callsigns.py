@@ -1,7 +1,10 @@
 import re
 
 def find_us_callsigns(string):
-    regex = '\\b[aAkKnNwW][A-z]?[0-9][A-z]{1,3}'
+    extra2x1 = "[aAkKnNwW][A-z][0-9][A-z]"
+    others = "[aAkKnNwW][A-z]?[0-9][A-z]{2,3}"
+
+    regex = "\\b(%s|%s)\\b" % (extra2x1, others)
 
     return re.findall(regex, string)
 
