@@ -95,6 +95,8 @@ class AppConfig:
         mset("settings", "chunk_delay", "1.5")
         mset("settings", "ddt_block_size", "1024")
         mset("settings", "swflow", "False")
+        mset("settings", "encoding", "yenc")
+        mset("settings", "compression", "True")
 
         mset("quick", None, None)
 
@@ -131,7 +133,9 @@ class AppConfig:
                 "chunk_delay" : "<span foreground='red'>Chunk delay (sec)</span>",
                 "ddt_block_size" : "Outgoing block size (KB)",
                 "swflow" : "D-RATS does flow control",
-                "callsigns" : "Mark callsigns by these countries"
+                "callsigns" : "Mark callsigns by these countries",
+                "encoding" : "Type of ASCII-armoring to use",
+                "compression" : "Compress blocks",
                 }
 
     id2tip = {"write_chunk" : "Stage DDT blocks into small chunks of this many bytes",
@@ -140,6 +144,8 @@ class AppConfig:
               "debuglog" : "Requires D-RATS restart to take effect",
               "swflow" : "Try this if using a USB-to-serial adapter",
               "callsigns" : "Mark callsigns by these countries",
+              "encoding" : "yenc is fastest, base64 is safest (currently)",
+              "compression" : "Compress outgoing blocks",
               }
 
     xfers = {"DDT" : ddt.DDTTransfer}
@@ -368,6 +374,7 @@ class AppConfig:
         vbox = gtk.VBox(False, 2)
 
         block_sizes = [str(pow(2,x)) for x in range(6, 13)]
+        encodings = ddt.ENCODINGS.keys()
 
         vbox.pack_start(self.make_sb("ddt_block_size",
                                      make_choice(block_sizes, False)), 0,0,0)
@@ -375,6 +382,10 @@ class AppConfig:
                                      self.make_spin(32, 0, 512)), 0,0,0)
         vbox.pack_start(self.make_sb("chunk_delay",
                                      self.make_spin(0.1, 0.1, 3.0)), 0,0,0)
+        vbox.pack_start(self.make_sb("compression",
+                                     self.make_bool()), 0,0,0)
+        vbox.pack_start(self.make_sb("encoding",
+                                     make_choice(encodings, False)), 0,0,0)
 
         vbox.show()
 
@@ -547,13 +558,15 @@ D-RATS has been started in safe mode, which means the configuration file has not
                   ("prefs", "eolstrip"),
                   ("prefs", "logenabled"),
                   ("prefs", "debuglog"),
-                  ("settings", "swflow")]
+                  ("settings", "swflow"),
+                  ("settings", "compression")]
 
         choicetext_v = [("settings", "port")]
 
         choice_v = [("settings", "rate"),
                     ("settings", "xfer"),
-                    ("settings", "ddt_block_size")]
+                    ("settings", "ddt_block_size"),
+                    ("settings", "encoding")]
 
         color_v = [("prefs", "incomingcolor"),
                    ("prefs", "outgoingcolor"),

@@ -28,6 +28,7 @@ import gobject
 
 import chatgui
 import config
+import ddt
 
 from utils import hexprint,filter_to_ascii
 import qst
@@ -314,9 +315,14 @@ class MainApp:
         self.chatgui.display_line(str(self.comm), "italic")
 
     def refresh_config(self):
-        rate=self.config.getint("settings", "rate")
-        port=self.config.get("settings", "port")
-        call=self.config.get("user", "callsign")
+        rate = self.config.getint("settings", "rate")
+        port = self.config.get("settings", "port")
+        call = self.config.get("user", "callsign")
+        enc = self.config.get("settings", "encoding")
+        com = self.config.getboolean("settings", "compression")
+
+        ddt.set_compression(com)
+        ddt.set_encoding(enc)
 
         if self.config.getboolean("prefs", "logenabled"):
             base = self.config.get("prefs", "download_dir")
