@@ -1,0 +1,69 @@
+<xml>
+<form id='radiogram'>
+<title>Radiogram</title>
+<field id='number'>
+<caption>Number</caption>
+<entry type='text'/>
+</field>
+<field id='precedence'>
+<caption>Precedence</caption>
+<entry type='choice'><choice set='y'>Routine</choice><choice>Priority</choice><choice>Emergency</choice></entry>
+</field>
+<field id='hx'>
+<caption>HX</caption>
+<entry type='text'/>
+</field>
+<field id='station'>
+<caption>Station of Origin</caption>
+<entry type='text'/>
+</field>
+<field id='check'>
+<caption>Check</caption>
+<entry type='text'/>
+</field>
+<field id='place'>
+<caption>Place of Origin</caption>
+<entry type='text'/>
+</field>
+<field id='time'>
+<caption>Time</caption>
+<entry type='time'>15:12:46</entry>
+</field>
+<field id='date'>
+<caption>Date</caption>
+<entry type='date'>08-Mar-2008</entry>
+</field>
+<field id='recip'>
+<caption>To</caption>
+<entry type='text'/>
+</field>
+<field id='recip_phone'>
+<caption>Recipient Phone #</caption>
+<entry type='text'/>
+</field>
+<field id='message'>
+<caption>Message</caption>
+<entry type='multiline'/>
+</field>
+<field id='sig'>
+<caption>Signature</caption>
+<entry type='text'/>
+</field>
+<field id='recv_t'>
+<caption>Received Time</caption>
+<entry type='time'>15:12:46</entry>
+</field>
+<field id='recv_d'>
+<caption>Received Date</caption>
+<entry type='date'>08-Mar-2008</entry>
+</field>
+<field id='sent_t'>
+<caption>Sent Time</caption>
+<entry type='time'>15:12:46</entry>
+</field>
+<field id='sent_d'>
+<caption>Sent Date</caption>
+<entry type='date'>08-Mar-2008</entry>
+</field>
+</form>
+</xml>
