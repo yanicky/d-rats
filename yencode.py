@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-DEFAULT_BANNED = "\x021\x023\032"
+DEFAULT_BANNED = "\x11\x13\x1A"
 
 def yencode_buffer(buf, banned=None):
     if not banned:
