@@ -10,8 +10,12 @@
    	       border: 1px solid black
 	    }
 
+	    .title {
+	       text-align: center;
+	    }
+
 	    .group {
-	       width: 80%;
+	       width: 100%;
 	    }
 
 	    .field-caption {
@@ -26,6 +30,10 @@
 	  </style>
 	</head>
 	<body>
+	  <h1 class="title">
+	    <xsl:value-of select="title"/>
+	  </h1>
+
 	  <table class="group">
 	    <tr>
 	      <xsl:apply-templates select="field[

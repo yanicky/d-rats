@@ -37,7 +37,9 @@
 	</head>
 	<body>
 	  
-	  <h1 class="title">Radiogram</h1>
+	  <h1 class="title">
+	    <xsl:value-of select="title"/>
+	  </h1>
 
 	  <table class="group">
 	    <tr>
