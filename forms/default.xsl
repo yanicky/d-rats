@@ -23,9 +23,17 @@
 	       font-family: Arial, Helvetica, sans-serif;
 	    }
 
+	    .title {
+	       text-align: center;
+	    }
 	  </style>
 	</head>
 	<body>
+
+	  <h1 class="title">
+	    <xsl:value-of select="title"/>
+	  </h1>
+
 	  <table>
 	      <xsl:apply-templates select="field"/>
 	  </table>
@@ -35,15 +43,23 @@
     
     <xsl:template match="field">
       <tr class="field">
-	<td>
+	<td class="field">
 	  <span class="field-caption">
 	    <xsl:value-of select="caption"/>
 	  </span>
-	  </td><td>
+	</td>
+	<td class="field" width="100%">
 	  <span class="field-content">
-	    <xsl:value-of select="entry"/>
+	    <xsl:choose>
+	      <xsl:when test="entry/@type = 'choice'">
+		<xsl:value-of select="entry/choice[@set='y']"/>
+	      </xsl:when>
+	      <xsl:otherwise>
+		<xsl:value-of select="entry"/>
+	      </xsl:otherwise>
+	    </xsl:choose>
 	  </span>
-	  </td>
+	</td>
       </tr>
     </xsl:template>
 </xsl:stylesheet>
