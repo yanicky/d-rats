@@ -39,6 +39,12 @@ class ChoiceDialog(gtk.Dialog):
         self.vbox.pack_start(self.choice, 1, 1, 0)
         self.choice.show()
 
+class ExceptionDialog(gtk.MessageDialog):
+    def __init__(self, exception, **args):
+        gtk.MessageDialog.__init__(self, buttons=gtk.BUTTONS_OK, **args)
+        self.set_property("text", "An error has occurred")
+        self.format_secondary_text(str(exception))
+
 if __name__ == "__main__":
     d = TextInputDialog("Foo")
     d.label.set_text("Enter a filter RegEx")
