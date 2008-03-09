@@ -31,7 +31,7 @@ import ddt
 
 from xfergui import FileTransferGUI, FormTransferGUI
 from qst import QSTGUI, QuickMsgGUI
-from inputdialog import TextInputDialog, ChoiceDialog
+from inputdialog import TextInputDialog, ChoiceDialog, ExceptionDialog
 from utils import filter_to_ascii
 from callsigns import find_callsigns
 import mainapp
@@ -1139,7 +1139,7 @@ class FormManager:
                                             "*.xml"))
 
         if not form_files:
-            d = gtk.MessageDialog(buttons=gtk.BUTTONS_OK, parent=self.window)
+            d = gtk.MessageDialog(buttons=gtk.BUTTONS_OK, parent=self.gui.window)
             d.set_property("text", "No template forms available")
             d.format_secondary_text("Please copy in the template forms to %s or create a new template by going to File->Manage Form Templates" % os.path.abspath(self.form_source_dir))
             d.run()
@@ -1164,11 +1164,17 @@ class FormManager:
         newfn = time.strftime(os.path.join(self.form_store_dir,
                                            "form_%m%d%Y_%H%M%S.xml"))
 
-        form = formgui.FormFile("New %s form" % formid,
-                                forms[formid])
-        r = form.run_auto(newfn)
-        form.destroy()
-        if r == gtk.RESPONSE_CANCEL:
+        try:
+            form = formgui.FormFile("New %s form" % formid,
+                                    forms[formid])
+            r = form.run_auto(newfn)
+            form.destroy()
+            if r == gtk.RESPONSE_CANCEL:
+                return
+        except Exception, e:
+            d = ExceptionDialog(e, parent=self.gui.window)
+            d.run()
+            d.destroy()
             return
 
         stamp = self.get_stamp()
@@ -1196,7 +1202,15 @@ class FormManager:
         #FIXME: Only update if successful
         self.store.set(iter, self.col_xfert, self.get_stamp())
 
-        ft.do_send(filename)
+        try:
+            ft.do_send(filename)
+        except Exception, e:
+            d = ExceptionDialog(e, parent=self.gui.window)
+            d.run()
+            d.destroy()
+
+        ft.destroy()
+            
 
     def recv_cb(self, data, success, filename, actual):
         print "Receive Callback for: %s" % filename
@@ -1216,6 +1230,7 @@ class FormManager:
         newfn = time.strftime(os.path.join(self.form_store_dir,
                                            "form_%m%d%Y_%H%M%S.xml"))
         ft.do_recv(newfn)
+        ft.destroy()
 
     def edit(self, widget, data=None):
         (list, iter) = self.view.get_selection().get_selected()
@@ -1227,11 +1242,17 @@ class FormManager:
 
         print "Editing %s" % filename
 
-        form = formgui.FormFile("Edit Form", filename)
-        r = form.run_auto()
-        form.destroy()
-        if r == gtk.RESPONSE_CANCEL:
-            return
+        try:
+            form = formgui.FormFile("Edit Form", filename)
+            r = form.run_auto()
+            form.destroy()
+            if r == gtk.RESPONSE_CANCEL:
+                return
+        except Exception, e:
+            d = ExceptionDialog(e, parent=self.gui.window)
+            d.run()
+            d.destroy()
+            return            
 
         stamp = self.get_stamp()
         self.store.set(iter, self.col_stamp, stamp)
