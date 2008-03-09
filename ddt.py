@@ -21,6 +21,7 @@ import time
 import serial
 import base64
 import struct
+import zlib
 
 from utils import hexprint
 
@@ -160,11 +161,13 @@ class DDTEncodedFrame(DDTFrame):
 
     def pack(self):
         raw = DDTFrame.pack(self)
+        compr = zlib.compress(raw, 9)
 
-        return base64.encodestring(raw) + ENCODED_TRAILER
+        return base64.encodestring(compr) + ENCODED_TRAILER
 
     def unpack(self, value):
-        raw = base64.decodestring(value.rstrip(ENCODED_TRAILER))
+        compr = base64.decodestring(value.rstrip(ENCODED_TRAILER))
+        raw = zlib.decompress(compr)
 
         return DDTFrame.unpack(self, raw)
 
