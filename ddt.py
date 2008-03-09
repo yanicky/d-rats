@@ -37,12 +37,34 @@ FILE_XFER_TOKEN = 7
 FILE_XFER_MSTART = 8
 
 ENCODED_TRAILER = "--(EOB)--"
+ENABLE_COMPRESSION = True
+ENCODING = "yenc"
+
+ENCODINGS = {
+    "yenc"   : (yencode.yencode_buffer, yencode.ydecode_buffer),
+    "base64" : (base64.encodestring, base64.decodestring),
+}
+
+def set_compression(enabled):
+    global ENABLE_COMPRESSION
+
+    ENABLE_COMPRESSION = enabled
+
+def set_encoding(enc):
+    global ENCODING
+
+    if ENCODINGS.has_key(enc):
+        ENCODING = enc
+        return True
+    else:
+        return False
 
 def detect_frame_type(data):
     frame = DDTEncodedFrame()
     try:
         frame.unpack(data)
-    except:
+    except Exception, e:
+        print "Unpack failed: %s" % e
         return None
 
     type = frame.get_type()
@@ -64,11 +86,16 @@ class DDTFrame:
         self.data = None
         self.type = None
         self.seq = 0
-        self.magic = 0xD5
+        self.magic_reg = 0xD5
+        self.magic_com = 0xCC
+        self.magic = self.magic_reg
         self.checksum = 0
         self.format = "!BHHHB"
 
     def set_data(self, data):
+        if ENABLE_COMPRESSION:
+            self.magic = self.magic_com
+
         self.data = data
         self.calc_checksum()
         
@@ -88,7 +115,12 @@ class DDTFrame:
         return self.seq
 
     def pack(self):
-        length = len(self.data)
+        if self.magic == self.magic_com:
+            data = zlib.compress(self.data, 9)
+        else:
+            data = self.data
+
+        length = len(data)
 
         val = struct.pack(self.format,
                           self.magic,
@@ -96,7 +128,8 @@ class DDTFrame:
                           self.seq,
                           self.checksum,
                           self.type)
-        val += self.data
+
+        val += data
 
         return val
 
@@ -110,7 +143,7 @@ class DDTFrame:
          checksum,
          self.type) = struct.unpack(self.format, header)
 
-        if magic != self.magic:
+        if magic not in [self.magic_com, self.magic_reg]:
             print "Failed magic: %0x != %0x" % (magic, self.magic)
             hexprint(header)
             hexprint(data)
@@ -120,9 +153,14 @@ class DDTFrame:
 
         if len(data) != length:
             print "Length %i != %i" % (len(data), length)
+            hexprint(value)
             return False
 
-        self.data = data
+        if magic == self.magic_com:
+            self.data = zlib.decompress(data)
+        else:
+            self.data = data
+
         self.calc_checksum()
 
         if self.checksum != checksum:
@@ -163,18 +201,17 @@ class DDTEncodedFrame(DDTFrame):
 
     def pack(self):
         raw = DDTFrame.pack(self)
-        raw = zlib.compress(raw, 9)
 
-        #return base64.encodestring(raw) + ENCODED_TRAILER
-        ret = yencode.yencode_buffer(raw) + ENCODED_TRAILER
-        hexprint(ret[0:32])
-        return ret
+        func = ENCODINGS[ENCODING][0]
+
+        return func(raw) + ENCODED_TRAILER
 
     def unpack(self, value):
-        #raw = base64.decodestring(value.rstrip(ENCODED_TRAILER))
-        raw = yencode.ydecode_buffer(value.replace(ENCODED_TRAILER, ""))
-        hexprint(raw[0:32])
-        raw = zlib.decompress(raw)
+        func = ENCODINGS[ENCODING][1]
+
+        ri = value.rindex(ENCODED_TRAILER)
+
+        raw = func(value[0:ri])
 
         return DDTFrame.unpack(self, raw)
 
