@@ -25,6 +25,8 @@ import zlib
 
 from utils import hexprint
 
+import yencode
+
 FILE_XFER_START = 1
 FILE_XFER_BLOCK = 2
 FILE_XFER_ACK   = 3
@@ -161,13 +163,18 @@ class DDTEncodedFrame(DDTFrame):
 
     def pack(self):
         raw = DDTFrame.pack(self)
-        compr = zlib.compress(raw, 9)
+        raw = zlib.compress(raw, 9)
 
-        return base64.encodestring(compr) + ENCODED_TRAILER
+        #return base64.encodestring(raw) + ENCODED_TRAILER
+        ret = yencode.yencode_buffer(raw) + ENCODED_TRAILER
+        hexprint(ret[0:32])
+        return ret
 
     def unpack(self, value):
-        compr = base64.decodestring(value.rstrip(ENCODED_TRAILER))
-        raw = zlib.decompress(compr)
+        #raw = base64.decodestring(value.rstrip(ENCODED_TRAILER))
+        raw = yencode.ydecode_buffer(value.replace(ENCODED_TRAILER, ""))
+        hexprint(raw[0:32])
+        raw = zlib.decompress(raw)
 
         return DDTFrame.unpack(self, raw)
 
