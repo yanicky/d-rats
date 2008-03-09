@@ -276,7 +276,10 @@ class ChoiceWidget(FieldWidget):
             return
 
         try:
-            self.choices.append(node.children.getContent().strip())
+            content = node.children.getContent().strip()
+            self.choices.append(content)
+            if node.prop("set"):
+                self.default = content
         except:
             pass
 
@@ -284,22 +287,34 @@ class ChoiceWidget(FieldWidget):
         FieldWidget.__init__(self, node)
         
         self.choices = []
-        value = ""
+        self.default = None
 
         child = node.children
         while child:
             if child.type == "element":
                 self.parse_choice(child)
-            elif child.type == "text":
-                value += child.getContent().strip()
 
             child = child.next
 
-        self.widget = make_choice(self.choices, False, value)
+        self.widget = make_choice(self.choices, False, self.default)
         self.widget.show()
 
     def get_value(self):
         return self.widget.get_active_text()
+
+    def update_node(self):
+        value = self.get_value()
+        if not value:
+            return
+        
+        child = self.node.children
+        while child:
+            if child.getContent() == value:
+                child.newProp("set", "y")
+            else:
+                child.unsetProp("set")
+
+            child = child.next
 
 class FormField:
     widget_types = {

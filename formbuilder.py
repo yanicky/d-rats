@@ -298,12 +298,18 @@ class FormBuilderGUI(gtk.Dialog):
             try:
                 print "Opts: %s" % opts
                 l = eval(opts)
-                if not val:
-                    val = ""
-                ent_xml = \
-                    "<entry type='%s'>%s<choice>" % (type, val) + \
-                    "</choice><choice>".join(l) + \
-                    "</choice></entry>"
+
+                ent_xml = "<entry type='%s'>" % type
+                for c in l:
+                    if c == val:
+                        set = " set='y'"
+                    else:
+                        set = ""
+
+                    ent_xml += "<choice%s>%s</choice>" % (set, c)
+
+                ent_xml += "</entry>"
+
             except Exception, e:
                 print "Exception parsing choice list: %s" % e
                 ent_xml = "<!-- Invalid list: %s -->" % opts
