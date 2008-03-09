@@ -1193,7 +1193,9 @@ class FormManager:
         os.remove(filename)
 
     def send(self, widget, data=None):
-        ft = FormTransferGUI(self.gui, self.config.xfer())
+        ft = FormTransferGUI(self.gui,
+                             self.config.xfer(),
+                             parent=self.gui.window)
 
         (list, iter) = self.view.get_selection().get_selected()
 
@@ -1226,7 +1228,9 @@ class FormManager:
         self.reg_form("Received Form", fqfn, stamp)
 
     def recv(self, widget, data=None):
-        ft = FormTransferGUI(self.gui, self.config.xfer())
+        ft = FormTransferGUI(self.gui,
+                             self.config.xfer(),
+                             parent=self.gui.window)
         ft.register_cb(self.recv_cb, None)
 
         newfn = time.strftime(os.path.join(self.form_store_dir,
