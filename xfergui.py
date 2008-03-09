@@ -33,6 +33,8 @@ class FileTransferGUI(gtk.Dialog):
     title = "File Transfer"
 
     def cancel_xfer(self, widget, data=None):
+        self.close_btn.set_sensitive(True)
+        self.cancel_btn.set_sensitive(False)
         self.xfer.cancel()
 
     def close_gui(self, widget, data=None):
@@ -163,10 +165,15 @@ class FileTransferGUI(gtk.Dialog):
             print "Failed to set chunk values: %s" % e
             raise
 
-        if self.is_send:
-            x.send_file(self.filename)
-        else:
-            x.recv_file(self.filename)
+        try:
+            if self.is_send:
+                x.send_file(self.filename)
+            else:
+                x.recv_file(self.filename)
+        except Exception, e:
+            gobject.idle_add(self.set_status_msg, str(e))
+            self.cancel_xfer(None, None)
+            return
 
         gobject.idle_add(self.ddt_finish)
 
