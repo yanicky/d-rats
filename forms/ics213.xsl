@@ -70,7 +70,14 @@
 	</span>
 	<br/>
 	<span class="field-content">
-	  <xsl:value-of select="entry"/>
+	  <xsl:choose>
+	    <xsl:when test="entry/@type = 'choice'">
+	      <xsl:value-of select="entry/choice[@set='y']"/>
+	    </xsl:when>
+	    <xsl:otherwise>
+	      <xsl:value-of select="entry"/>
+	    </xsl:otherwise>
+	  </xsl:choose>
 	</span>
       </td>
     </xsl:template>
