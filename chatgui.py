@@ -1202,6 +1202,8 @@ class FormManager:
         #FIXME: Only update if successful
         self.store.set(iter, self.col_xfert, self.get_stamp())
 
+        self.gui.toggle_sendable(False)
+
         try:
             ft.do_send(filename)
         except Exception, e:
@@ -1210,7 +1212,7 @@ class FormManager:
             d.destroy()
 
         ft.destroy()
-            
+        self.gui.toggle_sendable(True)            
 
     def recv_cb(self, data, success, filename, actual):
         print "Receive Callback for: %s" % filename
@@ -1229,8 +1231,10 @@ class FormManager:
 
         newfn = time.strftime(os.path.join(self.form_store_dir,
                                            "form_%m%d%Y_%H%M%S.xml"))
+        self.gui.toggle_sendable(False)
         ft.do_recv(newfn)
         ft.destroy()
+        self.gui.toggle_sendable(True)
 
     def edit(self, widget, data=None):
         (list, iter) = self.view.get_selection().get_selected()
