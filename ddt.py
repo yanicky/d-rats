@@ -167,7 +167,8 @@ class DDTFrame:
             print "Checksum failed:"
             hexprint(self.checksum)
             hexprint(checksum)
-        
+            return False
+
         return True
 
     def update_crc(self, c, crc):
@@ -209,7 +210,10 @@ class DDTEncodedFrame(DDTFrame):
     def unpack(self, value):
         func = ENCODINGS[ENCODING][1]
 
-        ri = value.rindex(ENCODED_TRAILER)
+        try:
+            ri = value.rindex(ENCODED_TRAILER)
+        except:
+            ri = len(value)
 
         raw = func(value[0:ri])
 
