@@ -377,6 +377,7 @@ class Form(gtk.Dialog):
                                   action=gtk.FILE_CHOOSER_ACTION_SAVE,
                                   buttons=(gtk.STOCK_SAVE, gtk.RESPONSE_OK,
                                            gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL))
+        d.set_current_name("%s.html" % self.id)
         r = d.run()
         if r != gtk.RESPONSE_CANCEL:
             try:
