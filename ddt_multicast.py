@@ -59,7 +59,7 @@ class DDTMultiXferStartFrame(DDTEncodedFrame):
             stat = os.stat(filename)
             self.file_size = stat.st_size
             self.file_name = os.path.basename(filename)
-            ddt.DDTFrame.set_data(self, self.xfer_start_data())
+            ddt.DDTEncodedFrame.set_data(self, self.xfer_start_data())
             self.set_type(ddt.FILE_XFER_MSTART)
 
     def set_data(self):
@@ -442,8 +442,11 @@ class DDTMulticastTransfer:
             frame = DDTMultiXferStartFrame()
             try:
                 if not frame.unpack(i):
+                    print "Unable to unpack start frame:"
+                    hexprint(i)
                     continue
-            except:
+            except Exception, e:
+                print "MC Start Exception: %s" % e
                 continue
 
             print "Got file: %s (%i/%i bytes)" % (frame.get_filename(),
