@@ -264,15 +264,16 @@ class ChatGUI:
         reverse = ["callsigncolor"]
 
         for i in regular + reverse:
-            if tags.lookup(i):
-                tags.remove(tags.lookup(i))
+            tag = tags.lookup(i)
+            if not tag:
+                tag = gtk.TextTag(i)
+                tags.add(tag)
+                #tags.remove(tags.lookup(i))
 
-            tag = gtk.TextTag(i)
             if i in regular:
                 tag.set_property("foreground", self.config.get("prefs", i))
             elif i in reverse:
                 tag.set_property("background", self.config.get("prefs", i))
-            tags.add(tag)
 
     def set_window_defaults(self, window):
         window.set_geometry_hints(None, min_width=400, min_height=200)
