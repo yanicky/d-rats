@@ -19,11 +19,11 @@
 </field>
 <field id='time'>
 <caption>Time</caption>
-<entry type='time'>22:13:08</entry>
+<entry type='time'/>
 </field>
 <field id='date'>
 <caption>Date</caption>
-<entry type='date'>01-Jan-2008</entry>
+<entry type='date'/>
 </field>
 <field id='recip'>
 <caption>Recipient</caption>

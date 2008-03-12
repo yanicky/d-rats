@@ -7,11 +7,11 @@
 </field>
 <field id='time'>
 <caption>Time</caption>
-<entry type='time'>22:13:08</entry>
+<entry type='time'/>
 </field>
 <field id='date'>
 <caption>Date</caption>
-<entry type='date'>01-Jan-2008</entry>
+<entry type='date'/>
 </field>
 <field id='recip'>
 <caption>To</caption>
@@ -47,11 +47,11 @@
 </field>
 <field id='date_reply'>
 <caption>Date of reply</caption>
-<entry type='date'>11-Mar-2008</entry>
+<entry type='date'/>
 </field>
 <field id='time_reply'>
 <caption>Time of reply</caption>
-<entry type='time'>17:10:14</entry>
+<entry type='time'/>
 </field>
 </form>
 </xml>
