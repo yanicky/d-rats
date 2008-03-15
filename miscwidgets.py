@@ -32,7 +32,7 @@ class ListWidget(gtk.HBox):
 
         for t,c in columns:
             index = columns.index((t,c))
-            if t == gobject.TYPE_STRING:
+            if t == gobject.TYPE_STRING or t == gobject.TYPE_INT:
                 r = gtk.CellRendererText()
                 c = gtk.TreeViewColumn(c, r, text=index)
             elif t == gobject.TYPE_BOOLEAN:
