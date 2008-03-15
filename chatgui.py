@@ -665,7 +665,7 @@ class MainChatGUI(ChatGUI):
 
         self.menu_ag.add_actions(actions)
         self.menu_ag.add_action_with_accel(advanced, "<Control>a")
-        self.menu_ag.add_action_with_accel(connected, "<Control>c")
+        self.menu_ag.add_action_with_accel(connected, "<Control>d")
 
         uim.insert_action_group(self.menu_ag, 0)
         menuid = uim.add_ui_from_string(menu_xml)
