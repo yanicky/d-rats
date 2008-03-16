@@ -240,20 +240,26 @@ class FileTransferGUI(gtk.Dialog):
             self.run()
 
     def do_recv(self):
-        title = "Select destination folder"
-        stock = gtk.FILE_CHOOSER_ACTION_SELECT_FOLDER
-        fc = gtk.FileChooserDialog(title,
-                                   None,
-                                   stock,
-                                   (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
-                                    gtk.STOCK_SAVE, gtk.RESPONSE_OK))
         d = self.chatgui.config.get("prefs", "download_dir")
-        fc.set_current_folder(d)
+        if self.chatgui.config.getboolean("prefs", "autoreceive"):
+            self.filename = d
+            result = gtk.RESPONSE_OK
+        else:
+            title = "Select destination folder"
+            stock = gtk.FILE_CHOOSER_ACTION_SELECT_FOLDER
+            fc = gtk.FileChooserDialog(title,
+                                       None,
+                                       stock,
+                                       (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
+                                        gtk.STOCK_SAVE, gtk.RESPONSE_OK))
+            fc.set_current_folder(d)
+            
+            result = fc.run()
+            self.filename = fc.get_filename()
+            fc.destroy()
 
-        result = fc.run()
-        self.filename = fc.get_filename()
-        fc.destroy()
         if result == gtk.RESPONSE_OK:
+            print "Receiving file to: %s" % self.filename
             self.is_send = False
             self.run()
 
