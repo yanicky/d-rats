@@ -172,12 +172,13 @@ class TcpDataPath(DataPath):
         self.thread.start()
 
 class Repeater:
-    def __init__(self):
+    def __init__(self, id="D-RATS Network Proxy"):
         self.paths = []
         self.thread = None
         self.enabled = True
         self.socket = None
         self.repeat_thread = None
+        self.id = id
 
     def accept_new(self):
         if not self.socket:
@@ -189,7 +190,7 @@ class Repeater:
             return
 
         path = TcpDataPath("Network (%s:%s)" % csocket.getpeername(), csocket)
-        path.write("D-RATS Network Proxy: Ready")
+        path.write(self.id)
         self.paths.append(path)
 
     def listen_on(self, port):
@@ -203,7 +204,8 @@ class Repeater:
 
     def send_data(self, exclude, data):
         targets = list(self.paths)
-        targets.remove(exclude)
+        if exclude in targets:
+            targets.remove(exclude)
 
         for t in targets:
             print "Sending to %s" % t.id
@@ -292,6 +294,7 @@ class RepeaterGUI:
                       "19200", "38400", "115200"]
 
         baud = make_choice(baud_rates, True, "9600")
+        baud.set_size_request(75, -1)
         baud.show()
         hbox.pack_start(baud, 0,0,0)
 
@@ -381,11 +384,35 @@ class RepeaterGUI:
 
         return hbox        
 
+    def make_id(self):
+        frame = gtk.Frame("Identification")
+
+        hbox = gtk.HBox(False, 2)
+
+        self.entry_id = gtk.Entry()
+        self.entry_id.set_text("D-RATS Repeater Proxy: W1AW")
+        self.entry_id.show()
+        hbox.pack_start(self.entry_id, 1,1,1)
+
+        self.id_freq = make_choice(["Never", "30", "60", "120"],
+                                   True,
+                                   "30")
+        self.id_freq.set_size_request(75, -1)
+        self.id_freq.show()
+        hbox.pack_start(self.id_freq, 0,0,0)
+
+        hbox.show()
+        frame.add(hbox)
+        frame.show()
+
+        return frame
+
     def make_settings(self):
         vbox = gtk.VBox(False, 5)
 
         vbox.pack_start(self.make_devices(), 1,1,1)
         vbox.pack_start(self.make_network(), 0,0,0)
+        vbox.pack_start(self.make_id(), 0,0,0)
 
         vbox.show()
 
@@ -434,11 +461,13 @@ class RepeaterGUI:
         return vbox
 
     def button_on(self, widget, data=None):
+        self.tick = 0
+
         self.but_off.set_sensitive(True)
         self.but_on.set_sensitive(False)
         self.settings.set_sensitive(False)
 
-        self.repeater = Repeater()
+        self.repeater = Repeater(self.entry_id.get_text())
         for dev,baud in self.dev_list.get_values():
             s = SerialDataPath("Serial (%s)" % dev, dev, baud)
             self.repeater.paths.append(s)
@@ -484,11 +513,22 @@ class RepeaterGUI:
             (start, end) = self.traffic_buffer.get_bounds()
             self.traffic_buffer.insert(end, traffic)
         
+        try:
+            limit = int(self.id_freq.get_active_text())
+            if (self.tick / 60) == limit:
+                self.repeater.send_data(None, self.entry_id.get_text())
+                self.tick = 0
+        except:
+            pass
+
+        self.tick += 1
+
         return True
 
     def __init__(self):
         self.repeater = None
         self.tap = None
+        self.tick = 0
 
         self.window = gtk.Window(gtk.WINDOW_TOPLEVEL)
         self.window.set_default_size(450, 380)
