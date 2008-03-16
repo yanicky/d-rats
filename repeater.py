@@ -3,6 +3,7 @@
 import threading
 import time
 import socket
+from select import select
 
 import gtk
 import gobject
@@ -143,13 +144,17 @@ class TcpDataPath(DataPath):
         inp = "foo"
         data = ""
 
-        while inp:
+        while True:
             try:
+                #print "Read"
                 inp = self.socket.recv(64)
-            except:
-                break
-
-            data += inp
+                if inp == "":
+                    print "Socket Closed"
+                    self.enabled = False
+                    break
+                data += inp
+            except socket.error, info:
+                break # timeout
 
         if data:
             call_with_lock(self.lock,
@@ -159,7 +164,6 @@ class TcpDataPath(DataPath):
         while self.enabled:
             self.tcp_outgoing()
             self.tcp_incoming()
-            time.sleep(0.25)
 
         self.socket.close()
 
@@ -167,7 +171,8 @@ class TcpDataPath(DataPath):
         DataPath.__init__(self, id)
 
         self.socket = socket
-        self.socket.setblocking(False)
+        #self.socket.setblocking(False)
+        self.socket.settimeout(0.25)
         self.thread = threading.Thread(target=self.tcp_thread)
         self.thread.start()
 
@@ -223,8 +228,12 @@ class Repeater:
             for p in self.paths:
                 if p.hasIncoming():
                     print "Got data from %s" % p.id
-                    data = p.read()
-                    self.send_data(p, data)
+                    try:
+                        data = p.read()
+                        self.send_data(p, data)
+                    except:
+                        print "%s closed" % p.id
+                        self.paths.remove(p)
 
             time.sleep(0.1)
          
