@@ -21,6 +21,7 @@ import time
 import re
 from threading import Thread, Lock
 from select import select
+import socket
 
 import serial
 import gtk
@@ -89,6 +90,46 @@ class SWFSerial(serial.Serial):
     def read(self, len):
         return serial.Serial.read(self, len)
 
+class SocketSerial:
+    def __init__(self, port, timeout=0.25):
+        (_, host, port) = port.split(":")
+
+        self.portstr = "Network (%s:%s)" % (host, port)
+
+        self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.socket.connect((host, int(port)))
+
+        self.timeout = timeout
+
+    def read(self, length):
+        end = time.time() + self.timeout
+        data = ""
+        while len(data) < length:
+            try:
+                data += self.socket.recv(length - len(data),
+                                         socket.MSG_DONTWAIT)
+            except:
+                if len(data) == 0:
+                    return ""
+
+            if time.time() > end:
+                break
+
+        return data
+
+    def write(self, buf):
+        self.socket.send(buf)
+
+    def getBaudrate(self):
+        return 0
+
+    def flush(self):
+        return
+
+    def close(self):
+        self.socket.close()
+        self.socket = None
+
 class SerialCommunicator:
 
     def __init__(self, port=0, rate=9600, log=None, swf=False):
@@ -146,7 +187,9 @@ class SerialCommunicator:
             return self.opened
 
         try:
-            if self.swf:
+            if self.port.startswith("net:"):
+                self.pipe = SocketSerial(port=self.port)
+            elif self.swf:
                 self.pipe = SWFSerial(port=self.port,
                                       baudrate=self.rate,
                                       timeout=0.25,
