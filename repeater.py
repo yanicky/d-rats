@@ -145,7 +145,7 @@ class TcpDataPath(DataPath):
 
         while inp:
             try:
-                inp = self.socket.recv(64, socket.MSG_DONTWAIT)
+                inp = self.socket.recv(64)
             except:
                 break
 
@@ -167,6 +167,7 @@ class TcpDataPath(DataPath):
         DataPath.__init__(self, id)
 
         self.socket = socket
+        self.socket.setblocking(False)
         self.thread = threading.Thread(target=self.tcp_thread)
         self.thread.start()
 
@@ -187,7 +188,7 @@ class Repeater:
         except:
             return
 
-        path = TcpDataPath("TCP:%s" % csocket, csocket)
+        path = TcpDataPath("Network (%s:%s)" % csocket.getpeername(), csocket)
         path.write("D-RATS Network Proxy: Ready")
         self.paths.append(path)
 
@@ -239,6 +240,9 @@ class Repeater:
         for p in self.paths:
             print "Stopping %s" % p.id
             p.stop()
+
+        if self.socket:
+            self.socket.close()
 
         print "EXIT"
 
@@ -436,7 +440,7 @@ class RepeaterGUI:
 
         self.repeater = Repeater()
         for dev,baud in self.dev_list.get_values():
-            s = SerialDataPath(dev[0], dev[0], baud)
+            s = SerialDataPath("Serial (%s)" % dev, dev, baud)
             self.repeater.paths.append(s)
 
         try:
