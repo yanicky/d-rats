@@ -106,6 +106,11 @@ class AppConfig:
         mset("state", "filters", "[]")
         mset("state", "show_all_filter", False)
 
+        if not os.path.isdir(self.get("prefs", "download_dir")):
+            d = self.default_directory()
+            print "Resetting invalid download_dir to: %s" % d
+            self.set("prefs", "download_dir", d)
+
     id2label = {"name" : "Name",
                 "callsign" : "Callsign",
                 "autoreceive" : "Auto File Receive",
@@ -159,9 +164,12 @@ class AppConfig:
         return self.xfers[name]
 
     def default_filename(self):
-        return "drats.config"
+        return os.path.join(self.default_directory(), "drats.config")
 
     def default_directory(self):
+        return os.path.abspath(".")
+
+    def default_download_dir(self):
         return os.path.abspath(".")
 
     def copy_template_forms(self, dir):
@@ -430,7 +438,7 @@ class AppConfig:
         nb.show()
 
         # Disable unsupported functions
-        for i in ("autoreceive",):
+        for i in []:
             self.fields[i].set_sensitive(False)
 
         mainvbox = gtk.VBox(False, 5)
@@ -602,12 +610,14 @@ D-RATS has been started in safe mode, which means the configuration file has not
 
         self.tips = gtk.Tooltips()
 
-        if not _file:
-            _file = self.default_filename()
+        if _file:
+            self._file = _file
+        else:
+            self._file = self.default_filename()
 
         self.config = ConfigParser.ConfigParser()
         if not self.safe:
-            self.load_config(_file)
+            self.load_config(self._file)
         self.fields = {}
 
         self.init_config()
@@ -616,7 +626,7 @@ D-RATS has been started in safe mode, which means the configuration file has not
 
     def save(self, _file=None):
         if not _file:
-            _file = self.default_filename()
+            _file = self._file
 
         f = file(_file, "w")
         self.config.write(f)
@@ -630,6 +640,17 @@ class UnixAppConfig(AppConfig):
     def port_list(self):
         return ["/dev/ttyS0", "/dev/ttyS1",
                 "/dev/ttyUSB0", "/dev/ttyUSB1"]
+
+    def default_directory(self):
+        base = os.path.join(os.getenv("HOME"), ".d-rats")
+        if not os.path.isdir(base):
+            print "Creating `%s'" % base
+            os.mkdir(base)
+
+        return base
+
+    def default_download_dir(self):
+        return os.getenv("HOME")
 
 class Win32AppConfig(AppConfig):
     default_port = "COM1"
@@ -646,6 +667,9 @@ class Win32AppConfig(AppConfig):
             os.mkdir(base)
 
         return base
+
+    def default_download_dir(self):
+        return os.path.join(os.getenv("USERPROFILE"), "Desktop")
 
     def default_filename(self):
         config = os.path.join(self.default_directory(), "d-rats.config")
