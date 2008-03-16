@@ -98,17 +98,22 @@ class SocketSerial:
 
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.socket.connect((host, int(port)))
+        self.socket.setblocking(False)
 
         self.timeout = timeout
 
     def read(self, length):
         end = time.time() + self.timeout
         data = ""
+        fd = self.socket.fileno()
+
         while len(data) < length:
             try:
-                data += self.socket.recv(length - len(data),
-                                         socket.MSG_DONTWAIT)
-            except:
+                r, _, _ = select([fd], [], [], self.timeout)
+                if fd in r:
+                    data += self.socket.recv(length - len(data))
+            except Exception, e:
+                print "Socket read exception: %s" % e
                 if len(data) == 0:
                     return ""
 
