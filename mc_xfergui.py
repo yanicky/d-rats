@@ -120,13 +120,16 @@ class MulticastGUI(gtk.Dialog):
     def button_close(self, widget, data=None):
         self.response(gtk.RESPONSE_OK)
 
-    def update(self, msg, vals):
+    def _update(self, msg, vals):
         if msg:
             self.values["_message"].set_text(msg)
 
         for k,v in vals.items():
             if self.values.has_key(k):
                 self.values[k].set_text(str(v))
+
+    def update(self, msg, vals):
+        gobject.idle_add(self._update, msg, vals)
 
     def _station_joined(self, station):
         print "%s joined" % station
@@ -190,6 +193,7 @@ class MulticastGUI(gtk.Dialog):
 
     def transfer_thread(self):
         print "Thread started"
+
         self.transfer.send_file(self._filename,
                                 self.station_joined,
                                 self.station_update)
