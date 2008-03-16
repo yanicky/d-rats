@@ -494,6 +494,7 @@ class RepeaterGUI:
         self.window.set_default_size(450, 380)
         self.window.connect("delete_event", self.ev_delete)
         self.window.connect("destroy", self.sig_destroy)
+        self.window.set_title("D-RATS Repeater Proxy")
 
         vbox = gtk.VBox(False, 5)
 
