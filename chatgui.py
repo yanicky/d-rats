@@ -1451,9 +1451,25 @@ class CallCatcher:
         clear.show()
         vbox.pack_start(clear, 0,0,0)
 
+        lookup = gtk.Button("Lookup")
+        lookup.set_size_request(75, 30)
+        lookup.connect("clicked", self.but_lookup)
+        self.gui.tips.set_tip(lookup, "Lookup call on QRZ")
+        lookup.show()
+        vbox.pack_start(lookup, 0,0,0)
+
         vbox.show()
         
         return vbox
+
+    def but_lookup(self, widget):
+        (list, iter) = self.view.get_selection().get_selected()
+        (call,) = list.get(iter, self.col_call)
+
+        if os.name == "nt":
+            os.system("explorer http://qrz.com/%s" % call)
+        else:
+            os.system("firefox http://qrz.com/%s" % call)
 
     def but_remove(self, widget):
         (list, iter) = self.view.get_selection().get_selected()
