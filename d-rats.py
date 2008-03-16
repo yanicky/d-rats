@@ -26,7 +26,10 @@ if __name__ == "__main__":
                  dest="safe",
                  action="store_true",
                  help="Safe mode (ignore configuration)")
+    o.add_option("-c", "--config",
+                 dest="config",
+                 help="Use alternate configuration file")
     (opts, args) = o.parse_args()
-    app = mainapp.MainApp(opts.safe)
+    app = mainapp.MainApp(_file=opts.config, safe=opts.safe)
     sys.exit(app.main())
 
