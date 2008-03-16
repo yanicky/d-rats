@@ -417,7 +417,7 @@ class MainApp:
         except Exception, e:
             print "Unable to open debug log: %s" % e
             
-    def __init__(self, bypass_config=False):
+    def __init__(self, **args):
         global MAINAPP
         MAINAPP = self
 
@@ -427,11 +427,11 @@ class MainApp:
         self.seen_callsigns = {}
 
         if os.name == "posix":
-            self.config = config.UnixAppConfig(self, safe=bypass_config)
+            self.config = config.UnixAppConfig(self, **args)
         elif os.name == "nt":
-            self.config = config.Win32AppConfig(self, safe=bypass_config)
+            self.config = config.Win32AppConfig(self, **args)
         else:
-            self.config = config.AppConfig(self)
+            self.config = config.AppConfig(self, **args)
 
         self.maybe_redirect_stdout()
 
