@@ -69,7 +69,7 @@ class AppConfig:
         mset("user", "callsign", "W1AW")
 
         mset("prefs", "autoreceive", "False")
-        mset("prefs", "download_dir", self.default_directory())
+        mset("prefs", "download_dir", self.default_download_dir())
         mset("prefs", "blinkmsg", "False")
         mset("prefs", "noticere", "")
         mset("prefs", "ignorere", "")
@@ -107,7 +107,7 @@ class AppConfig:
         mset("state", "show_all_filter", False)
 
         if not os.path.isdir(self.get("prefs", "download_dir")):
-            d = self.default_directory()
+            d = self.default_download_dir()
             print "Resetting invalid download_dir to: %s" % d
             self.set("prefs", "download_dir", d)
 
