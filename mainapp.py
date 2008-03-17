@@ -135,13 +135,11 @@ class SocketSerial:
 
 class SerialCommunicator:
 
-    def __init__(self, port=0, rate=9600, log=None, swf=False):
+    def __init__(self, port=0, rate=9600, swf=False):
         self.enabled = False
-        self.log = None
         self.pipe = None
         self.opened = False
         
-        self.logfile = log
         self.port = port
         self.rate = rate
         self.swf = swf
@@ -159,23 +157,6 @@ class SerialCommunicator:
     def read(self, len):
         if self.enabled:
             return self.pipe.read(len)
-
-    def write_log(self, text):
-        if not self.log:
-            return
-
-        print >>self.log, "%s: %s" % (time.strftime(LOGTF), text)
-        self.log.flush()
-
-    def open_log(self):
-        if self.logfile:
-            self.log = file(self.logfile, "a")
-            print >>self.log, "*** Log started @ %s ***" % time.strftime(LOGTF)
-
-    def close_log(self):
-        if self.log:
-            print >>self.log, "*** Log closed @ %s ***" % time.strftime(LOGTF)
-            self.log.close()
 
     def close(self):
         if self.opened:
@@ -218,7 +199,6 @@ class SerialCommunicator:
 
         self.gui = gui
         if not self.enabled:
-            self.open_log()
             self.enabled = True
             self.thread = Thread(target=self.watch_serial)
             self.thread.start()
@@ -229,14 +209,10 @@ class SerialCommunicator:
     def disable(self):
         if self.enabled:
             self.enabled = False
-            self.close_log()
             print "Waiting for chat watch thread..."
             self.thread.join()
 
     def send_text(self, text):
-        if self.enabled:
-            self.write_log(text)
-
         self.lock.acquire()
         self.outgoing_data += text
         self.lock.release()
@@ -254,10 +230,6 @@ class SerialCommunicator:
             data = data.rstrip("\n")
             if os.linesep != "\n":
                 data = data.replace("\n", os.linesep)
-
-        stamp = time.strftime("%H:%M:%S")
-
-        self.write_log("%s%s%s" % (stamp, data, os.linesep))
 
         self.gui.display_line(data, "incomingcolor")
 
@@ -345,7 +317,7 @@ class MainApp:
 
             self.qsts.append(qstinst)
 
-    def refresh_comm(self, rate, port, log=None):
+    def refresh_comm(self, rate, port):
         if self.comm:
             self.comm.disable()
             
@@ -354,7 +326,7 @@ class MainApp:
         except:
             swf = False
 
-        self.comm = SerialCommunicator(rate=rate, port=port, log=log, swf=swf)
+        self.comm = SerialCommunicator(rate=rate, port=port, swf=swf)
         if self.comm.open():
             self.comm.enable(self.chatgui)
             
@@ -370,19 +342,13 @@ class MainApp:
         ddt.set_compression(com)
         ddt.set_encoding(enc)
 
-        if self.config.getboolean("prefs", "logenabled"):
-            base = self.config.get("prefs", "download_dir")
-            logfile = "%s%s%s" % (base, os.path.sep, "d-rats.log")
-        else:
-            logfile = None
-
         if self.comm and self.comm.enabled:
-            if self.comm.pipe.baudrate != rate or \
+            if self.comm.pipe.getBaudrate() != rate or \
                 self.comm.pipe.portstr != port:
                 print "Serial config changed"
-                self.refresh_comm(rate, port, logfile)
+                self.refresh_comm(rate, port)
         else:
-            self.refresh_comm(rate, port, logfile)
+            self.refresh_comm(rate, port)
 
         self.chatgui.display("My Call: %s\n" % call, "blue", "italic")
 
@@ -426,7 +392,6 @@ class MainApp:
 
         self.comm = None
         self.qsts = []
-        self.log = None
         self.seen_callsigns = {}
 
         if os.name == "posix":
