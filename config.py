@@ -19,6 +19,9 @@ import os
 import ConfigParser
 import glob
 import shutil
+import sys
+
+from subprocess import Popen
 
 import gtk
 import pygtk
@@ -163,6 +166,9 @@ class AppConfig:
 
         return self.xfers[name]
 
+    def open_text_file(self):
+        pass
+
     def default_filename(self):
         return os.path.join(self.default_directory(), "drats.config")
 
@@ -171,6 +177,15 @@ class AppConfig:
 
     def default_download_dir(self):
         return os.path.abspath(".")
+
+    def log_file(self, name):
+        fname = name.replace(" ", "_")
+        fname = self.filter_filename(fname)
+        fname += ".txt"
+        dir = os.path.join(self.default_directory(), "logs")
+        if not os.path.isdir(dir):
+            os.mkdir(dir)
+        return os.path.join(dir, fname)
 
     def copy_template_forms(self, dir):
         if os.path.isdir("forms"):
@@ -652,6 +667,22 @@ class UnixAppConfig(AppConfig):
     def default_download_dir(self):
         return os.getenv("HOME")
 
+    def filter_filename(self, filename):
+        return filename.replace("/", "")
+
+    def open_text_file(self, filename):
+        pid1 = os.fork()
+        if pid1 == 0:
+            pid2 = os.fork()
+            if pid2 == 0:
+                print "calling `gedit %s'" % filename
+                os.execlp("gedit", "gedit", filename)
+            else:
+                sys.exit(0)
+        else:
+            os.waitpid(pid1, 0)
+            print "Exec child exited"
+
 class Win32AppConfig(AppConfig):
     default_port = "COM1"
 
@@ -679,6 +710,17 @@ class Win32AppConfig(AppConfig):
 
     def port_list(self):
         return ["COM1", "COM2", "COM3", "COM4"]
+
+    def filter_filename(self, filename):
+        for char in "/\\:*?\"<>|":
+            filename = filename.replace(char, "")
+
+        return filename
+
+    def open_text_file(self, filename):
+        Popen(["notepad", filename])
+        return
+        os.system("notepad %s" % filename)
 
 if __name__ == "__main__":
     g = UnixAppConfig(None)
