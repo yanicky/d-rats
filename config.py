@@ -85,7 +85,7 @@ class AppConfig:
         mset("prefs", "noticecolor", "#0000660011DD")
         mset("prefs", "ignorecolor", "#BB88BB88BB88")
         mset("prefs", "callsigncolor", "#FFDD99CC77CC")
-        mset("prefs", "logenabled", "False")
+        mset("prefs", "logenabled", "True")
         mset("prefs", "debuglog", "False")
         mset("prefs", "eolstrip", "True")
         mset("prefs", "font", "Sans 12")
