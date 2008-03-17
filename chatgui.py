@@ -330,9 +330,20 @@ class ChatGUI:
         self.window.show()
 
 class ChatFilter:
-    def __init__(self, tabs):
+    def __init__(self, filterstring, tabs):
         self.exclusive = True
         self.tabs = tabs
+        self.logfn = mainapp.get_mainapp().config.log_file(filterstring)
+        do_log = mainapp.get_mainapp().config.getboolean("prefs",
+                                                         "logenabled")
+        if do_log:
+            try:
+                self.logfile = file(self.logfn, "a", 0)
+            except Exception, e:
+                print "Failed to open log `%s': %s" % (self.logfn, e)
+                self.logfile = None
+        else:
+            self.logfile = None
 
     def set_exclusive(self, exclusive):
         self.exclusive = exclusive
@@ -350,6 +361,12 @@ class ChatFilter:
         else:
             self.label.set_markup(self.label.get_text())
 
+    def log(self, string):
+        if self.logfile:
+            stamp = time.strftime(mainapp.LOGTF)
+            self.logfile.write("%s: %s%s" % (stamp, string, os.linesep))
+        self.set_waiting(True)
+
 class MainChatGUI(ChatGUI):
     
     def display_line(self, string, *attrs):
@@ -358,17 +375,17 @@ class MainChatGUI(ChatGUI):
         for f in self.filters[1:]:
             if f.text and f.text in string:
                 f.root.display_line(string, *attrs)
-                f.set_waiting(True)
+                f.log(string)
                 if f.exclusive:
                     do_main = False
             elif not f.text:
                 # This is the 'all' filter
                 f.root.display_line(string, *attrs)
-                f.set_waiting(True)
+                f.log(string)
 
         if do_main:
             ChatGUI.display_line(self, string, *attrs)
-            self.filters[0].set_waiting(True)
+            self.filters[0].log(string)
 
     def ev_delete(self, widget, event, data=None):
         self.window.set_default_size(*self.window.get_size())
@@ -449,7 +466,7 @@ class MainChatGUI(ChatGUI):
                           self.select_page,
                           None)
 
-        main_filter = ChatFilter(self.tabs)
+        main_filter = ChatFilter("main", self.tabs)
         main_filter.text = None
         main_filter.label = tab_label
         main_filter.tab_child = vbox2
@@ -516,6 +533,14 @@ class MainChatGUI(ChatGUI):
                 return
         
         self.main_buffer.set_text("")
+
+    def filter_current_log(self):
+        tab = self.tabs.get_nth_page(self.tabs.get_current_page())
+
+        for f in self.filters:
+            if f.tab_child == tab:
+                self.config.open_text_file(f.logfn)
+                break
 
     def do_mcast_send(self):
         d = gtk.FileChooserDialog("Select file to send",
@@ -593,6 +618,9 @@ class MainChatGUI(ChatGUI):
             t.do_recv()            
             t.destroy()
             self.toggle_sendable(True)
+        elif action == 'thislog':
+            self.filter_current_log()
+
 
     def make_menubar(self):
         menu_xml = """
@@ -618,6 +646,7 @@ class MainChatGUI(ChatGUI):
               <menuitem action='filter'/>
               <menuitem action='unfilter'/>
               <menuitem action='allfilter'/>
+              <menuitem action='thislog'/>
               <separator/>
               <menuitem action='advanced'/>
             </menu>
@@ -644,6 +673,7 @@ class MainChatGUI(ChatGUI):
                    ('filter', None, '_Filter by string', "<Control>f", None, self.menu_handler),
                    ('unfilter', None, '_Remove current filter', "<Control>k", None, self.menu_handler),
                    ('allfilter', None, 'Show "_all" filter', None, None, self.show_allfilter),
+                   ('thislog', None, 'Log for this tab', None, None, self.menu_handler),
                    ('help', None, '_Help', None, None, self.menu_handler),
                    ('about', None, '_About', None, None, self.menu_handler)]
 
@@ -718,7 +748,7 @@ class MainChatGUI(ChatGUI):
             self.display_line("--- Disconnected ---", "italic")
 
     def show_allfilter(self, action):
-        all_filter = ChatFilter(self.tabs)
+        all_filter = ChatFilter("all", self.tabs)
         all_filter.set_exclusive(False)
         all_filter.root = ChatGUI(self.config, self.mainapp)
         all_filter.tab_child = all_filter.root.mainpane
@@ -807,7 +837,7 @@ class MainChatGUI(ChatGUI):
         self.entry.grab_focus()
 
     def activate_filter(self, _, text):
-        filter = ChatFilter(self.tabs)
+        filter = ChatFilter(text, self.tabs)
 
         filter.root = ChatGUI(self.config, self.mainapp)
         filter.tab_child = filter.root.mainpane
