@@ -747,6 +747,11 @@ class MainChatGUI(ChatGUI):
         else:
             self.display_line("--- Disconnected ---", "italic")
 
+    def set_connected(self, bool):
+        action = self.menu_ag.get_action("connect")
+        action.set_active(bool)
+        self.connect(action, None)
+
     def show_allfilter(self, action):
         all_filter = ChatFilter("all", self.tabs)
         all_filter.set_exclusive(False)

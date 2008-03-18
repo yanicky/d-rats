@@ -95,29 +95,30 @@ class SocketSerial:
         (_, host, port) = port.split(":")
 
         self.portstr = "Network (%s:%s)" % (host, port)
+        self.timeout = timeout
 
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.socket.connect((host, int(port)))
         self.socket.settimeout(0.25)
-
-        self.timeout = timeout
-
+        
     def read(self, length):
         data = ""
         end = time.time() + self.timeout
         while len(data) < length:
+            if time.time() > end:
+                break
+
             try:
                 inp = self.socket.recv(length - len(data))
                 data += inp
-
-                if inp == "":
-                    break
             except Exception, e:
-                pass
+                print "Socket timed out"
+                continue
 
-            if time.time > end:
-                break
-
+            if inp == "":
+                print "Got nothing, socket must be dead"
+                raise Exception("Socket closed")
+            
         return data
 
     def write(self, buf):
@@ -132,6 +133,9 @@ class SocketSerial:
     def close(self):
         self.socket.close()
         self.socket = None
+
+    def flushInput(self):
+        return
 
 class SerialCommunicator:
 
@@ -252,11 +256,13 @@ class SerialCommunicator:
                     print "Done with send"
                 except Exception, e:
                     print "Exception during write: %s" % e
+                    break
 
             try:
                 newdata = self.pipe.read(64)
             except Exception, e:
                 print "Serial read failed: %s" % e
+                break
             
             if len(newdata) > 0:
                 data += newdata
@@ -273,6 +279,11 @@ class SerialCommunicator:
                     data = ""
                     
                 time.sleep(0.25)
+
+        if self.enabled:
+            print "Exited loop due to error, going offline"
+            self.enabled = False
+            gobject.idle_add(self.gui.set_connected, False)
 
     def __str__(self):
         if self.enabled:
