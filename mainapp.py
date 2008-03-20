@@ -112,7 +112,6 @@ class SocketSerial:
                 inp = self.socket.recv(length - len(data))
                 data += inp
             except Exception, e:
-                print "Socket timed out"
                 continue
 
             if inp == "":
