@@ -38,13 +38,20 @@ OUT = 1
 PEEK = 2
 
 class DataPath:
-    def __init__(self, id):
+    def __init__(self, id, condition):
         self.id = id
         self.in_buffer = ""
         self.out_buffer = ""
         self.lock = threading.Lock()
         self.thread = None
         self.enabled = True
+        self.condition = condition
+    
+    def signal(self):
+        self.condition.acquire()
+        print "Signaling %s" % time.time()
+        self.condition.notify()
+        self.condition.release()
 
     def hasIncoming(self):
         r = call_with_lock(self.lock, len, self.in_buffer)
@@ -67,6 +74,7 @@ class DataPath:
     def l_append_buffer(self, buffer, value):
         if buffer == IN:
             self.in_buffer += value
+            self.signal()
         elif buffer == OUT:
             self.out_buffer += value
 
@@ -134,12 +142,10 @@ class SerialDataPath(DataPath):
             self.serial_outgoing()
             self.serial_incoming()
 
-            time.sleep(0.25)            
-    
         self.pipe.close()
 
-    def __init__(self, id, port, rate):
-        DataPath.__init__(self, id)
+    def __init__(self, id, condition, port, rate):
+        DataPath.__init__(self, id, condition)
 
         self.pipe = SWFSerial(port=port, baudrate=rate, timeout=0.25)
         self.thread = threading.Thread(target=self.serial_thread)
@@ -182,8 +188,8 @@ class TcpDataPath(DataPath):
 
         self.socket.close()
 
-    def __init__(self, id, socket):
-        DataPath.__init__(self, id)
+    def __init__(self, id, condition, socket):
+        DataPath.__init__(self, id, condition)
 
         self.socket = socket
         #self.socket.setblocking(False)
@@ -199,6 +205,7 @@ class Repeater:
         self.socket = None
         self.repeat_thread = None
         self.id = id
+        self.condition = threading.Condition()
 
     def accept_new(self):
         if not self.socket:
@@ -209,7 +216,9 @@ class Repeater:
         except:
             return
 
-        path = TcpDataPath("Network (%s:%s)" % csocket.getpeername(), csocket)
+        path = TcpDataPath("Network (%s:%s)" % csocket.getpeername(),
+                           self.condition,
+                           csocket)
         path.write(self.id)
         self.paths.append(path)
 
@@ -237,7 +246,12 @@ class Repeater:
 
     def _repeat(self):
         while self.enabled:
+            self.condition.acquire()
+            print "Waiting for data %s" % time.time()
+            self.condition.wait(5)
             self.accept_new()
+            print "Got data %s" % time.time()
+            self.condition.release()
 
             data = {}
             for p in self.paths:
@@ -250,14 +264,16 @@ class Repeater:
                         print "%s closed" % p.id
                         self.paths.remove(p)
 
-            time.sleep(0.1)
-         
     def repeat(self):
         self.repeat_thread = threading.Thread(target=self._repeat)
         self.repeat_thread.start()
 
     def stop(self):
         self.enabled = False
+
+        self.condition.acquire()
+        self.condition.notify()
+        self.condition.release()
 
         if self.repeat_thread:
             print "Stopping repeater"
@@ -493,7 +509,10 @@ class RepeaterGUI:
 
         self.repeater = Repeater(self.entry_id.get_text())
         for dev,baud in self.dev_list.get_values():
-            s = SerialDataPath("Serial (%s)" % dev, dev, baud)
+            s = SerialDataPath("Serial (%s)" % dev,
+                               self.repeater.condition,
+                               dev,
+                               baud)
             self.repeater.paths.append(s)
 
         try:
@@ -505,7 +524,7 @@ class RepeaterGUI:
         if port and enabled:
             self.repeater.listen_on(port)
 
-        self.tap = LoopDataPath("TAP")
+        self.tap = LoopDataPath("TAP", self.repeater.condition)
         self.repeater.paths.append(self.tap)
 
         self.repeater.repeat()
@@ -585,7 +604,7 @@ if __name__=="__main__":
 
     r = Repeater()
 
-    s = SerialDataPath("USB1", "/dev/ttyUSB0", 9600)
+    s = SerialDataPath("USB1", "/dev/ttyUSB0", r.condition, 9600)
     r.paths.append(s)
 
     r.listen_on(9000)
