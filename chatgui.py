@@ -377,6 +377,7 @@ class ChatFilter:
             self.label.set_markup(self.label.get_text())
 
     def log(self, string):
+        string = filter_to_ascii(string)
         if self.logfile:
             stamp = time.strftime(mainapp.LOGTF)
             self.logfile.write("%s: %s%s" % (stamp, string, os.linesep))
