@@ -480,6 +480,10 @@ class RepeaterGUI:
         self.traffic_view.set_wrap_mode(gtk.WRAP_WORD)
         self.traffic_view.show()
 
+        self.traffic_buffer.create_mark("end",
+                                        self.traffic_buffer.get_end_iter(),
+                                        False)
+
         sw = gtk.ScrolledWindow()
         sw.set_policy(gtk.POLICY_NEVER, gtk.POLICY_AUTOMATIC)
         sw.add(self.traffic_view)
@@ -555,7 +559,8 @@ class RepeaterGUI:
             traffic = self.tap.peek()
             (start, end) = self.traffic_buffer.get_bounds()
             self.traffic_buffer.insert(end, traffic)
-        
+            endmark = self.traffic_buffer.get_mark("end")
+            self.traffic_view.scroll_to_mark(endmark, 0.0, True, 0, 1)
         try:
             limit = int(self.id_freq.get_active_text())
             if (self.tick / 60) == limit:
