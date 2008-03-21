@@ -46,7 +46,8 @@ class DataPath:
         self.thread = None
         self.enabled = True
         self.condition = condition
-    
+        self.min_buffer = 512
+
     def signal(self):
         self.condition.acquire()
         print "Signaling %s" % time.time()
@@ -133,6 +134,11 @@ class SerialDataPath(DataPath):
             inp = self.pipe.read(64)
             data += inp
 
+            if len(data) > self.min_buffer:
+                call_with_lock(self.lock,
+                               self.l_append_buffer, IN, data)
+                data = ""
+
         if data:
             call_with_lock(self.lock,
                            self.l_append_buffer, IN, data)
@@ -147,7 +153,7 @@ class SerialDataPath(DataPath):
     def __init__(self, id, condition, port, rate):
         DataPath.__init__(self, id, condition)
 
-        self.pipe = SWFSerial(port=port, baudrate=rate, timeout=0.25)
+        self.pipe = SWFSerial(port=port, baudrate=rate, timeout=0.1)
         self.thread = threading.Thread(target=self.serial_thread)
         self.thread.start()
 
@@ -177,6 +183,11 @@ class TcpDataPath(DataPath):
             except socket.error, info:
                 break # timeout
 
+            if len(data) > self.min_buffer:
+                call_with_lock(self.lock,
+                               self.l_append_buffer, IN, data)
+                data = ""
+
         if data:
             call_with_lock(self.lock,
                            self.l_append_buffer, IN, data)
@@ -193,7 +204,7 @@ class TcpDataPath(DataPath):
 
         self.socket = socket
         #self.socket.setblocking(False)
-        self.socket.settimeout(0.25)
+        self.socket.settimeout(0.1)
         self.thread = threading.Thread(target=self.tcp_thread)
         self.thread.start()
 
@@ -247,10 +258,8 @@ class Repeater:
     def _repeat(self):
         while self.enabled:
             self.condition.acquire()
-            print "Waiting for data %s" % time.time()
             self.condition.wait(5)
             self.accept_new()
-            print "Got data %s" % time.time()
             self.condition.release()
 
             data = {}
