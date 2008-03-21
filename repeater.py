@@ -18,12 +18,11 @@
 import threading
 import time
 import socket
-from select import select
 
 import gtk
 import gobject
 
-from mainapp import SWFSerial
+from mainapp import SWFSerial, SocketSerial
 from config import make_choice
 import miscwidgets
 import platform
@@ -209,6 +208,19 @@ class TcpDataPath(DataPath):
         self.thread = threading.Thread(target=self.tcp_thread)
         self.thread.start()
 
+class TcpOutgoingDataPath(TcpDataPath):
+    def __init__(self, id, condition, host):
+        try:
+            _, host, port = host.split(":")
+            port = int(port)
+        except Exception, e:
+            print "Unable to parse host `%s': %s" % (host, e)
+            return
+
+        _socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        _socket.connect((host, port))
+        TcpDataPath.__init__(self, id, condition, _socket)
+
 class Repeater:
     def __init__(self, id="D-RATS Network Proxy"):
         self.paths = []
@@ -338,7 +350,7 @@ class RepeaterGUI:
 
         hbox = gtk.HBox(False, 2)
 
-        lab = gtk.Label("Add serial device:")
+        lab = gtk.Label("Add serial or net path:")
         lab.show()
         hbox.pack_start(lab, 0,0,0)
 
@@ -362,7 +374,7 @@ class RepeaterGUI:
         return hbox
 
     def make_devices(self):
-        frame = gtk.Frame("Devices")
+        frame = gtk.Frame("Paths")
 
         vbox = gtk.VBox(False, 2)
         frame.add(vbox)
@@ -526,11 +538,16 @@ class RepeaterGUI:
 
         self.repeater = Repeater(self.entry_id.get_text())
         for dev,baud in self.dev_list.get_values():
-            s = SerialDataPath("Serial (%s)" % dev,
-                               self.repeater.condition,
-                               dev,
-                               baud)
-            self.repeater.paths.append(s)
+            if dev.startswith("net:"):
+                p = TcpOutgoingDataPath("Network (%s)" % dev,
+                                        self.repeater.condition,
+                                        dev)
+            else:
+                p = SerialDataPath("Serial (%s)" % dev,
+                                   self.repeater.condition,
+                                   dev,
+                                   baud)
+            self.repeater.paths.append(p)
 
         try:
             port = int(self.entry_port.get_text())
