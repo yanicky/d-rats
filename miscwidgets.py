@@ -63,6 +63,22 @@ class ListWidget(gtk.HBox):
         iter = self._store.append()
         self._store.set(iter, *args)
 
+    def _remove_item(self, model, path, iter, match):
+        vals = model.get(iter, *tuple(range(0, self._ncols)))
+        if vals == match:
+            mode.remove(iter)
+
+    def remove_item(self, *vals):
+        if len(vals) != self._ncols:
+            raise Exception("Need %i columns" % self._ncols)
+
+    def remove_selected(self):
+        try:
+            (list, iter) = self._view.get_selection().get_selected()
+            list.remove(iter)
+        except Exception, e:
+            print "Unable to remove selected: %s" % e
+
     def _get_value(self, model, path, iter, list):
         list.append(model.get(iter, *tuple(range(0, self._ncols))))
 
