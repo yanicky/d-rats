@@ -18,6 +18,7 @@
 import threading
 import time
 import socket
+import ConfigParser
 
 import gtk
 import gobject
@@ -315,18 +316,24 @@ class RepeaterGUI:
         entry, baud = widgets
 
         try:
-            self.dev_list.add_item(entry.get_active_text(),
-                                   int(baud.get_active_text()))
+            d = entry.get_active_text()
+            r = int(baud.get_active_text())
+            self.dev_list.add_item(d, r)
+            l = eval(self.config.get("settings", "devices"))
+            l.append((d,r))
+            self.config.set("settings", "devices", str(l))
         except Exception, e:
             print "Error adding serial port: %s" % e
             pass
 
     def sig_destroy(self, widget, data=None):
         self.button_off(None)
+        self.save_config(self.config)
         gtk.main_quit()
 
     def ev_delete(self, widget, event, data=None):
         self.button_off(None)
+        self.save_config(self.config)
         gtk.main_quit()        
 
     def make_side_buttons(self):
@@ -334,6 +341,7 @@ class RepeaterGUI:
 
         but_remove = gtk.Button("Remove")
         but_remove.set_size_request(75, 30)
+        but_remove.connect("clicked", self.button_remove)
         but_remove.show()
         vbox.pack_start(but_remove, 0,0,0)
 
@@ -373,6 +381,14 @@ class RepeaterGUI:
 
         return hbox
 
+    def load_devices(self):
+        try:
+            l = eval(self.config.get("settings", "devices"))
+            for d,r in l:
+                self.dev_list.add_item(d, r)
+        except Exception, e:
+            print "Unable to load devices: %s" % e
+
     def make_devices(self):
         frame = gtk.Frame("Paths")
 
@@ -384,6 +400,7 @@ class RepeaterGUI:
         self.dev_list = miscwidgets.ListWidget([(gobject.TYPE_STRING, "Device"),
                                                 (gobject.TYPE_INT, "Baud")])
         self.dev_list.show()
+        self.load_devices()
 
         hbox.pack_start(self.dev_list, 1,1,1)
         hbox.pack_start(self.make_side_buttons(), 0,0,0)
@@ -404,7 +421,12 @@ class RepeaterGUI:
         frame.add(vbox)
 
         self.net_enabled = gtk.CheckButton("Accept incoming connections")
-        self.net_enabled.set_active(True)
+        try:
+            accept = self.config.getboolean("settings", "acceptnet")
+        except:
+            accept = True
+
+        self.net_enabled.set_active(accept)
         self.net_enabled.show()
 
         vbox.pack_start(self.net_enabled, 0,0,0)
@@ -416,7 +438,12 @@ class RepeaterGUI:
         hbox.pack_start(lab, 0,0,0)
 
         self.entry_port = gtk.Entry()
-        self.entry_port.set_text("9000")
+        try:
+            port = self.config.get("settings", "netport")
+        except:
+            port = "9000"
+        
+        self.entry_port.set_text(port)
         self.entry_port.set_size_request(100, -1)
         self.entry_port.show()
         hbox.pack_start(self.entry_port, 0,0,0)
@@ -455,13 +482,23 @@ class RepeaterGUI:
         hbox = gtk.HBox(False, 2)
 
         self.entry_id = gtk.Entry()
-        self.entry_id.set_text("D-RATS Repeater Proxy: W1AW")
+        try:
+            deftxt = self.config.get("settings", "idstr")
+        except:
+            deftxt = "D-RATS Repeater Proxy: W1AW"
+
+        self.entry_id.set_text(deftxt)
         self.entry_id.show()
         hbox.pack_start(self.entry_id, 1,1,1)
 
+        try:
+            idfreq = self.config.get("settings", "idfreq")
+        except:
+            idfreq = "30"
+
         self.id_freq = make_choice(["Never", "30", "60", "120"],
                                    True,
-                                   "30")
+                                   idfreq)
         self.id_freq.set_size_request(75, -1)
         self.id_freq.show()
         hbox.pack_start(self.id_freq, 0,0,0)
@@ -529,8 +566,24 @@ class RepeaterGUI:
 
         return vbox
 
+    def sync_config(self):
+        idstr = self.entry_id.get_text()
+        idfreq = self.id_freq.get_active_text()
+        port = self.entry_port.get_text()
+        acceptnet = str(self.net_enabled.get_active())
+
+        self.config.set("settings", "idstr", idstr)
+        self.config.set("settings", "idfreq", idfreq)
+        self.config.set("settings", "netport", port)
+        self.config.set("settings", "acceptnet", acceptnet)
+
+    def button_remove(self, widget):
+        self.dev_list.remove_selected()
+
     def button_on(self, widget, data=None):
         self.tick = 0
+
+        self.save_config(self.config)
 
         self.but_off.set_sensitive(True)
         self.but_on.set_sensitive(False)
@@ -603,10 +656,33 @@ class RepeaterGUI:
 
         return True
 
+    def load_config(self):
+        self.config_fn = self.platform.config_file("repeater.config")
+        config = ConfigParser.ConfigParser()
+        config.add_section("settings")
+        config.set("settings", "devices", "[]")
+        config.set("settings", "acceptnet", "True")
+        config.set("settings", "netport", "9000")
+        config.set("settings", "idstr", "D-RATS Repeater Proxy: W1AW")
+        config.set("settings", "idfreq", "30")
+        config.read(self.config_fn)
+
+        return config
+
+    def save_config(self, config):
+        self.sync_config()
+        f = file(self.config_fn, "w")
+        config.write(f)
+        f.close()
+
     def __init__(self):
         self.repeater = None
         self.tap = None
         self.tick = 0
+
+        self.platform = platform.get_platform()
+
+        self.config = self.load_config()
 
         self.window = gtk.Window(gtk.WINDOW_TOPLEVEL)
         self.window.set_default_size(450, 380)
