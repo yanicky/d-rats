@@ -26,6 +26,7 @@ import gobject
 from mainapp import SWFSerial
 from config import make_choice
 import miscwidgets
+import platform
 
 def call_with_lock(lock, fn, *args):
     lock.acquire()
@@ -302,10 +303,10 @@ class RepeaterGUI:
         entry, baud = widgets
 
         try:
-            self.dev_list.add_item(entry.get_text(),
+            self.dev_list.add_item(entry.get_active_text(),
                                    int(baud.get_active_text()))
-            entry.set_text("")
-        except:
+        except Exception, e:
+            print "Error adding serial port: %s" % e
             pass
 
     def sig_destroy(self, widget, data=None):
@@ -329,26 +330,29 @@ class RepeaterGUI:
         return vbox
 
     def make_add_serial(self):
+        p = platform.get_platform()
+
+        rates = ["300", "1200", "4800", "9600",
+                 "19200", "38400", "115200"]
+        ports = p.list_serial_ports()
+
         hbox = gtk.HBox(False, 2)
 
         lab = gtk.Label("Add serial device:")
         lab.show()
         hbox.pack_start(lab, 0,0,0)
 
-        entry_serial = gtk.Entry()
-        entry_serial.show()
-        hbox.pack_start(entry_serial, 1,1,1)
+        serial = make_choice(ports, True, ports[0])
+        serial.show()
+        hbox.pack_start(serial, 1,1,1)
 
-        baud_rates = ["300", "1200", "4800", "9600",
-                      "19200", "38400", "115200"]
-
-        baud = make_choice(baud_rates, True, "9600")
+        baud = make_choice(rates, True, "9600")
         baud.set_size_request(75, -1)
         baud.show()
         hbox.pack_start(baud, 0,0,0)
 
         but_add = gtk.Button("Add")
-        but_add.connect("clicked", self.add_serial, (entry_serial, baud))
+        but_add.connect("clicked", self.add_serial, (serial, baud))
         but_add.set_size_request(75, 30)
         but_add.show()
         hbox.pack_start(but_add, 0,0,0)
