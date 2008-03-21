@@ -92,15 +92,40 @@ class SWFSerial(serial.Serial):
 
 class SocketSerial:
     def __init__(self, port, timeout=0.25):
-        (_, host, port) = port.split(":")
+        (_, self.host, self.port) = port.split(":")
 
-        self.portstr = "Network (%s:%s)" % (host, port)
+        self.portstr = "Network (%s:%s)" % (self.host, self.port)
         self.timeout = timeout
 
-        self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.socket.connect((host, int(port)))
-        self.socket.settimeout(0.25)
+        self.connect()
+
+    def connect(self):
+
+        try:
+            self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.socket.connect((self.host, int(self.port)))
+            self.socket.settimeout(0.25)
+        except:
+            return False
         
+        try:
+            r = self.socket.recv(1)
+        except:
+            return True
+
+        return r != ''
+
+    def reconnect(self, iter=10, timeout=5):
+        for i in range(iter):
+            if self.connect():
+                print "Reconnected"
+                return True
+            else:
+                print "Retrying..."
+                time.sleep(timeout)
+
+        return False
+
     def read(self, length):
         data = ""
         end = time.time() + self.timeout
@@ -115,8 +140,9 @@ class SocketSerial:
                 continue
 
             if inp == "":
-                print "Got nothing, socket must be dead"
-                raise Exception("Socket closed")
+                print "Got nothing, socket must be dead!"
+                if not self.reconnect():
+                    raise Exception("Socket closed")
             
         return data
 
