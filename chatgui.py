@@ -330,20 +330,35 @@ class ChatGUI:
         self.window.show()
 
 class ChatFilter:
-    def __init__(self, filterstring, tabs):
+    def __init__(self, filterstring, tabs, root):
         self.exclusive = True
         self.tabs = tabs
-        self.logfn = mainapp.get_mainapp().config.log_file(filterstring)
+        if root:
+            self.root = root
+            self.tab_child = root.mainpane
+        self.mainapp = mainapp.get_mainapp()
+        self.logfn = self.mainapp.config.platform.log_file(filterstring)
         do_log = mainapp.get_mainapp().config.getboolean("prefs",
                                                          "logenabled")
         if do_log:
             try:
-                self.logfile = file(self.logfn, "a", 0)
+                self.logfile = file(self.logfn, "a+", 0)
+                self.load_back_log()
             except Exception, e:
                 print "Failed to open log `%s': %s" % (self.logfn, e)
                 self.logfile = None
         else:
             self.logfile = None
+
+    def load_back_log(self):
+        self.logfile.seek(-512, 2)
+        old_log = self.logfile.read(512)
+        try:
+            i = old_log.index(os.linesep)
+            old_log = old_log[i+1:]
+            self.root.display(old_log, "grey")
+        except Exception, e:
+            print "Unable to load old log: %s" % e            
 
     def set_exclusive(self, exclusive):
         self.exclusive = exclusive
@@ -466,10 +481,10 @@ class MainChatGUI(ChatGUI):
                           self.select_page,
                           None)
 
-        main_filter = ChatFilter("main", self.tabs)
+        main_filter = ChatFilter("main", self.tabs, None)
         main_filter.text = None
-        main_filter.label = tab_label
         main_filter.tab_child = vbox2
+        main_filter.label = tab_label
         self.filters.append(main_filter)
 
         vbox1.pack_start(self.menubar, 0, 1, 0)
@@ -539,7 +554,7 @@ class MainChatGUI(ChatGUI):
 
         for f in self.filters:
             if f.tab_child == tab:
-                self.config.open_text_file(f.logfn)
+                self.config.platform.open_text_file(f.logfn)
                 break
 
     def do_mcast_send(self):
@@ -753,10 +768,9 @@ class MainChatGUI(ChatGUI):
         self.connect(action, None)
 
     def show_allfilter(self, action):
-        all_filter = ChatFilter("all", self.tabs)
+        root = ChatGUI(self.config, self.mainapp)
+        all_filter = ChatFilter("all", self.tabs, root)
         all_filter.set_exclusive(False)
-        all_filter.root = ChatGUI(self.config, self.mainapp)
-        all_filter.tab_child = all_filter.root.mainpane
         all_filter.label = gtk.Label("All")
         all_filter.text = None
         
@@ -842,10 +856,9 @@ class MainChatGUI(ChatGUI):
         self.entry.grab_focus()
 
     def activate_filter(self, _, text):
-        filter = ChatFilter(text, self.tabs)
 
-        filter.root = ChatGUI(self.config, self.mainapp)
-        filter.tab_child = filter.root.mainpane
+        root = ChatGUI(self.config, self.mainapp)
+        filter = ChatFilter(text, self.tabs, root)
         filter.label = gtk.Label(text)
         filter.text = text
 
@@ -891,6 +904,9 @@ class MainChatGUI(ChatGUI):
             self.show_allfilter(None)
 
         self.tabs.set_current_page(0)
+
+        self.filters[0].root = self
+        self.filters[0].load_back_log()
 
     def __init__(self, config, _mainapp):
         self.config = config # Set early for make_menubar()
@@ -1501,10 +1517,8 @@ class CallCatcher:
         (list, iter) = self.view.get_selection().get_selected()
         (call,) = list.get(iter, self.col_call)
 
-        if os.name == "nt":
-            os.system("explorer http://qrz.com/%s" % call)
-        else:
-            os.system("firefox http://qrz.com/%s" % call)
+        url = "http://qrz.com/%s" % call
+        self.mainapp.config.platform.open_html_file(url)
 
     def but_remove(self, widget):
         (list, iter) = self.view.get_selection().get_selected()

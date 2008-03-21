@@ -21,14 +21,13 @@ import glob
 import shutil
 import sys
 
-from subprocess import Popen
-
 import gtk
 import pygtk
 import gobject
 
 import ddt
 import miscwidgets
+import platform
 
 def color_string(color):
     try:
@@ -72,7 +71,7 @@ class AppConfig:
         mset("user", "callsign", "W1AW")
 
         mset("prefs", "autoreceive", "False")
-        mset("prefs", "download_dir", self.default_download_dir())
+        mset("prefs", "download_dir", self.platform.default_dir())
         mset("prefs", "blinkmsg", "False")
         mset("prefs", "noticere", "")
         mset("prefs", "ignorere", "")
@@ -166,26 +165,8 @@ class AppConfig:
 
         return self.xfers[name]
 
-    def open_text_file(self):
-        pass
-
     def default_filename(self):
-        return os.path.join(self.default_directory(), "drats.config")
-
-    def default_directory(self):
-        return os.path.abspath(".")
-
-    def default_download_dir(self):
-        return os.path.abspath(".")
-
-    def log_file(self, name):
-        fname = name.replace(" ", "_")
-        fname = self.filter_filename(fname)
-        fname += ".txt"
-        dir = os.path.join(self.default_directory(), "logs")
-        if not os.path.isdir(dir):
-            os.mkdir(dir)
-        return os.path.join(dir, fname)
+        return self.platform.config_file("drats.config")
 
     def copy_template_forms(self, dir):
         if os.path.isdir("forms"):
@@ -196,7 +177,7 @@ class AppConfig:
                 shutil.copyfile(f, dst)
 
     def form_source_dir(self):
-        d = os.path.join(self.default_directory(), "Form_Templates")
+        d = os.path.join(self.platform.config_dir(), "Form_Templates")
         if not os.path.isdir(d):
             os.mkdir(d)
             try:
@@ -207,7 +188,7 @@ class AppConfig:
         return d
 
     def form_store_dir(self):
-        d = os.path.join(self.default_directory(), "Saved_Forms")
+        d = os.path.join(self.platform.config_dir(), "Saved_Forms")
         if not os.path.isdir(d):
             os.mkdir(d)
 
@@ -371,8 +352,10 @@ class AppConfig:
         baud_rates = ["300", "1200", "4800", "9600",
                       "19200", "38400", "115200"]
 
+        ports = self.platform.list_serial_ports()
+
         vbox.pack_start(self.make_sb("port",
-                                     make_choice(self.port_list())), 0,0,0)
+                                     make_choice(ports)), 0,0,0)
         vbox.pack_start(self.make_sb("rate",
                                      make_choice(baud_rates, False)), 0,0,0)
 
@@ -623,6 +606,12 @@ D-RATS has been started in safe mode, which means the configuration file has not
         self.mainapp = mainapp
         self.safe = safe
 
+        self.platform = platform.get_platform()
+        try:
+            self.default_port = self.platform.list_serial_ports()[0]
+        except:
+            self.default_port = ""
+
         self.tips = gtk.Tooltips()
 
         if _file:
@@ -648,81 +637,3 @@ D-RATS has been started in safe mode, which means the configuration file has not
         f.close()
 
         self.safe = False
-
-class UnixAppConfig(AppConfig):
-    default_port = "/dev/ttyS0"
-
-    def port_list(self):
-        return ["/dev/ttyS0", "/dev/ttyS1",
-                "/dev/ttyUSB0", "/dev/ttyUSB1"]
-
-    def default_directory(self):
-        base = os.path.join(os.getenv("HOME"), ".d-rats")
-        if not os.path.isdir(base):
-            print "Creating `%s'" % base
-            os.mkdir(base)
-
-        return base
-
-    def default_download_dir(self):
-        return os.getenv("HOME")
-
-    def filter_filename(self, filename):
-        return filename.replace("/", "")
-
-    def open_text_file(self, filename):
-        pid1 = os.fork()
-        if pid1 == 0:
-            pid2 = os.fork()
-            if pid2 == 0:
-                print "calling `gedit %s'" % filename
-                os.execlp("gedit", "gedit", filename)
-            else:
-                sys.exit(0)
-        else:
-            os.waitpid(pid1, 0)
-            print "Exec child exited"
-
-class Win32AppConfig(AppConfig):
-    default_port = "COM1"
-
-    def migrate_old_config(self, new):
-        if os.path.isfile("c:\drats.config"):
-            print "Migrating old config to %s" % new
-            os.rename("c:\drats.config", new)
-
-    def default_directory(self):
-        base = os.path.join(os.getenv("APPDATA"), "D-RATS")
-        if not os.path.isdir(base):
-            print "Creating `%s'" % base
-            os.mkdir(base)
-
-        return base
-
-    def default_download_dir(self):
-        return os.path.join(os.getenv("USERPROFILE"), "Desktop")
-
-    def default_filename(self):
-        config = os.path.join(self.default_directory(), "d-rats.config")
-        self.migrate_old_config(config)
-
-        return config        
-
-    def port_list(self):
-        return ["COM1", "COM2", "COM3", "COM4"]
-
-    def filter_filename(self, filename):
-        for char in "/\\:*?\"<>|":
-            filename = filename.replace(char, "")
-
-        return filename
-
-    def open_text_file(self, filename):
-        Popen(["notepad", filename])
-        return
-        os.system("notepad %s" % filename)
-
-if __name__ == "__main__":
-    g = UnixAppConfig(None)
-    g.show()
-    gtk.main()

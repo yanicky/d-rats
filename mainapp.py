@@ -366,17 +366,6 @@ class MainApp:
         self.chatgui.refresh_colors()
         self.chatgui.refresh_advanced()
 
-    def config_upgrade_fixdownloaddir(self):
-        """Fix the 'download_dir = None' problem, if present in an
-        existing config"""
-
-        dir = self.config.get("prefs", "download_dir")
-        if not os.path.isdir(dir):
-            self.config.set("prefs",
-                                   "download_dir",
-                                   self.config.default_directory())
-            print "Fixed broken default_dir"
-
     def maybe_redirect_stdout(self):
         try:
             if self.config.getboolean("prefs", "debuglog"):
@@ -404,19 +393,11 @@ class MainApp:
         self.qsts = []
         self.seen_callsigns = {}
 
-        if os.name == "posix":
-            self.config = config.UnixAppConfig(self, **args)
-        elif os.name == "nt":
-            self.config = config.Win32AppConfig(self, **args)
-        else:
-            self.config = config.AppConfig(self, **args)
+        self.config = config.AppConfig(self, **args)
 
         self.maybe_redirect_stdout()
 
         self.chatgui = chatgui.MainChatGUI(self.config, self)
-
-        # Upgrade config issues and/or fix known issues
-        self.config_upgrade_fixdownloaddir()
 
         self.chatgui.display("D-RATS v%s " % DRATS_VERSION, "red")
         self.chatgui.display("(Copyright 2008 Dan Smith KI4IFW)\n",
