@@ -89,6 +89,7 @@ class AppConfig:
         mset("prefs", "eolstrip", "True")
         mset("prefs", "font", "Sans 12")
         mset("prefs", "callsigns", "%s" % self.default_call_settings)
+        mset("prefs", "logresume", "True")
 
         mset("settings", "port", self.default_port)
         mset("settings", "rate", "9600")
@@ -143,6 +144,7 @@ class AppConfig:
                 "callsigns" : "Mark callsigns by these countries",
                 "encoding" : "Type of ASCII-armoring to use",
                 "compression" : "Compress blocks",
+                "logresume" : "Load tail of previous log",
                 }
 
     id2tip = {"write_chunk" : "Stage DDT blocks into small chunks of this many bytes",
@@ -153,6 +155,7 @@ class AppConfig:
               "callsigns" : "Mark callsigns by these countries",
               "encoding" : "yenc is fastest, base64 is safest (currently)",
               "compression" : "Compress outgoing blocks",
+              "logresume" : "Loads the last bit of the log for context at startup",
               }
 
     xfers = {"DDT" : ddt.DDTTransfer}
@@ -315,6 +318,8 @@ class AppConfig:
         vbox.pack_start(self.make_sb("logenabled",
                                      self.make_bool()), 0,0,0)
         vbox.pack_start(self.make_sb("debuglog",
+                                     self.make_bool()), 0,0,0)
+        vbox.pack_start(self.make_sb("logresume",
                                      self.make_bool()), 0,0,0)
 
         vbox.show()
@@ -565,7 +570,8 @@ D-RATS has been started in safe mode, which means the configuration file has not
                   ("prefs", "logenabled"),
                   ("prefs", "debuglog"),
                   ("settings", "swflow"),
-                  ("settings", "compression")]
+                  ("settings", "compression"),
+                  ("prefs", "logresume")]
 
         choicetext_v = [("settings", "port")]
 

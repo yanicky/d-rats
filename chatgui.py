@@ -351,6 +351,10 @@ class ChatFilter:
             self.logfile = None
 
     def load_back_log(self):
+        if not self.mainapp.config.getboolean("prefs", "logresume"):
+            print "Not resuming log for filter"
+            return
+
         self.logfile.seek(-512, 2)
         old_log = self.logfile.read(512)
         try:
