@@ -363,8 +363,12 @@ class ChatFilter:
                                                          "logenabled")
         if do_log:
             try:
-                self.logfile = file(self.logfn, "a+", 0)
                 self.load_back_log()
+                self.logfile = file(self.logfn, "a", 0)
+                if not self.logfile:
+                    print "Failed to open log: %s" % self.logfn
+                else:
+                    print "Opened log: %s" % self.logfn
             except Exception, e:
                 print "Failed to open log `%s': %s" % (self.logfn, e)
                 self.logfile = None
@@ -376,8 +380,22 @@ class ChatFilter:
             print "Not resuming log for filter"
             return
 
-        self.logfile.seek(-512, 2)
-        old_log = self.logfile.read(512)
+        try:
+            f = file(self.logfn, "r")
+        except:
+            f = None
+        if not f:
+            print "Unable to load back log"
+            return
+
+        try:
+            f.seek(-512, 2)
+        except:
+            f.seek(0)
+
+        old_log = f.read(512)
+        f.close()
+
         try:
             i = old_log.index(os.linesep)
             old_log = old_log[i+1:]
