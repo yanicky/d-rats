@@ -88,13 +88,19 @@ class GPSPosition:
             else:
                 distance = ""
 
-            return "GPS: %s reporting %s,%s@%s at %s (%s)%s" % (self.station,
-                                                                self.latitude,
-                                                                self.longitude,
-                                                                self.altitude,
-                                                                self.date,
-                                                                self.comment,
-                                                                distance)
+            if self.comment:
+                comment = " (%s)"
+            else:
+                comment = ""
+
+            return "GPS: %s reporting %.4f,%.4f@%.1f at %s%s%s" % ( \
+                self.station,
+                self.latitude,
+                self.longitude,
+                self.altitude,
+                self.date,
+                comment,
+                distance)
         else:
             return "GPS: (Invalid GPS data)"
 
