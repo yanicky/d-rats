@@ -37,6 +37,7 @@ from callsigns import find_callsigns
 import mainapp
 import formgui
 import formbuilder
+import gps
 
 from mc_xfergui import MulticastGUI, MulticastRecvGUI
 
@@ -408,6 +409,10 @@ class MainChatGUI(ChatGUI):
     
     def display_line(self, string, *attrs):
         do_main = True
+
+        gps_fix = gps.parse_GPS(string)
+        if gps_fix:
+            string = str(gps_fix)
 
         for f in self.filters[1:]:
             if f.text and f.text in string:
