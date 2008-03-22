@@ -326,7 +326,8 @@ class ChoiceWidget(FieldWidget):
         child = self.node.children
         while child:
             if child.getContent() == value:
-                child.newProp("set", "y")
+                if not child.hasProp("set"):
+                    child.newProp("set", "y")
             else:
                 child.unsetProp("set")
 
