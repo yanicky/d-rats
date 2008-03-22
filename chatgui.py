@@ -167,9 +167,12 @@ class ChatGUI:
 
         self.display(stamp + text + os.linesep, *attrs)
 
-    def tx_msg(self, string):
-        call = self.config.get("user", "callsign")
-        message = "%s> %s" % (call, string)
+    def tx_msg(self, string, raw=False):
+        if not raw:
+            call = self.config.get("user", "callsign")
+            message = "%s> %s" % (call, string)
+        else:
+            message = string
 
         ChatGUI.display_line(self, message, "outgoingcolor")
         self.mainapp.comm.send_text(message)
