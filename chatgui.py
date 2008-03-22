@@ -835,9 +835,21 @@ class MainChatGUI(ChatGUI):
         return nb
 
     def ev_window(self, window, event):
+        print "Window event"
         if event.type == gtk.gdk.WINDOW_STATE:
             max = event.new_window_state & gtk.gdk.WINDOW_STATE_MAXIMIZED
             self.is_maximized = (max != 0)
+    
+    def ev_window_sized(self, window, req):
+        def refresh(gui):
+            print "Redrawing"
+            gui.window.queue_draw()
+            gui.needs_redraw = False
+
+        if not self.needs_redraw:
+            print "Resize"
+            gobject.idle_add(refresh, self)
+            self.needs_redraw = True
 
     def make_window(self):
         self.window = gtk.Window(gtk.WINDOW_TOPLEVEL)
@@ -866,6 +878,7 @@ class MainChatGUI(ChatGUI):
         self.window.connect("destroy", self.sig_destroy)
         self.window.connect("focus", self.ev_focus)
         self.window.connect("window-state-event", self.ev_window)
+        self.window.connect("size-allocate", self.ev_window_sized)
         self.window.add_accel_group(self.accel_group)
         self.window.show()
 
@@ -931,6 +944,7 @@ class MainChatGUI(ChatGUI):
         self.filters[0].load_back_log()
 
     def __init__(self, config, _mainapp):
+        self.needs_redraw = False
         self.config = config # Set early for make_menubar()
 
         self.menubar = self.make_menubar()
