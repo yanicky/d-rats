@@ -4,6 +4,15 @@ import time
 TEST = "$GPGGA,180718.02,4531.3740,N,12255.4599,W,1,07,1.4,50.6,M,-21.4,M,,*63 KE7JSS  ,440.350+ PL127.3"
 
 class GPSPosition:
+    def __init__(self):
+        self.valid = False
+        self.latitude = 0
+        self.longitude = 0
+        self.altitude = 0
+        self.satellites = 0
+        self.station = "UNKNOWN"
+        self.comment = ""
+
     def parse_string(self, string):
         csvel = "[^,]+"
         expr = \
@@ -32,21 +41,10 @@ class GPSPosition:
         self.longitude = float(m.group(4)) * mult
 
         self.satellites = int(m.group(7))
-        self.altitude = "%s %s" % (m.group(9), m.group(10))
+        self.altitude = float(m.group(9))
         self.station = m.group(13).split(' ', 1)[1].strip()
         self.comment = m.group(14).strip()
         
-    def __init__(self, string):
-        string = string.replace('\r', ' ')
-        string = string.replace('\n', ' ') 
-        try:
-            self.parse_string(string)
-            self.valid = True
-        except Exception, e:
-            print "Invalid GPS data: %s" % e
-            self.valid = False
-            return
-
     def __str__(self):
         if self.valid:
             return "GPS: %s reporting %s,%s@%s at %s (%s)" % (self.station,
@@ -58,24 +56,50 @@ class GPSPosition:
         else:
             return "GPS: (Invalid GPS data)"
 
-    def to_NMEA_GGA(self, station, comment="D-RATS"):
+    def to_NMEA_GGA(self):
         date = time.strftime("%H%M%S")
         if self.latitude > 0:
-            lat = "%.4f,%s" % (self.latitude, "N")
+            lat = "%.3f,%s" % (self.latitude, "N")
         else:
-            lat = "%.4f,%s" % (self.latitude * -1, "S")
+            lat = "%.3f,%s" % (self.latitude * -1, "S")
 
         if self.longitude > 0:
-            lon = "%.4f,%s" % (self.longitude, "E")
+            lon = "%.3f,%s" % (self.longitude, "E")
         else:
-            lon = "%.4f,%s" % (self.longitude * -1, "W")
+            lon = "%.3f,%s" % (self.longitude * -1, "W")
 
-        return "$GPGGA,%s,%s,%s,1,0,0,0,M,0,M,,*00 %s,%s" % ( \
-            date, lat, lon, station, comment)
+        return "$GPGGA,%s,%s,%s,1,%i,0,%.1f,M,0,M,,*00 %s,%s" % ( \
+            date, lat, lon, self.satellites, self.altitude, self.station, self.comment)
+
+    def from_NMEA_GGA(self, string):
+        string = string.replace('\r', ' ')
+        string = string.replace('\n', ' ') 
+        try:
+            self.parse_string(string)
+            self.valid = True
+        except Exception, e:
+            print "Invalid GPS data: %s" % e
+            self.valid = False
+            return
+
+    def from_coords(self, lat, lon, alt=0):
+        self.latitude = lat * 100
+        self.longitude = lon * 100
+        self.altitude = alt
+        self.satellites = 3
+        self.valid = True
+
+    def set_station(self, station, comment="D-RATS"):
+        self.station = station
+        self.comment = comment
 
 def parse_GPS(string):
     if string.startswith("$GPGGA,"):
-        return GPSPosition(string)
+        p = GPSPosition()
+        p.from_NMEA_GGA(string)
+        return p
+    else:
+        return None
 
 if __name__ == "__main__":
     p = parse_GPS(TEST)
@@ -91,4 +115,4 @@ if __name__ == "__main__":
         print "Comment:    %s" % p.comment
 
         print "\n%s" % str(p)
-        print "\n%s" % p.to_NMEA_GGA("KI4IFW")
+        print "\n%s" % p.to_NMEA_GGA()
