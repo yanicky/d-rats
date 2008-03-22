@@ -90,6 +90,7 @@ class AppConfig:
         mset("prefs", "font", "Sans 12")
         mset("prefs", "callsigns", "%s" % self.default_call_settings)
         mset("prefs", "logresume", "True")
+        mset("prefs", "scrollback", "1024")
 
         mset("settings", "port", self.default_port)
         mset("settings", "rate", "9600")
@@ -145,6 +146,7 @@ class AppConfig:
                 "encoding" : "Type of ASCII-armoring to use",
                 "compression" : "Compress blocks",
                 "logresume" : "Load tail of previous log",
+                "scrollback" : "Lines of scrollback to keep",
                 }
 
     id2tip = {"write_chunk" : "Stage DDT blocks into small chunks of this many bytes",
@@ -347,7 +349,9 @@ class AppConfig:
 
         vbox.pack_start(self.make_sb("font",
                                      gtk.FontButton()), 0,0,0)
-        
+        vbox.pack_start(self.make_sb("scrollback",
+                                     self.make_spin(128, 0, 10000)), 0,0,0)
+
         vbox.show()
         return vbox
 
@@ -591,7 +595,8 @@ D-RATS has been started in safe mode, which means the configuration file has not
         font_v = [("prefs", "font")]
 
         spin_v = [("settings", "write_chunk"),
-                  ("settings", "chunk_delay")]
+                  ("settings", "chunk_delay"),
+                  ("prefs", "scrollback")]
 
         list_v = [("prefs", "callsigns")]
 

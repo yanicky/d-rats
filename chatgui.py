@@ -118,6 +118,21 @@ class ChatGUI:
             self.main_buffer.apply_tag_by_name("noticecolor", b, e)
             self.main_buffer.apply_tag_by_name("bold", b, e)
             
+    def _trim_buffer(self):
+        try:
+            limit = int(float(self.config.get("prefs", "scrollback")))
+        except Exception, e:
+            print "Unable to get scrollback limit: %s" % e
+            return
+
+        count = self.main_buffer.get_line_count()
+
+        if count > limit:
+            print "Trimming %i" % count
+            start = self.main_buffer.get_start_iter()
+            end = self.main_buffer.get_iter_at_line(count - limit)
+            self.main_buffer.delete(start, end)
+
     def display(self, string, *attrs):
         string = filter_to_ascii(string)
 
@@ -135,6 +150,8 @@ class ChatGUI:
         self.highlight_notices(string, pos)
 
         self.main_buffer.delete_mark(mark)
+
+        self._trim_buffer()
         
         endmark = self.main_buffer.get_mark("end")
         self.textview.scroll_to_mark(endmark, 0.0, True, 0, 1)
