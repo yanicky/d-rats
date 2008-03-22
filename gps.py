@@ -3,6 +3,13 @@ import time
 
 TEST = "$GPGGA,180718.02,4531.3740,N,12255.4599,W,1,07,1.4,50.6,M,-21.4,M,,*63 KE7JSS  ,440.350+ PL127.3"
 
+def NMEA_checksum(string):
+    checksum = 0
+    for i in string:
+        checksum ^= ord(i)
+
+    return "*%02x" % checksum
+
 class GPSPosition:
     def __init__(self):
         self.valid = False
@@ -68,8 +75,17 @@ class GPSPosition:
         else:
             lon = "%.3f,%s" % (self.longitude * -1, "W")
 
-        return "$GPGGA,%s,%s,%s,1,%i,0,%.1f,M,0,M,,*00 %s,%s" % ( \
-            date, lat, lon, self.satellites, self.altitude, self.station, self.comment)
+        data = "GPGGA,%s,%s,%s,1,%i,0,%.1f,M,0,M,," % ( \
+            date,
+            lat,
+            lon,
+            self.satellites,
+            self.altitude)
+
+        return "$%s%s %s,%s" % (data,
+                               NMEA_checksum(data),
+                               self.station,
+                               self.comment)
 
     def from_NMEA_GGA(self, string):
         string = string.replace('\r', ' ')
@@ -116,3 +132,5 @@ if __name__ == "__main__":
 
         print "\n%s" % str(p)
         print "\n%s" % p.to_NMEA_GGA()
+
+        print "Checksum of TEST: %s" % NMEA_checksum("GPGGA,180718.02,4531.3740,N,12255.4599,W,1,07,1.4,50.6,M,-21.4,M,,")
