@@ -571,11 +571,13 @@ class RepeaterGUI:
         idfreq = self.id_freq.get_active_text()
         port = self.entry_port.get_text()
         acceptnet = str(self.net_enabled.get_active())
+        devices = self.dev_list.get_values()
 
         self.config.set("settings", "idstr", idstr)
         self.config.set("settings", "idfreq", idfreq)
         self.config.set("settings", "netport", port)
         self.config.set("settings", "acceptnet", acceptnet)
+        self.config.set("settings", "devices", devices)
 
     def button_remove(self, widget):
         self.dev_list.remove_selected()
