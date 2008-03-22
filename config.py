@@ -69,6 +69,9 @@ class AppConfig:
 
         mset("user", "name", "A. Mateur")
         mset("user", "callsign", "W1AW")
+        mset("user", "latitude", "0.0")
+        mset("user", "longitude", "0.0")
+        mset("user", "altitude", "0.0")
 
         mset("prefs", "autoreceive", "False")
         mset("prefs", "download_dir", self.platform.default_dir())
@@ -147,6 +150,9 @@ class AppConfig:
                 "compression" : "Compress blocks",
                 "logresume" : "Load tail of previous log",
                 "scrollback" : "Lines of scrollback to keep",
+                "latitude" : "Current Latitude",
+                "longitude" : "Current Longitude",
+                "altitude" : "Current Altitude",
                 }
 
     id2tip = {"write_chunk" : "Stage DDT blocks into small chunks of this many bytes",
@@ -158,6 +164,9 @@ class AppConfig:
               "encoding" : "yenc is fastest, base64 is safest (currently)",
               "compression" : "Compress outgoing blocks",
               "logresume" : "Loads the last bit of the log for context at startup",
+              "latitude" : "Current latitude (deg.minutes)",
+              "longitude" : "Current longitude (deg.minutes)",
+              "altitude" : "Altitude in meters",
               }
 
     xfers = {"DDT" : ddt.DDTTransfer}
@@ -277,11 +286,13 @@ class AppConfig:
 
         return hbox
 
-    def make_spin(self, incr, min, max):
-        if (incr - int(incr)) != 0:
-            digits = 1
-        else:
-            digits = 0
+    def make_spin(self, incr, min, max, digits=None):
+        if not digits:
+            if (incr - int(incr)) != 0:
+                digits = 1
+            else:
+                digits = 0
+
         a = gtk.Adjustment(0, min, max, incr, 0, 0)
         b = gtk.SpinButton(adjustment=a, digits=digits)
         return b
@@ -323,6 +334,16 @@ class AppConfig:
                                      self.make_bool()), 0,0,0)
         vbox.pack_start(self.make_sb("logresume",
                                      self.make_bool()), 0,0,0)
+
+        vbox.pack_start(self.make_sb("latitude",
+                                     self.make_spin(0.0001, -180.0, 180.0, 6)),
+                        0,0,0)
+        vbox.pack_start(self.make_sb("longitude",
+                                     self.make_spin(0.0001, -180.0, 180.0, 6)),
+                        0,0,0)
+        vbox.pack_start(self.make_sb("altitude",
+                                     self.make_spin(0.1, 0.0, 29028.0, 1)),
+                        0,0,0)                                     
 
         vbox.show()
         return vbox
@@ -596,7 +617,9 @@ D-RATS has been started in safe mode, which means the configuration file has not
 
         spin_v = [("settings", "write_chunk"),
                   ("settings", "chunk_delay"),
-                  ("prefs", "scrollback")]
+                  ("prefs", "scrollback"),
+                  ("user", "latitude"),
+                  ("user", "longitude")]
 
         list_v = [("prefs", "callsigns")]
 
