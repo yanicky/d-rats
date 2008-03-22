@@ -30,6 +30,7 @@ import gobject
 import chatgui
 import config
 import ddt
+import gps
 
 from utils import hexprint,filter_to_ascii
 import qst
@@ -438,6 +439,21 @@ class MainApp:
         if self.config.getboolean("prefs", "dosignon"):
             self.chatgui.tx_msg(self.config.get("prefs", "signon"))
             
+    def get_position(self):
+        fix = gps.GPSPosition()
+        try:
+            lat = float(self.config.get("user", "latitude"))
+            lon = float(self.config.get("user", "longitude"))
+            alt = float(self.config.get("user", "altitude"))
+        except Exception, e:
+            print "Invalid position: %s" % e
+            return None
+
+        fix.from_coords(lat, lon, alt)
+        fix.set_station(self.config.get("user", "callsign"), "D-RATS")
+
+        return fix
+
     def main(self):
         try:
             gtk.main()

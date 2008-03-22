@@ -22,19 +22,20 @@ import time
 import datetime
 
 from commands import getstatusoutput as run
-
 from config import make_choice
+import mainapp
 
 class QSTText:
     def __init__(self, gui, config, text=None, freq=None):
         self.gui = gui
         self.config = config
 
-        self.prefix = "[QST]"
+        self.prefix = "[QST] "
         self.text = text
         self.freq = freq
         self.enabled = False
-
+        self.raw = False
+        
         self.reschedule()        
 
     def _reschedule(self):
@@ -87,7 +88,9 @@ class QSTText:
             
             if self.gui.sendable:
                 print "Tick: %s" % self.text
-                self.gui.tx_msg("%s %s" % (self.prefix, self.do_qst()))
+                msg = self.do_qst()
+                if msg:
+                    self.gui.tx_msg("%s%s" % (self.prefix, msg), self.raw)
             else:
                 print "Skipping QST because GUI is not sendable"
 
@@ -122,6 +125,21 @@ class QSTFile(QSTText):
         f.close()
 
         return text
+
+class QSTGPS(QSTText):
+    def __init__(self, gui, config, text=None, freq=None):
+        QSTText.__init__(self, gui, config, text, freq)
+
+        self.prefix = ""
+        self.raw = True
+        self.mainapp = mainapp.get_mainapp()
+
+    def do_qst(self):
+        fix = self.mainapp.get_position()
+        if fix.valid:
+            return fix.to_NMEA_GGA()
+        else:
+            return None
 
 class SelectGUI:
     def sync_gui(self, load=True):
@@ -364,7 +382,7 @@ class QSTGUI(SelectGUI):
 
     def make_b_controls(self):
         times = ["1", "5", "10", "20", "30", "60", ":15", ":30", ":45"]
-        types = ["Text", "Exec", "File"]
+        types = ["Text", "Exec", "File", "GPS"]
 
         self.msg = gtk.TextBuffer()
         self.entry = gtk.TextView(self.msg)
@@ -564,6 +582,8 @@ def get_qst_class(typestr):
         return QSTExec
     elif typestr == "File":
         return QSTFile
+    elif typestr == "GPS":
+        return QSTGPS
     else:
         return None
 
