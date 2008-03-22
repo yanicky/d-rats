@@ -1,6 +1,8 @@
 import re
 import time
 
+from math import pi,cos,acos,sin
+
 TEST = "$GPGGA,180718.02,4531.3740,N,12255.4599,W,1,07,1.4,50.6,M,-21.4,M,,*63 KE7JSS  ,440.350+ PL127.3"
 
 def NMEA_checksum(string):
@@ -9,6 +11,29 @@ def NMEA_checksum(string):
         checksum ^= ord(i)
 
     return "*%02x" % checksum
+
+def deg2rad(deg):
+    return deg * (pi / 180)
+
+def dm2deg(deg, min):
+    return deg + (min / 60.0)
+
+def deg2dm(decdeg):
+    deg = int(decdeg)
+    min = (decdeg - deg) * 60.0
+
+    return deg, min
+
+def nmea2deg(nmea):
+    deg = int(nmea) / 100
+    min = nmea % (deg * 100)
+
+    return dm2deg(deg, min)
+
+def deg2nmea(deg):
+    deg, min = deg2dm(deg)
+
+    return (deg * 100) + min
 
 class GPSPosition:
     def __init__(self):
@@ -19,6 +44,7 @@ class GPSPosition:
         self.satellites = 0
         self.station = "UNKNOWN"
         self.comment = ""
+        self.current = None
 
     def parse_string(self, string):
         csvel = "[^,]+"
@@ -39,13 +65,15 @@ class GPSPosition:
             mult = -1
         else:
             mult = 1
-        self.latitude = float(m.group(2)) * mult
+        self.latitude = nmea2deg(float(m.group(2))) * mult
 
         if m.group(5) == "W":
             mult = -1
         else:
             mult = 1
-        self.longitude = float(m.group(4)) * mult
+        self.longitude = nmea2deg(float(m.group(4))) * mult
+
+        print "%f,%f" % (self.latitude, self.longitude)
 
         self.satellites = int(m.group(7))
         self.altitude = float(m.group(9))
@@ -54,26 +82,36 @@ class GPSPosition:
         
     def __str__(self):
         if self.valid:
-            return "GPS: %s reporting %s,%s@%s at %s (%s)" % (self.station,
-                                                              self.latitude,
-                                                              self.longitude,
-                                                              self.altitude,
-                                                              self.date,
-                                                              self.comment)
+            if self.current:
+                dist = self.distance_from(self.current)
+                distance = " [%.1f miles away]" % dist
+            else:
+                distance = ""
+
+            return "GPS: %s reporting %s,%s@%s at %s (%s)%s" % (self.station,
+                                                                self.latitude,
+                                                                self.longitude,
+                                                                self.altitude,
+                                                                self.date,
+                                                                self.comment,
+                                                                distance)
         else:
             return "GPS: (Invalid GPS data)"
 
     def to_NMEA_GGA(self):
         date = time.strftime("%H%M%S")
+
         if self.latitude > 0:
-            lat = "%.3f,%s" % (self.latitude, "N")
+            lat = "%.3f,%s" % (deg2nmea(self.latitude), "N")
         else:
-            lat = "%.3f,%s" % (self.latitude * -1, "S")
+            lat = "%.3f,%s" % (deg2nmea(self.latitude * -1), "S")
+
+
 
         if self.longitude > 0:
-            lon = "%.3f,%s" % (self.longitude, "E")
+            lon = "%.3f,%s" % (deg2nmea(self.longitude), "E")
         else:
-            lon = "%.3f,%s" % (self.longitude * -1, "W")
+            lon = "%.3f,%s" % (deg2nmea(self.longitude * -1), "W")
 
         data = "GPGGA,%s,%s,%s,1,%i,0,%.1f,M,0,M,," % ( \
             date,
@@ -99,8 +137,8 @@ class GPSPosition:
             return
 
     def from_coords(self, lat, lon, alt=0):
-        self.latitude = lat * 100
-        self.longitude = lon * 100
+        self.latitude = lat
+        self.longitude = lon
         self.altitude = alt
         self.satellites = 3
         self.valid = True
@@ -108,6 +146,26 @@ class GPSPosition:
     def set_station(self, station, comment="D-RATS"):
         self.station = station
         self.comment = comment
+
+    def distance_from(self, pos):
+        lat_me = deg2rad(self.latitude)
+        lon_me = deg2rad(self.longitude)
+
+        lat_u = deg2rad(pos.latitude)
+        lon_u = deg2rad(pos.longitude)
+
+        earth_radius = 3963.1 # miles
+
+        distance = acos((cos(lat_me) * cos(lon_me) * \
+                             cos(lat_u) * cos(lon_u)) + \
+                            (cos(lat_me) * sin(lon_me) * \
+                                 cos(lat_u) * sin(lon_u)) + \
+                            (sin(lat_me) * sin(lat_u)))
+        
+        return distance * earth_radius
+
+    def set_relative_to_current(self, current):
+        self.current = current
 
 def parse_GPS(string):
     if string.startswith("$GPGGA,"):
@@ -118,7 +176,10 @@ def parse_GPS(string):
         return None
 
 if __name__ == "__main__":
+
     p = parse_GPS(TEST)
+    P = GPSPosition()
+    P.from_coords(45.535156, -122.956260)
     if not p:
         print "Failed"
     else:
@@ -134,3 +195,5 @@ if __name__ == "__main__":
         print "\n%s" % p.to_NMEA_GGA()
 
         print "Checksum of TEST: %s" % NMEA_checksum("GPGGA,180718.02,4531.3740,N,12255.4599,W,1,07,1.4,50.6,M,-21.4,M,,")
+
+        print "Distance: %s" % P.distance_from(p)
