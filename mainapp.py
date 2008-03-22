@@ -147,7 +147,11 @@ class SocketSerial:
         return data
 
     def write(self, buf):
-        self.socket.send(buf)
+        try:
+            self.socket.sendall(buf)
+        except Exception, e:
+            print "Socket write failed: %s" % e
+            self.reconnect()
 
     def getBaudrate(self):
         return 0
