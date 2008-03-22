@@ -1,6 +1,8 @@
 #!/bin/bash
 
-VERSION="0.1.10"
+LOCAL_VERSION=b
+eval $(cat mainapp.py | grep ^DRATS_VERSION | sed 's/ //g')
+VERSION=${DRATS_VERSION}${LOCAL_VERSION}
 INCLUDE="*.py forms/*.x[ms]l COPYING"
 TMP=$(mktemp -d)
 EXCLUDE="ddt_mb.py ptyhelper.py"
