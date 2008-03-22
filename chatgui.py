@@ -415,6 +415,7 @@ class MainChatGUI(ChatGUI):
 
         gps_fix = gps.parse_GPS(string)
         if gps_fix:
+            gps_fix.set_relative_to_current(self.mainapp.get_position())
             string = str(gps_fix)
 
         for f in self.filters[1:]:
