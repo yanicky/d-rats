@@ -640,8 +640,15 @@ class RepeaterGUI:
 
         if self.tap:
             traffic = self.tap.peek()
-            (start, end) = self.traffic_buffer.get_bounds()
+            end = self.traffic_buffer.get_end_iter()
             self.traffic_buffer.insert(end, traffic)
+
+            count = self.traffic_buffer.get_line_count()
+            if count > 200:
+                start = self.traffic_buffer.get_start_iter()
+                limit = self.traffic_buffer.get_iter_at_line(count - 200)
+                self.traffic_buffer.delete(start, limit)
+
             endmark = self.traffic_buffer.get_mark("end")
             self.traffic_view.scroll_to_mark(endmark, 0.0, True, 0, 1)
         try:
