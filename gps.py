@@ -1,7 +1,7 @@
 import re
 import time
 
-from math import pi,cos,acos,sin
+from math import pi,cos,acos,sin,atan2
 
 TEST = "$GPGGA,180718.02,4531.3740,N,12255.4599,W,1,07,1.4,50.6,M,-21.4,M,,*63 KE7JSS  ,440.350+ PL127.3"
 
@@ -14,6 +14,9 @@ def NMEA_checksum(string):
 
 def deg2rad(deg):
     return deg * (pi / 180)
+
+def rad2deg(rad):
+    return rad / (pi / 180)
 
 def dm2deg(deg, min):
     return deg + (min / 60.0)
@@ -84,7 +87,8 @@ class GPSPosition:
         if self.valid:
             if self.current:
                 dist = self.distance_from(self.current)
-                distance = " [%.1f miles away]" % dist
+                bear = self.current.bearing_to(self)
+                distance = " - %.1f miles away @ %.1f degrees" % (dist, bear)
             else:
                 distance = ""
 
@@ -170,22 +174,68 @@ class GPSPosition:
         
         return distance * earth_radius
 
+    def bearing_to(self, pos):
+        lat_me = deg2rad(self.latitude)
+        lon_me = deg2rad(self.longitude)
+
+        lat_u = deg2rad(pos.latitude)
+        lon_u = deg2rad(pos.longitude)
+
+        lat_d = deg2rad(pos.latitude - self.latitude)
+        lon_d = deg2rad(pos.longitude - self.longitude)
+
+        y = sin(lon_d) * cos(lat_u)
+        x = cos(lat_me) * sin(lat_u) - \
+            sin(lat_me) * cos(lat_u) * cos(lon_d)
+
+        bearing = rad2deg(atan2(y, x))
+
+        return (bearing + 360) % 360
+
     def set_relative_to_current(self, current):
         self.current = current
 
+    def coordinates(self):
+        return "%.4f,%.4f" % (self.latitude, self.longitude)
+
+class MapImage:
+    def __init__(self, center):
+        self.key = "ABQIAAAAWot3KuWpenfCAGfQ65FdzRTaP0xjRaMPpcw6bBbU2QUEXQBgHBR5Rr2HTGXYVWkcBFNkPvxtqV4VLg"
+        self.center = center
+        self.markers = [center]
+
+    def add_markers(self, markers):
+        self.markers += markers
+
+    def get_image_url(self):
+        el = [ "key=%s" % self.key,
+               "center=%s" % self.center.coordinates(),
+               "size=400x400"]
+
+        mstr = "markers="
+        index = ord("a")
+        for m in self.markers:
+            mstr += "%s,blue%s|" % (m.coordinates(), chr(index))
+            index += 1
+
+        el.append(mstr)
+
+        return "http://maps.google.com/staticmap?%s" % ("&".join(el))
+
 def parse_GPS(string):
-    if string.startswith("$GPGGA,"):
+    if "$GPGGA" in string:
         p = GPSPosition()
-        p.from_NMEA_GGA(string)
+        p.from_NMEA_GGA(string[string.index("$GPGGA"):])
         return p
     else:
         return None
 
 if __name__ == "__main__":
 
-    p = parse_GPS(TEST)
+    p = parse_GPS("08:44:37: " + TEST)
     P = GPSPosition()
     P.from_coords(45.535156, -122.956260)
+    p.set_relative_to_current(P)
     if not p:
         print "Failed"
     else:
@@ -203,3 +253,8 @@ if __name__ == "__main__":
         print "Checksum of TEST: %s" % NMEA_checksum("GPGGA,180718.02,4531.3740,N,12255.4599,W,1,07,1.4,50.6,M,-21.4,M,,")
 
         print "Distance: %s" % P.distance_from(p)
+        print "Bearing: %s" % P.bearing_to(p)
+        
+        mi = MapImage(P)
+        mi.add_markers([p])
+        print mi.get_image_url()
