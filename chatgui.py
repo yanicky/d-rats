@@ -73,12 +73,17 @@ class ChatGUI:
         for call in calls:
             ucall = call.upper()
 
+            if self.mainapp.seen_callsigns.has_key(ucall):
+                (_, pos) = self.mainapp.seen_callsigns[ucall]
+            else:
+                pos = None
+
             if "%s>" % call in string:
                 stamp = int(time.time())
-                self.mainapp.seen_callsigns[ucall] = stamp
+                self.mainapp.seen_callsigns[ucall] = (stamp, pos)
             else:
                 if ucall not in self.mainapp.seen_callsigns.keys():
-                    self.mainapp.seen_callsigns[ucall] = 0
+                    self.mainapp.seen_callsigns[ucall] = (0, pos)
 
         for item in self.mainapp.chatgui.adv_controls:
             if isinstance(item, CallCatcher):
@@ -428,12 +433,17 @@ class ChatFilter:
 
 class MainChatGUI(ChatGUI):
     
+    def update_known_position(self, pos):
+        station = pos.station.upper()
+        self.mainapp.seen_callsigns[station] = (time.time(), pos)
+
     def display_line(self, string, *attrs):
         do_main = True
 
         gps_fix = gps.parse_GPS(string)
         if gps_fix:
             gps_fix.set_relative_to_current(self.mainapp.get_position())
+            self.update_known_position(gps_fix)
             string = str(gps_fix)
 
         for f in self.filters[1:]:
@@ -1497,10 +1507,12 @@ class CallCatcher:
         self.col_call = 0
         self.col_disp = 1
         self.col_time = 2
+        self.col_pos  = 3
 
         self.store = gtk.ListStore(gobject.TYPE_STRING,
                                    gobject.TYPE_STRING,
-                                   gobject.TYPE_INT)
+                                   gobject.TYPE_INT,
+                                   gobject.TYPE_STRING)
 
         self.view = gtk.TreeView(self.store)
 
@@ -1512,6 +1524,11 @@ class CallCatcher:
         r = gtk.CellRendererText()
         c = gtk.TreeViewColumn("Last Seen", r, text=self.col_disp)
         c.set_sort_column_id(self.col_time)
+        self.view.append_column(c)
+
+        r = gtk.CellRendererText()
+        c = gtk.TreeViewColumn("Last Position", r, text=self.col_pos)
+        c.set_sort_column_id(self.col_pos)
         self.view.append_column(c)
 
         def cb(view, path, col, me):
@@ -1572,9 +1589,27 @@ class CallCatcher:
         lookup.show()
         vbox.pack_start(lookup, 0,0,0)
 
+        map = gtk.Button("Map")
+        map.set_size_request(75, 30)
+        map.connect("clicked", self.but_map)
+        self.gui.tips.set_tip(clear, "Get a Google map of known stations")
+        map.show()
+        vbox.pack_start(map, 0,0,0)
+
         vbox.show()
         
         return vbox
+
+    def but_map(self, widget):
+        img = gps.MapImage(self.mainapp.get_position())
+        for c,d in self.mainapp.seen_callsigns.items():
+            (t,p) = d
+            if p:
+                img.add_markers([p])
+
+        url = img.get_image_url()
+        print "Map URL: %s" % url
+        self.mainapp.config.platform.open_html_file(url)
 
     def but_lookup(self, widget):
         (list, iter) = self.view.get_selection().get_selected()
@@ -1607,11 +1642,16 @@ class CallCatcher:
         (list, iter) = self.view.get_selection().get_selected()
         (call,) = list.get(iter, self.col_call)
 
+        if self.mainapp.seen_callsigns.has_key(call):
+            (_, pos) = self.mainapp.seen_callsigns[call]
+        else:
+            pos = None
+
         try:
             if now:
-                self.mainapp.seen_callsigns[call] = time.time()
+                self.mainapp.seen_callsigns[call] = (time.time(), pos)
             else:
-                self.mainapp.seen_callsigns[call] = 0
+                self.mainapp.seen_callsigns[call] = (0, pos)
         except:
             pass
 
@@ -1656,13 +1696,26 @@ class CallCatcher:
                        self.col_disp, string)
         
     def refresh(self):
+        def format_pos(pos):
+            if pos == None:
+                return "Unknown"
+            else:
+                cur = self.mainapp.get_position()
+                return "%.2f,%.2f (%.1f mi @ %.1f deg)" % (\
+                    pos.latitude,
+                    pos.longitude,
+                    cur.distance_from(pos),
+                    cur.bearing_to(pos))
+
         self.store.clear()
 
-        for c,t in self.mainapp.seen_callsigns.items():
+        for c,d in self.mainapp.seen_callsigns.items():
+            (t, p) = d
             iter = self.store.append()
             self.store.set(iter,
                            self.col_call, c,
-                           self.col_time, t)
+                           self.col_time, t,
+                           self.col_pos, format_pos(p))
             self.update_time(iter)
 
     def update_all_times(self):
