@@ -97,6 +97,7 @@ class SocketSerial:
 
         self.portstr = "Network (%s:%s)" % (self.host, self.port)
         self.timeout = timeout
+        self.enabled = True
 
         self.connect()
 
@@ -118,7 +119,9 @@ class SocketSerial:
 
     def reconnect(self, iter=10, timeout=5):
         for i in range(iter):
-            if self.connect():
+            if not self.enabled:
+                break
+            elif self.connect():
                 print "Reconnected"
                 return True
             else:
@@ -163,6 +166,7 @@ class SocketSerial:
     def close(self):
         self.socket.close()
         self.socket = None
+        self.enabled = False
 
     def flushInput(self):
         return
