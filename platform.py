@@ -82,7 +82,7 @@ class UnixPlatform(Platform):
             print "Exec child exited"
 
     def open_html_file(self, path):
-        os.system("firefox %s" % path)
+        os.system("firefox '%s'" % path)
 
     def list_serial_ports(self):
         return sorted(glob.glob("/dev/ttyS*") + glob.glob("/dev/ttyUSB*"))
