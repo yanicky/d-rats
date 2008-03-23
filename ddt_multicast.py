@@ -434,30 +434,29 @@ class DDTMulticastTransfer:
             if not self.enabled:
                 raise TransferEnded("Cancelled by user")
 
+            print "Getting start block"
             frames = self.recv_raw_frames(1, True)
-            if len(frames) > 0:
-                break
-
-        for i in frames:
-            frame = DDTMultiXferStartFrame()
-            try:
-                if not frame.unpack(i):
-                    print "Unable to unpack start frame:"
-                    hexprint(i)
+            print "Got %i blocks" % len(frames)
+            for i in frames:
+                frame = DDTMultiXferStartFrame()
+                try:
+                    if not frame.unpack(i):
+                        print "Unable to unpack start frame:"
+                        hexprint(i)
+                        continue
+                except Exception, e:
+                    print "MC Start Exception: %s" % e
                     continue
-            except Exception, e:
-                print "MC Start Exception: %s" % e
-                continue
-
-            print "Got file: %s (%i/%i bytes)" % (frame.get_filename(),
-                                                  frame.get_block_size(),
-                                                  frame.get_size())
+                
+                print "Got file: %s (%i/%i bytes)" % (frame.get_filename(),
+                                                      frame.get_block_size(),
+                                                      frame.get_size())
         
-            self.total_size = frame.get_size()
-            self.block_size = frame.get_block_size()
-            self.filename = frame.get_filename()
+                self.total_size = frame.get_size()
+                self.block_size = frame.get_block_size()
+                self.filename = frame.get_filename()
 
-            return True
+                return True
 
         return False
 
