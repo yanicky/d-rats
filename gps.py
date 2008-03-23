@@ -126,7 +126,7 @@ class GPSPosition:
             self.satellites,
             self.altitude)
 
-        return "$%s%s %s,%s" % (data,
+        return "$%s%s %s,%s\r\n" % (data,
                                NMEA_checksum(data),
                                self.station,
                                self.comment)
