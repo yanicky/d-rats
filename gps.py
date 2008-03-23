@@ -89,7 +89,7 @@ class GPSPosition:
                 distance = ""
 
             if self.comment:
-                comment = " (%s)"
+                comment = " (%s)" % self.comment
             else:
                 comment = ""
 
