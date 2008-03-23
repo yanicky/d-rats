@@ -117,7 +117,7 @@ class SocketSerial:
 
         return r != ''
 
-    def reconnect(self, iter=10, timeout=5):
+    def reconnect(self, iter=50, timeout=1):
         for i in range(iter):
             if not self.enabled:
                 break
