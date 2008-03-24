@@ -180,7 +180,7 @@ class AppConfig:
         return self.xfers[name]
 
     def default_filename(self):
-        return self.platform.config_file("drats.config")
+        return self.platform.config_file("d-rats.config")
 
     def copy_template_forms(self, dir):
         if os.path.isdir("forms"):

@@ -419,6 +419,19 @@ class MainApp:
 
         except Exception, e:
             print "Unable to open debug log: %s" % e
+
+    def TEMP_migrate_config(self):
+        import platform
+
+        if os.name != "posix":
+            return
+
+        p = platform.get_platform()
+        fn = p.config_file("drats.config")
+        if os.path.exists(fn):
+            print "Migrating broken UNIX config filename"
+            newfn = p.config_file("d-rats.config")
+            os.rename(fn, newfn)            
             
     def __init__(self, **args):
         global MAINAPP
@@ -427,6 +440,9 @@ class MainApp:
         self.comm = None
         self.qsts = []
         self.seen_callsigns = {}
+
+        # REMOVE ME in 0.1.13
+        self.TEMP_migrate_config()
 
         self.config = config.AppConfig(self, **args)
 
