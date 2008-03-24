@@ -547,7 +547,7 @@ class RepeaterGUI:
                                         False)
 
         sw = gtk.ScrolledWindow()
-        sw.set_policy(gtk.POLICY_NEVER, gtk.POLICY_AUTOMATIC)
+        sw.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
         sw.add(self.traffic_view)
         sw.show()
 
