@@ -1,6 +1,6 @@
 #!/bin/bash
 
-LOCAL_VERSION=b
+LOCAL_VERSION=
 eval $(cat mainapp.py | grep ^DRATS_VERSION | sed 's/ //g')
 VERSION=${DRATS_VERSION}${LOCAL_VERSION}
 INCLUDE="*.py forms/*.x[ms]l COPYING"

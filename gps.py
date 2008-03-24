@@ -255,11 +255,14 @@ class MapImage:
 
     def display_in_browser(self):
         f = tempfile.NamedTemporaryFile(suffix=".html")
+        name = f.name
+        f.close()
+        f = file(name, "w")
         f.write(self.make_html())
         f.flush()
+        f.close()
         p = platform.get_platform()
         p.open_html_file(f.name)
-        f.close()
 
 def parse_GPS(string):
     if "$GPGGA" in string:
