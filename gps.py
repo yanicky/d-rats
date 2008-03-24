@@ -1,5 +1,7 @@
 import re
 import time
+import tempfile
+import platform
 
 from math import pi,cos,acos,sin,atan2
 
@@ -222,6 +224,43 @@ class MapImage:
 
         return "http://maps.google.com/staticmap?%s" % ("&".join(el))
 
+    def station_table(self):
+        table = ""
+
+        index = ord('A')
+        for m in self.markers:
+            table += "<tr><td>%s</td><td>%s</td><td>%s</td>\n" % (\
+                chr(index),
+                m.station,
+                m.coordinates())
+            index += 1
+            
+        return table
+
+    def make_html(self):
+        return """
+<html>
+  <head>
+    <title>Known stations</title>
+  </head>
+  <body>
+    <h1> Known Stations </h1>
+    <img src="%s"/><br/><br/>
+    <table border="1">
+%s
+    </table>
+  </body>
+</html>
+""" % (self.get_image_url(), self.station_table())
+
+    def display_in_browser(self):
+        f = tempfile.NamedTemporaryFile(suffix=".html")
+        f.write(self.make_html())
+        f.flush()
+        p = platform.get_platform()
+        p.open_html_file(f.name)
+        f.close()
+
 def parse_GPS(string):
     if "$GPGGA" in string:
         p = GPSPosition()
@@ -258,3 +297,4 @@ if __name__ == "__main__":
         mi = MapImage(P)
         mi.add_markers([p])
         print mi.get_image_url()
+        print mi.display_in_browser()

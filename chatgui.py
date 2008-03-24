@@ -1607,9 +1607,7 @@ class CallCatcher:
             if p:
                 img.add_markers([p])
 
-        url = img.get_image_url()
-        print "Map URL: %s" % url
-        self.mainapp.config.platform.open_html_file(url)
+        img.display_in_browser()
 
     def but_lookup(self, widget):
         (list, iter) = self.view.get_selection().get_selected()
