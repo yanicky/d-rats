@@ -32,7 +32,9 @@ class ListWidget(gtk.HBox):
 
         for t,c in columns:
             index = columns.index((t,c))
-            if t == gobject.TYPE_STRING or t == gobject.TYPE_INT:
+            if t == gobject.TYPE_STRING or \
+                    t == gobject.TYPE_INT or \
+                    t == gobject.TYPE_FLOAT:
                 r = gtk.CellRendererText()
                 c = gtk.TreeViewColumn(c, r, text=index)
             elif t == gobject.TYPE_BOOLEAN:
@@ -78,6 +80,10 @@ class ListWidget(gtk.HBox):
             list.remove(iter)
         except Exception, e:
             print "Unable to remove selected: %s" % e
+
+    def get_selected(self):
+        (list, iter) = self._view.get_selection().get_selected()
+        return list.get(iter, *tuple(range(self._ncols)))
 
     def _get_value(self, model, path, iter, list):
         list.append(model.get(iter, *tuple(range(0, self._ncols))))
