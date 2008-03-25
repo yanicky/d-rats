@@ -95,6 +95,45 @@ class ListWidget(gtk.HBox):
         for i in list:
             self.add_item(*i)
 
+class ProgressDialog(gtk.Window):
+    def __init__(self, title, parent=None):
+        gtk.Window.__init__(self, gtk.WINDOW_TOPLEVEL)
+        self.set_title(title)
+        if parent:
+            self.set_transient_for(parent)
+
+        self.set_resizable(False)
+
+        vbox = gtk.VBox(False, 2)
+
+        self.label = gtk.Label("")
+        self.label.set_size_request(100, 50)
+        self.label.show()
+
+        self.bar = gtk.ProgressBar()
+        self.bar.show()
+        
+        vbox.pack_start(self.label, 0,0,0)
+        vbox.pack_start(self.bar, 0,0,0)
+
+        vbox.show()
+
+        self.add(vbox)
+
+    def set_text(self, text):
+        self.label.set_text(text)
+        self.queue_draw()
+
+        while gtk.events_pending():
+            gtk.main_iteration_do(False)
+
+    def set_fraction(self, frac):
+        self.bar.set_fraction(frac)
+        self.queue_draw()
+
+        while gtk.events_pending():
+            gtk.main_iteration_do(False)
+
 if __name__=="__main__":
     w = gtk.Window(gtk.WINDOW_TOPLEVEL)
     l = ListWidget([(gobject.TYPE_STRING, "Foo"),
@@ -106,6 +145,9 @@ if __name__=="__main__":
     l.show()
     w.add(l)
     w.show()
+
+    w1 = ProgressDialog("foo")
+    w1.show()
 
     try:
         gtk.main()
