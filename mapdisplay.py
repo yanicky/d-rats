@@ -6,6 +6,7 @@ import urllib
 import time
 
 import gtk
+import gobject
 
 import platform
 import miscwidgets
@@ -153,14 +154,14 @@ class MapTile:
         if not os.path.isdir(self.dir):
             os.mkdir(self.dir)
 
-class MapWindow:
+class MapWidget(gtk.DrawingArea):
     def draw_marker_at(self, x, y, text):
-        gc = self.map.get_style().black_gc
+        gc = self.get_style().black_gc
 
-        pl = self.map.create_pango_layout("")
+        pl = self.create_pango_layout("")
         markup = '<span background="yellow">%s</span>' % text
         pl.set_markup(markup)
-        self.map.window.draw_layout(gc, x, y, pl)
+        self.window.draw_layout(gc, x, y, pl)
 
     def draw_marker(self, id):
         (lat, lon, comment) = self.markers[id]
@@ -189,7 +190,7 @@ class MapWindow:
         if len(self.map_bufs) == 0:
             self.load_tiles()
 
-        gc = self.map.get_style().black_gc
+        gc = self.get_style().black_gc
 
         for i in range(0, self.width):
             for j in range(0, self.height):
@@ -201,12 +202,12 @@ class MapWindow:
                                                           len(self.map_bufs))
                     return
 
-                self.map.window.draw_pixbuf(gc,
-                                            pb,
-                                            0, 0,
-                                            self.tilesize * i,
-                                            self.tilesize * j,
-                                            -1, -1)
+                self.window.draw_pixbuf(gc,
+                                        pb,
+                                        0, 0,
+                                        self.tilesize * i,
+                                        self.tilesize * j,
+                                        -1, -1)
                 
         self.draw_markers()
 
@@ -218,7 +219,7 @@ class MapWindow:
         (_, self.lon_max, self.lat_max, _) = topleft.tile_edges()        
 
     def load_tiles(self):
-        prog = miscwidgets.ProgressDialog("Loading map", parent=self.window)
+        prog = miscwidgets.ProgressDialog("Loading map")
         prog.show()
 
         prog.set_text("Getting map center")
@@ -255,6 +256,8 @@ class MapWindow:
         prog.hide()
 
     def __init__(self, width, height, tilesize=256):
+        gtk.DrawingArea.__init__(self)
+
         self.height = height
         self.width = width
         self.tilesize = tilesize
@@ -266,38 +269,135 @@ class MapWindow:
         self.markers = {}
         self.map_bufs = []
 
-        self.window = gtk.Window(gtk.WINDOW_TOPLEVEL)
-        self.window.set_title("Map")
-        self.window.show()
-
-        self.map = gtk.DrawingArea()
-        self.map.set_size_request(self.tilesize * self.width,
-                                  self.tilesize * self.height)
-        self.map.connect("expose-event", self.expose)
-        self.map.show()
-
-        self.sw = gtk.ScrolledWindow()
-        self.sw.add_with_viewport(self.map)
-        self.sw.show()
-
-        self.window.add(self.sw)
-        self.window.show()
+        self.set_size_request(self.tilesize * self.width,
+                              self.tilesize * self.height)
+        self.connect("expose-event", self.expose)
 
     def set_center(self, lat, lon):
         self.lat = lat
         self.lon = lon
         self.map_bufs = []
+        self.queue_draw()
 
     def set_zoom(self, zoom):
+        if zoom > 15 or zoom == 1:
+            return
+
         self.zoom = zoom
+        self.map_bufs = []
+        self.queue_draw()
+
+    def get_zoom(self):
+        return self.zoom
 
     def set_marker(self, id, lat, lon, comment=None):
         self.markers[id] = (lat, lon, comment)
+        self.queue_draw()
 
+    def del_marker(self, id):
+        del self.markers[id]
+
+class MapWindow(gtk.Window):
+    def zoom_in(self, widget, data=None):
+        self.map.set_zoom(self.map.get_zoom() + 1)
+
+    def zoom_out(self, widget, data=None):
+        self.map.set_zoom(self.map.get_zoom() - 1)
+    
+    def make_zoom_controls(self):
+        box = gtk.HBox(False, 2)
+
+        zi = gtk.Button("+")
+        zi.connect("clicked", self.zoom_in)
+        zi.set_size_request(75,75)
+        zi.show()
+
+        zo = gtk.Button("-")
+        zo.connect("clicked", self.zoom_out)
+        zo.set_size_request(75,75)
+        zo.show()
+
+        box.pack_start(zo, 0,0,0)
+        box.pack_start(zi, 0,0,0)
+
+        box.show()
+
+        return box
+
+    def recenter(self, view, path, column, data=None):
+        items = self.marker_list.get_selected()
+
+        print "Recenter: %s" % str(items)
+        self.map.set_center(items[1], items[2])
+
+    def make_marker_list(self):
+        cols = [(gobject.TYPE_STRING, "Station"),
+                (gobject.TYPE_FLOAT, "Latitude"),
+                (gobject.TYPE_FLOAT, "Longitude")]
+        self.marker_list = miscwidgets.ListWidget(cols)
+        self.marker_list.set_size_request(-1, 150)
+
+        self.marker_list._view.connect("row-activated", self.recenter)
+
+        self.marker_list.show()
+
+        return self.marker_list
+
+    def refresh_marker_list(self):
+        self.marker_list.set_values([])
+
+        for id, val in self.map.markers.items():
+            (lat, lon, _) = val
+
+            self.marker_list.add_item(id, lat, lon)
+
+    def make_bottom_pane(self):
+        box = gtk.HBox(False, 2)
+
+        box.pack_start(self.make_marker_list(), 1,1,1)
+        box.pack_start(self.make_zoom_controls(), 0,0,0)
+
+        box.show()
+
+        return box
+
+    def __init__(self, *args):
+        gtk.Window.__init__(self, *args)
+
+        self.map = MapWidget(3, 3)
+        self.map.show()
+
+        box = gtk.VBox(False, 2)
+
+        self.sw = gtk.ScrolledWindow()
+        self.sw.add_with_viewport(self.map)
+        self.sw.show()
+
+        box.pack_start(self.sw, 1,1,1)
+        box.pack_start(self.make_bottom_pane(), 0,0,0)
+        box.show()
+
+        self.set_default_size(600,600)
+
+        self.add(box)
+
+    def set_marker(self, id, lat, lon):
+        self.map.set_marker(id, lat, lon)
+        self.refresh_marker_list()
+
+    def del_marker(self, id):
+        self.map.del_marker(id)
+        self.refresh_marker_list()
+
+    def set_zoom(self, zoom):
+        self.map.set_zoom(zoom)
+
+    def set_center(self, lat, lon):
+        self.map.set_center(lat, lon)
 
 if __name__ == "__main__":
 
-    m = MapWindow(7, 7)
+    m = MapWindow()
     m.set_center(45.525012, -122.916434)
     m.set_zoom(14)
 
@@ -305,6 +405,8 @@ if __name__ == "__main__":
     m.set_marker("KE7FTE", 45.5363, -122.9105)
     m.set_marker("KA7VQH", 45.4846, -122.8278)
     m.set_marker("N7QQU", 45.5625, -122.8645)
+
+    m.show()
 
     gtk.main()
 
