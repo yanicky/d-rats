@@ -1,0 +1,328 @@
+#!/usr/bin/python
+
+import os
+from math import *
+import urllib
+import time
+
+import gtk
+
+import platform
+import miscwidgets
+
+class MapTile:
+    def path_els(self):
+        # http://svn.openstreetmap.org/applications/routing/pyroute/tilenames.py
+        def numTiles(z):
+            return(pow(2,z))
+        
+        def sec(x):
+            return(1/cos(x))
+
+        def latlon2relativeXY(lat,lon):
+            x = (lon + 180) / 360
+            y = (1 - log(tan(radians(lat)) + sec(radians(lat))) / pi) / 2
+            return(x,y)
+        
+        def latlon2xy(lat,lon,z):
+            n = numTiles(z)
+            x,y = latlon2relativeXY(lat,lon)
+            return(n*x, n*y)
+        
+        def tileXY(lat, lon, zoom):
+            x, y = latlon2xy(lat, lon, zoom)
+            return (int(x), int(y))
+
+        x, y = tileXY(self.lat, self.lon, self.zoom)
+
+        return x, y
+
+    def tile_edges(self):
+        def numTiles(z):
+            return(pow(2,z))
+
+        def mercatorToLat(mercatorY):
+            return(degrees(atan(sinh(mercatorY))))
+
+        def latEdges(y,z):
+            n = numTiles(z)
+            unit = 1 / n
+            relY1 = y * unit
+            relY2 = relY1 + unit
+            lat1 = mercatorToLat(pi * (1 - 2 * relY1))
+            lat2 = mercatorToLat(pi * (1 - 2 * relY2))
+            return(lat1,lat2)
+
+        def lonEdges(x,z):
+            n = numTiles(z)
+            unit = 360 / n
+            lon1 = -180 + x * unit
+            lon2 = lon1 + unit
+            return(lon1,lon2)
+  
+        def tileEdges(x,y,z):
+            lat1,lat2 = latEdges(y,z)
+            lon1,lon2 = lonEdges(x,z)
+            return((lat2, lon1, lat1, lon2)) # S,W,N,E
+        
+        return tileEdges(self.x, self.y, self.zoom)
+
+    def lat_range(self):
+        edges = self.tile_edges()
+        return (edges[2], edges[0])
+
+    def lon_range(self):
+        edges = self.tile_edges()
+        return (edges[1], edges[3])
+
+    def path(self):
+        return "%d/%d/%d.png" % (self.zoom, self.x, self.y)
+
+    def _local_path(self):
+        path = os.path.join(self.dir, self.path())
+        if not os.path.isdir(os.path.dirname(path)):
+            os.makedirs(os.path.dirname(path))
+
+        return path
+
+    def is_local(self):
+        return os.path.exists(self._local_path())
+
+    def fetch(self):
+        if not os.path.exists(self._local_path()):
+            urllib.urlretrieve(self.remote_path(), self._local_path())
+
+    def local_path(self):
+        path = self._local_path()
+        self.fetch()
+
+        return path
+
+    def remote_path(self):
+        return "http://dev.openstreetmap.org/~ojw/Tiles/tile.php/%s" % self.path()
+
+    def __add__(self, count):
+        (x, y) = count
+
+        def mercatorToLat(mercatorY):
+            return(degrees(atan(sinh(mercatorY))))
+
+        def numTiles(z):
+            return(pow(2,z))
+
+        def xy2latlon(x,y,z):
+            n = numTiles(z)
+            relY = y / n
+            lat = mercatorToLat(pi * (1 - 2 * relY))
+            lon = -180.0 + 360.0 * x / n
+            return(lat,lon)
+
+        (lat, lon) = xy2latlon(self.x + x, self.y + y, self.zoom)
+
+        return MapTile(lat, lon, self.zoom)
+
+    def __sub__(self, tile):
+        return (self.x - tile.x, self.y - tile.y)
+
+    def __contains__(self, point):
+        (lat, lon) = point
+
+        # FIXME for non-western!
+        (lat_max, lat_min) = self.lat_range()
+        (lon_min, lon_max) = self.lon_range()
+
+        #print "%f < %f < %f" % (lat_min, lat, lat_max)
+        #print "%f < %f < %f" % (lon_min, lon, lon_max)
+
+        lat_match = (lat < lat_max and lat > lat_min)
+        lon_match = (lon < lon_max and lon > lon_min)
+
+        print "LAT: %s LON: %s" % (lat_match, lon_match)
+
+        return lat_match and lon_match
+
+    def __init__(self, lat, lon, zoom):
+        self.lat = lat
+        self.lon = lon
+        self.zoom = zoom
+
+        self.x, self.y = self.path_els()
+
+        self.platform = platform.get_platform()
+        self.dir = os.path.join(self.platform.config_dir(), "maps")
+        if not os.path.isdir(self.dir):
+            os.mkdir(self.dir)
+
+class MapWindow:
+    def draw_marker_at(self, x, y, text):
+        gc = self.map.get_style().black_gc
+
+        pl = self.map.create_pango_layout("")
+        markup = '<span background="yellow">%s</span>' % text
+        pl.set_markup(markup)
+        self.map.window.draw_layout(gc, x, y, pl)
+
+    def draw_marker(self, id):
+        (lat, lon, comment) = self.markers[id]
+
+        y = 1- ((lat - self.lat_min) / (self.lat_max - self.lat_min))
+        x = 1- ((lon - self.lon_min) / (self.lon_max - self.lon_min))
+
+        print "%f, %f" % (x,y)
+        print "%f %f %f" % (self.lat_min, lat, self.lat_max)
+        print "%ix%i" % ((self.tilesize * self.width),
+                         (self.tilesize * self.height))
+
+        x *= (self.tilesize * self.width)
+        y *= (self.tilesize * self.height)
+
+        print "%s label is %i,%i" % (id, x,y)
+
+        self.draw_marker_at(x, y, id)
+
+    def draw_markers(self):
+        for id in self.markers.keys():
+            self.draw_marker(id)
+
+    def expose(self, area, event):
+
+        if len(self.map_bufs) == 0:
+            self.load_tiles()
+
+        gc = self.map.get_style().black_gc
+
+        for i in range(0, self.width):
+            for j in range(0, self.height):
+                index = (i * self.height) + j
+                try:
+                    (pb, _) = self.map_bufs[index]
+                except:
+                    print "Index %i out of range (%i)" % (index,
+                                                          len(self.map_bufs))
+                    return
+
+                self.map.window.draw_pixbuf(gc,
+                                            pb,
+                                            0, 0,
+                                            self.tilesize * i,
+                                            self.tilesize * j,
+                                            -1, -1)
+                
+        self.draw_markers()
+
+    def calculate_bounds(self):
+        (_, topleft) = self.map_bufs[0]
+        (_, botright) = self.map_bufs[-1]
+
+        (self.lat_min, _, _, self.lon_min) = botright.tile_edges()
+        (_, self.lon_max, self.lat_max, _) = topleft.tile_edges()        
+
+    def load_tiles(self):
+        prog = miscwidgets.ProgressDialog("Loading map", parent=self.window)
+        prog.show()
+
+        prog.set_text("Getting map center")
+        center = MapTile(self.lat, self.lon, self.zoom)
+
+        delta_h = self.height / 2
+        delta_w = self.width  / 2
+
+        count = 0
+        total = self.width * self.height
+
+        for i in range(0, self.width):
+            for j in range(0, self.height):
+                tile = center + (i - delta_w, j - delta_h)
+                if not tile.is_local():
+                    prog.set_text("Retrieving %i, %i" % (i,j))
+                else:
+                    prog.set_text("Loading %i, %i" % (i, j))
+                
+                try:
+                    pb = gtk.gdk.pixbuf_new_from_file(tile.local_path())
+                except Exception, e:
+                    print "Broken cached file: %s" % tile.local_path()
+                    continue
+ 
+                self.map_bufs.append((pb, tile))
+
+                count += 1
+                prog.set_fraction(float(count) / float(total))
+
+        self.calculate_bounds()
+
+        prog.set_text("Complete")
+        prog.hide()
+
+    def __init__(self, width, height, tilesize=256):
+        self.height = height
+        self.width = width
+        self.tilesize = tilesize
+
+        self.lat = 0
+        self.lon = 0
+        self.zoom = 1
+
+        self.markers = {}
+        self.map_bufs = []
+
+        self.window = gtk.Window(gtk.WINDOW_TOPLEVEL)
+        self.window.set_title("Map")
+        self.window.show()
+
+        self.map = gtk.DrawingArea()
+        self.map.set_size_request(self.tilesize * self.width,
+                                  self.tilesize * self.height)
+        self.map.connect("expose-event", self.expose)
+        self.map.show()
+
+        self.sw = gtk.ScrolledWindow()
+        self.sw.add_with_viewport(self.map)
+        self.sw.show()
+
+        self.window.add(self.sw)
+        self.window.show()
+
+    def set_center(self, lat, lon):
+        self.lat = lat
+        self.lon = lon
+        self.map_bufs = []
+
+    def set_zoom(self, zoom):
+        self.zoom = zoom
+
+    def set_marker(self, id, lat, lon, comment=None):
+        self.markers[id] = (lat, lon, comment)
+
+
+if __name__ == "__main__":
+
+    m = MapWindow(7, 7)
+    m.set_center(45.525012, -122.916434)
+    m.set_zoom(14)
+
+    m.set_marker("KI4IFW", 45.525012, -122.916434)
+    m.set_marker("KE7FTE", 45.5363, -122.9105)
+    m.set_marker("KA7VQH", 45.4846, -122.8278)
+    m.set_marker("N7QQU", 45.5625, -122.8645)
+
+    gtk.main()
+
+
+#    area = gtk.DrawingArea()
+#    area.set_size_request(768, 768)
+#
+#    w = gtk.Window(gtk.WINDOW_TOPLEVEL)
+#    w.add(area)
+#    area.show()
+#    w.show()
+#
+#    def expose(area, event):
+#        for i in range(1,4):
+#            img = gtk.gdk.pixbuf_new_from_file("/tmp/tile%i.png" % i)
+#            area.window.draw_pixbuf(area.get_style().black_gc,
+#                                    img,
+#                                    0, 0, 256 * (i-1), 0, 256, 256)
+#
+#    area.connect("expose-event", expose)
+#
