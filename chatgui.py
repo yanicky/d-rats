@@ -38,6 +38,7 @@ import mainapp
 import formgui
 import formbuilder
 import gps
+import mapdisplay
 
 from mc_xfergui import MulticastGUI, MulticastRecvGUI
 
@@ -437,6 +438,8 @@ class MainChatGUI(ChatGUI):
         station = pos.station.upper()
         self.mainapp.seen_callsigns[station] = (time.time(), pos)
 
+        self.map.set_marker(station, pos.latitude, pos.longitude)
+
     def display_line(self, string, *attrs):
         do_main = True
 
@@ -694,7 +697,8 @@ class MainChatGUI(ChatGUI):
             self.toggle_sendable(True)
         elif action == 'thislog':
             self.filter_current_log()
-
+        elif action == "map":
+            self.map.show()
 
     def make_menubar(self):
         menu_xml = """
@@ -723,6 +727,7 @@ class MainChatGUI(ChatGUI):
               <menuitem action='thislog'/>
               <separator/>
               <menuitem action='advanced'/>
+              <menuitem action='map'/>
             </menu>
             <menu action='help'>
               <menuitem action='about'/>
@@ -748,6 +753,8 @@ class MainChatGUI(ChatGUI):
                    ('unfilter', None, '_Remove current filter', "<Control>k", None, self.menu_handler),
                    ('allfilter', None, 'Show "_all" filter', None, None, self.show_allfilter),
                    ('thislog', None, 'Log for this tab', None, None, self.menu_handler),
+                   ('map', None, 'Map', None, None, self.menu_handler),
+
                    ('help', None, '_Help', None, None, self.menu_handler),
                    ('about', None, '_About', None, None, self.menu_handler)]
 
@@ -993,6 +1000,11 @@ class MainChatGUI(ChatGUI):
         self.textview.connect("populate-popup",
                               self.popup,
                               None)
+
+        self.map = mapdisplay.MapWindow()
+        pos = self.mainapp.get_position()
+        self.map.set_center(pos.latitude, pos.longitude)
+        self.map.set_zoom(14)
 
         self.load_filters()
         self.show()
