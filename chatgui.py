@@ -1002,6 +1002,7 @@ class MainChatGUI(ChatGUI):
                               None)
 
         self.map = mapdisplay.MapWindow()
+        self.map.set_title("D-RATS Station Map")
         pos = self.mainapp.get_position()
         self.map.set_center(pos.latitude, pos.longitude)
         self.map.set_zoom(14)
