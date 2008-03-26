@@ -438,7 +438,7 @@ class MainChatGUI(ChatGUI):
         station = pos.station.upper()
         self.mainapp.seen_callsigns[station] = (time.time(), pos)
 
-        self.map.set_marker(station, pos.latitude, pos.longitude)
+        self.map.set_marker(pos)
 
     def display_line(self, string, *attrs):
         do_main = True
@@ -1003,9 +1003,14 @@ class MainChatGUI(ChatGUI):
 
         self.map = mapdisplay.MapWindow()
         self.map.set_title("D-RATS Station Map")
+
         pos = self.mainapp.get_position()
         self.map.set_center(pos.latitude, pos.longitude)
         self.map.set_zoom(14)
+
+        fix = self.mainapp.get_position()
+        fix.station = "Me"
+        self.map.set_marker(fix)
 
         self.load_filters()
         self.show()
@@ -1712,11 +1717,7 @@ class CallCatcher:
                 return "Unknown"
             else:
                 cur = self.mainapp.get_position()
-                return "%.2f,%.2f (%.1f mi @ %.1f deg)" % (\
-                    pos.latitude,
-                    pos.longitude,
-                    cur.distance_from(pos),
-                    cur.bearing_to(pos))
+                return cur.fuzzy_to(pos)
 
         self.store.clear()
 
