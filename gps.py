@@ -41,13 +41,13 @@ def deg2nmea(deg):
     return (deg * 100) + min
 
 class GPSPosition:
-    def __init__(self):
+    def __init__(self, lat=0, lon=0, station="UNKNOWN"):
         self.valid = False
-        self.latitude = 0
-        self.longitude = 0
+        self.latitude = lat
+        self.longitude = lon
         self.altitude = 0
         self.satellites = 0
-        self.station = "UNKNOWN"
+        self.station = station
         self.comment = ""
         self.current = None
 
