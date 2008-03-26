@@ -11,6 +11,8 @@ import gobject
 import platform
 import miscwidgets
 
+from gps import GPSPosition
+
 class MapTile:
     def path_els(self):
         # http://svn.openstreetmap.org/applications/routing/pyroute/tilenames.py
@@ -279,6 +281,9 @@ class MapWidget(gtk.DrawingArea):
         self.map_bufs = []
         self.queue_draw()
 
+    def get_center(self):
+        return (self.lat, self.lon)
+
     def set_zoom(self, zoom):
         if zoom > 15 or zoom == 1:
             return
@@ -329,11 +334,16 @@ class MapWindow(gtk.Window):
 
         print "Recenter: %s" % str(items)
         self.map.set_center(items[1], items[2])
+        self.refresh_marker_list()
 
     def make_marker_list(self):
-        cols = [(gobject.TYPE_STRING, "Station"),
+        cols = [(gobject.TYPE_BOOLEAN, "Show"),
+                (gobject.TYPE_STRING, "Station"),
                 (gobject.TYPE_FLOAT, "Latitude"),
-                (gobject.TYPE_FLOAT, "Longitude")]
+                (gobject.TYPE_FLOAT, "Longitude"),
+                (gobject.TYPE_FLOAT, "Distance"),
+                (gobject.TYPE_FLOAT, "Direction"),
+                ]
         self.marker_list = miscwidgets.ListWidget(cols)
         self.marker_list.set_size_request(-1, 150)
 
@@ -345,11 +355,19 @@ class MapWindow(gtk.Window):
 
     def refresh_marker_list(self):
         self.marker_list.set_values([])
+        self.map.markers = {}
 
-        for id, val in self.map.markers.items():
-            (lat, lon, _) = val
+        (lat, lon) = self.map.get_center()
+        center = GPSPosition(lat=lat, lon=lon)
 
-            self.marker_list.add_item(id, lat, lon)
+        for id, fix in self.markers.items():
+            self.marker_list.add_item(True,
+                                      id,
+                                      fix.latitude,
+                                      fix.longitude,
+                                      center.distance_from(fix),
+                                      center.bearing_to(fix))
+            self.map.markers[id] = (fix.latitude, fix.longitude, None)
 
     def make_bottom_pane(self):
         box = gtk.HBox(False, 2)
@@ -379,10 +397,13 @@ class MapWindow(gtk.Window):
 
         self.set_default_size(600,600)
 
+        self.markers = {}
+
         self.add(box)
 
-    def set_marker(self, id, lat, lon):
-        self.map.set_marker(id, lat, lon)
+    def set_marker(self, fix):
+        self.markers[fix.station] = fix
+        self.map.set_marker(fix.station, fix.latitude, fix.longitude)
         self.refresh_marker_list()
 
     def del_marker(self, id):
@@ -401,10 +422,10 @@ if __name__ == "__main__":
     m.set_center(45.525012, -122.916434)
     m.set_zoom(14)
 
-    m.set_marker("KI4IFW", 45.525012, -122.916434)
-    m.set_marker("KE7FTE", 45.5363, -122.9105)
-    m.set_marker("KA7VQH", 45.4846, -122.8278)
-    m.set_marker("N7QQU", 45.5625, -122.8645)
+    m.set_marker(GPSPosition(station="KI4IFW", lat=45.525012, lon=-122.916434))
+    m.set_marker(GPSPosition(station="KE7FTE", lat=45.5363, lon=-122.9105))
+    m.set_marker(GPSPosition(station="KA7VQH", lat=45.4846, lon=-122.8278))
+    m.set_marker(GPSPosition(station="N7QQU", lat=45.5625, lon=-122.8645))
 
     m.show()
 
