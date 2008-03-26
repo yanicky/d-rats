@@ -200,6 +200,28 @@ class GPSPosition:
     def coordinates(self):
         return "%.4f,%.4f" % (self.latitude, self.longitude)
 
+    def fuzzy_to(self, pos):
+        dir = self.bearing_to(pos)
+
+        cardinal = {
+            (0, 45)    : "N",
+            (45, 90)   : "NE",
+            (90, 135)  : "E",
+            (135, 180) : "SE",
+            (180, 225) : "S",
+            (225, 270) : "SW",
+            (270, 215) : "W",
+            (315, 360) : "NW"}
+
+        direction = "?"
+        for r, d in cardinal.items():
+            l, h = r
+            if dir > l and dir < h:
+                print "%f : %s" % (dir, str(r))
+                direction = d
+
+        return "%.1f mi %s" % (self.distance_from(pos), direction)
+
 class MapImage:
     def __init__(self, center):
         self.key = "ABQIAAAAWot3KuWpenfCAGfQ65FdzRTaP0xjRaMPpcw6bBbU2QUEXQBgHBR5Rr2HTGXYVWkcBFNkPvxtqV4VLg"
@@ -300,4 +322,5 @@ if __name__ == "__main__":
         mi = MapImage(P)
         mi.add_markers([p])
         print mi.get_image_url()
-        print mi.display_in_browser()
+        #print mi.display_in_browser()
+        print P.fuzzy_to(p)
