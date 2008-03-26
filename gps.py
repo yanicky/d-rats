@@ -203,22 +203,20 @@ class GPSPosition:
     def fuzzy_to(self, pos):
         dir = self.bearing_to(pos)
 
-        cardinal = {
-            (0, 45)    : "N",
-            (45, 90)   : "NE",
-            (90, 135)  : "E",
-            (135, 180) : "SE",
-            (180, 225) : "S",
-            (225, 270) : "SW",
-            (270, 215) : "W",
-            (315, 360) : "NW"}
+        dirs = ["N", "NNE", "NE", "ENE", "E",
+                "ESE", "SE", "SSE", "S",
+                "SSW", "SW", "WSW", "W",
+                "WNW", "NW", "NNW"]
+
+        delta = 22.5
+        angle = 0
 
         direction = "?"
-        for r, d in cardinal.items():
-            l, h = r
-            if dir > l and dir < h:
-                print "%f : %s" % (dir, str(r))
-                direction = d
+        for i in dirs:
+            if dir > angle and dir < (angle + delta):
+                print "%f : %s" % (dir, angle)
+                direction = i
+            angle += delta
 
         return "%.1f mi %s" % (self.distance_from(pos), direction)
 
@@ -298,7 +296,7 @@ if __name__ == "__main__":
 
     p = parse_GPS("08:44:37: " + TEST)
     P = GPSPosition()
-    P.from_coords(45.535156, -122.956260)
+    P.from_coords(45.525012, -122.916434)
     p.set_relative_to_current(P)
     if not p:
         print "Failed"
