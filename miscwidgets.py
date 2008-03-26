@@ -44,6 +44,7 @@ class ListWidget(gtk.HBox):
             else:
                 raise Exception("Unknown column type (%i)" % index)
 
+            c.set_sort_column_id(index)
             self._view.append_column(c)
 
         self._view.show()
