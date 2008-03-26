@@ -165,19 +165,40 @@ class MapWidget(gtk.DrawingArea):
         pl.set_markup(markup)
         self.window.draw_layout(gc, x, y, pl)
 
+        lat, lon = self.xy2latlon(x, y)
+        print "Marker `%s' at %i,%i -- %f,%f" % (text,
+                                                 x, y,
+                                                 lat, lon)
+
+    def latlon2xy(self, lat, lon):
+        y = 1- ((lat - self.lat_min) / (self.lat_max - self.lat_min))
+        x = 1- ((lon - self.lon_min) / (self.lon_max - self.lon_min))
+        
+        x *= (self.tilesize * self.width)
+        y *= (self.tilesize * self.height)
+
+        return (x, y)
+
+    def xy2latlon(self, x, y):
+        lon = 1 - (float(x) / (self.tilesize * self.width))
+        lat = 1 - (float(y) / (self.tilesize * self.height))
+        
+        print "Foo: %f,%f" % (lat, lon)
+
+        lat = (lat * (self.lat_max - self.lat_min)) + self.lat_min
+        lon = (lon * (self.lon_max - self.lon_min)) + self.lon_min
+
+        return lat, lon
+
     def draw_marker(self, id):
         (lat, lon, comment) = self.markers[id]
 
-        y = 1- ((lat - self.lat_min) / (self.lat_max - self.lat_min))
-        x = 1- ((lon - self.lon_min) / (self.lon_max - self.lon_min))
+#        print "%f, %f" % (x,y)
+#        print "%f %f %f" % (self.lat_min, lat, self.lat_max)
+#        print "%ix%i" % ((self.tilesize * self.width),
+#                         (self.tilesize * self.height))
 
-        print "%f, %f" % (x,y)
-        print "%f %f %f" % (self.lat_min, lat, self.lat_max)
-        print "%ix%i" % ((self.tilesize * self.width),
-                         (self.tilesize * self.height))
-
-        x *= (self.tilesize * self.width)
-        y *= (self.tilesize * self.height)
+        x, y = self.latlon2xy(lat, lon)
 
         print "%s label is %i,%i" % (id, x,y)
 
@@ -334,7 +355,8 @@ class MapWindow(gtk.Window):
 
         self.map.set_center(items[2], items[3])
         self.refresh_marker_list()
-        self.scroll_to_center(self.sw)
+        self.map.load_tiles()
+        self.center_on(items[2], items[3])
 
     def make_marker_list(self):
         cols = [(gobject.TYPE_BOOLEAN, "Show"),
@@ -351,7 +373,12 @@ class MapWindow(gtk.Window):
 
         self.marker_list.show()
 
-        return self.marker_list
+        sw = gtk.ScrolledWindow()
+        sw.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
+        sw.add(self.marker_list)
+        sw.show()
+
+        return sw
 
     def refresh_marker_list(self):
         self.marker_list.set_values([])
@@ -381,13 +408,39 @@ class MapWindow(gtk.Window):
 
     def scroll_to_center(self, widget):
         a = widget.get_vadjustment()
-        print a.upper
-        print a.lower
         a.set_value((a.upper - a.page_size) / 2)
 
-        print a.upper
         a = widget.get_hadjustment()
         a.set_value((a.upper - a.page_size) / 2)
+
+    def center_on(self, lat, lon):
+        ha = self.sw.get_hadjustment()
+        va = self.sw.get_vadjustment()
+
+        x, y = self.map.latlon2xy(lat, lon)
+
+        ha.set_value(x - (ha.page_size / 2))
+        va.set_value(y - (va.page_size / 2))
+
+    def mouse_event(self, widget, event):
+        x,y = event.get_coords()
+
+        ha = widget.get_hadjustment()
+        va = widget.get_vadjustment()
+        mx = x + int(ha.get_value())
+        my = y + int(va.get_value())
+
+        print "Button %i at %i,%i" % (event.button, mx, my)
+        if event.type == gtk.gdk._2BUTTON_PRESS:
+            lat, lon = self.map.xy2latlon(mx, my)
+            print "Recenter on %.4f, %.4f" % (lat,lon)
+            self.map.set_center(lat, lon)
+            self.map.load_tiles()
+            nx, ny = self.map.latlon2xy(lat, lon)
+
+            ha.set_value(nx - (ha.page_size / 2))
+            va.set_value(ny - (va.page_size / 2))
+            
 
     def __init__(self, *args):
         gtk.Window.__init__(self, *args)
@@ -402,6 +455,8 @@ class MapWindow(gtk.Window):
         self.sw = gtk.ScrolledWindow()
         self.sw.add_with_viewport(self.map)
         self.sw.show()
+
+        self.sw.connect("button-press-event", self.mouse_event)
 
         self.sw.connect('realize', self.scroll_to_center)
 
@@ -423,8 +478,14 @@ class MapWindow(gtk.Window):
         self.refresh_marker_list()
 
     def del_marker(self, id):
-        self.map.del_marker(id)
-        self.refresh_marker_list()
+        try:
+            self.map.del_marker(id)
+            self.refresh_marker_list()
+        except Exception, e:
+            print "Unable to delete marker `%s': %s" % e
+            return False
+
+        return True
 
     def set_zoom(self, zoom):
         self.map.set_zoom(zoom)
