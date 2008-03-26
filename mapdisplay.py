@@ -332,9 +332,9 @@ class MapWindow(gtk.Window):
     def recenter(self, view, path, column, data=None):
         items = self.marker_list.get_selected()
 
-        print "Recenter: %s" % str(items)
-        self.map.set_center(items[1], items[2])
+        self.map.set_center(items[2], items[3])
         self.refresh_marker_list()
+        self.scroll_to_center(self.sw)
 
     def make_marker_list(self):
         cols = [(gobject.TYPE_BOOLEAN, "Show"),
@@ -379,10 +379,22 @@ class MapWindow(gtk.Window):
 
         return box
 
+    def scroll_to_center(self, widget):
+        a = widget.get_vadjustment()
+        print a.upper
+        print a.lower
+        a.set_value((a.upper - a.page_size) / 2)
+
+        print a.upper
+        a = widget.get_hadjustment()
+        a.set_value((a.upper - a.page_size) / 2)
+
     def __init__(self, *args):
         gtk.Window.__init__(self, *args)
 
-        self.map = MapWidget(3, 3)
+        tiles = 5
+
+        self.map = MapWidget(tiles, tiles)
         self.map.show()
 
         box = gtk.VBox(False, 2)
@@ -391,11 +403,15 @@ class MapWindow(gtk.Window):
         self.sw.add_with_viewport(self.map)
         self.sw.show()
 
+        self.sw.connect('realize', self.scroll_to_center)
+
         box.pack_start(self.sw, 1,1,1)
         box.pack_start(self.make_bottom_pane(), 0,0,0)
         box.show()
 
         self.set_default_size(600,600)
+        self.set_geometry_hints(max_width=tiles*256,
+                                max_height=tiles*256)
 
         self.markers = {}
 
@@ -429,7 +445,14 @@ if __name__ == "__main__":
 
     m.show()
 
-    gtk.main()
+    print m.sw.get_vadjustment().get_value()
+
+    try:
+        gtk.main()
+    except:
+        pass
+
+    print m.sw.get_vadjustment().get_value()
 
 
 #    area = gtk.DrawingArea()
