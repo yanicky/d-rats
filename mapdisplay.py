@@ -367,15 +367,31 @@ class MapWindow(gtk.Window):
                 (gobject.TYPE_FLOAT, "Direction"),
                 ]
         self.marker_list = miscwidgets.ListWidget(cols)
-        self.marker_list.set_size_request(-1, 150)
 
         self.marker_list._view.connect("row-activated", self.recenter)
+
+        def render_coord(col, rend, model, iter, cnum):
+            rend.set_property('text', "%.4f" % model.get_value(iter, cnum))
+
+        for col in [2, 3]:
+            c = self.marker_list._view.get_column(col)
+            r = c.get_cell_renderers()[0]
+            c.set_cell_data_func(r, render_coord, col)
+
+        def render_dist(col, rend, model, iter, cnum):
+            rend.set_property('text', "%.2f" % model.get_value(iter, cnum))
+
+        for col in [4, 5]:
+            c = self.marker_list._view.get_column(col)
+            r = c.get_cell_renderers()[0]
+            c.set_cell_data_func(r, render_dist, col)
 
         self.marker_list.show()
 
         sw = gtk.ScrolledWindow()
         sw.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
-        sw.add(self.marker_list)
+        sw.add_with_viewport(self.marker_list)
+        sw.set_size_request(-1, 150)
         sw.show()
 
         return sw
@@ -442,6 +458,16 @@ class MapWindow(gtk.Window):
             va.set_value(ny - (va.page_size / 2))
             
 
+    def ev_destroy(self, widget, data=None):
+        print "Destroy"
+        self.hide()
+        return True
+
+    def ev_delete(self, widget, event, data=None):
+        print "Delete"
+        self.hide()
+        return True
+
     def __init__(self, *args):
         gtk.Window.__init__(self, *args)
 
@@ -472,6 +498,9 @@ class MapWindow(gtk.Window):
 
         self.add(box)
 
+        self.connect("destroy", self.ev_destroy)
+        self.connect("delete_event", self.ev_delete)
+
     def set_marker(self, fix):
         self.markers[fix.station] = fix
         self.map.set_marker(fix.station, fix.latitude, fix.longitude)
@@ -479,7 +508,7 @@ class MapWindow(gtk.Window):
 
     def del_marker(self, id):
         try:
-            self.map.del_marker(id)
+            del self.markers[id]
             self.refresh_marker_list()
         except Exception, e:
             print "Unable to delete marker `%s': %s" % e
@@ -503,6 +532,7 @@ if __name__ == "__main__":
     m.set_marker(GPSPosition(station="KE7FTE", lat=45.5363, lon=-122.9105))
     m.set_marker(GPSPosition(station="KA7VQH", lat=45.4846, lon=-122.8278))
     m.set_marker(GPSPosition(station="N7QQU", lat=45.5625, lon=-122.8645))
+    m.del_marker("N7QQU")
 
     m.show()
 
