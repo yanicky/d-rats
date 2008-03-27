@@ -114,7 +114,7 @@ class AppConfig:
         mset("state", "show_all_filter", False)
 
         if not os.path.isdir(self.get("prefs", "download_dir")):
-            d = self.default_download_dir()
+            d = self.platform.default_dir()
             print "Resetting invalid download_dir to: %s" % d
             self.set("prefs", "download_dir", d)
 
