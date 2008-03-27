@@ -1640,6 +1640,7 @@ class CallCatcher:
 
         try:
             del self.mainapp.seen_callsigns[call]
+            self.map.del_marker(call)
         except:
             pass
 
