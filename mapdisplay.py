@@ -134,13 +134,8 @@ class MapTile:
         (lat_max, lat_min) = self.lat_range()
         (lon_min, lon_max) = self.lon_range()
 
-        #print "%f < %f < %f" % (lat_min, lat, lat_max)
-        #print "%f < %f < %f" % (lon_min, lon, lon_max)
-
         lat_match = (lat < lat_max and lat > lat_min)
         lon_match = (lon < lon_max and lon > lon_min)
-
-        print "LAT: %s LON: %s" % (lat_match, lon_match)
 
         return lat_match and lon_match
 
@@ -163,12 +158,7 @@ class MapWidget(gtk.DrawingArea):
         pl = self.create_pango_layout("")
         markup = '<span background="yellow">%s</span>' % text
         pl.set_markup(markup)
-        self.window.draw_layout(gc, x, y, pl)
-
-        lat, lon = self.xy2latlon(x, y)
-        print "Marker `%s' at %i,%i -- %f,%f" % (text,
-                                                 x, y,
-                                                 lat, lon)
+        self.window.draw_layout(gc, int(x), int(y), pl)
 
     def latlon2xy(self, lat, lon):
         y = 1- ((lat - self.lat_min) / (self.lat_max - self.lat_min))
@@ -183,8 +173,6 @@ class MapWidget(gtk.DrawingArea):
         lon = 1 - (float(x) / (self.tilesize * self.width))
         lat = 1 - (float(y) / (self.tilesize * self.height))
         
-        print "Foo: %f,%f" % (lat, lon)
-
         lat = (lat * (self.lat_max - self.lat_min)) + self.lat_min
         lon = (lon * (self.lon_max - self.lon_min)) + self.lon_min
 
@@ -193,14 +181,7 @@ class MapWidget(gtk.DrawingArea):
     def draw_marker(self, id):
         (lat, lon, comment) = self.markers[id]
 
-#        print "%f, %f" % (x,y)
-#        print "%f %f %f" % (self.lat_min, lat, self.lat_max)
-#        print "%ix%i" % ((self.tilesize * self.width),
-#                         (self.tilesize * self.height))
-
         x, y = self.latlon2xy(lat, lon)
-
-        print "%s label is %i,%i" % (id, x,y)
 
         self.draw_marker_at(x, y, id)
 
@@ -459,12 +440,10 @@ class MapWindow(gtk.Window):
             
 
     def ev_destroy(self, widget, data=None):
-        print "Destroy"
         self.hide()
         return True
 
     def ev_delete(self, widget, event, data=None):
-        print "Delete"
         self.hide()
         return True
 
