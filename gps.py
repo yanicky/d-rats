@@ -51,6 +51,22 @@ class GPSPosition:
         self.comment = ""
         self.current = None
 
+    def test_checksum(self, string, csum):
+        try:
+            idx = string.index("*")
+        except:
+            print "String does not contain '*XY' checksum"
+            return False
+
+        segment = string[1:idx]
+
+        print "Checking checksum: |%s|" % segment
+
+        print "Calc'd: %s" % NMEA_checksum(segment)
+        print "Recv'd: %s" % csum
+
+        return csum == NMEA_checksum(segment)
+
     def parse_string(self, string):
         csvel = "[^,]+"
         expr = \
@@ -82,9 +98,12 @@ class GPSPosition:
 
         self.satellites = int(m.group(7))
         self.altitude = float(m.group(9))
-        self.station = m.group(13).split(' ', 1)[1].strip()
+        (csum, self.station) = m.group(13).split(' ', 1)
+        self.station = self.station.strip()
         self.comment = m.group(14).strip()
         
+        self.valid = self.test_checksum(string, csum)
+
     def __str__(self):
         if self.valid:
             if self.current:
@@ -142,7 +161,6 @@ class GPSPosition:
         string = string.replace('\n', ' ') 
         try:
             self.parse_string(string)
-            self.valid = True
         except Exception, e:
             print "Invalid GPS data: %s" % e
             self.valid = False
