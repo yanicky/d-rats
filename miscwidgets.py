@@ -20,6 +20,10 @@ import gobject
 class ListWidget(gtk.HBox):
     def _toggle(self, render, path, column):
         self._store[path][column] = not self._store[path][column]
+        iter = self._store.get_iter(path)
+        vals = tuple(self._store.get(iter, *tuple(range(self._ncols))))
+        for cb in self.toggle_cb:
+            cb(*vals)
 
     def __init__(self, columns):
         gtk.HBox.__init__(self)
@@ -49,6 +53,8 @@ class ListWidget(gtk.HBox):
 
         self._view.show()
         self.pack_start(self._view, 1,1,1)
+
+        self.toggle_cb = []
 
     def add_item(self, *vals):
         if len(vals) != self._ncols:
