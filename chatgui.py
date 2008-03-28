@@ -1003,6 +1003,7 @@ class MainChatGUI(ChatGUI):
 
         self.map = mapdisplay.MapWindow()
         self.map.set_title("D-RATS Station Map")
+        self.map.load_static_points(self.config.platform.config_file("static.csv"))
 
         pos = self.mainapp.get_position()
         self.map.set_center(pos.latitude, pos.longitude)

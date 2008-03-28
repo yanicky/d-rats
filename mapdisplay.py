@@ -286,6 +286,9 @@ class MapWidget(gtk.DrawingArea):
         self.lon = 0
         self.zoom = 1
 
+        self.lat_max = self.lat_min = 0
+        self.lon_max = self.lon_min = 0
+
         self.markers = {}
         self.map_bufs = []
 
@@ -450,7 +453,6 @@ class MapWindow(gtk.Window):
             print "Clicked: %.4f,%.4f" % (lat, lon)
             self.set_marker(GPSPosition(station="Crosshair",
                                         lat=lat, lon=lon))
-            self.clicked = True
         elif event.type == gtk.gdk._2BUTTON_PRESS:
             print "Recenter on %.4f, %.4f" % (lat,lon)
             self.map.set_center(lat, lon)
@@ -466,9 +468,6 @@ class MapWindow(gtk.Window):
 
         self.statusbar.pop(self.STATUS_COORD)
         self.statusbar.push(self.STATUS_COORD, "%.4f, %.4f" % (lat, lon))
-
-        if self.clicked:
-            print "Dragging %i,%i" % (x,y)
 
     def ev_destroy(self, widget, data=None):
         self.hide()
@@ -542,6 +541,37 @@ class MapWindow(gtk.Window):
 
     def set_center(self, lat, lon):
         self.map.set_center(lat, lon)
+
+    def parse_static_line(self, line):
+        if line.startswith("//"):
+            return
+        elif "#" in line:
+            line = line[:line.index("//")]
+            
+        (id, lat, lon, alt) = line.split(",", 4)
+            
+        pos = GPSPosition(station=id.strip(),
+                          lat=float(lat),
+                          lon=float(lon))
+
+        self.set_marker(pos)
+        print "Loaded static point `%s'" % id
+
+    def load_static_points(self, filename):
+        try:
+            f = file(filename)
+        except Exception, e:
+            print "Failed to open static points `%s': %s" % (filename, e)
+            return False
+
+        lines = f.read().split("\n")
+        for line in lines:
+            try:
+                self.parse_static_line(line)
+            except Exception, e:
+                print "Failed to parse line `%s': %s" % (line, e)
+
+        return True
 
 if __name__ == "__main__":
 
