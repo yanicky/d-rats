@@ -152,11 +152,18 @@ class MapTile:
             os.mkdir(self.dir)
 
 class MapWidget(gtk.DrawingArea):
-    def draw_text_marker_at(self, x, y, text):
+    def draw_text_marker_at(self, x, y, text, color="yellow"):
         gc = self.get_style().black_gc
 
+        if self.zoom < 12:
+            size = 'size="x-small"'
+        elif self.zoom < 14:
+            size = 'size="small"'
+        else:
+            size = ''
+
         pl = self.create_pango_layout("")
-        markup = '<span background="yellow">%s</span>' % text
+        markup = '<span %s background="%s">%s</span>' % (size, color, text)
         pl.set_markup(markup)
         self.window.draw_layout(gc, int(x), int(y), pl)
 
@@ -192,14 +199,14 @@ class MapWidget(gtk.DrawingArea):
         return lat, lon
 
     def draw_marker(self, id):
-        (lat, lon, comment) = self.markers[id]
+        (lat, lon, color) = self.markers[id]
 
         x, y = self.latlon2xy(lat, lon)
 
         if id == "Crosshair":
             self.draw_cross_marker_at(x, y)
         else:
-            self.draw_text_marker_at(x, y, id)
+            self.draw_text_marker_at(x, y, id, color)
 
     def draw_markers(self):
         for id in self.markers.keys():
@@ -316,8 +323,8 @@ class MapWidget(gtk.DrawingArea):
     def get_zoom(self):
         return self.zoom
 
-    def set_marker(self, id, lat, lon, comment=None):
-        self.markers[id] = (lat, lon, comment)
+    def set_marker(self, id, lat, lon, color="yellow"):
+        self.markers[id] = (lat, lon, color)
         self.queue_draw()
 
     def del_marker(self, id):
@@ -358,6 +365,13 @@ class MapWindow(gtk.Window):
         self.map.load_tiles()
         self.center_on(items[2], items[3])
 
+    def toggle_show(self, *vals):
+        fix = self.markers[vals[1]][0]
+        self.markers[vals[1]] = (fix, vals[0])
+        print "Setting %s to %s" % (vals[1], vals[0])
+        self.refresh_marker_list()
+        self.map.queue_draw()
+
     def make_marker_list(self):
         cols = [(gobject.TYPE_BOOLEAN, "Show"),
                 (gobject.TYPE_STRING, "Station"),
@@ -367,6 +381,7 @@ class MapWindow(gtk.Window):
                 (gobject.TYPE_FLOAT, "Direction"),
                 ]
         self.marker_list = miscwidgets.ListWidget(cols)
+        self.marker_list.toggle_cb.append(self.toggle_show)
 
         self.marker_list._view.connect("row-activated", self.recenter)
 
@@ -403,14 +418,15 @@ class MapWindow(gtk.Window):
         (lat, lon) = self.map.get_center()
         center = GPSPosition(lat=lat, lon=lon)
 
-        for id, fix in self.markers.items():
-            self.marker_list.add_item(True,
+        for id, (fix, show, color) in self.markers.items():
+            self.marker_list.add_item(show,
                                       id,
                                       fix.latitude,
                                       fix.longitude,
                                       center.distance_from(fix),
                                       center.bearing_to(fix))
-            self.map.markers[id] = (fix.latitude, fix.longitude, None)
+            if show:
+                self.map.markers[id] = (fix.latitude, fix.longitude, color)
 
     def make_bottom_pane(self):
         box = gtk.HBox(False, 2)
@@ -518,8 +534,8 @@ class MapWindow(gtk.Window):
         self.connect("destroy", self.ev_destroy)
         self.connect("delete_event", self.ev_delete)
 
-    def set_marker(self, fix):
-        self.markers[fix.station] = fix
+    def set_marker(self, fix, color="yellow"):
+        self.markers[fix.station] = (fix, True, color)
         self.map.set_marker(fix.station, fix.latitude, fix.longitude)
         self.refresh_marker_list()
 
@@ -554,7 +570,7 @@ class MapWindow(gtk.Window):
                           lat=float(lat),
                           lon=float(lon))
 
-        self.set_marker(pos)
+        self.set_marker(pos, "orange")
         print "Loaded static point `%s'" % id
 
     def load_static_points(self, filename):
@@ -579,11 +595,13 @@ if __name__ == "__main__":
     m.set_center(45.525012, -122.916434)
     m.set_zoom(14)
 
-    m.set_marker(GPSPosition(station="KI4IFW", lat=45.525012, lon=-122.916434))
+    m.set_marker(GPSPosition(station="KI4IFW_H", lat=45.520, lon=-122.916434))
     m.set_marker(GPSPosition(station="KE7FTE", lat=45.5363, lon=-122.9105))
     m.set_marker(GPSPosition(station="KA7VQH", lat=45.4846, lon=-122.8278))
     m.set_marker(GPSPosition(station="N7QQU", lat=45.5625, lon=-122.8645))
     m.del_marker("N7QQU")
+
+    m.load_static_points("/home/dan/.d-rats/static.csv")
 
     m.show()
 
