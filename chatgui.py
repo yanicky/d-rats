@@ -1640,9 +1640,9 @@ class CallCatcher:
 
         try:
             del self.mainapp.seen_callsigns[call]
-            self.map.del_marker(call)
-        except:
-            pass
+            self.gui.map.del_marker(call)
+        except Exception, e:
+            print "Failed to delete: %s" % e
 
         list.remove(iter)
 
