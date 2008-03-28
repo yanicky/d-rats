@@ -152,13 +152,26 @@ class MapTile:
             os.mkdir(self.dir)
 
 class MapWidget(gtk.DrawingArea):
-    def draw_marker_at(self, x, y, text):
+    def draw_text_marker_at(self, x, y, text):
         gc = self.get_style().black_gc
 
         pl = self.create_pango_layout("")
         markup = '<span background="yellow">%s</span>' % text
         pl.set_markup(markup)
         self.window.draw_layout(gc, int(x), int(y), pl)
+
+    def draw_cross_marker_at(self, x, y):
+        width = 2
+        cm = self.window.get_colormap()
+        color = cm.alloc_color("red")
+        gc = self.window.new_gc(foreground=color,
+                                line_width=width)
+
+        x = int(x)
+        y = int(y)
+
+        self.window.draw_lines(gc, [(x, y-5), (x, y+5)])
+        self.window.draw_lines(gc, [(x-5, y), (x+5, y)])
 
     def latlon2xy(self, lat, lon):
         y = 1- ((lat - self.lat_min) / (self.lat_max - self.lat_min))
@@ -183,7 +196,10 @@ class MapWidget(gtk.DrawingArea):
 
         x, y = self.latlon2xy(lat, lon)
 
-        self.draw_marker_at(x, y, id)
+        if id == "Crosshair":
+            self.draw_cross_marker_at(x, y)
+        else:
+            self.draw_text_marker_at(x, y, id)
 
     def draw_markers(self):
         for id in self.markers.keys():
@@ -419,7 +435,7 @@ class MapWindow(gtk.Window):
         ha.set_value(x - (ha.page_size / 2))
         va.set_value(y - (va.page_size / 2))
 
-    def mouse_event(self, widget, event):
+    def mouse_click_event(self, widget, event):
         x,y = event.get_coords()
 
         ha = widget.get_hadjustment()
@@ -427,9 +443,15 @@ class MapWindow(gtk.Window):
         mx = x + int(ha.get_value())
         my = y + int(va.get_value())
 
+        lat, lon = self.map.xy2latlon(mx, my)
+
         print "Button %i at %i,%i" % (event.button, mx, my)
-        if event.type == gtk.gdk._2BUTTON_PRESS:
-            lat, lon = self.map.xy2latlon(mx, my)
+        if event.type == gtk.gdk.BUTTON_PRESS:
+            print "Clicked: %.4f,%.4f" % (lat, lon)
+            self.set_marker(GPSPosition(station="Crosshair",
+                                        lat=lat, lon=lon))
+            self.clicked = True
+        elif event.type == gtk.gdk._2BUTTON_PRESS:
             print "Recenter on %.4f, %.4f" % (lat,lon)
             self.map.set_center(lat, lon)
             self.map.load_tiles()
@@ -438,6 +460,15 @@ class MapWindow(gtk.Window):
             ha.set_value(nx - (ha.page_size / 2))
             va.set_value(ny - (va.page_size / 2))
             
+    def mouse_move_event(self, widget, event):
+        x, y = event.get_coords()
+        lat, lon = self.map.xy2latlon(x, y)
+
+        self.statusbar.pop(self.STATUS_COORD)
+        self.statusbar.push(self.STATUS_COORD, "%.4f, %.4f" % (lat, lon))
+
+        if self.clicked:
+            print "Dragging %i,%i" % (x,y)
 
     def ev_destroy(self, widget, data=None):
         self.hide()
@@ -450,6 +481,8 @@ class MapWindow(gtk.Window):
     def __init__(self, *args):
         gtk.Window.__init__(self, *args)
 
+        self.STATUS_COORD = 0
+
         tiles = 5
 
         self.map = MapWidget(tiles, tiles)
@@ -461,12 +494,18 @@ class MapWindow(gtk.Window):
         self.sw.add_with_viewport(self.map)
         self.sw.show()
 
-        self.sw.connect("button-press-event", self.mouse_event)
+        self.map.add_events(gtk.gdk.POINTER_MOTION_MASK)
+        self.map.connect("motion-notify-event", self.mouse_move_event)
+        self.sw.connect("button-press-event", self.mouse_click_event)
 
         self.sw.connect('realize', self.scroll_to_center)
 
+        self.statusbar = gtk.Statusbar()
+        self.statusbar.show()
+
         box.pack_start(self.sw, 1,1,1)
         box.pack_start(self.make_bottom_pane(), 0,0,0)
+        box.pack_start(self.statusbar, 0,0,0)
         box.show()
 
         self.set_default_size(600,600)
@@ -487,7 +526,10 @@ class MapWindow(gtk.Window):
 
     def del_marker(self, id):
         try:
+            print "Deleting marker %s" % id
+            print self.markers.keys()
             del self.markers[id]
+            print self.markers.keys()
             self.refresh_marker_list()
         except Exception, e:
             print "Unable to delete marker `%s': %s" % e
