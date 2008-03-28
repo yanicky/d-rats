@@ -13,9 +13,15 @@ def find_au_callsigns(string):
 
     return re.findall(regex, string)
 
+def find_ca_callsigns(string):
+    regex = '[Vv][EeAa][0-9][A-z]{2,3}'
+    
+    return re.findall(regex, string)
+
 callsign_functions = {
     "US" : find_us_callsigns,
     "Australia" : find_au_callsigns,
+    "Canada" : find_ca_callsigns,
 }
 
 def find_callsigns(config, string):
