@@ -28,6 +28,7 @@ import gobject
 import ddt
 import miscwidgets
 import platform
+import callsigns
 
 def color_string(color):
     try:
@@ -54,11 +55,6 @@ def make_choice(options, editable=True, default=None):
     return sel
 
 class AppConfig:
-    default_call_settings = [
-        (True, "US"),
-        (False, "Australia"),
-        ]
-
     def init_config(self):
         def mset(section, option, value):
             if not self.config.has_section(section):
@@ -91,7 +87,7 @@ class AppConfig:
         mset("prefs", "debuglog", "False")
         mset("prefs", "eolstrip", "True")
         mset("prefs", "font", "Sans 12")
-        mset("prefs", "callsigns", "%s" % self.default_call_settings)
+        mset("prefs", "callsigns", "%s" % str([(True, "US")]))
         mset("prefs", "logresume", "True")
         mset("prefs", "scrollback", "1024")
 
@@ -435,7 +431,7 @@ class AppConfig:
 
         call_settings = eval(self.get("prefs", "callsigns"))
         known = [y for x,y in call_settings]
-        avail = [y for x,y in self.default_call_settings]
+        avail = callsigns.callsign_functions.keys()
 
         for i in avail:
             if i not in known:
