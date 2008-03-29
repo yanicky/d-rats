@@ -13,6 +13,8 @@ import miscwidgets
 
 from gps import GPSPosition
 
+CROSSHAIR = "Crosshair"
+
 class MapTile:
     def path_els(self):
         # http://svn.openstreetmap.org/applications/routing/pyroute/tilenames.py
@@ -203,7 +205,7 @@ class MapWidget(gtk.DrawingArea):
 
         x, y = self.latlon2xy(lat, lon)
 
-        if id == "Crosshair":
+        if id == CROSSHAIR:
             self.draw_cross_marker_at(x, y)
         else:
             self.draw_text_marker_at(x, y, id, color)
@@ -366,8 +368,8 @@ class MapWindow(gtk.Window):
         self.center_on(items[2], items[3])
 
     def toggle_show(self, *vals):
-        fix = self.markers[vals[1]][0]
-        self.markers[vals[1]] = (fix, vals[0])
+        (fix, _, color) = self.markers[vals[1]]
+        self.markers[vals[1]] = (fix, vals[0], color)
         print "Setting %s to %s" % (vals[1], vals[0])
         self.refresh_marker_list()
         self.map.queue_draw()
@@ -467,7 +469,7 @@ class MapWindow(gtk.Window):
         print "Button %i at %i,%i" % (event.button, mx, my)
         if event.type == gtk.gdk.BUTTON_PRESS:
             print "Clicked: %.4f,%.4f" % (lat, lon)
-            self.set_marker(GPSPosition(station="Crosshair",
+            self.set_marker(GPSPosition(station=CROSSHAIR,
                                         lat=lat, lon=lon))
         elif event.type == gtk.gdk._2BUTTON_PRESS:
             print "Recenter on %.4f, %.4f" % (lat,lon)
@@ -547,7 +549,7 @@ class MapWindow(gtk.Window):
             print self.markers.keys()
             self.refresh_marker_list()
         except Exception, e:
-            print "Unable to delete marker `%s': %s" % e
+            print "Unable to delete marker `%s': %s" % (id, e)
             return False
 
         return True
