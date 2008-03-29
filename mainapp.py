@@ -45,6 +45,9 @@ MAINAPP = None
 
 gobject.threads_init()
 
+class SocketClosedError(Exception):
+    pass
+
 class SWFSerial(serial.Serial):
     __swf_debug = False
 
@@ -146,7 +149,7 @@ class SocketSerial:
             if inp == "":
                 print "Got nothing, socket must be dead!"
                 if not self.reconnect():
-                    raise Exception("Socket closed")
+                    raise SocketClosedError("Socket closed")
             
         return data
 
@@ -288,6 +291,9 @@ class SerialCommunicator:
                     print "Sending %s" % out
                     self.pipe.write(out)
                     print "Done with send"
+                except serial.writeTimeoutError, e:
+                    print "Write timeout on serial? (%s)" % e
+                    continue
                 except Exception, e:
                     print "Exception during write: %s" % e
                     break
