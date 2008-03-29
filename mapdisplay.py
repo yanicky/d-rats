@@ -13,7 +13,7 @@ import miscwidgets
 
 from gps import GPSPosition
 
-CROSSHAIR = "Crosshair"
+CROSSHAIR = "+"
 
 class MapTile:
     def path_els(self):
