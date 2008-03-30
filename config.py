@@ -68,6 +68,7 @@ class AppConfig:
         mset("user", "latitude", "0.0")
         mset("user", "longitude", "0.0")
         mset("user", "altitude", "0.0")
+        mset("user", "units", "Imperial")
 
         mset("prefs", "autoreceive", "False")
         mset("prefs", "download_dir", self.platform.default_dir())
@@ -149,6 +150,7 @@ class AppConfig:
                 "latitude" : "Current Latitude",
                 "longitude" : "Current Longitude",
                 "altitude" : "Current Altitude",
+                "units" : "Units",
                 }
 
     id2tip = {"write_chunk" : "Stage DDT blocks into small chunks of this many bytes",
@@ -166,6 +168,20 @@ class AppConfig:
               }
 
     xfers = {"DDT" : ddt.DDTTransfer}
+
+    def units_of(self, type):
+        units = {
+            "Imperial" : { "distance" : "miles",
+                           "dist" : "mi",
+                           "elevation" : "feet",
+                           "elev" : "ft" },
+            "Metric" : { "distance" : "kilometers",
+                         "dist" : "km",
+                         "elevation" : "meters",
+                         "elev" : "m" }
+            }
+
+        return units[self.get("user", "units")][type]
 
     def xfer(self):
         try:
@@ -340,6 +356,11 @@ class AppConfig:
         vbox.pack_start(self.make_sb("altitude",
                                      self.make_spin(0.1, 0.0, 29028.0, 1)),
                         0,0,0)                                     
+
+        units = ["Imperial", "Metric"]
+
+        vbox.pack_start(self.make_sb("units",
+                                     make_choice(units, False)), 0,0,0)
 
         vbox.show()
         return vbox
@@ -599,7 +620,8 @@ D-RATS has been started in safe mode, which means the configuration file has not
         choice_v = [("settings", "rate"),
                     ("settings", "xfer"),
                     ("settings", "ddt_block_size"),
-                    ("settings", "encoding")]
+                    ("settings", "encoding"),
+                    ("user", "units")]
 
         color_v = [("prefs", "incomingcolor"),
                    ("prefs", "outgoingcolor"),
