@@ -23,7 +23,7 @@ import ConfigParser
 import gtk
 import gobject
 
-from mainapp import SWFSerial, SocketSerial
+from mainapp import SWFSerial
 from config import make_choice
 import miscwidgets
 import platform
