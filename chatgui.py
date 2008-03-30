@@ -636,7 +636,7 @@ class MainChatGUI(ChatGUI):
 
             self.toggle_sendable(False)
             d = MulticastGUI(f,
-                             self.mainapp.comm.pipe,
+                             self.mainapp.comm.path,
                              bsize,
                              parent=self.window)
             d.run()

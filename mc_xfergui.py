@@ -228,7 +228,7 @@ class MulticastRecvGUI(FileTransferGUI):
     def ddt_xfer(self):
         station = self.chatgui.config.get("user", "callsign")
 
-        xfer = ddt_multicast.DDTMulticastTransfer(self.chatgui.mainapp.comm.pipe,
+        xfer = ddt_multicast.DDTMulticastTransfer(self.chatgui.mainapp.comm.path,
                                                   station,
                                                   status_fn=self.update)
         self.xfer = xfer
