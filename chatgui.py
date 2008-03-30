@@ -235,9 +235,9 @@ class ChatGUI:
         self.entry.set_sensitive(state)
         self.send_button.set_sensitive(state)
         if state:
-            self.mainapp.comm.enable(self)
+            self.mainapp.comm.start_watch()
         else:
-            self.mainapp.comm.disable()
+            self.mainapp.comm.stop_watch()
 
         
     def make_main_pane(self):
@@ -823,15 +823,14 @@ class MainChatGUI(ChatGUI):
         connected = action.get_active()
         self.toggle_sendable(connected)
         if connected:
-            self.mainapp.comm.pipe.flushInput()
-            self.display_line("--- Connected ---", "italic")
+            self.mainapp.comm.connect()
         else:
-            self.display_line("--- Disconnected ---", "italic")
+            self.mainapp.comm.close()
 
     def set_connected(self, bool):
         action = self.menu_ag.get_action("connect")
         action.set_active(bool)
-        self.connect(action, None)
+        self.toggle_sendable(bool)
 
     def show_allfilter(self, action):
         root = ChatGUI(self.config, self.mainapp)

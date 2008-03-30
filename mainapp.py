@@ -31,6 +31,7 @@ import chatgui
 import config
 import ddt
 import gps
+import comm
 
 from utils import hexprint,filter_to_ascii
 import qst
@@ -94,244 +95,131 @@ class SWFSerial(serial.Serial):
     def read(self, len):
         return serial.Serial.read(self, len)
 
-class SocketSerial:
-    def __init__(self, port, timeout=0.25):
-        (_, self.host, self.port) = port.split(":")
-
-        self.portstr = "Network (%s:%s)" % (self.host, self.port)
-        self.timeout = timeout
-        self.enabled = True
-
-        self.connect()
-
-    def connect(self):
-
-        try:
-            self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.socket.connect((self.host, int(self.port)))
-            self.socket.settimeout(0.25)
-        except:
-            return False
-        
-        try:
-            r = self.socket.recv(1)
-        except:
-            return True
-
-        return r != ''
-
-    def reconnect(self, iter=50, timeout=1):
-        for i in range(iter):
-            if not self.enabled:
-                break
-            elif self.connect():
-                print "Reconnected"
-                return True
-            else:
-                print "Retrying..."
-                time.sleep(timeout)
-
-        return False
-
-    def read(self, length):
-        data = ""
-        end = time.time() + self.timeout
-        while len(data) < length:
-            if time.time() > end:
-                break
-
-            try:
-                inp = self.socket.recv(length - len(data))
-                data += inp
-            except Exception, e:
-                continue
-
-            if inp == "":
-                print "Got nothing, socket must be dead!"
-                if not self.reconnect():
-                    raise SocketClosedError("Socket closed")
-            
-        return data
-
-    def write(self, buf):
-        try:
-            self.socket.sendall(buf)
-        except Exception, e:
-            print "Socket write failed: %s" % e
-            self.reconnect()
-
-    def getBaudrate(self):
-        return 0
-
-    def flush(self):
-        return
-
-    def close(self):
-        self.socket.close()
-        self.socket = None
+class ChatBuffer:
+    def __init__(self, path, infunc, connfunc):
         self.enabled = False
 
-    def flushInput(self):
-        return
+        self.inbuf = ""
+        self.outbuf = ""
 
-class SerialCommunicator:
+        self.infunc = infunc
+        self.connfunc = connfunc
 
-    def __init__(self, port=0, rate=9600, swf=False):
-        self.enabled = False
-        self.pipe = None
-        self.opened = False
-        
-        self.port = port
-        self.rate = rate
-        self.swf = swf
+        self.path = path
 
         self.lock = Lock()
-        self.incoming_data = ""
-        self.outgoing_data = ""
+        self.thread = None
 
-        self.state = True
+    def connect(self):
+        try:
+            self.path.connect()
+            self.connfunc(self.path.is_connected())
+        except Exception, e:
+            self.infunc("Unable to connect: %s" % e)
+            self.connfunc(False)
+            return False
+
+        self.infunc("Connected: %s" % str(self.path))
+        return True
 
     def write(self, buf):
-        if self.enabled:
-            return self.pipe.write(buf)
+        self.lock.acquire()
+        self.outbuf += buf
+        self.lock.release()
 
-    def read(self, len):
-        if self.enabled:
-            return self.pipe.read(len)
+    def read(self, count):
+        self.lock.acquire()
+        data = self.inbuf[:count]
+        self.lock.release()
+
+        if len(data) == count:
+            print "Got enough"
+            return data
+
+        print "Delaying for another read"
+        time.sleep(0.2)
+
+        self.lock.acquire()
+        data += self.inbuf[:count - len(data)]
+        self.lock.release()
+
+        return data        
 
     def close(self):
-        if self.opened:
-            self.pipe.close()
-            self.opened = False
-            return True
-        else:
-            return False
-
-    def open(self):
-        if self.opened:
-            return self.opened
-
-        try:
-            if self.port.startswith("net:"):
-                self.pipe = SocketSerial(port=self.port)
-            elif self.swf:
-                self.pipe = SWFSerial(port=self.port,
-                                      baudrate=self.rate,
-                                      timeout=0.25,
-                                      writeTimeout=5,
-                                      xonxoff=0)
-            else:
-                self.pipe = serial.Serial(port=self.port,
-                                          baudrate=self.rate,
-                                          timeout=0.25,
-                                          writeTimeout=5,
-                                          xonxoff=1)
-            self.opened = True
-        except Exception, e:
-            print "Failed to open serial port: %s" % e
-            self.opened = False
-
-        return self.opened
-
-    def enable(self, gui):
-        if not self.opened:
-            print "Attempt to enable a non-opened serial line"
-            return False
-
-        self.gui = gui
-        if not self.enabled:
-            self.enabled = True
-            self.thread = Thread(target=self.watch_serial)
-            self.thread.start()
-            return True
-        else:
-            return False
-
-    def disable(self):
         if self.enabled:
-            self.enabled = False
-            print "Waiting for chat watch thread..."
+            self.stop_watch()
+        self.path.disconnect()
+
+    def incoming(self, data):
+        gobject.idle_add(self.infunc, data)
+
+    def disconnected(self, data):
+        self.path.disconnect()
+        self.enabled = False
+        gobject.idle_add(self.connfunc, False)
+
+    def start_watch(self):
+        if not self.path.is_connected():
+            try:
+                self.path.connect
+            except Exception, e:
+                print "Unable to connect: %s" % e
+                return
+
+        self.enabled = True
+        self.thread = Thread(target=self.serial_thread)
+        self.thread.start()
+
+    def stop_watch(self):
+        self.enabled = False
+        if self.thread:
             self.thread.join()
 
-    def send_text(self, text):
-        self.lock.acquire()
-        self.outgoing_data += text
-        self.lock.release()
-
-    def incoming_chat(self):
-        self.lock.acquire()
-        data = self.incoming_data
-        self.incoming_data = ""
-        self.lock.release()
-
-        if self.gui.config.getboolean("prefs", "eolstrip"):
-            data = data.replace("\n", "")
-            data = data.replace("\r", "")
-        else:
-            data = data.rstrip("\n")
-            if os.linesep != "\n":
-                data = data.replace("\n", os.linesep)
-
-        self.gui.display_line(data, "incomingcolor")
-
-    def watch_serial(self):
-        data = ""
-        newdata = ""
-        
-        print "Starting chat watch thread"
-
+    def serial_thread(self):
         while self.enabled:
             self.lock.acquire()
-            out = self.outgoing_data
-            self.outgoing_data = ""
+            out = self.outbuf
+            self.outbuf = ""
             self.lock.release()
 
             if out:
                 try:
-                    print "Sending %s" % out
-                    self.pipe.write(out)
-                    print "Done with send"
-                except serial.writeTimeoutError, e:
-                    print "Write timeout on serial? (%s)" % e
-                    continue
-                except Exception, e:
-                    print "Exception during write: %s" % e
-                    break
+                    self.path.write(out)
+                except comm.DataPathIOError, e:
+                    self.incoming("Write error")
+                except comm.DataPathNotConnectedError, e:
+                    self.incoming("Disconnected")
+                    self.disconnected()
 
             try:
-                newdata = self.pipe.read(64)
-            except Exception, e:
-                print "Serial read failed: %s" % e
-                break
-            
-            if len(newdata) > 0:
-                data += newdata
-                #print "Data chunk:"
-                #hexprint(newdata)
-            else:
-                if data:
-                    print "No more data, queuing: %s" % filter_to_ascii(data)
-                    self.lock.acquire()
-                    self.incoming_data += data
-                    self.lock.release()
+                inp = ""
+                while True:
+                    _inp = self.path.read(64)
+                    if not _inp:
+                        break
+                    else:
+                        inp += _inp
+            except comm.DataPathIOError, e:
+                self.incoming("Read error")
+            except comm.DataPathNotConnectedError, e:
+                self.incoming("Disconnected")
+                self.disconnected()
 
-                    gobject.idle_add(self.incoming_chat)
-                    data = ""
-                    
-                time.sleep(0.25)
+            if inp:
+                print "Got data %s" % filter_to_ascii(inp)
+                self.lock.acquire()
+                self.inbuf += inp
+                self.lock.release()
+                self.incoming(inp)
 
-        if self.enabled:
-            print "Exited loop due to error, going offline"
-            self.enabled = False
-            gobject.idle_add(self.gui.set_connected, False)
+            if not inp and not out:
+                time.sleep(0.2)
 
-    def __str__(self):
-        if self.enabled:
-            return "Connected: %s @ %i baud" % (self.pipe.portstr,
-                                                self.pipe.getBaudrate())
-        else:
-            return "Unable to connect to serial port: %s" % self.port
-            
+    def send_text(self, text):
+        self.lock.acquire()
+        self.outbuf += text
+        self.lock.release()
+
 class MainApp:
     def setup_autoid(self):
         idtext = "(ID)"
@@ -368,20 +256,34 @@ class MainApp:
 
             self.qsts.append(qstinst)
 
+    def incoming_chat(self, data):
+        print "Incoming: %s" % data
+        self.chatgui.display_line(data, "incomingcolor")
+
+    def connected(self, is_connected):
+        self.chatgui.set_connected(is_connected)
+
     def refresh_comm(self, rate, port):
         if self.comm:
-            self.comm.disable()
+            self.comm.close()
             
         try:
             swf = self.config.getboolean("settings", "swflow")
         except:
             swf = False
 
-        self.comm = SerialCommunicator(rate=rate, port=port, swf=swf)
-        if self.comm.open():
-            self.comm.enable(self.chatgui)
-            
-        self.chatgui.display_line(str(self.comm), "italic")
+        if ":" in port:
+            (_, host, port) = port.split(":")
+            self.comm = ChatBuffer(comm.SocketDataPath((host, int(port))),
+                                   self.incoming_chat,
+                                   self.connected)
+        else:
+            self.comm = ChatBuffer(comm.SerialDataPath((port, int(rate))),
+                                   self.incoming_chat,
+                                   self.connected)
+                                   
+        if self.comm.connect():
+            self.comm.start_watch()
 
     def refresh_config(self):
         rate = self.config.getint("settings", "rate")
@@ -396,13 +298,7 @@ class MainApp:
 
         gps.set_units(units)
 
-        if self.comm and self.comm.enabled:
-            if self.comm.pipe.getBaudrate() != rate or \
-                self.comm.pipe.portstr != port:
-                print "Serial config changed"
-                self.refresh_comm(rate, port)
-        else:
-            self.refresh_comm(rate, port)
+        self.refresh_comm(rate, port)
 
         self.chatgui.display("My Call: %s\n" % call, "blue", "italic")
 
@@ -495,7 +391,7 @@ class MainApp:
         self.config.save()
 
         print "Disabling watch thread..."
-        self.comm.disable()
+        self.comm.stop_watch()
 
         print "Closing serial..."
         self.comm.close()

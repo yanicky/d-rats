@@ -147,7 +147,7 @@ class FileTransferGUI(gtk.Dialog):
                     self._real_filename) #Change this to report real success
 
     def ddt_xfer(self):
-        x = self.xfer_agent(self.chatgui.mainapp.comm.pipe,
+        x = self.xfer_agent(self.chatgui.mainapp.comm.path,
                             status_fn=self.update)
         
         self.xfer = x
