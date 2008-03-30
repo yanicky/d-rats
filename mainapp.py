@@ -153,18 +153,20 @@ class ChatBuffer:
     def incoming(self, data):
         gobject.idle_add(self.infunc, data)
 
-    def disconnected(self, data):
+    def disconnected(self):
         self.path.disconnect()
         self.enabled = False
         gobject.idle_add(self.connfunc, False)
 
     def start_watch(self):
         if not self.path.is_connected():
-            try:
-                self.path.connect
-            except Exception, e:
+            if not self.connect():
                 print "Unable to connect: %s" % e
                 return
+
+        if self.enabled:
+            print "Attempt to reconnect main comm channel!"
+            return
 
         self.enabled = True
         self.thread = Thread(target=self.serial_thread)
@@ -195,10 +197,11 @@ class ChatBuffer:
                 inp = ""
                 while True:
                     _inp = self.path.read(64)
-                    if not _inp:
+                    if len(_inp) == 0:
                         break
                     else:
                         inp += _inp
+                        print "Got chunk: %s" % _inp
             except comm.DataPathIOError, e:
                 self.incoming("Read error")
             except comm.DataPathNotConnectedError, e:
@@ -282,8 +285,7 @@ class MainApp:
                                    self.incoming_chat,
                                    self.connected)
                                    
-        if self.comm.connect():
-            self.comm.start_watch()
+        self.comm.connect()
 
     def refresh_config(self):
         rate = self.config.getint("settings", "rate")

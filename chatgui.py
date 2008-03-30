@@ -238,7 +238,6 @@ class ChatGUI:
             self.mainapp.comm.start_watch()
         else:
             self.mainapp.comm.stop_watch()
-
         
     def make_main_pane(self):
         vbox = gtk.VBox(False, 0)
@@ -822,15 +821,10 @@ class MainChatGUI(ChatGUI):
     def connect(self, action, data=None):
         connected = action.get_active()
         self.toggle_sendable(connected)
-        if connected:
-            self.mainapp.comm.connect()
-        else:
-            self.mainapp.comm.close()
 
     def set_connected(self, bool):
         action = self.menu_ag.get_action("connect")
         action.set_active(bool)
-        self.toggle_sendable(bool)
 
     def show_allfilter(self, action):
         root = ChatGUI(self.config, self.mainapp)
