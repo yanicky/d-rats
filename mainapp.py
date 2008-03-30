@@ -389,9 +389,12 @@ class MainApp:
         call = self.config.get("user", "callsign")
         enc = self.config.get("settings", "encoding")
         com = self.config.getboolean("settings", "compression")
+        units = self.config.get("user", "units")
 
         ddt.set_compression(com)
         ddt.set_encoding(enc)
+
+        gps.set_units(units)
 
         if self.comm and self.comm.enabled:
             if self.comm.pipe.getBaudrate() != rate or \

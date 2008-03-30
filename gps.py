@@ -7,6 +7,22 @@ from math import pi,cos,acos,sin,atan2
 
 TEST = "$GPGGA,180718.02,4531.3740,N,12255.4599,W,1,07,1.4,50.6,M,-21.4,M,,*63 KE7JSS  ,440.350+ PL127.3"
 
+EARTH_RADIUS = 3963.1
+EARTH_UNITS = "mi"
+
+def set_units(units):
+    global EARTH_RADIUS
+    global EARTH_UNITS
+
+    if units == "Imperial":
+        EARTH_RADIUS = 3963.1
+        EARTH_UNITS = "mi"
+    elif units == "Metric":
+        EARTH_RADIUS = 6380.0
+        EARTH_UNITS = "km"
+
+    print "Set GPS units to %s" % units
+
 def NMEA_checksum(string):
     checksum = 0
     for i in string:
@@ -109,7 +125,9 @@ class GPSPosition:
             if self.current:
                 dist = self.distance_from(self.current)
                 bear = self.current.bearing_to(self)
-                distance = " - %.1f miles away @ %.1f degrees" % (dist, bear)
+                distance = " - %.1f %s away @ %.1f degrees" % (dist,
+                                                               EARTH_UNITS,
+                                                               bear)
             else:
                 distance = ""
 
@@ -184,7 +202,7 @@ class GPSPosition:
         lat_u = deg2rad(pos.latitude)
         lon_u = deg2rad(pos.longitude)
 
-        earth_radius = 3963.1 # miles
+        earth_radius = EARTH_RADIUS # miles
 
         distance = acos((cos(lat_me) * cos(lon_me) * \
                              cos(lat_u) * cos(lon_u)) + \
@@ -236,7 +254,9 @@ class GPSPosition:
                 direction = i
             angle += delta
 
-        return "%.1f mi %s" % (self.distance_from(pos), direction)
+        return "%.1f %s %s" % (self.distance_from(pos),
+                               EARTH_UNITS,
+                               direction)
 
 class MapImage:
     def __init__(self, center):
