@@ -615,7 +615,8 @@ D-RATS has been started in safe mode, which means the configuration file has not
                   ("settings", "chunk_delay"),
                   ("prefs", "scrollback"),
                   ("user", "latitude"),
-                  ("user", "longitude")]
+                  ("user", "longitude"),
+                  ("user", "altitude")]
 
         list_v = [("prefs", "callsigns")]
 
