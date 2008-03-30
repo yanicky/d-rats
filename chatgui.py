@@ -183,6 +183,9 @@ class ChatGUI:
         ChatGUI.display_line(self, message, "outgoingcolor")
         self.mainapp.comm.send_text(message)
 
+        if self.logfn:
+            self.logfn(message)
+
         if self.config.getboolean("prefs", "blinkmsg"):
             self.window.set_urgency_hint(True)
 
@@ -330,9 +333,11 @@ class ChatGUI:
 
         self.entry.grab_focus()
 
-    def __init__(self, config, mainapp):
+    def __init__(self, config, mainapp, logfn=None):
         self.config = config
         self.mainapp = mainapp
+        self.logfn = logfn
+
         self.tips = gtk.Tooltips()
 
         self.main_buffer = gtk.TextBuffer()
@@ -827,7 +832,7 @@ class MainChatGUI(ChatGUI):
         action.set_active(bool)
 
     def show_allfilter(self, action):
-        root = ChatGUI(self.config, self.mainapp)
+        root = ChatGUI(self.config, self.mainapp, self.log_by_filter)
         all_filter = ChatFilter("all", self.tabs, root)
         all_filter.set_exclusive(False)
         all_filter.label = gtk.Label("All")
@@ -929,7 +934,7 @@ class MainChatGUI(ChatGUI):
 
     def activate_filter(self, _, text):
 
-        root = ChatGUI(self.config, self.mainapp)
+        root = ChatGUI(self.config, self.mainapp, self.log_by_filter)
         filter = ChatFilter(text, self.tabs, root)
         filter.label = gtk.Label(text)
         filter.text = text
@@ -980,6 +985,19 @@ class MainChatGUI(ChatGUI):
         self.filters[0].root = self
         self.filters[0].load_back_log()
 
+    def log_by_filter(self, text):
+        tab = self.tabs.get_nth_page(self.tabs.get_current_page())
+
+        all = None
+
+        for i in range(0, len(self.filters)):
+            f = self.filters[i]
+            if f.tab_child == tab:
+                f.log(text)
+            elif i > 0 and f.text == None:
+                # All filter
+                f.log(text)
+
     def __init__(self, config, _mainapp):
         self.needs_redraw = False
         self.config = config # Set early for make_menubar()
@@ -988,7 +1006,7 @@ class MainChatGUI(ChatGUI):
         self.menubar.show()
         self.filters = []
 
-        ChatGUI.__init__(self, config, _mainapp)
+        ChatGUI.__init__(self, config, _mainapp, self.log_by_filter)
 
         self.textview.connect("populate-popup",
                               self.popup,
