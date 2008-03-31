@@ -747,7 +747,7 @@ class MainChatGUI(ChatGUI):
                    ('mrecv', None, "_Multi Recv File", "F4", None, self.menu_handler),
                    ('config', None, "Main _Settings", None, None, self.menu_handler),
                    ('qsts', None, "_Auto QST Settings", "<Control>q", None, self.menu_handler),
-                   ('quickmsg', None, 'Quick _Messages', "<Control>m", None, self.menu_handler),
+                   ('quickmsg', None, 'Quick _Messages', None, None, self.menu_handler),
                    ('manageform', None, '_Manage Form Templates', None, None, self.menu_handler),
                    ('quit', None, "_Quit", None, None, self.menu_handler),
                    ('sendtext', None, 'Broadcast _Text File', "<Control>b", None, self.menu_handler),
@@ -757,7 +757,7 @@ class MainChatGUI(ChatGUI):
                    ('unfilter', None, '_Remove current filter', "<Control>k", None, self.menu_handler),
                    ('allfilter', None, 'Show "_all" filter', None, None, self.show_allfilter),
                    ('thislog', None, 'Log for this tab', None, None, self.menu_handler),
-                   ('map', None, 'Map', None, None, self.menu_handler),
+                   ('map', None, 'Map', "<Control>m", None, self.menu_handler),
 
                    ('help', None, '_Help', None, None, self.menu_handler),
                    ('about', None, '_About', None, None, self.menu_handler)]
