@@ -285,7 +285,8 @@ class MainApp:
                                    self.incoming_chat,
                                    self.connected)
                                    
-        self.comm.connect()
+        if self.comm.connect():
+            self.comm.start_watch()
 
     def refresh_config(self):
         rate = self.config.getint("settings", "rate")
