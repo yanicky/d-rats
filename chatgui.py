@@ -1619,25 +1619,9 @@ class CallCatcher:
         lookup.show()
         vbox.pack_start(lookup, 0,0,0)
 
-        map = gtk.Button("Map")
-        map.set_size_request(75, 30)
-        map.connect("clicked", self.but_map)
-        self.gui.tips.set_tip(clear, "Get a Google map of known stations")
-        map.show()
-        vbox.pack_start(map, 0,0,0)
-
         vbox.show()
         
         return vbox
-
-    def but_map(self, widget):
-        img = gps.MapImage(self.mainapp.get_position())
-        for c,d in self.mainapp.seen_callsigns.items():
-            (t,p) = d
-            if p:
-                img.add_markers([p])
-
-        img.display_in_browser()
 
     def but_lookup(self, widget):
         (list, iter) = self.view.get_selection().get_selected()
