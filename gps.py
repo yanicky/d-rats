@@ -169,10 +169,10 @@ class GPSPosition:
             self.satellites,
             self.altitude)
 
-        return "$%s%s %s,%s\r\n" % (data,
-                               NMEA_checksum(data),
-                               self.station,
-                               self.comment)
+        return "$%s%s\r%-8.8s,%-15.15s\r\n" % (data,
+                                               NMEA_checksum(data),
+                                               self.station,
+                                               self.comment)
 
     def from_NMEA_GGA(self, string):
         string = string.replace('\r', ' ')
@@ -348,15 +348,16 @@ if __name__ == "__main__":
         print "Comment:    %s" % p.comment
 
         print "\n%s" % str(p)
-        print "\n%s" % p.to_NMEA_GGA()
+        print "\n%s" % p.to_NMEA_GGA().replace("\r", "\n")
 
         print "Checksum of TEST: %s" % NMEA_checksum("GPGGA,180718.02,4531.3740,N,12255.4599,W,1,07,1.4,50.6,M,-21.4,M,,")
 
         print "Distance: %s" % P.distance_from(p)
         print "Bearing: %s" % P.bearing_to(p)
         
-        mi = MapImage(P)
-        mi.add_markers([p])
-        print mi.get_image_url()
-        #print mi.display_in_browser()
         print P.fuzzy_to(p)
+
+        P.station = "KI4IFW M"
+        P.comment = "Dan Mobile"
+
+        print P.to_NMEA_GGA().replace("\r", "\n")
