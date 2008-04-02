@@ -14,12 +14,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from xml.dom.ext.reader import Sax2
-from xml.dom.ext import Print
-from xml import xpath
-from xml.dom.NodeFilter import NodeFilter
-from xml.dom import Node
-
 import gtk
 import gobject
 
