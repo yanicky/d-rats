@@ -128,12 +128,12 @@ class SocketDataPath(DataPath):
                         print "Timeout after read: %f" % (time.time() - x)
                     break
                 else:
-                    end = time.time() + self.timeout
                     continue
 
             if inp == "":
                 raise DataPathNotConnectedError("Socket closed")
 
+            end = time.time() + self.timeout
             data += inp
 
 
