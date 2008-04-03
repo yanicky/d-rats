@@ -169,10 +169,10 @@ class GPSPosition:
             self.satellites,
             self.altitude)
 
-        return "$%s%s\r%-8.8s,%-15.15s\r\n" % (data,
-                                               NMEA_checksum(data),
-                                               self.station,
-                                               self.comment)
+        return "$%s%s\r\n%-8.8s,%-20.20s\r\n" % (data,
+                                                 NMEA_checksum(data),
+                                                 self.station,
+                                                 self.comment)
 
     def from_NMEA_GGA(self, string):
         string = string.replace('\r', ' ')
