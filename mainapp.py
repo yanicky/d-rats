@@ -201,7 +201,6 @@ class ChatBuffer:
                         break
                     else:
                         inp += _inp
-                        print "Got chunk: %s" % _inp
             except comm.DataPathIOError, e:
                 self.incoming("Read error")
             except comm.DataPathNotConnectedError, e:
