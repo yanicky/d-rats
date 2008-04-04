@@ -363,6 +363,12 @@ class QSTGUI(SelectGUI):
         
         SelectGUI.__init__(self, "QST Configuration")
 
+        # Unset editability of the type field
+
+        c = self.list.get_column(self.column_type)
+        r = c.get_cell_renderers()[0]
+        r.set_property("editable", False)
+
     def ev_add(self, widget, data=None):
         msg = self.msg.get_text(self.msg.get_start_iter(),
                                 self.msg.get_end_iter())
