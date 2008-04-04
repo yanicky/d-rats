@@ -136,6 +136,7 @@ class QSTGPS(QSTText):
 
     def do_qst(self):
         fix = self.mainapp.get_position()
+        fix.comment = self.text[:20]
         if fix.valid:
             return fix.to_NMEA_GGA()
         else:
