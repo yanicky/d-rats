@@ -259,7 +259,6 @@ class MainApp:
             self.qsts.append(qstinst)
 
     def incoming_chat(self, data):
-        print "Incoming: %s" % data
         self.chatgui.display_line(data, "incomingcolor")
 
     def connected(self, is_connected):
