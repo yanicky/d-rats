@@ -445,7 +445,9 @@ class QSTGUI(SelectGUI):
                                                gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL))
             if d.run() == gtk.RESPONSE_OK:
                 self.msg.set_text(d.get_filename())
-            d.destroy()            
+            d.destroy()   
+        elif widget.get_active_text() in ["GPS"]:
+            self.msg.set_text("ON D-RATS")
 
     def load_qst(self, section):
         freq = self.config.get(section, "freq")
