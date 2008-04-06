@@ -359,14 +359,6 @@ class MapWindow(gtk.Window):
 
         return box
 
-    def recenter(self, view, path, column, data=None):
-        items = self.marker_list.get_selected()
-
-        self.map.set_center(items[2], items[3])
-        self.refresh_marker_list()
-        self.map.load_tiles()
-        self.center_on(items[2], items[3])
-
     def toggle_show(self, *vals):
         (fix, _, color) = self.markers[vals[1]]
         self.markers[vals[1]] = (fix, vals[0], color)
@@ -385,7 +377,7 @@ class MapWindow(gtk.Window):
         self.marker_list = miscwidgets.ListWidget(cols)
         self.marker_list.toggle_cb.append(self.toggle_show)
 
-        self.marker_list._view.connect("row-activated", self.recenter)
+        self.marker_list._view.connect("row-activated", self.recenter_cb)
 
         def render_coord(col, rend, model, iter, cnum):
             rend.set_property('text', "%.4f" % model.get_value(iter, cnum))
@@ -430,11 +422,32 @@ class MapWindow(gtk.Window):
             if show:
                 self.map.markers[id] = (fix.latitude, fix.longitude, color)
 
+    def make_track(self):
+        def toggle(cb, mw):
+            mw.tracking_enabled = cb.get_active()
+
+        cb = gtk.CheckButton("Track center")
+        cb.connect("toggled", toggle, self)
+
+        cb.show()
+
+        return cb
+
+    def make_controls(self):
+        vbox = gtk.VBox(False, 2)
+
+        vbox.pack_start(self.make_zoom_controls(), 0,0,0)
+        vbox.pack_start(self.make_track(), 0,0,0)
+
+        vbox.show()
+
+        return vbox
+
     def make_bottom_pane(self):
         box = gtk.HBox(False, 2)
 
         box.pack_start(self.make_marker_list(), 1,1,1)
-        box.pack_start(self.make_zoom_controls(), 0,0,0)
+        box.pack_start(self.make_controls(), 0,0,0)
 
         box.show()
 
@@ -456,6 +469,21 @@ class MapWindow(gtk.Window):
         ha.set_value(x - (ha.page_size / 2))
         va.set_value(y - (va.page_size / 2))
 
+    def recenter(self, lat, lon):
+        self.map.set_center(lat, lon)
+        self.refresh_marker_list()
+        self.map.load_tiles()
+        self.center_on(lat, lon)
+
+    def recenter_cb(self, view, path, column, data=None):
+        items = self.marker_list.get_selected()
+
+        self.recenter(items[2], items[3])
+
+        self.center_mark = items[1]
+        self.sb_center.pop(self.STATUS_CENTER)
+        self.sb_center.push(self.STATUS_CENTER, "Center: %s" % self.center_mark)
+
     def mouse_click_event(self, widget, event):
         x,y = event.get_coords()
 
@@ -473,19 +501,15 @@ class MapWindow(gtk.Window):
                                         lat=lat, lon=lon))
         elif event.type == gtk.gdk._2BUTTON_PRESS:
             print "Recenter on %.4f, %.4f" % (lat,lon)
-            self.map.set_center(lat, lon)
-            self.map.load_tiles()
-            nx, ny = self.map.latlon2xy(lat, lon)
 
-            ha.set_value(nx - (ha.page_size / 2))
-            va.set_value(ny - (va.page_size / 2))
-            
+            self.recenter(lat, lon)
+
     def mouse_move_event(self, widget, event):
         x, y = event.get_coords()
         lat, lon = self.map.xy2latlon(x, y)
 
-        self.statusbar.pop(self.STATUS_COORD)
-        self.statusbar.push(self.STATUS_COORD, "%.4f, %.4f" % (lat, lon))
+        self.sb_coords.pop(self.STATUS_COORD)
+        self.sb_coords.push(self.STATUS_COORD, "%.4f, %.4f" % (lat, lon))
 
     def ev_destroy(self, widget, data=None):
         self.hide()
@@ -499,6 +523,10 @@ class MapWindow(gtk.Window):
         gtk.Window.__init__(self, *args)
 
         self.STATUS_COORD = 0
+        self.STATUS_CENTER = 1
+
+        self.center_mark = None
+        self.tracking_enabled = False
 
         tiles = 5
 
@@ -517,12 +545,22 @@ class MapWindow(gtk.Window):
 
         self.sw.connect('realize', self.scroll_to_center)
 
-        self.statusbar = gtk.Statusbar()
-        self.statusbar.show()
+        hbox = gtk.HBox(False, 2)
+
+        self.sb_coords = gtk.Statusbar()
+        self.sb_coords.show()
+        self.sb_coords.set_has_resize_grip(False)
+
+        self.sb_center = gtk.Statusbar()
+        self.sb_center.show()
+
+        hbox.pack_start(self.sb_coords, 1,1,1)
+        hbox.pack_start(self.sb_center, 1,1,1)
+        hbox.show()
 
         box.pack_start(self.sw, 1,1,1)
         box.pack_start(self.make_bottom_pane(), 0,0,0)
-        box.pack_start(self.statusbar, 0,0,0)
+        box.pack_start(hbox, 0,0,0)
         box.show()
 
         self.set_default_size(600,600)
@@ -540,6 +578,10 @@ class MapWindow(gtk.Window):
         self.markers[fix.station] = (fix, True, color)
         self.map.set_marker(fix.station, fix.latitude, fix.longitude)
         self.refresh_marker_list()
+
+        if self.center_mark and fix.station == self.center_mark and \
+                self.tracking_enabled:
+            self.recenter(fix.latitude, fix.longitude)
 
     def del_marker(self, id):
         try:
