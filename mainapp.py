@@ -304,7 +304,7 @@ class MainApp:
         self.chatgui.display("My Call: %s\n" % call, "blue", "italic")
 
         self.refresh_qsts()
-        self.chatgui.refresh_colors()
+        self.chatgui.refresh_config()
         self.chatgui.refresh_advanced()
 
     def maybe_redirect_stdout(self):

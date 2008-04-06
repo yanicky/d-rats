@@ -61,6 +61,8 @@ class QSTText:
 
     def reset(self):
         self.next = 0
+        if not self.enabled:
+            self.fire()
 
     def remaining(self):
         delta = int(self.next - time.time())
@@ -70,9 +72,12 @@ class QSTText:
             return 0
 
     def enable(self):
-        self.enabled = True
-        print "Starting QST `%s'" % self.text
-        gobject.timeout_add(1000, self.tick)
+        if self.freq[0] != "0":
+            self.enabled = True
+            print "Starting QST `%s'" % self.text
+            gobject.timeout_add(1000, self.tick)
+        else:
+            print "Not starting idle thread for 0-time QST"
 
     def disable(self):
         self.enabled = False
@@ -80,20 +85,21 @@ class QSTText:
     def do_qst(self):
         return self.text
 
+    def fire(self):
+        if self.gui.sendable:
+            print "Tick: %s" % self.text
+            msg = self.do_qst()
+            if msg:
+                self.gui.tx_msg("%s%s" % (self.prefix, msg), self.raw)
+            else:
+                print "Skipping QST because GUI is not sendable"
+
     def tick(self):
         if not self.enabled:
             return False
 
         if self.remaining() == 0:
-            
-            if self.gui.sendable:
-                print "Tick: %s" % self.text
-                msg = self.do_qst()
-                if msg:
-                    self.gui.tx_msg("%s%s" % (self.prefix, msg), self.raw)
-            else:
-                print "Skipping QST because GUI is not sendable"
-
+            self.fire()
             self.reschedule()
 
         return True

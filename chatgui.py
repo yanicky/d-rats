@@ -255,7 +255,7 @@ class ChatGUI:
 
         return vbox
 
-    def refresh_colors(self, first_time=False):
+    def _refresh_colors(self, first_time=False):
 
         fontname = self.config.get("prefs", "font")
         font = pango.FontDescription(fontname)
@@ -303,6 +303,9 @@ class ChatGUI:
                 tag.set_property("foreground", self.config.get("prefs", i))
             elif i in reverse:
                 tag.set_property("background", self.config.get("prefs", i))
+
+    def refresh_config(self, first_time=False):
+        self._refresh_colors(first_time)
 
     def set_window_defaults(self, window):
         window.set_geometry_hints(None, min_width=400, min_height=200)
@@ -352,7 +355,7 @@ class ChatGUI:
 
         self.window = None
 
-        self.refresh_colors(first_time=True)
+        self._refresh_colors(first_time=True)
 
     def show(self):
         if not self.window:
@@ -1019,13 +1022,19 @@ class MainChatGUI(ChatGUI):
         pos = self.mainapp.get_position()
         self.map.set_center(pos.latitude, pos.longitude)
         self.map.set_zoom(14)
+        self._refresh_location()
 
+        self.load_filters()
+        self.show()
+
+    def _refresh_location(self):
         fix = self.mainapp.get_position()
         fix.station = "Me"
         self.map.set_marker(fix)
 
-        self.load_filters()
-        self.show()
+    def refresh_config(self, first_time=False):
+        self._refresh_location()
+        ChatGUI.refresh_config(self, first_time)        
 
     def main(self):
         gtk.main()
@@ -1151,12 +1160,17 @@ class QSTMonitor:
 
         rem = qst.remaining()
 
-        if rem < 90:
+        if max == 0:
+            status = "Manual"
+        elif rem < 90:
             status = "%i sec" % rem
         else:
             status = "%i min" % (rem / 60)
 
-        val = (float(rem) / float(max)) * 100.0
+        try:
+            val = (float(rem) / float(max)) * 100.0
+        except:
+            val = 0
 
         self.store.set(iter,
                        self.col_remain, val,
@@ -1178,16 +1192,23 @@ class QSTMonitor:
         rem = qst.remaining()
         msg = qst.text
 
-        if rem < 90:
+        if max == 0:
+            status = "Manual"
+        elif rem < 90:
             status = "%i sec" % rem
         else:
             status = "%i min" % (rem / 60)
+
+        try:
+            val = (float(rem) / float(max)) * 100
+        except:
+            val = 0
 
         iter = self.store.append()
         self.store.set(iter,
                        self.col_index, index,
                        self.col_period, qst.freq,
-                       self.col_remain, (rem / max) * 100,
+                       self.col_remain, val,
                        self.col_status, status,
                        self.col_msg, msg)
         
