@@ -23,6 +23,23 @@ def set_units(units):
 
     print "Set GPS units to %s" % units
 
+def value_with_units(value):
+    if value < 0.5:
+        if EARTH_UNITS == "km":
+            scale = 1000
+            units = "m"
+        elif EARTH_UNITS == "mi":
+            scale = 5280
+            units = "ft"
+        else:
+            scale = 1
+            units = EARTH_UNITS
+    else:
+        scale = 1
+        units = EARTH_UNITS
+
+    return "%.2f %s" % (value * scale, units)
+
 def NMEA_checksum(string):
     checksum = 0
     for i in string:

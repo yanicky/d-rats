@@ -11,7 +11,7 @@ import gobject
 import platform
 import miscwidgets
 
-from gps import GPSPosition, distance
+from gps import GPSPosition, distance, value_with_units
 
 CROSSHAIR = "+"
 
@@ -345,12 +345,7 @@ class MapWidget(gtk.DrawingArea):
         # width of one tile
         d = distance(lat_a, lon_a, lat_b, lon_b) * (float(pixels) / self.tilesize)
 
-        if d < 0.5:
-            dist = d * 5280
-            units = "ft"
-        else:
-            dist = d
-            units = "mi"
+        dist = value_with_units(d)
 
         color = self.window.get_colormap().alloc_color("black")
         gc = self.window.new_gc(line_width=1, foreground=color)
@@ -361,7 +356,7 @@ class MapWidget(gtk.DrawingArea):
         self.window.draw_line(gc, x-(pixels/2), y-shift, x-(pixels/2), y-shift-tick)
 
         pl = self.create_pango_layout("")
-        pl.set_markup("%.1f %s" % (dist, units))
+        pl.set_markup("%s" % dist)
         self.window.draw_layout(gc, x-pixels, y-shift, pl)        
 
 class MapWindow(gtk.Window):
