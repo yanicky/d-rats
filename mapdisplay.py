@@ -11,7 +11,7 @@ import gobject
 import platform
 import miscwidgets
 
-from gps import GPSPosition
+from gps import GPSPosition, distance
 
 CROSSHAIR = "+"
 
@@ -332,6 +332,38 @@ class MapWidget(gtk.DrawingArea):
     def del_marker(self, id):
         del self.markers[id]
 
+    def scale(self, x, y, pixels=128):
+        shift = 15
+        tick = 5
+
+        #rect = gtk.gdk.Rectangle(x-pixels,y-shift-tick,x,y)
+        #self.window.invalidate_rect(rect, True)
+
+        (lat_a, lon_a) = self.xy2latlon(self.tilesize, self.tilesize)
+        (lat_b, lon_b) = self.xy2latlon(self.tilesize * 2, self.tilesize)
+
+        # width of one tile
+        d = distance(lat_a, lon_a, lat_b, lon_b) * (float(pixels) / self.tilesize)
+
+        if d < 0.5:
+            dist = d * 5280
+            units = "ft"
+        else:
+            dist = d
+            units = "mi"
+
+        color = self.window.get_colormap().alloc_color("black")
+        gc = self.window.new_gc(line_width=1, foreground=color)
+
+        self.window.draw_line(gc, x-pixels, y-shift, x, y-shift)
+        self.window.draw_line(gc, x-pixels, y-shift, x-pixels, y-shift-tick)
+        self.window.draw_line(gc, x, y-shift, x, y-shift-tick)
+        self.window.draw_line(gc, x-(pixels/2), y-shift, x-(pixels/2), y-shift-tick)
+
+        pl = self.create_pango_layout("")
+        pl.set_markup("%.1f %s" % (dist, units))
+        self.window.draw_layout(gc, x-pixels, y-shift, pl)        
+
 class MapWindow(gtk.Window):
     def zoom_in(self, widget, data=None):
         self.map.set_zoom(self.map.get_zoom() + 1)
@@ -538,6 +570,32 @@ class MapWindow(gtk.Window):
         self.sw = gtk.ScrolledWindow()
         self.sw.add_with_viewport(self.map)
         self.sw.show()
+
+
+        def pre_scale(sw, event, mw):
+            ha = mw.sw.get_hadjustment()
+            va = mw.sw.get_vadjustment()
+
+            px = ha.get_value() + ha.page_size
+            py = va.get_value() + va.page_size
+
+            rect = gtk.gdk.Rectangle(int(px-128-5),0,int(px),int(py))
+            mw.map.window.invalidate_rect(rect, True)
+
+        def _scale(sw, event, mw):
+            ha = mw.sw.get_hadjustment()
+            va = mw.sw.get_vadjustment()
+
+            px = ha.get_value() + ha.page_size
+            py = va.get_value() + va.page_size
+
+            pm = mw.map.scale(int(px) - 5, int(py))
+
+        def scale(sw, event, mw):
+            gobject.idle_add(_scale, sw, event, mw)
+
+        self.sw.connect("expose-event", pre_scale, self)
+        self.sw.connect_after("expose-event", scale, self)
 
         self.map.add_events(gtk.gdk.POINTER_MOTION_MASK)
         self.map.connect("motion-notify-event", self.mouse_move_event)
