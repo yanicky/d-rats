@@ -56,6 +56,24 @@ def deg2nmea(deg):
 
     return (deg * 100) + min
 
+def distance(lat_a, lon_a, lat_b, lon_b):
+    lat_a = deg2rad(lat_a)
+    lon_a = deg2rad(lon_a)
+    
+    lat_b = deg2rad(lat_b)
+    lon_b = deg2rad(lon_b)
+    
+    earth_radius = EARTH_RADIUS # miles
+    
+    distance = acos((cos(lat_a) * cos(lon_a) * \
+                         cos(lat_b) * cos(lon_b)) + \
+                        (cos(lat_a) * sin(lon_a) * \
+                             cos(lat_b) * sin(lon_b)) + \
+                        (sin(lat_a) * sin(lat_b)))
+    
+    return distance * earth_radius
+
+
 class GPSPosition:
     def __init__(self, lat=0, lon=0, station="UNKNOWN"):
         self.valid = False
@@ -196,21 +214,8 @@ class GPSPosition:
         self.comment = comment
 
     def distance_from(self, pos):
-        lat_me = deg2rad(self.latitude)
-        lon_me = deg2rad(self.longitude)
-
-        lat_u = deg2rad(pos.latitude)
-        lon_u = deg2rad(pos.longitude)
-
-        earth_radius = EARTH_RADIUS # miles
-
-        distance = acos((cos(lat_me) * cos(lon_me) * \
-                             cos(lat_u) * cos(lon_u)) + \
-                            (cos(lat_me) * sin(lon_me) * \
-                                 cos(lat_u) * sin(lon_u)) + \
-                            (sin(lat_me) * sin(lat_u)))
-        
-        return distance * earth_radius
+        return distance(self.latitude, self.longitude,
+                        pos.latitude, pos.longitude)
 
     def bearing_to(self, pos):
         lat_me = deg2rad(self.latitude)
