@@ -1024,6 +1024,8 @@ class MainChatGUI(ChatGUI):
         self.map.set_zoom(14)
         self._refresh_location()
 
+        gobject.timeout_add(10000, self._refresh_location)
+
         self.load_filters()
         self.show()
 
@@ -1031,6 +1033,7 @@ class MainChatGUI(ChatGUI):
         fix = self.mainapp.get_position()
         fix.station = "Me"
         self.map.set_marker(fix)
+        return True
 
     def refresh_config(self, first_time=False):
         self._refresh_location()
