@@ -114,17 +114,20 @@ class GPSPosition:
 
         segment = string[1:idx]
 
-        print "Checking checksum: |%s|" % segment
+        #print "Checking checksum: |%s|" % segment
 
-        print "Calc'd: %s" % NMEA_checksum(segment)
-        print "Recv'd: %s" % csum
+        csum = csum.upper()
+        _csum = NMEA_checksum(segment).upper()
 
-        return csum == NMEA_checksum(segment)
+        #print "Calc'd: %s" % _csum
+        #print "Recv'd: %s" % csum
+
+        return csum == _csum
 
     def parse_string(self, string):
         csvel = "[^,]+"
         expr = \
-            "\$GPGGA,(%s),(%s),([NS]),(%s),([EW]),([0-9]),(%s),(%s),(%s),([A-Z]),(%s),([A-Z]),,(%s),(%s)" % \
+            "\$GPGGA,(%s),(%s),([NS]),(%s),([EW]),([0-9]),(%s),(%s),(%s),([A-Z]),(%s),([A-Z]),,(%s),?(%s)?" % \
         (csvel, csvel, csvel, csvel, csvel, csvel, csvel, csvel, csvel)
 
         m = re.match(expr, string)
@@ -152,9 +155,14 @@ class GPSPosition:
 
         self.satellites = int(m.group(7))
         self.altitude = float(m.group(9))
-        (csum, self.station) = m.group(13).split(' ', 1)
-        self.station = self.station.strip()
-        self.comment = m.group(14).strip()
+        if " "in m.group(13):
+            (csum, self.station) = m.group(13).split(' ', 1)
+            self.station = self.station.strip()
+            self.comment = m.group(14).strip()
+        else:
+            csum = m.group(13)
+            self.station = ""
+            self.comment = ""
         
         self.valid = self.test_checksum(string, csum)
 
@@ -355,7 +363,7 @@ class GPSSource:
         self.serial = serial.Serial(port=port, baudrate=4800, timeout=1)
         self.thread = None
 
-        self.positition = GPSPosition()
+        self.position = GPSPosition()
 
     def start(self):
         self.enabled = True
@@ -370,22 +378,18 @@ class GPSSource:
     def gpsthread(self):
         while self.enabled:
             data = self.serial.read(1024)
-            print "Got %i" % len(data)
             lines = data.split("\r\n")
             
-            print lines
-
             for line in lines:
                 if line.startswith("$GPGGA"):
-                    print "Got line: %s" % line
                     position = GPSPosition()
                     position.from_NMEA_GGA(line)
-                    print position
 
                     if position.valid:
                         self.position = position
+                    else:
+                        print "Could not parse: %s" % line
                     
-            print "Sleeping"
             time.sleep(1)
 
     def get_position(self):
