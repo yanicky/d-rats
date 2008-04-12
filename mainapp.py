@@ -286,6 +286,43 @@ class MainApp:
         if self.comm.connect():
             self.comm.start_watch()
 
+    def update_position(self):
+        if self.gps:
+            self.position = self.gps.get_position()
+            if self.position.valid:
+                return True
+            
+        self.position = gps.GPSPosition()
+        try:
+            lat = float(self.config.get("user", "latitude"))
+            lon = float(self.config.get("user", "longitude"))
+            alt = float(self.config.get("user", "altitude"))
+            self.position.from_coords(lat, lon, alt)
+        except Exception, e:
+            print "Invalid static position: %s" % e
+                
+        return True
+
+    def refresh_gps(self):
+        port = self.config.get("settings", "gpsport")
+        enab = self.config.getboolean("settings", "gpsenabled")
+
+        print "GPS: %s on %s" % (enab, port)
+
+        if enab:
+            if self.gps:
+                if port != self.gps.port:
+                    self.gps.stop()
+                    self.gps = gps.GPSSource(port)
+                    self.gps.start()
+            else:
+                self.gps = gps.GPSSource(port)
+                self.gps.start()
+        else:
+            if self.gps:
+                self.gps.stop()
+                self.gps = None          
+
     def refresh_config(self):
         rate = self.config.getint("settings", "rate")
         port = self.config.get("settings", "port")
@@ -304,6 +341,7 @@ class MainApp:
         self.chatgui.display("My Call: %s\n" % call, "blue", "italic")
 
         self.refresh_qsts()
+        self.refresh_gps()
         self.chatgui.refresh_config()
         self.chatgui.refresh_advanced()
 
@@ -346,6 +384,8 @@ class MainApp:
         self.comm = None
         self.qsts = []
         self.seen_callsigns = {}
+        self.gps = None
+        self.position = None
 
         # REMOVE ME in 0.1.13
         self.TEMP_migrate_config()
@@ -366,19 +406,9 @@ class MainApp:
             self.chatgui.tx_msg(self.config.get("prefs", "signon"))
             
     def get_position(self):
-        fix = gps.GPSPosition()
-        try:
-            lat = float(self.config.get("user", "latitude"))
-            lon = float(self.config.get("user", "longitude"))
-            alt = float(self.config.get("user", "altitude"))
-        except Exception, e:
-            print "Invalid position: %s" % e
-            return None
-
-        fix.from_coords(lat, lon, alt)
-        fix.set_station(self.config.get("user", "callsign"), "D-RATS")
-
-        return fix
+        self.update_position()
+        self.position.set_station(self.config.get("user", "callsign"))
+        return self.position
 
     def main(self):
         try:
@@ -397,8 +427,11 @@ class MainApp:
         print "Closing serial..."
         self.comm.close()
 
-        print "Done.  Exit."
+        if self.gps:
+            print "Stopping GPS..."
+            self.gps.stop()
 
+        print "Done.  Exit."
 
 def get_mainapp():
     return MAINAPP
