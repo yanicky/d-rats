@@ -101,6 +101,8 @@ class AppConfig:
         mset("settings", "swflow", "False")
         mset("settings", "encoding", "yenc")
         mset("settings", "compression", "True")
+        mset("settings", "gpsport", "")
+        mset("settings", "gpsenabled", "False")
 
         mset("quick", None, None)
 
@@ -151,6 +153,8 @@ class AppConfig:
                 "longitude" : "Current Longitude",
                 "altitude" : "Current Altitude",
                 "units" : "Units",
+                "gpsport" : "External GPS serial port",
+                "gpsenabled" : "Update position from external GPS",
                 }
 
     id2tip = {"write_chunk" : "Stage DDT blocks into small chunks of this many bytes",
@@ -165,6 +169,8 @@ class AppConfig:
               "latitude" : "Current latitude (deg.minutes)",
               "longitude" : "Current longitude (deg.minutes)",
               "altitude" : "Altitude in meters",
+              "gpsport" : "Set this to the serial port of your external NMEA GPS",
+              "gpsenabled" : "When enabled, update position from GPS data",
               }
 
     xfers = {"DDT" : ddt.DDTTransfer}
@@ -420,6 +426,12 @@ class AppConfig:
                                      make_choice(self.xfers.keys(), False)), 0,0,0)
         vbox.pack_start(self.make_sb("swflow", self.make_bool()), 0,0,0)
 
+        vbox.pack_start(self.make_sb("gpsport",
+                                     make_choice(ports)), 0,0,0)
+        vbox.pack_start(self.make_sb("gpsenabled",
+                                     self.make_bool()), 0,0,0)
+
+
         vbox.show()
         return vbox
 
@@ -613,9 +625,11 @@ D-RATS has been started in safe mode, which means the configuration file has not
                   ("prefs", "debuglog"),
                   ("settings", "swflow"),
                   ("settings", "compression"),
-                  ("prefs", "logresume")]
+                  ("prefs", "logresume"),
+                  ("settings", "gpsenabled")]
 
-        choicetext_v = [("settings", "port")]
+        choicetext_v = [("settings", "port"),
+                        ("settings", "gpsport")]
 
         choice_v = [("settings", "rate"),
                     ("settings", "xfer"),
