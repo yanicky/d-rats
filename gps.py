@@ -3,6 +3,9 @@ import time
 import tempfile
 import platform
 
+import threading
+import serial
+
 from math import pi,cos,acos,sin,atan2
 
 TEST = "$GPGGA,180718.02,4531.3740,N,12255.4599,W,1,07,1.4,50.6,M,-21.4,M,,*63 KE7JSS  ,440.350+ PL127.3"
@@ -344,6 +347,51 @@ class MapImage:
         p = platform.get_platform()
         p.open_html_file(f.name)
 
+class GPSSource:
+    def __init__(self, port):
+        self.port = port
+        self.enabled = False
+
+        self.serial = serial.Serial(port=port, baudrate=4800, timeout=1)
+        self.thread = None
+
+        self.positition = GPSPosition()
+
+    def start(self):
+        self.enabled = True
+        self.thread = threading.Thread(target=self.gpsthread)
+        self.thread.start()
+
+    def stop(self):
+        if self.thread and self.enabled:
+            self.enabled = False
+            self.thread.join()
+
+    def gpsthread(self):
+        while self.enabled:
+            data = self.serial.read(1024)
+            print "Got %i" % len(data)
+            lines = data.split("\r\n")
+            
+            print lines
+
+            for line in lines:
+                if line.startswith("$GPGGA"):
+                    print "Got line: %s" % line
+                    position = GPSPosition()
+                    position.from_NMEA_GGA(line)
+                    print position
+
+                    if position.valid:
+                        self.position = position
+                    
+            print "Sleeping"
+            time.sleep(1)
+
+    def get_position(self):
+        return self.position
+            
+
 def parse_GPS(string):
     if "$GPGGA" in string:
         p = GPSPosition()
@@ -354,32 +402,41 @@ def parse_GPS(string):
 
 if __name__ == "__main__":
 
-    p = parse_GPS("08:44:37: " + TEST)
-    P = GPSPosition()
-    P.from_coords(45.525012, -122.916434)
-    p.set_relative_to_current(P)
-    if not p:
-        print "Failed"
-    else:
-        print "Date:       %s" % p.date
-        print "Latitude:   %s" % p.latitude
-        print "Longitude:  %s" % p.longitude
-        print "# Sats:     %s" % p.satellites
-        print "Altitude:   %s" % p.altitude
-        print "Station:    %s" % p.station
-        print "Comment:    %s" % p.comment
+#    p = parse_GPS("08:44:37: " + TEST)
+#    P = GPSPosition()
+#    P.from_coords(45.525012, -122.916434)
+#    p.set_relative_to_current(P)
+#    if not p:
+#        print "Failed"
+#    else:
+#        print "Date:       %s" % p.date
+#        print "Latitude:   %s" % p.latitude
+#        print "Longitude:  %s" % p.longitude
+#        print "# Sats:     %s" % p.satellites
+#        print "Altitude:   %s" % p.altitude
+#        print "Station:    %s" % p.station
+#        print "Comment:    %s" % p.comment
+#
+#        print "\n%s" % str(p)
+#        print "\n%s" % p.to_NMEA_GGA().replace("\r", "\n")
+#
+#        print "Checksum of TEST: %s" % NMEA_checksum("GPGGA,180718.02,4531.3740,N,12255.4599,W,1,07,1.4,50.6,M,-21.4,M,,")
+#
+#        print "Distance: %s" % P.distance_from(p)
+#        print "Bearing: %s" % P.bearing_to(p)
+#        
+#        print P.fuzzy_to(p)
+#
+#        P.station = "KI4IFW M"
+#        P.comment = "Dan Mobile"
+#
+#        print P.to_NMEA_GGA().replace("\r", "\n")
 
-        print "\n%s" % str(p)
-        print "\n%s" % p.to_NMEA_GGA().replace("\r", "\n")
+    gps = GPSSource("/dev/ttyS0")
+    gps.start()
 
-        print "Checksum of TEST: %s" % NMEA_checksum("GPGGA,180718.02,4531.3740,N,12255.4599,W,1,07,1.4,50.6,M,-21.4,M,,")
+    for i in range(30):
+        time.sleep(1)
 
-        print "Distance: %s" % P.distance_from(p)
-        print "Bearing: %s" % P.bearing_to(p)
-        
-        print P.fuzzy_to(p)
-
-        P.station = "KI4IFW M"
-        P.comment = "Dan Mobile"
-
-        print P.to_NMEA_GGA().replace("\r", "\n")
+    print "Stopping"
+    gps.stop()
