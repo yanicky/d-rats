@@ -249,7 +249,6 @@ class MapWidget(gtk.DrawingArea):
 
     def load_tiles(self):
         prog = miscwidgets.ProgressDialog("Loading map")
-        prog.show()
 
         prog.set_text("Getting map center")
         center = MapTile(self.lat, self.lon, self.zoom)
@@ -265,6 +264,7 @@ class MapWidget(gtk.DrawingArea):
                 tile = center + (i - delta_w, j - delta_h)
                 if not tile.is_local():
                     prog.set_text("Retrieving %i, %i" % (i,j))
+                    prog.show()
                 else:
                     prog.set_text("Loading %i, %i" % (i, j))
                 
