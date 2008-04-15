@@ -574,9 +574,8 @@ class MapWindow(gtk.Window):
             px = ha.get_value() + ha.page_size
             py = va.get_value() + va.page_size
 
-            rect = gtk.gdk.Rectangle(int(px-128-5),0,int(px),int(py))
-            mw.map.window.invalidate_rect(rect, True)
-            rect = gtk.gdk.Rectangle(0, int(py), 0, int(py-20))
+            rect = gtk.gdk.Rectangle(int(ha.get_value()), int(va.get_value()),
+                                     int(py), int(py))
             mw.map.window.invalidate_rect(rect, True)
 
         def _scale(sw, event, mw):
