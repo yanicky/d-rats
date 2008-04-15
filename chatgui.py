@@ -521,9 +521,9 @@ class MainChatGUI(ChatGUI):
         else:
             filename = fc.get_filename()
             fc.destroy()
-            self.mainapp.comm.disable()
+            self.mainapp.comm.stop_watch()
             self.tx_file(filename)
-            self.mainapp.comm.enable(self)
+            self.mainapp.comm.start_watch()
   
     def select_page(self, tabs, page, page_num, data=None):
         page = tabs.get_nth_page(page_num)
