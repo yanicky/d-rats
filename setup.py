@@ -14,5 +14,6 @@ opts = {
 setup(
     windows=[{'script' : "d-rats.py",
               'icon_resources': [(0x0004, 'd-rats.ico')]},
-             {'script' : 'repeater.py'}],
+             {'script' : 'repeater.py'},
+             {'script' : 'mapdownloader.py'}],
     options=opts)
