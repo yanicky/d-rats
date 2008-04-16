@@ -294,9 +294,9 @@ class MainApp:
             
         self.position = gps.GPSPosition()
         try:
-            lat = float(self.config.get("user", "latitude"))
-            lon = float(self.config.get("user", "longitude"))
-            alt = float(self.config.get("user", "altitude"))
+            lat = self.config.get("user", "latitude")
+            lon = self.config.get("user", "longitude")
+            alt = self.config.get("user", "altitude")
             self.position.from_coords(lat, lon, alt)
         except Exception, e:
             print "Invalid static position: %s" % e
