@@ -166,8 +166,8 @@ class AppConfig:
               "encoding" : "yenc is fastest, base64 is safest (currently)",
               "compression" : "Compress outgoing blocks",
               "logresume" : "Loads the last bit of the log for context at startup",
-              "latitude" : "Current latitude (deg.minutes)",
-              "longitude" : "Current longitude (deg.minutes)",
+              "latitude" : "Current latitude (dd.dddd or dd hh mm)",
+              "longitude" : "Current longitude (dd.dddd or dd hh mm)",
               "altitude" : "Altitude in meters",
               "gpsport" : "Set this to the serial port of your external NMEA GPS",
               "gpsenabled" : "When enabled, update position from GPS data",
@@ -354,11 +354,9 @@ class AppConfig:
                                      self.make_bool()), 0,0,0)
 
         vbox.pack_start(self.make_sb("latitude",
-                                     self.make_spin(0.0001, -180.0, 180.0, 6)),
-                        0,0,0)
+                                     miscwidgets.LatLonEntry()), 0,0,0)
         vbox.pack_start(self.make_sb("longitude",
-                                     self.make_spin(0.0001, -180.0, 180.0, 6)),
-                        0,0,0)
+                                     miscwidgets.LatLonEntry()), 0,0,0)
         vbox.pack_start(self.make_sb("altitude",
                                      self.make_spin(0.1, 0.0, 29028.0, 1)),
                         0,0,0)                                     
@@ -615,7 +613,9 @@ D-RATS has been started in safe mode, which means the configuration file has not
                   ("prefs", "noticere"),
                   ("prefs", "ignorere"),
                   ("prefs", "signon"),
-                  ("prefs", "signoff")]
+                  ("prefs", "signoff"),
+                  ("user", "latitude"),
+                  ("user", "longitude")]
 
         bool_v = [("prefs", "autoreceive"),
                   ("prefs", "dosignon"),
@@ -650,8 +650,6 @@ D-RATS has been started in safe mode, which means the configuration file has not
         spin_v = [("settings", "write_chunk"),
                   ("settings", "chunk_delay"),
                   ("prefs", "scrollback"),
-                  ("user", "latitude"),
-                  ("user", "longitude"),
                   ("user", "altitude")]
 
         list_v = [("prefs", "callsigns")]
