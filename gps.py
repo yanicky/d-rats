@@ -13,6 +13,30 @@ TEST = "$GPGGA,180718.02,4531.3740,N,12255.4599,W,1,07,1.4,50.6,M,-21.4,M,,*63 K
 EARTH_RADIUS = 3963.1
 EARTH_UNITS = "mi"
 
+DEGREE = u"\u00b0"
+
+def parse_dms(string):
+    string = string.replace(u"\u00b0", " ")
+    string = string.replace('"', ' ')
+    string = string.replace("'", ' ')
+    string = string.replace('  ', ' ')
+    string = string.strip()
+    
+    (d, m, s) = string.split(' ', 3)
+    
+    deg = int(d)
+    min = int(m)
+    sec = float(s)
+
+    if deg < 0:
+        mul = -1
+    else:
+        mul = 1
+
+    deg = abs(deg)
+   
+    return (deg + (min / 60.0) + (sec / 3600.0)) * mul
+
 def set_units(units):
     global EARTH_RADIUS
     global EARTH_UNITS
@@ -231,9 +255,17 @@ class GPSPosition:
             return
 
     def from_coords(self, lat, lon, alt=0):
-        self.latitude = lat
-        self.longitude = lon
-        self.altitude = alt
+        try:
+            self.latitude = float(lat)
+        except ValueError:
+            self.latitude = parse_dms(lat)
+
+        try:
+            self.longitude = float(lon)
+        except ValueError:
+            self.longitude = parse_dms(lon)
+
+        self.altitude = float(alt)
         self.satellites = 3
         self.valid = True
 
