@@ -147,6 +147,85 @@ class ProgressDialog(gtk.Window):
         while gtk.events_pending():
             gtk.main_iteration_do(False)
 
+class LatLonEntry(gtk.Entry):
+    def __init__(self, *args):
+        gtk.Entry.__init__(self, *args)
+
+        self.connect("changed", self.format)
+
+    def format(self, editable):
+        s = self.get_text()
+
+        d = u"\u00b0"
+
+        while " " in s:
+            if "." in s:
+                break
+            elif d not in s:
+                s = s.replace(" ", d)
+            elif "'" not in s:
+                s = s.replace(" ", "'")
+            elif '"' not in s:
+                s = s.replace(" ", '"')
+            else:
+                s = s.replace(" ", "")
+
+        self.set_text(s)
+
+    def parse_dd(self, string):
+        return float(string)
+
+    def parse_dm(self, string):
+        string = string.strip()
+        string = string.replace('  ', ' ')
+        
+        (d, m) = string.split(' ', 2)
+
+        deg = int(d)
+        min = float(m)
+
+        return deg + (min / 60.0)
+
+    def parse_dms(self, string):
+        string = string.replace(u"\u00b0", " ")
+        string = string.replace('"', ' ')
+        string = string.replace("'", ' ')
+        string = string.replace('  ', ' ')
+        string = string.strip()
+
+        (d, m, s) = string.split(' ', 3)
+
+        deg = int(d)
+        min = int(m)
+        sec = float(s)
+        
+        return deg + (min / 60.0) + (sec / 3600.0)
+
+    def value(self):
+        s = self.get_text()
+
+        try:
+            return self.parse_dd(s)
+        except:
+            try:
+                return self.parse_dm(s)
+            except:
+                try:
+                    return self.parse_dms(s)
+                except Exception, e:
+                    print "DMS: %s" % e
+                    pass
+
+        raise Exception("Invalid format")
+
+    def validate(self):
+        try:
+            self.value()
+            return True
+        except:
+            return False
+            
+
 if __name__=="__main__":
     w = gtk.Window(gtk.WINDOW_TOPLEVEL)
     l = ListWidget([(gobject.TYPE_STRING, "Foo"),
@@ -161,6 +240,21 @@ if __name__=="__main__":
 
     w1 = ProgressDialog("foo")
     w1.show()
+
+    w2 = gtk.Window(gtk.WINDOW_TOPLEVEL)
+    lle = LatLonEntry()
+    lle.show()
+    w2.add(lle)
+    w2.show()
+
+    def print_val(entry):
+        if entry.validate():
+            print "Valid: %s" % entry.value()
+        else:
+            print "Invalid"
+    lle.connect("activate", print_val)
+
+    lle.set_text("45 13 12")
 
     try:
         gtk.main()
