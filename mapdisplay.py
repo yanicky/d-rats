@@ -4,6 +4,7 @@ import os
 from math import *
 import urllib
 import time
+import random
 
 import gtk
 import gobject
@@ -95,7 +96,17 @@ class MapTile:
 
     def fetch(self):
         if not os.path.exists(self._local_path()):
-            urllib.urlretrieve(self.remote_path(), self._local_path())
+            for i in range(10):
+                url = self.remote_path()
+                try:
+                    urllib.urlretrieve(url, self._local_path())
+                    return True
+                except Exception, e:
+                    print "[%i] Failed to fetch `%s': %s" % (i, url, e)
+
+            return False
+        else:
+            return True
 
     def local_path(self):
         path = self._local_path()
@@ -104,7 +115,8 @@ class MapTile:
         return path
 
     def remote_path(self):
-        return "http://dev.openstreetmap.org/~ojw/Tiles/tile.php/%s" % self.path()
+        i = chr(ord("a") + random.randint(0,25))
+        return "http://%s.tile.openstreetmap.org/%s" % (i, self.path())
 
     def __add__(self, count):
         (x, y) = count
