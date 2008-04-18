@@ -91,37 +91,28 @@ class MapDownloader(gtk.Window):
 
         tile = mapdisplay.MapTile(lat, lon, zoom)
         
-        (mlat, mlon, Mlat, Mlon) = tile.tile_edges()
+        _tile = tile
 
-        dlat = Mlat - mlat
-        dlon = Mlon - mlon
+        y = 0
+        while _tile.lat > vals["lat_min"]:
+            x = 0
+            _tile = tile
+            while _tile.lon < vals["lon_max"]:
+                if not self.enabled:
+                    break
 
-        print "Edges: %.2f - %.2f  %.2f - %.2f" % (Mlat, mlat,
-                                                   Mlon, mlon)
-        print "Deltas: %.2f %.2f" % (dlat, dlon)
+                print "Delta: %i,%i" % (x,y)
+                
+                _tile = tile + (x,y)
 
-        count = ((vals["lat_max"] - vals["lat_min"]) / dlat) * \
-            ((vals["lon_max"] - vals["lon_min"]) / dlon)
-        i = 0
+                if not _tile.is_local():
+                    self.update(0.5,
+                                "Fetching %.2f,%.2f at %i zoom" % \
+                                    (_tile.lat, _tile.lon, zoom))
+                    _tile.fetch()
+                x += 1
 
-        while lat > vals["lat_min"] and self.enabled:
-            lon = vals["lon_min"]
-            while lon < vals["lon_max"] and self.enabled:
-                tile = mapdisplay.MapTile(lat, lon, zoom)
-                if not tile.is_local():
-                    self.update(float(i) / float(count),
-                                "Fetching %.2f,%.2f at %i zoom" % (lat,
-                                                                   lon,
-                                                                   zoom))
-                    tile.fetch()
-
-                lon += dlon
-                i += 1
-
-            lat -= dlat
-
-        print "Ending: %.2f %.2f" % (lat, lon)
-        print "Max: %.2f %.2f" % (vals["lat_max"], vals["lon_min"])
+            y += 1
 
     def download_thread(self, **vals):
         print "Download thread: %s" % str(vals)
