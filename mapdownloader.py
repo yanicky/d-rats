@@ -3,10 +3,11 @@
 import gtk
 import gobject
 import threading
+import time
+
 
 import mapdisplay
-
-import time
+import miscwidgets
 
 class MapDownloader(gtk.Window):
     def make_val(self, key, label):
@@ -15,7 +16,7 @@ class MapDownloader(gtk.Window):
         l = gtk.Label(label)
         l.show()
 
-        e = gtk.Entry()
+        e = miscwidgets.LatLonEntry()
         e.show()
 
         box.pack_start(l)
@@ -86,7 +87,7 @@ class MapDownloader(gtk.Window):
         gobject.idle_add(self._update, prog, status)
 
     def download_zoom(self, zoom, **vals):
-        lat = vals["lat_max"]
+        lat = vals["lat_min"]
         lon = vals["lon_min"]
 
         tile = mapdisplay.MapTile(lat, lon, zoom)
@@ -94,25 +95,29 @@ class MapDownloader(gtk.Window):
         _tile = tile
 
         y = 0
-        while _tile.lat > vals["lat_min"]:
+        while _tile.lat < vals["lat_max"] and self.enabled:
             x = 0
             _tile = tile
-            while _tile.lon < vals["lon_max"]:
-                if not self.enabled:
-                    break
-
+            while _tile.lon < vals["lon_max"] and self.enabled:
                 print "Delta: %i,%i" % (x,y)
                 
                 _tile = tile + (x,y)
 
+                pct = ((_tile.lat - tile.lat) / (vals["lat_max"] - tile.lat))
+                print "Percent: %f" % pct
+                print "%.2f %.2f  -  %.2f %.2f" % (tile.lat,
+                                                   tile.lon,
+                                                   _tile.lat,
+                                                   _tile.lon)
+
                 if not _tile.is_local():
-                    self.update(0.5,
+                    self.update(pct,
                                 "Fetching %.2f,%.2f at %i zoom" % \
                                     (_tile.lat, _tile.lon, zoom))
                     _tile.fetch()
                 x += 1
 
-            y += 1
+            y -= 1
 
     def download_thread(self, **vals):
         print "Download thread: %s" % str(vals)
@@ -152,7 +157,7 @@ class MapDownloader(gtk.Window):
                 if "zoom" in k:
                     vals[k] = int(e.get_adjustment().get_value())
                 else:
-                    vals[k] = float(e.get_text())
+                    vals[k] = e.value()
             except ValueError, e:
                 self.show_field_error(self.val_keys[k])
                 return
