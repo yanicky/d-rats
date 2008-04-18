@@ -27,6 +27,25 @@ class MapDownloader(gtk.Window):
 
         return box
 
+    def make_zoom(self, key, label, min, max, default):
+        box = gtk.HBox(True, 2)
+
+        l = gtk.Label(label)
+        l.show()
+
+        a = gtk.Adjustment(default, min, max, 1, 1)
+        e = gtk.SpinButton(a, digits=0)
+        e.show()
+
+        box.pack_start(l)
+        box.pack_start(e)
+
+        box.show()
+
+        self.vals[key] = e
+
+        return box
+
     def build_bounds(self):
         frame = gtk.Frame("Bounds")
 
@@ -36,12 +55,15 @@ class MapDownloader(gtk.Window):
                           "lat_min" : "Lower Latitude",
                           "lon_max" : "Max Longitude",
                           "lon_min" : "Min Longitude",
-                          "zoom_max" : "Zoom Upper Limit",
-                          "zoom_min" : "Zoom Lower Limit",
+                          "zoom_max" : ("Zoom Upper Limit", 10, 15, 15),
+                          "zoom_min" : ("Zoom Lower Limit", 10, 15, 13),
                           }
 
         for key in sorted(self.val_keys.keys()):
-            box.pack_start(self.make_val(key, self.val_keys[key]), 0,0,0)
+            if "zoom" in key:
+                box.pack_start(self.make_zoom(key, *self.val_keys[key]), 0,0,0)
+            else:
+                box.pack_start(self.make_val(key, self.val_keys[key]), 0,0,0)
 
         box.show()
 
@@ -108,7 +130,10 @@ class MapDownloader(gtk.Window):
 
         zooms = range(int(vals["zoom_min"]), int(vals["zoom_max"]) + 1)
 
+        print "Zooms: %s" % zooms
+
         for zoom in zooms:
+            print "Zoom: %i" % zoom
             self.download_zoom(zoom, **vals)
             if not self.enabled:
                 break
@@ -133,7 +158,10 @@ class MapDownloader(gtk.Window):
 
         for k,e in self.vals.items():
             try:
-                vals[k] = float(e.get_text())
+                if "zoom" in k:
+                    vals[k] = int(e.get_adjustment().get_value())
+                else:
+                    vals[k] = float(e.get_text())
             except ValueError, e:
                 self.show_field_error(self.val_keys[k])
                 return
