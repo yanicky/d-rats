@@ -193,7 +193,26 @@ class LatLonEntry(gtk.Entry):
         string = string.replace('  ', ' ')
         string = string.strip()
 
-        (d, m, s) = string.split(' ', 3)
+        items = string.split(' ')
+
+        if len(items) > 3:
+            raise Exception("Invalid format")
+        elif len(items) == 3:
+            d = items[0]
+            m = items[1]
+            s = items[2]
+        elif len(items) == 2:
+            d = items[0]
+            m = items[1]
+            s = 0
+        elif len(items) == 1:
+            d = items[0]
+            m = 0
+            s = 0
+        else:
+            d = 0
+            m = 0
+            s = 0
 
         deg = int(d)
         min = int(m)
