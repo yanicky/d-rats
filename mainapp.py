@@ -286,22 +286,20 @@ class MainApp:
         if self.comm.connect():
             self.comm.start_watch()
 
-    def update_position(self):
-        if self.gps:
-            self.position = self.gps.get_position()
-            if self.position.valid:
-                return True
-            
-        self.position = gps.GPSPosition()
+    def _static_gps(self):
+        lat = 0.0
+        lon = 0.0
+        alt = 0.0
+
         try:
             lat = self.config.get("user", "latitude")
             lon = self.config.get("user", "longitude")
             alt = self.config.get("user", "altitude")
-            self.position.from_coords(lat, lon, alt)
         except Exception, e:
             print "Invalid static position: %s" % e
-                
-        return True
+
+        print "Static position: %s,%s" % (lat,lon)
+        return gps.StaticGPSSource(lat, lon)
 
     def refresh_gps(self):
         port = self.config.get("settings", "gpsport")
@@ -311,17 +309,14 @@ class MainApp:
 
         if enab:
             if self.gps:
-                if port != self.gps.port:
-                    self.gps.stop()
-                    self.gps = gps.GPSSource(port)
-                    self.gps.start()
-            else:
-                self.gps = gps.GPSSource(port)
-                self.gps.start()
+                self.gps.stop()
+            self.gps = gps.GPSSource(port)
+            self.gps.start()
         else:
             if self.gps:
                 self.gps.stop()
-                self.gps = None          
+
+            self.gps = self._static_gps()
 
     def refresh_config(self):
         rate = self.config.getint("settings", "rate")
@@ -384,13 +379,14 @@ class MainApp:
         self.comm = None
         self.qsts = []
         self.seen_callsigns = {}
-        self.gps = None
         self.position = None
 
         # REMOVE ME in 0.1.13
         self.TEMP_migrate_config()
 
         self.config = config.AppConfig(self, **args)
+
+        self.gps = self._static_gps()
 
         self.maybe_redirect_stdout()
 
@@ -406,9 +402,9 @@ class MainApp:
             self.chatgui.tx_msg(self.config.get("prefs", "signon"))
             
     def get_position(self):
-        self.update_position()
-        self.position.set_station(self.config.get("user", "callsign"))
-        return self.position
+        p = self.gps.get_position()
+        p.set_station(self.config.get("user", "callsign"))
+        return p
 
     def main(self):
         try:

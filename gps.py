@@ -413,6 +413,7 @@ class GPSSource:
         self.serial = serial.Serial(port=port, baudrate=4800, timeout=1)
         self.thread = None
 
+        self.last_valid = False
         self.position = GPSPosition()
 
     def start(self):
@@ -435,6 +436,7 @@ class GPSSource:
                     position = GPSPosition()
                     position.from_NMEA_GGA(line)
 
+                    self.last_valid = position.valid
                     if position.valid:
                         self.position = position
                     else:
@@ -444,7 +446,32 @@ class GPSSource:
 
     def get_position(self):
         return self.position
-            
+
+    def status_string(self):
+        if self.last_valid and self.position.satellites >= 3:
+            return "GPS Locked (%i sats)" % self.position.satellites
+        else:
+            return "GPS Not Locked"
+
+class StaticGPSSource(GPSSource):
+    def __init__(self, lat, lon):
+        self.lat = lat
+        self.lon = lon
+
+        self.position = GPSPosition()
+        self.position.from_coords(self.lat, self.lon)
+
+    def start(self):
+        pass
+
+    def stop(self):
+        pass
+
+    def get_position(self):
+        return self.position
+
+    def status_string(self):
+        return "Static position"
 
 def parse_GPS(string):
     if "$GPGGA" in string:

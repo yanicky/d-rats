@@ -1033,6 +1033,7 @@ class MainChatGUI(ChatGUI):
         fix = self.mainapp.get_position()
         fix.station = "Me"
         self.map.set_marker(fix)
+        self.map.update_gps_status(self.mainapp.gps.status_string())
         return True
 
     def refresh_config(self, first_time=False):

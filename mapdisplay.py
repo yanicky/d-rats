@@ -558,11 +558,16 @@ class MapWindow(gtk.Window):
         self.hide()
         return True
 
+    def update_gps_status(self, string):
+        self.sb_gps.pop(self.STATUS_GPS)
+        self.sb_gps.push(self.STATUS_GPS, string)
+
     def __init__(self, *args):
         gtk.Window.__init__(self, *args)
 
         self.STATUS_COORD = 0
         self.STATUS_CENTER = 1
+        self.STATUS_GPS = 2
 
         self.center_mark = None
         self.tracking_enabled = False
@@ -619,9 +624,14 @@ class MapWindow(gtk.Window):
 
         self.sb_center = gtk.Statusbar()
         self.sb_center.show()
+        self.sb_center.set_has_resize_grip(False)
+
+        self.sb_gps = gtk.Statusbar()
+        self.sb_gps.show()
 
         hbox.pack_start(self.sb_coords, 1,1,1)
         hbox.pack_start(self.sb_center, 1,1,1)
+        hbox.pack_start(self.sb_gps, 1,1,1)
         hbox.show()
 
         box.pack_start(self.sw, 1,1,1)
