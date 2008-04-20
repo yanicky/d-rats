@@ -107,16 +107,34 @@ def distance(lat_a, lon_a, lat_b, lon_b):
     lat_b = deg2rad(lat_b)
     lon_b = deg2rad(lon_b)
     
-    earth_radius = EARTH_RADIUS # miles
+    earth_radius = EARTH_RADIUS
     
-    distance = acos((cos(lat_a) * cos(lon_a) * \
-                         cos(lat_b) * cos(lon_b)) + \
-                        (cos(lat_a) * sin(lon_a) * \
-                             cos(lat_b) * sin(lon_b)) + \
-                        (sin(lat_a) * sin(lat_b)))
-    
-    return distance * earth_radius
+    #print "cos(La)=%f cos(la)=%f" % (cos(lat_a), cos(lon_a))
+    #print "cos(Lb)=%f cos(lb)=%f" % (cos(lat_b), cos(lon_b))
+    #print "sin(la)=%f" % sin(lon_a)
+    #print "sin(lb)=%f" % sin(lon_b)
+    #print "sin(La)=%f sin(Lb)=%f" % (sin(lat_a), sin(lat_b))
+    #print "cos(lat_a) * cos(lon_a) * cos(lat_b) * cos(lon_b) = %f" % (\
+    #    cos(lat_a) * cos(lon_a) * cos(lat_b) * cos(lon_b))
+    #print "cos(lat_a) * sin(lon_a) * cos(lat_b) * sin(lon_b) = %f" % (\
+    #    cos(lat_a) * sin(lon_a) * cos(lat_b) * sin(lon_b))
+    #print "sin(lat_a) * sin(lat_b) = %f" % (sin(lat_a) * sin(lat_b))
 
+    tmp = (cos(lat_a) * cos(lon_a) * \
+               cos(lat_b) * cos(lon_b)) + \
+               (cos(lat_a) * sin(lon_a) * \
+                    cos(lat_b) * sin(lon_b)) + \
+                    (sin(lat_a) * sin(lat_b))
+
+    # Correct round-off error (which is just *silly*)
+    if tmp > 1:
+        tmp = 1
+    elif tmp < -1:
+        tmp = -1
+
+    distance = acos(tmp)
+
+    return distance * earth_radius
 
 class GPSPosition:
     def __init__(self, lat=0, lon=0, station="UNKNOWN"):
