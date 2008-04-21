@@ -1574,16 +1574,19 @@ class CallCatcher:
         r = gtk.CellRendererText()
         c = gtk.TreeViewColumn("Callsign", r, text=self.col_call)
         c.set_sort_column_id(self.col_call)
+        c.set_resizable(True)
         self.view.append_column(c)
 
         r = gtk.CellRendererText()
         c = gtk.TreeViewColumn("Last Seen", r, text=self.col_disp)
         c.set_sort_column_id(self.col_time)
+        c.set_resizable(True)
         self.view.append_column(c)
 
         r = gtk.CellRendererText()
         c = gtk.TreeViewColumn("Last Position", r, text=self.col_pos)
         c.set_sort_column_id(self.col_pos)
+        c.set_resizable(True)
         self.view.append_column(c)
 
         def cb(view, path, col, me):
