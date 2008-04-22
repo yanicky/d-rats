@@ -5,6 +5,7 @@ from math import *
 import urllib
 import time
 import random
+import shutil
 
 import gtk
 import gobject
@@ -501,6 +502,52 @@ class MapWindow(gtk.Window):
 
         return cb
 
+    def clear_map_cache(self):
+        d = gtk.MessageDialog(buttons=gtk.BUTTONS_YES_NO)
+        d.set_property("text", "Are you sure you want to clear your map cache?")
+        r = d.run()
+        d.destroy()
+
+        if r == gtk.RESPONSE_YES:
+            dir = os.path.join(platform.get_platform().config_dir(), "maps")
+            shutil.rmtree(dir, True)
+            self.map.queue_draw()
+        
+    def mh(self, _action):
+        action = _action.get_name()
+
+        if action == "refresh":
+            self.map.queue_draw()
+        elif action == "clearcache":
+            self.clear_map_cache()
+
+    def make_menu(self):
+        menu_xml = """
+<ui>
+  <menubar name="MenuBar">
+    <menu action="map">
+      <menuitem action="refresh"/>
+      <menuitem action="clearcache"/>
+    </menu>
+  </menubar>
+</ui>
+"""
+
+        actions = [('map', None, "_Map", None, None, self.mh),
+                   ('refresh', None, "_Refresh", None, None, self.mh),
+                   ('clearcache', None, "_Clear Cache", None, None, self.mh),
+                   ]
+
+        uim = gtk.UIManager()
+        self.menu_ag = gtk.ActionGroup("MenuBar")
+
+        self.menu_ag.add_actions(actions)
+        
+        uim.insert_action_group(self.menu_ag, 0)
+        menuid = uim.add_ui_from_string(menu_xml)
+
+        return uim.get_widget("/MenuBar")
+
     def make_controls(self):
         vbox = gtk.VBox(False, 2)
 
@@ -608,10 +655,13 @@ class MapWindow(gtk.Window):
 
         box = gtk.VBox(False, 2)
 
+        self.menubar = self.make_menu()
+        self.menubar.show()
+        box.pack_start(self.menubar, 0,0,0)
+
         self.sw = gtk.ScrolledWindow()
         self.sw.add_with_viewport(self.map)
         self.sw.show()
-
 
         def pre_scale(sw, event, mw):
             ha = mw.sw.get_hadjustment()
