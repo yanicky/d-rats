@@ -259,6 +259,33 @@ class MapWidget(gtk.DrawingArea):
         (self.lat_min, _, _, self.lon_min) = botright.tile_edges()
         (_, self.lon_max, self.lat_max, _) = topleft.tile_edges()        
 
+    def broken_tile(self):
+        broken = [
+            "48 16 4 1",
+            "       c None",
+            ".      c #000000000000",
+            "x      c #FFFF00000000",
+            "X      c #000000000000",
+            "xx             xx   XX   X   XXX                ",
+            " xx           xx    X X  X  X   X               ",
+            "  xx         xx     X X  X X     X              ",
+            "   xx       xx      X  X X X     X              ",
+            "    xx     xx       X  X X X     X              ",
+            "     xx   xx        X  X X  X   X               ",
+            "      xx xx         X   XX   XXX                ",
+            "       xxx                                      ",
+            "       xxx                                      ",
+            "      xx xx         XXXX     XX   XXXXX   XX    ",
+            "     xx   xx        X   X   X  X    X    X  X   ",
+            "    xx     xx       X    X X    X   X   X    X  ",
+            "   xx       xx      X    X X    X   X   X    X  ",
+            "  xx         xx     X    X XXXXXX   X   XXXXXX  ",
+            " xx           xx    X   X  X    X   X   X    X  ",
+            "xx             xx   XXXX   X    X   X   X    X  "
+            ]
+
+        return gtk.gdk.pixbuf_new_from_xpm_data(broken)
+
     def load_tiles(self):
         prog = miscwidgets.ProgressDialog("Loading map")
 
@@ -281,10 +308,12 @@ class MapWidget(gtk.DrawingArea):
                     prog.set_text("Loading %i, %i" % (i, j))
                 
                 try:
+                    if not tile.fetch():
+                        pb = self.broken_tile()
                     pb = gtk.gdk.pixbuf_new_from_file(tile.local_path())
                 except Exception, e:
-                    print "Broken cached file: %s" % tile.local_path()
-                    continue
+                    print "Broken cached file"
+                    pb = self.broken_tile()
  
                 self.map_bufs.append((pb, tile))
 
