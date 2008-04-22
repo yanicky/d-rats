@@ -68,6 +68,14 @@ class UnixPlatform(Platform):
     def filter_filename(self, filename):
         return filename.replace("/", "")
 
+    def _editor(self):
+        macos_textedit = "/Applications/TextEdit.app/Contents/MacOS/TextEdit"
+
+        if os.path.exists(macos_textedit):
+            return macos_textedit
+        else:
+            return "gedit"
+
     def open_text_file(self, path):
         pid1 = os.fork()
         if pid1 == 0:
