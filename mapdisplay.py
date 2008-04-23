@@ -812,7 +812,10 @@ class MapWindow(gtk.Window):
         self.set_marker(pos, "orange", group)
         print "Loaded static point `%s'" % id
 
-    def load_static_points(self, filename, group="Static"):
+    def load_static_points(self, filename, group=None):
+        if not group:
+            group = os.path.splitext(os.path.basename(filename))[0]
+
         try:
             f = file(filename)
         except Exception, e:
@@ -840,7 +843,7 @@ if __name__ == "__main__":
     m.set_marker(GPSPosition(station="N7QQU", lat=45.5625, lon=-122.8645))
     m.del_marker("N7QQU")
 
-    m.load_static_points("/home/dan/.d-rats/static.csv")
+    m.load_static_points("/home/dan/.d-rats/static_locations/Washington County ARES.csv")
 
     m.show()
 
