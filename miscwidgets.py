@@ -25,13 +25,10 @@ class ListWidget(gtk.HBox):
         for cb in self.toggle_cb:
             cb(*vals)
 
-    def __init__(self, columns):
-        gtk.HBox.__init__(self)
+    def make_store(self, col_types):
+        return gtk.ListStore(*col_types)
 
-        col_types = tuple([x for x,y in columns])
-        self._ncols = len(col_types)
-
-        self._store = gtk.ListStore(*col_types)
+    def make_view(self, columns):
         self._view = gtk.TreeView(self._store)
 
         for t,c in columns:
@@ -50,6 +47,15 @@ class ListWidget(gtk.HBox):
 
             c.set_sort_column_id(index)
             self._view.append_column(c)
+
+    def __init__(self, columns):
+        gtk.HBox.__init__(self)
+
+        col_types = tuple([x for x,y in columns])
+        self._ncols = len(col_types)
+
+        self._store = self.make_store(col_types)
+        self.make_view(columns)
 
         self._view.show()
         self.pack_start(self._view, 1,1,1)
@@ -107,6 +113,120 @@ class ListWidget(gtk.HBox):
 
         for i in list:
             self.add_item(*i)
+
+class TreeWidget(ListWidget):
+    def _toggle(self, render, path, column):
+        self._store[path][column] = not self._store[path][column]
+        iter = self._store.get_iter(path)
+        vals = tuple(self._store.get(iter, *tuple(range(self._ncols))))
+
+        piter = self._store.iter_parent(iter)
+        if piter:
+            parent = self._store.get(piter, self._key)[0]
+        else:
+            parent = None
+
+        for cb in self.toggle_cb:
+            cb(parent, *vals)
+
+    def __init__(self, columns, key):
+        ListWidget.__init__(self, columns)
+
+        self._key = key
+
+    def make_store(self, col_types):
+        return gtk.TreeStore(*col_types)
+
+    def _add_item(self, piter, *vals):
+        args = []
+        i = 0
+        for v in vals:
+            args.append(i)
+            args.append(v)
+            i += 1
+
+        args = tuple(args)
+
+        iter = self._store.append(piter)
+        self._store.set(iter, *args)
+
+    def _iter_of(self, key, iter=None):
+        if not iter:
+            iter = self._store.get_iter_first()
+
+        while iter is not None:
+            id = self._store.get(iter, self._key)[0]
+            if id == key:
+                return iter
+
+            iter = self._store.iter_next(iter)
+
+        return None
+
+    def add_item(self, parent, *vals):
+        if len(vals) != self._ncols:
+            raise Exception("Need %i columns" % self._ncols)
+
+        if not parent:
+            self._add_item(None, *vals)
+        else:
+            iter = self._iter_of(parent)
+            if iter:
+                self._add_item(iter, *vals)
+            else:
+                raise Exception("Parent not found: %s", parent)
+
+    def _set_values(self, parent, vals):
+        if isinstance(vals, dict):
+            for k,v in vals.items():
+                iter = self._store.append(parent)
+                self._store.set(iter, self._key, k)
+                self._set_values(iter, v)
+        elif isinstance(vals, list):
+            for i in vals:
+                self._set_values(parent, i)
+        elif isinstance(vals, tuple):
+            self._add_item(parent, *vals)
+        else:
+            print "Unknown type: %s" % vals
+
+    def set_values(self, vals):
+        self._store.clear()
+        self._set_values(self._store.get_iter_first(), vals)
+
+    def del_item(self, parent, key):
+        iter = self._iter_of(key,
+                             self._store.iter_children(self._iter_of(parent)))
+        if iter:
+            self._store.remove(iter)
+        else:
+            raise Exception("Item not found")
+
+    def get_item(self, parent, key):
+        iter = self._iter_of(key,
+                             self._store.iter_children(self._iter_of(parent)))
+
+        if iter:
+            return self._store.get(iter, *(tuple(range(0, self._ncols))))
+        else:
+            raise Exception("Item not found")
+
+    def set_item(self, parent, *vals):
+        iter = self._iter_of(vals[self._key],
+                             self._store.iter_children(self._iter_of(parent)))
+
+        if iter:
+            args = []
+            i = 0
+
+            for v in vals:
+                args.append(i)
+                args.append(v)
+                i += 1
+
+            self._store.set(iter, *(tuple(args)))
+        else:
+            raise Exception("Item not found")
 
 class ProgressDialog(gtk.Window):
     def __init__(self, title, parent=None):
@@ -265,6 +385,19 @@ if __name__=="__main__":
     lle.show()
     w2.add(lle)
     w2.show()
+
+    w3 = gtk.Window(gtk.WINDOW_TOPLEVEL)
+    l = TreeWidget([(gobject.TYPE_STRING, "Id"),
+                    (gobject.TYPE_STRING, "Value")],
+                   1)
+    #l.add_item(None, "Foo", "Bar")
+    #l.add_item("Foo", "Bar", "Baz")
+    l.set_values({"Fruit" : [("Apple", "Red"), ("Orange", "Orange")],
+                  "Pizza" : [("Cheese", "Simple"), ("Pepperoni", "Yummy")]})
+    l.add_item("Fruit", "Bananna", "Yellow")
+    l.show()
+    w3.add(l)
+    w3.show()
 
     def print_val(entry):
         if entry.validate():
