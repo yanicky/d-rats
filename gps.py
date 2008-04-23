@@ -333,7 +333,6 @@ class GPSPosition:
         direction = "?"
         for i in dirs:
             if dir > angle and dir < (angle + delta):
-                print "%f : %s" % (dir, angle)
                 direction = i
             angle += delta
 
