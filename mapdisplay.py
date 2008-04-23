@@ -228,34 +228,21 @@ class MapWidget(gtk.DrawingArea):
             self.draw_marker(id)
 
     def expose(self, area, event):
-
-        if len(self.map_bufs) == 0:
+        if len(self.map_tiles) == 0:
             self.load_tiles()
 
         gc = self.get_style().black_gc
+        self.window.draw_drawable(gc,
+                                  self.pixmap,
+                                  0, 0,
+                                  0, 0,
+                                  -1, -1)
 
-        for i in range(0, self.width):
-            for j in range(0, self.height):
-                index = (i * self.height) + j
-                try:
-                    (pb, _) = self.map_bufs[index]
-                except:
-                    print "Index %i out of range (%i)" % (index,
-                                                          len(self.map_bufs))
-                    return
-
-                self.window.draw_pixbuf(gc,
-                                        pb,
-                                        0, 0,
-                                        self.tilesize * i,
-                                        self.tilesize * j,
-                                        -1, -1)
-                
         self.draw_markers()
 
     def calculate_bounds(self):
-        (_, topleft) = self.map_bufs[0]
-        (_, botright) = self.map_bufs[-1]
+        topleft = self.map_tiles[0]
+        botright = self.map_tiles[-1]
 
         (self.lat_min, _, _, self.lon_min) = botright.tile_edges()
         (_, self.lon_max, self.lat_max, _) = topleft.tile_edges()        
@@ -299,6 +286,11 @@ class MapWidget(gtk.DrawingArea):
         count = 0
         total = self.width * self.height
 
+        self.pixmap = gtk.gdk.Pixmap(self.window,
+                                     self.width * self.tilesize,
+                                     self.height * self.tilesize)
+        gc = self.pixmap.new_gc()
+
         for i in range(0, self.width):
             for j in range(0, self.height):
                 tile = center + (i - delta_w, j - delta_h)
@@ -316,7 +308,14 @@ class MapWidget(gtk.DrawingArea):
                     print "Broken cached file"
                     pb = self.broken_tile()
  
-                self.map_bufs.append((pb, tile))
+                self.pixmap.draw_pixbuf(gc,
+                                        pb,
+                                        0, 0,
+                                        self.tilesize * i,
+                                        self.tilesize * j,
+                                        -1, -1)
+
+                self.map_tiles.append(tile)
 
                 count += 1
                 prog.set_fraction(float(count) / float(total))
@@ -341,7 +340,7 @@ class MapWidget(gtk.DrawingArea):
         self.lon_max = self.lon_min = 0
 
         self.markers = {}
-        self.map_bufs = []
+        self.map_tiles = []
 
         self.set_size_request(self.tilesize * self.width,
                               self.tilesize * self.height)
@@ -350,7 +349,7 @@ class MapWidget(gtk.DrawingArea):
     def set_center(self, lat, lon):
         self.lat = lat
         self.lon = lon
-        self.map_bufs = []
+        self.map_tiles = []
         self.queue_draw()
 
     def get_center(self):
@@ -361,7 +360,7 @@ class MapWidget(gtk.DrawingArea):
             return
 
         self.zoom = zoom
-        self.map_bufs = []
+        self.map_tiles = []
         self.queue_draw()
 
     def get_zoom(self):
@@ -810,7 +809,6 @@ class MapWindow(gtk.Window):
                           lon=float(lon))
 
         self.set_marker(pos, "orange", group)
-        print "Loaded static point `%s'" % id
 
     def load_static_points(self, filename, group=None):
         if not group:
