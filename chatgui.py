@@ -69,8 +69,6 @@ class ChatGUI:
     def note_callsigns(self, string):
         calls = find_callsigns(self.config, string)
         
-        print "Found calls %s in %s" % (calls, string)
-
         for call in calls:
             ucall = call.upper()
 
@@ -97,10 +95,8 @@ class ChatGUI:
             return
 
         callsigns = find_callsigns(self.config, string)
-        print "Marking callsigns %s in %s" % (callsigns, string)
 
         for call in callsigns:
-            print "Marking for callsign %s" % call
             try:
                 (b, e) = start.forward_search(call, 0)
             except:
@@ -880,19 +876,16 @@ class MainChatGUI(ChatGUI):
         return nb
 
     def ev_window(self, window, event):
-        print "Window event"
         if event.type == gtk.gdk.WINDOW_STATE:
             max = event.new_window_state & gtk.gdk.WINDOW_STATE_MAXIMIZED
             self.is_maximized = (max != 0)
     
     def ev_window_sized(self, window, req):
         def refresh(gui):
-            print "Redrawing"
             gui.window.queue_draw()
             gui.needs_redraw = False
 
         if not self.needs_redraw:
-            print "Resize"
             gobject.idle_add(refresh, self)
             self.needs_redraw = True
 

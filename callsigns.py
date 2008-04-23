@@ -32,7 +32,6 @@ def find_callsigns(config, string):
 
     for t in callsign_functions.keys():
         if callsign_functions.has_key(t) and t in enabled:
-            print "Matching `%s' callsigns" % t
             list += callsign_functions[t](string)
     
     return list

@@ -121,11 +121,8 @@ class SocketDataPath(DataPath):
             try:
                 x = time.time()
                 inp = self._socket.recv(count - len(data))
-                print "Time after read: %f" % (time.time() - x)
             except Exception, e:
                 if time.time() > end:
-                    if len(data) > 0:
-                        print "Timeout after read: %f" % (time.time() - x)
                     break
                 else:
                     continue
