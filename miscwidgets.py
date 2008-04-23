@@ -48,7 +48,7 @@ class ListWidget(gtk.HBox):
             c.set_sort_column_id(index)
             self._view.append_column(c)
 
-    def __init__(self, columns):
+    def __init__(self, columns, parent=True):
         gtk.HBox.__init__(self)
 
         col_types = tuple([x for x,y in columns])
@@ -58,9 +58,13 @@ class ListWidget(gtk.HBox):
         self.make_view(columns)
 
         self._view.show()
-        self.pack_start(self._view, 1,1,1)
+        if parent:
+            self.pack_start(self._view, 1,1,1)
 
         self.toggle_cb = []
+
+    def packable(self):
+        return self._view
 
     def add_item(self, *vals):
         if len(vals) != self._ncols:
@@ -129,8 +133,8 @@ class TreeWidget(ListWidget):
         for cb in self.toggle_cb:
             cb(parent, *vals)
 
-    def __init__(self, columns, key):
-        ListWidget.__init__(self, columns)
+    def __init__(self, columns, key, parent=True):
+        ListWidget.__init__(self, columns, parent)
 
         self._key = key
 

@@ -450,7 +450,7 @@ class MapWindow(gtk.Window):
                 (gobject.TYPE_FLOAT, "Distance"),
                 (gobject.TYPE_FLOAT, "Direction"),
                 ]
-        self.marker_list = miscwidgets.TreeWidget(cols, 1)
+        self.marker_list = miscwidgets.TreeWidget(cols, 1, parent=False)
         self.marker_list.toggle_cb.append(self.toggle_show)
 
         self.marker_list._view.connect("row-activated", self.recenter_cb)
@@ -477,11 +477,9 @@ class MapWindow(gtk.Window):
             r = c.get_cell_renderers()[0]
             c.set_cell_data_func(r, render_dist, col)
 
-        self.marker_list.show()
-
         sw = gtk.ScrolledWindow()
         sw.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
-        sw.add_with_viewport(self.marker_list)
+        sw.add(self.marker_list.packable())
         sw.set_size_request(-1, 150)
         sw.show()
 
