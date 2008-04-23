@@ -445,7 +445,7 @@ class MainChatGUI(ChatGUI):
         station = pos.station.upper()
         self.mainapp.seen_callsigns[station] = (time.time(), pos)
 
-        self.map.set_marker(pos)
+        self.map.set_marker(pos, group="Stations")
 
     def display_line(self, string, *attrs):
         do_main = True
@@ -1001,6 +1001,16 @@ class MainChatGUI(ChatGUI):
                 # All filter
                 f.log(text)
 
+    def load_static_locations(self):
+        dir = os.path.join(self.config.platform.config_dir(),
+                           "static_locations")
+        if not os.path.isdir(dir):
+            os.path.mkdir(dir)
+
+        files = glob.glob(os.path.join(dir, "*.csv"))
+        for f in files:
+            self.map.load_static_points(f)        
+
     def __init__(self, config, _mainapp):
         self.needs_redraw = False
         self.config = config # Set early for make_menubar()
@@ -1017,7 +1027,7 @@ class MainChatGUI(ChatGUI):
 
         self.map = mapdisplay.MapWindow()
         self.map.set_title("D-RATS Station Map")
-        self.map.load_static_points(self.config.platform.config_file("static.csv"))
+        self.load_static_locations()
 
         pos = self.mainapp.get_position()
         self.map.set_center(pos.latitude, pos.longitude)
@@ -1032,7 +1042,7 @@ class MainChatGUI(ChatGUI):
     def _refresh_location(self):
         fix = self.mainapp.get_position()
         fix.station = "Me"
-        self.map.set_marker(fix)
+        self.map.set_marker(fix, group="Stations")
         self.map.update_gps_status(self.mainapp.gps.status_string())
         return True
 
