@@ -428,12 +428,20 @@ class MapWindow(gtk.Window):
 
         return box
 
-    def toggle_show(self, *vals):
-        (fix, _, color) = self.markers[vals[1]]
-        self.markers[vals[1]] = (fix, vals[0], color)
-        print "Setting %s to %s" % (vals[1], vals[0])
-        self.refresh_marker_list()
-        self.map.queue_draw()
+    def toggle_show(self, group, *vals):
+        if self.markers.has_key(group):
+            (fix, _, color) = self.markers[group][vals[1]]
+            self.markers[group][vals[1]] = (fix, vals[0], color)
+            print "Setting %s to %s" % (vals[1], vals[0])
+            self.refresh_marker_list()
+            self.map.queue_draw()
+        elif group == None:
+            id = vals[1]
+            for k,v in self.markers[id].items():
+                nv = (v[0], vals[0], v[2])
+                self.markers[id][k] = nv
+            self.refresh_marker_list()
+            self.map.queue_draw()
 
     def make_marker_list(self):
         cols = [(gobject.TYPE_BOOLEAN, "Show"),
@@ -443,13 +451,16 @@ class MapWindow(gtk.Window):
                 (gobject.TYPE_FLOAT, "Distance"),
                 (gobject.TYPE_FLOAT, "Direction"),
                 ]
-        self.marker_list = miscwidgets.ListWidget(cols)
+        self.marker_list = miscwidgets.TreeWidget(cols, 1)
         self.marker_list.toggle_cb.append(self.toggle_show)
 
         self.marker_list._view.connect("row-activated", self.recenter_cb)
 
         def render_coord(col, rend, model, iter, cnum):
-            rend.set_property('text', "%.4f" % model.get_value(iter, cnum))
+            if model.iter_parent(iter):
+                rend.set_property('text', "%.4f" % model.get_value(iter, cnum))
+            else:
+                rend.set_property('text', '')
 
         for col in [2, 3]:
             c = self.marker_list._view.get_column(col)
@@ -457,7 +468,10 @@ class MapWindow(gtk.Window):
             c.set_cell_data_func(r, render_coord, col)
 
         def render_dist(col, rend, model, iter, cnum):
-            rend.set_property('text', "%.2f" % model.get_value(iter, cnum))
+            if model.iter_parent(iter):
+                rend.set_property('text', "%.2f" % model.get_value(iter, cnum))
+            else:
+                rend.set_property('text', '')
 
         for col in [4, 5]:
             c = self.marker_list._view.get_column(col)
@@ -475,21 +489,22 @@ class MapWindow(gtk.Window):
         return sw
 
     def refresh_marker_list(self):
-        self.marker_list.set_values([])
         self.map.markers = {}
 
         (lat, lon) = self.map.get_center()
         center = GPSPosition(lat=lat, lon=lon)
 
-        for id, (fix, show, color) in self.markers.items():
-            self.marker_list.add_item(show,
-                                      id,
-                                      fix.latitude,
-                                      fix.longitude,
-                                      center.distance_from(fix),
-                                      center.bearing_to(fix))
-            if show:
-                self.map.markers[id] = (fix.latitude, fix.longitude, color)
+        for grp, lst in self.markers.items():
+            for id, (fix, show, color) in lst.items():
+                self.marker_list.set_item(grp,
+                                          show,
+                                          id,
+                                          fix.latitude,
+                                          fix.longitude,
+                                          center.distance_from(fix),
+                                          center.bearing_to(fix))
+                if show:
+                    self.map.markers[id] = (fix.latitude, fix.longitude, color)
 
     def make_track(self):
         def toggle(cb, mw):
@@ -591,6 +606,10 @@ class MapWindow(gtk.Window):
         self.center_on(lat, lon)
 
     def recenter_cb(self, view, path, column, data=None):
+        model = view.get_model()
+        if model.iter_parent(model.get_iter(path)) == None:
+            return
+
         items = self.marker_list.get_selected()
 
         self.recenter(items[2], items[3])
@@ -729,21 +748,42 @@ class MapWindow(gtk.Window):
         self.connect("destroy", self.ev_destroy)
         self.connect("delete_event", self.ev_delete)
 
-    def set_marker(self, fix, color="yellow"):
-        self.markers[fix.station] = (fix, True, color)
+    def set_marker(self, fix, color="yellow", group="Misc"):
+        if not self.markers.has_key(group):
+            self.markers[group] = {}
+            print "Adding group %s" % group
+            self.marker_list.add_item(None,
+                                      True,
+                                      group,
+                                      0,
+                                      0,
+                                      0,
+                                      0)
+        if not self.markers[group].has_key(fix.station):
+            self.marker_list.add_item(group,
+                                      True,
+                                      fix.station,
+                                      0,
+                                      0,
+                                      0,
+                                      0)
+
+        self.markers[group][fix.station] = (fix, True, color)
         self.map.set_marker(fix.station, fix.latitude, fix.longitude)
+
         self.refresh_marker_list()
 
         if self.center_mark and fix.station == self.center_mark and \
                 self.tracking_enabled:
             self.recenter(fix.latitude, fix.longitude)
 
-    def del_marker(self, id):
+    def del_marker(self, id, group="Misc"):
         try:
             print "Deleting marker %s" % id
             print self.markers.keys()
-            del self.markers[id]
+            del self.markers[group][id]
             print self.markers.keys()
+            self.marker_list.del_item(group, id)
             self.refresh_marker_list()
         except Exception, e:
             print "Unable to delete marker `%s': %s" % (id, e)
@@ -757,7 +797,7 @@ class MapWindow(gtk.Window):
     def set_center(self, lat, lon):
         self.map.set_center(lat, lon)
 
-    def parse_static_line(self, line):
+    def parse_static_line(self, line, group):
         if line.startswith("//"):
             return
         elif "#" in line:
@@ -769,10 +809,10 @@ class MapWindow(gtk.Window):
                           lat=float(lat),
                           lon=float(lon))
 
-        self.set_marker(pos, "orange")
+        self.set_marker(pos, "orange", group)
         print "Loaded static point `%s'" % id
 
-    def load_static_points(self, filename):
+    def load_static_points(self, filename, group="Static"):
         try:
             f = file(filename)
         except Exception, e:
@@ -782,7 +822,7 @@ class MapWindow(gtk.Window):
         lines = f.read().split("\n")
         for line in lines:
             try:
-                self.parse_static_line(line)
+                self.parse_static_line(line, group)
             except Exception, e:
                 print "Failed to parse line `%s': %s" % (line, e)
 
