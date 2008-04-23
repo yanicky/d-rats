@@ -531,6 +531,7 @@ class MapWindow(gtk.Window):
         action = _action.get_name()
 
         if action == "refresh":
+            self.map_tiles = []
             self.map.queue_draw()
         elif action == "clearcache":
             self.clear_map_cache()
