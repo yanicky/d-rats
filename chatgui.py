@@ -1005,7 +1005,7 @@ class MainChatGUI(ChatGUI):
         dir = os.path.join(self.config.platform.config_dir(),
                            "static_locations")
         if not os.path.isdir(dir):
-            os.path.mkdir(dir)
+            os.mkdir(dir)
 
         files = glob.glob(os.path.join(dir, "*.csv"))
         for f in files:
