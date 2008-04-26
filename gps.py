@@ -74,6 +74,22 @@ def NMEA_checksum(string):
 
     return "*%02x" % checksum
 
+def GPSA_checksum(string):
+    def calc(buf):
+        icomcrc = 0xffff
+
+        for _char in buf:
+            char = ord(_char)
+            for i in range(0, 8):
+                xorflag = (((icomcrc ^ char) & 0x01) == 0x01)
+                icomcrc = (icomcrc >> 1) & 0x7fff
+                if xorflag:
+                    icomcrc ^= 0x8408
+                char = (char >> 1) & 0x7f
+        return (~icomcrc) & 0xffff
+
+    return calc(string)
+
 def deg2rad(deg):
     return deg * (pi / 180)
 
@@ -261,6 +277,33 @@ class GPSPosition:
                                                  NMEA_checksum(data),
                                                  self.station,
                                                  self.comment)
+
+    def to_APRS(self, dest="APDPRS"):
+        s = "%s>%s,DSTAR*:!" % (self.station, dest)
+
+        if self.latitude > 0:
+            ns = "N"
+            Lm = 1
+        else:
+            ns = "S"
+            Lm = -1
+
+        if self.longitude > 0:
+            ew = "E"
+            lm = 1
+        else:
+            ew = "W"            
+            lm = -1
+
+        s += "%.2f%s/%08.2f%s>" % (deg2nmea(self.latitude * Lm), ns,
+                                  deg2nmea(self.longitude * lm), ew)
+        #s += "000/000" # FIXME: What is this?
+        if self.comment:
+            s += " %s" % self.comment
+            
+        s += "/\r"
+
+        return "$$CRC%04X,%s\n" % (GPSA_checksum(s), s)
 
     def from_NMEA_GGA(self, string):
         string = string.replace('\r', ' ')
@@ -483,8 +526,10 @@ def parse_GPS(string):
 if __name__ == "__main__":
 
 #    p = parse_GPS("08:44:37: " + TEST)
-#    P = GPSPosition()
-#    P.from_coords(45.525012, -122.916434)
+    P = GPSPosition()
+    #P.from_coords(45.525012, -122.916434)
+    P.from_coords(nmea2deg(3302.39),
+                  nmea2deg(9644.66) * -1)
 #    p.set_relative_to_current(P)
 #    if not p:
 #        print "Failed"
@@ -507,16 +552,22 @@ if __name__ == "__main__":
 #        
 #        print P.fuzzy_to(p)
 #
-#        P.station = "KI4IFW M"
-#        P.comment = "Dan Mobile"
+    P.station = "AE5PL-T"
+    #P.comment = "Dan Mobile"
 #
 #        print P.to_NMEA_GGA().replace("\r", "\n")
 
-    gps = GPSSource("/dev/ttyS0")
-    gps.start()
+    print P.to_APRS(dest="API282")
+        
+#    gps = GPSSource("/dev/ttyS0")
+#    gps.start()
+#
+#    for i in range(30):
+#        time.sleep(1)
+#
+#    print "Stopping"
+#    gps.stop()
 
-    for i in range(30):
-        time.sleep(1)
+    string = "AE5PL-T>API282,DSTAR*:!3302.39N/09644.66W>/\r"
 
-    print "Stopping"
-    gps.stop()
+    print "%X" % GPSA_checksum(string)
