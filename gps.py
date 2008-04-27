@@ -349,7 +349,7 @@ class GPSPosition:
             s += "%.1f/%.1f" % (float(self.speed), float(self.direction))
 
         if self.comment:
-            s += " %s" % self.comment
+            s += "%s" % self.comment
             
         s += "\r"
 
