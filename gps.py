@@ -105,11 +105,19 @@ def deg2dm(decdeg):
 
     return deg, min
 
-def nmea2deg(nmea):
+def nmea2deg(nmea, dir="N"):
     deg = int(nmea) / 100
-    min = nmea % (deg * 100)
+    try:
+        min = nmea % (deg * 100)
+    except ZeroDivisionError, e:
+        min = int(nmea)
 
-    return dm2deg(deg, min)
+    if dir == "S" or dir == "W":
+        m = -1
+    else:
+        m = 1
+
+    return dm2deg(deg, min) * m
 
 def deg2nmea(deg):
     deg, min = deg2dm(deg)
@@ -178,6 +186,8 @@ class GPSPosition:
         self.comment = ""
         self.current = None
         self.date = "00:00:00"
+        self.speed = None
+        self.direction = None
 
         self._from_coords(lat, lon)
 
@@ -197,14 +207,21 @@ class GPSPosition:
             else:
                 comment = ""
 
-            return "GPS: %s reporting %.4f,%.4f@%.1f at %s%s%s" % ( \
+            if self.speed and self.direction:
+                dir = " (Heading %.0f at %i knots)" % (self.direction,
+                                                       self.speed)
+            else:
+                dir = ""
+
+            return "GPS: %s reporting %.4f,%.4f@%.1f at %s%s%s%s" % ( \
                 self.station,
                 self.latitude,
                 self.longitude,
                 self.altitude,
                 self.date,
                 comment,
-                distance)
+                distance,
+                dir)
         else:
             return "GPS: (Invalid GPS data)"
 
@@ -341,24 +358,15 @@ class NMEAGPSPosition(GPSPosition):
 
         m = re.match(expr, string)
         if not m:
-            raise Exception("Unable to parse sentence")
+            raise Exception("Unable to parse GPGGA")
 
         t = m.group(1)
         self.date = "%02i:%02i:%02i" % (int(t[0:2]),
                                         int(t[2:4]),
                                         int(t[4:6]))
 
-        if m.group(3) == "S":
-            mult = -1
-        else:
-            mult = 1
-        self.latitude = nmea2deg(float(m.group(2))) * mult
-
-        if m.group(5) == "W":
-            mult = -1
-        else:
-            mult = 1
-        self.longitude = nmea2deg(float(m.group(4))) * mult
+        self.latitude = nmea2deg(float(m.group(2)), m.group(3))
+        self.longitude = nmea2deg(float(m.group(4)), m.group(5))
 
         print "%f,%f" % (self.latitude, self.longitude)
 
@@ -375,6 +383,44 @@ class NMEAGPSPosition(GPSPosition):
         
         self.valid = self._test_checksum(string, csum)
 
+    def _parse_GPRMC(self, string):
+        csvel = "[^,]+"
+        expr = "\$GPRMC," \
+            "(%s),(%s),"  \
+            "(%s),(%s),"  \
+            "(%s),(%s),"  \
+            "(%s),(%s),"  \
+            "(%s),(%s),"  \
+            "([EW])(.*)" % (csvel, csvel, csvel, csvel,
+                            csvel, csvel, csvel, csvel,
+                            csvel, csvel)
+        
+        m = re.search(expr, string)
+        if not m:
+            raise Exception("Unable to parse GPMRC")
+
+        if m.group(2) != "A":
+            self.valid = False
+            print "GPRMC marked invalid by GPS"
+            return
+
+        t = m.group(1)
+        d = m.group(9)
+
+        self.date = "%02i:%02i:%02i %02i-%02i-%02i" % (
+            int(t[0:2]), int(t[2:4]), int(t[4:6]),
+            int(d[0:2]), int(t[2:4]), int(t[4:6]))
+
+        self.latitude = nmea2deg(float(m.group(3)), m.group(4))
+        self.longitude = nmea2deg(float(m.group(5)), m.group(6))
+
+        self.speed = float(m.group(7))
+        self.direction = float(m.group(8))
+
+        csum = m.group(12)
+
+        self.valid = self._test_checksum(string, csum)
+
     def _from_NMEA_GGA(self, string):
         string = string.replace('\r', ' ')
         string = string.replace('\n', ' ') 
@@ -383,12 +429,23 @@ class NMEAGPSPosition(GPSPosition):
         except Exception, e:
             print "Invalid GPS data: %s" % e
             self.valid = False
-            return
+
+    def _from_NMEA_GPRMC(self, string):
+        try:
+            self._parse_GPRMC(string)
+        except Exception, e:
+            print "Invalid GPS data: %s" % e
+            self.valid = False
 
     def __init__(self, sentence, station="UNKNOWN"):
         GPSPosition.__init__(self)
 
-        self._from_NMEA_GGA(sentence)
+        if sentence.startswith("$GPGGA"):
+            self._from_NMEA_GPGGA(sentence)
+        elif sentence.startswith("$GPRMC"):
+            self._from_NMEA_GPRMC(sentence)
+        else:
+            print "Unsupported GPS sentence type: %s" % sentence    
 
 class APRSGPSPosition(GPSPosition):
     def _parse_GPSA(self, string):
@@ -408,19 +465,8 @@ class APRSGPSPosition(GPSPosition):
 
         lat, lon = latlon[1:].split("/")
 
-        if lat[-1] == "N":
-            Lm = 1
-        else:
-            Lm = -1
-
-        if lon[-1] == "E":
-            lm = 1
-        else:
-            lm = -1
-
-        # parse and store lat/lon
-        self.latitude = nmea2deg(float(lat[:-1])) * Lm
-        self.longitude = nmea2deg(float(lon[:-1])) * lm
+        self.latitude = nmea2deg(float(lat[:-1]), lat[-1])
+        self.longitude = nmea2deg(float(lon[:-1]), lon[-1])
 
         self.date = time.strftime("%H:%M:%S")
         
@@ -532,7 +578,8 @@ class GPSSource:
             lines = data.split("\r\n")
             
             for line in lines:
-                if line.startswith("$GPGGA"):
+                if line.startswith("$GPGGA") or \
+                        line.startswith("$GPRMC"):
                     position = NMEAGPSPosition(line)
 
                     self.last_valid = position.valid
@@ -585,7 +632,7 @@ def parse_GPS(string):
 if __name__ == "__main__":
 
 #    p = parse_GPS("08:44:37: " + TEST)
-    P = GPSPosition(nmea2deg(3302.39), nmea2deg(9644.66) * -1)
+    P = GPSPosition(nmea2deg(3302.39), nmea2deg(9644.66, "W"))
     #P.from_coords(45.525012, -122.916434)
     #P.from_coords(,
     #              )
@@ -635,3 +682,8 @@ if __name__ == "__main__":
 
     PP = APRSGPSPosition(string)
     print PP
+
+    string = "$GPRMC,220516,A,5133.82,N,00042.24,W,173.8,231.8,130694,004.2,W*70"
+
+    PPP = NMEAGPSPosition(string)
+    print PPP
