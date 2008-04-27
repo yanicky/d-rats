@@ -153,76 +153,33 @@ def distance(lat_a, lon_a, lat_b, lon_b):
     return distance * earth_radius
 
 class GPSPosition:
+    """Represents a position on the globe, either from GPS data or a static
+    positition"""
+    def _from_coords(self, lat, lon, alt=0):
+        try:
+            self.latitude = float(lat)
+        except ValueError:
+            self.latitude = parse_dms(lat)
+
+        try:
+            self.longitude = float(lon)
+        except ValueError:
+            self.longitude = parse_dms(lon)
+
+        self.altitude = float(alt)
+        self.satellites = 3
+        self.valid = True
+
     def __init__(self, lat=0, lon=0, station="UNKNOWN"):
         self.valid = False
-        self.latitude = lat
-        self.longitude = lon
         self.altitude = 0
         self.satellites = 0
         self.station = station
         self.comment = ""
         self.current = None
+        self.date = "00:00:00"
 
-    def test_checksum(self, string, csum):
-        try:
-            idx = string.index("*")
-        except:
-            print "String does not contain '*XY' checksum"
-            return False
-
-        segment = string[1:idx]
-
-        #print "Checking checksum: |%s|" % segment
-
-        csum = csum.upper()
-        _csum = NMEA_checksum(segment).upper()
-
-        #print "Calc'd: %s" % _csum
-        #print "Recv'd: %s" % csum
-
-        return csum == _csum
-
-    def parse_string(self, string):
-        csvel = "[^,]+"
-        expr = \
-            "\$GPGGA,(%s),(%s),([NS]),(%s),([EW]),([0-9]),(%s),(%s),(%s),([A-Z]),(%s),([A-Z]),,(%s),?(%s)?" % \
-        (csvel, csvel, csvel, csvel, csvel, csvel, csvel, csvel, csvel)
-
-        m = re.match(expr, string)
-        if not m:
-            raise Exception("Unable to parse sentence")
-
-        t = m.group(1)
-        self.date = "%02i:%02i:%02i" % (int(t[0:2]),
-                                        int(t[2:4]),
-                                        int(t[4:6]))
-
-        if m.group(3) == "S":
-            mult = -1
-        else:
-            mult = 1
-        self.latitude = nmea2deg(float(m.group(2))) * mult
-
-        if m.group(5) == "W":
-            mult = -1
-        else:
-            mult = 1
-        self.longitude = nmea2deg(float(m.group(4))) * mult
-
-        print "%f,%f" % (self.latitude, self.longitude)
-
-        self.satellites = int(m.group(7))
-        self.altitude = float(m.group(9))
-        if " "in m.group(13):
-            (csum, self.station) = m.group(13).split(' ', 1)
-            self.station = self.station.strip()
-            self.comment = m.group(14).strip()
-        else:
-            csum = m.group(13)
-            self.station = ""
-            self.comment = ""
-        
-        self.valid = self.test_checksum(string, csum)
+        self._from_coords(lat, lon)
 
     def __str__(self):
         if self.valid:
@@ -252,6 +209,7 @@ class GPSPosition:
             return "GPS: (Invalid GPS data)"
 
     def to_NMEA_GGA(self):
+        """Returns an NMEA-compliant GPGGA sentence"""
         date = time.strftime("%H%M%S")
 
         if self.latitude > 0:
@@ -279,6 +237,7 @@ class GPSPosition:
                                                  self.comment)
 
     def to_APRS(self, dest="APDPRS"):
+        """Returns a GPS-A (APRS-compliant) string"""
         s = "%s>%s,DSTAR*:!" % (self.station, dest)
 
         if self.latitude > 0:
@@ -304,80 +263,6 @@ class GPSPosition:
         s += "/\r"
 
         return "$$CRC%04X,%s\n" % (GPSA_checksum(s), s)
-
-    def parse_GPSA(self, string):
-        elements = string.split(",")
-
-        if not elements[0].startswith("$$CRC"):
-            print "Missing $$CRC..."
-            return
-
-        crc = re.search("^\$\$CRC([A-Z0-9]{4})", elements[0]).group(1)
-        
-        print "CRC: %s" % crc
-        
-        src, dst = elements[1].split(">")
-
-        print "From %s to %s" % (src, dst)
-
-        path, data = elements[2].split(":")
-
-        latlon, extra = data.split(">")
-
-        lat, lon = latlon[1:].split("/")
-
-        if lat[-1] == "N":
-            Lm = 1
-        else:
-            Lm = -1
-
-        if lon[-1] == "E":
-            lm = 1
-        else:
-            lm = -1
-
-        # parse and store lat/lon
-        self.latitude = nmea2deg(float(lat[:-1]))
-        self.longitude = nmea2deg(float(lon[:-1]))
-
-        self.date = time.strftime("%H:%M:%S")
-        
-        self.valid = True
-
-    def from_APRS(self, string):
-        self.valid = False
-        try:
-            self.parse_GPSA(string)
-        except Exception, e:
-            print "APRS: %s" % e
-            return False
-
-        return self.valid        
-
-    def from_NMEA_GGA(self, string):
-        string = string.replace('\r', ' ')
-        string = string.replace('\n', ' ') 
-        try:
-            self.parse_string(string)
-        except Exception, e:
-            print "Invalid GPS data: %s" % e
-            self.valid = False
-            return
-
-    def from_coords(self, lat, lon, alt=0):
-        try:
-            self.latitude = float(lat)
-        except ValueError:
-            self.latitude = parse_dms(lat)
-
-        try:
-            self.longitude = float(lon)
-        except ValueError:
-            self.longitude = parse_dms(lon)
-
-        self.altitude = float(alt)
-        self.satellites = 3
-        self.valid = True
 
     def set_station(self, station, comment="D-RATS"):
         self.station = station
@@ -431,6 +316,130 @@ class GPSPosition:
         return "%.1f %s %s" % (self.distance_from(pos),
                                EARTH_UNITS,
                                direction)
+
+class NMEAGPSPosition(GPSPosition):
+    """A GPSPosition initialized from a NMEA sentence"""
+    def _test_checksum(self, string, csum):
+        try:
+            idx = string.index("*")
+        except:
+            print "String does not contain '*XY' checksum"
+            return False
+
+        segment = string[1:idx]
+
+        csum = csum.upper()
+        _csum = NMEA_checksum(segment).upper()
+
+        return csum == _csum
+
+    def _parse_GPGGA(self, string):
+        csvel = "[^,]+"
+        expr = \
+            "\$GPGGA,(%s),(%s),([NS]),(%s),([EW]),([0-9]),(%s),(%s),(%s),([A-Z]),(%s),([A-Z]),,(%s),?(%s)?" % \
+        (csvel, csvel, csvel, csvel, csvel, csvel, csvel, csvel, csvel)
+
+        m = re.match(expr, string)
+        if not m:
+            raise Exception("Unable to parse sentence")
+
+        t = m.group(1)
+        self.date = "%02i:%02i:%02i" % (int(t[0:2]),
+                                        int(t[2:4]),
+                                        int(t[4:6]))
+
+        if m.group(3) == "S":
+            mult = -1
+        else:
+            mult = 1
+        self.latitude = nmea2deg(float(m.group(2))) * mult
+
+        if m.group(5) == "W":
+            mult = -1
+        else:
+            mult = 1
+        self.longitude = nmea2deg(float(m.group(4))) * mult
+
+        print "%f,%f" % (self.latitude, self.longitude)
+
+        self.satellites = int(m.group(7))
+        self.altitude = float(m.group(9))
+        if " "in m.group(13):
+            (csum, self.station) = m.group(13).split(' ', 1)
+            self.station = self.station.strip()
+            self.comment = m.group(14).strip()
+        else:
+            csum = m.group(13)
+            self.station = ""
+            self.comment = ""
+        
+        self.valid = self._test_checksum(string, csum)
+
+    def _from_NMEA_GGA(self, string):
+        string = string.replace('\r', ' ')
+        string = string.replace('\n', ' ') 
+        try:
+            self._parse_GPGGA(string)
+        except Exception, e:
+            print "Invalid GPS data: %s" % e
+            self.valid = False
+            return
+
+    def __init__(self, sentence, station="UNKNOWN"):
+        GPSPosition.__init__(self)
+
+        self._from_NMEA_GGA(sentence)
+
+class APRSGPSPosition(GPSPosition):
+    def _parse_GPSA(self, string):
+        elements = string.split(",")
+
+        if not elements[0].startswith("$$CRC"):
+            print "Missing $$CRC..."
+            return
+
+        crc = re.search("^\$\$CRC([A-Z0-9]{4})", elements[0]).group(1)
+        
+        self.station, dst = elements[1].split(">")
+
+        path, data = elements[2].split(":")
+
+        latlon, extra = data.split(">")
+
+        lat, lon = latlon[1:].split("/")
+
+        if lat[-1] == "N":
+            Lm = 1
+        else:
+            Lm = -1
+
+        if lon[-1] == "E":
+            lm = 1
+        else:
+            lm = -1
+
+        # parse and store lat/lon
+        self.latitude = nmea2deg(float(lat[:-1]))
+        self.longitude = nmea2deg(float(lon[:-1]))
+
+        self.date = time.strftime("%H:%M:%S")
+        
+        self.valid = True
+
+    def _from_APRS(self, string):
+        self.valid = False
+        try:
+            self._parse_GPSA(string)
+        except Exception, e:
+            print "APRS: %s" % e
+            return False
+
+        return self.valid        
+
+    def __init__(self, message):
+        GPSPosition.__init__(self)
+
+        self._from_APRS(message)
 
 class MapImage:
     def __init__(self, center):
@@ -524,8 +533,7 @@ class GPSSource:
             
             for line in lines:
                 if line.startswith("$GPGGA"):
-                    position = GPSPosition()
-                    position.from_NMEA_GGA(line)
+                    position = NMEAGPSPosition(line)
 
                     self.last_valid = position.valid
                     if position.valid:
@@ -549,8 +557,7 @@ class StaticGPSSource(GPSSource):
         self.lat = lat
         self.lon = lon
 
-        self.position = GPSPosition()
-        self.position.from_coords(self.lat, self.lon)
+        self.position = GPSPosition(self.lat, self.lon)
 
     def start(self):
         pass
@@ -566,19 +573,19 @@ class StaticGPSSource(GPSSource):
 
 def parse_GPS(string):
     if "$GPGGA" in string:
-        p = GPSPosition()
-        p.from_NMEA_GGA(string[string.index("$GPGGA"):])
-        return p
+        return NMEAGPSPosition(string[string.index("$GPGGA"):])
+    elif "$$CRC" in string:
+        return APRSGPSPosition(string[string.index("$$CRC"):])
     else:
         return None
 
 if __name__ == "__main__":
 
 #    p = parse_GPS("08:44:37: " + TEST)
-    P = GPSPosition()
+    P = GPSPosition(nmea2deg(3302.39), nmea2deg(9644.66) * -1)
     #P.from_coords(45.525012, -122.916434)
-    P.from_coords(nmea2deg(3302.39),
-                  nmea2deg(9644.66) * -1)
+    #P.from_coords(,
+    #              )
 #    p.set_relative_to_current(P)
 #    if not p:
 #        print "Failed"
@@ -623,5 +630,5 @@ if __name__ == "__main__":
 
     string = "$$CRCCE3E,%s" % string
 
-    P.from_APRS(string)
-    print P
+    PP = APRSGPSPosition(string)
+    print PP
