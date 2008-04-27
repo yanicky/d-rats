@@ -139,10 +139,19 @@ class QSTGPS(QSTText):
         self.prefix = ""
         self.raw = True
         self.mainapp = mainapp.get_mainapp()
+        self.fix = None
+
+    def set_fix(self, fix):
+        self.fix = fix
 
     def do_qst(self):
-        fix = self.mainapp.get_position()
+        if not self.fix:
+            fix = self.mainapp.get_position()
+        else:
+            fix = self.fix
+
         fix.comment = self.text[:20]
+
         if fix.valid:
             return fix.to_NMEA_GGA()
         else:

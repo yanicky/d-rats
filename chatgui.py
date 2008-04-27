@@ -30,7 +30,7 @@ import ConfigParser
 import ddt
 
 from xfergui import FileTransferGUI, FormTransferGUI
-from qst import QSTGUI, QuickMsgGUI
+from qst import QSTGUI, QuickMsgGUI, QSTGPS, QSTGPSA
 from inputdialog import TextInputDialog, ChoiceDialog, ExceptionDialog
 from utils import filter_to_ascii
 from callsigns import find_callsigns
@@ -1652,6 +1652,13 @@ class CallCatcher:
         lookup.show()
         vbox.pack_start(lookup, 0,0,0)
 
+        echo = gtk.Button("Echo Position")
+        echo.set_size_request(75, 30)
+        echo.connect("clicked", self.but_echo_position)
+        self.gui.tips.set_tip(echo, "Re-broadcast position of selected station")
+        echo.show()
+        vbox.pack_start(echo, 0,0,0)
+
         vbox.show()
         
         return vbox
@@ -1720,6 +1727,31 @@ class CallCatcher:
     def but_clear(self, widget):
         self.mainapp.seen_callsigns = {}
         self.refresh()
+
+    def but_echo_position(self, widget):
+        (list, paths) = self.view.get_selection().get_selected_rows()
+
+        mycall = self.mainapp.config.get("user", "callsign")
+
+        qsts = []
+
+        for path in paths:
+            iter = list.get_iter(path)
+            (call,) = list.get(iter, self.col_call)
+
+            (_, pos) = self.mainapp.seen_callsigns.get(call, None)
+            if not pos:
+                continue
+
+            q = QSTGPS(self.gui,
+                       self.mainapp.config,
+                       "VIA %s" % mycall)
+            q.set_fix(pos)
+
+            qsts.append(q)
+
+        for qst in qsts:
+            qst.fire()
 
     def show(self):
         self.root.show()
