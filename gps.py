@@ -431,7 +431,7 @@ class APRSGPSPosition(GPSPosition):
         try:
             self._parse_GPSA(string)
         except Exception, e:
-            print "APRS: %s" % e
+            print "Invalid APRS: %s" % e
             return False
 
         return self.valid        
@@ -572,12 +572,15 @@ class StaticGPSSource(GPSSource):
         return "Static position"
 
 def parse_GPS(string):
-    if "$GPGGA" in string:
-        return NMEAGPSPosition(string[string.index("$GPGGA"):])
-    elif "$$CRC" in string:
-        return APRSGPSPosition(string[string.index("$$CRC"):])
-    else:
-        return None
+    try:
+        if "$GPGGA" in string:
+            return NMEAGPSPosition(string[string.index("$GPGGA"):])
+        elif "$$CRC" in string:
+            return APRSGPSPosition(string[string.index("$$CRC"):])
+    except Exception, e:
+        pass
+
+    return None
 
 if __name__ == "__main__":
 
