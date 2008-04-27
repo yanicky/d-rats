@@ -208,8 +208,14 @@ class GPSPosition:
                 comment = ""
 
             if self.speed and self.direction:
-                dir = " (Heading %.0f at %i knots)" % (self.direction,
-                                                       self.speed)
+                if EARTH_UNITS == "mi":
+                    speed = "%.1f mph" % (float(self.speed) * 1.15077945)
+                elif EARTH_UNITS == "m":
+                    speed = "%.1f km/h" % (float(self.speed) * 1.852)
+                else:
+                    speed = "%.2f knots" % float(self.speed)
+
+                dir = " (Heading %.0f at %s)" % (self.direction, speed)
             else:
                 dir = ""
 
@@ -273,11 +279,13 @@ class GPSPosition:
 
         s += "%.2f%s/%08.2f%s>" % (deg2nmea(self.latitude * Lm), ns,
                                   deg2nmea(self.longitude * lm), ew)
-        #s += "000/000" # FIXME: What is this?
+        if self.speed and self.direction:
+            s += "%.1f/%.1f" % (float(self.speed), float(self.direction))
+
         if self.comment:
             s += " %s" % self.comment
             
-        s += "/\r"
+        s += "\r"
 
         return "$$CRC%04X,%s\n" % (GPSA_checksum(s), s)
 
@@ -421,7 +429,7 @@ class NMEAGPSPosition(GPSPosition):
 
         self.valid = self._test_checksum(string, csum)
 
-    def _from_NMEA_GGA(self, string):
+    def _from_NMEA_GPGGA(self, string):
         string = string.replace('\r', ' ')
         string = string.replace('\n', ' ') 
         try:
@@ -625,7 +633,7 @@ def parse_GPS(string):
         elif "$$CRC" in string:
             return APRSGPSPosition(string[string.index("$$CRC"):])
     except Exception, e:
-        pass
+        print "Exception during GPS parse: %s" % e
 
     return None
 
@@ -687,3 +695,4 @@ if __name__ == "__main__":
 
     PPP = NMEAGPSPosition(string)
     print PPP
+    print PPP.to_APRS()
