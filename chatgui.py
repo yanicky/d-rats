@@ -1562,6 +1562,64 @@ class FormManager:
         pass
 
 class CallCatcher:
+    def mh(self, _action):
+        action = _action.get_name()
+
+        if action == "lookup":
+            self.mnu_lookup(None)
+        elif action == "echoposgps":
+            self.but_echo_position(None, False)
+        elif action == "echoposgpsa":
+            self.mnu_echo_position(None, True)
+        elif action == "remove":
+            self.but_remove(None)
+        elif action == "reset":
+            self.but_reset(None, True)
+        elif action == "forget":
+            self.but_reset(None, False)
+        else:
+            print "Unknown action `%s'" % action
+
+    def make_menu(self):
+        a = [('echoposgps', None, 'Echo position (GPS)', None, None, self.mh),
+             ('echoposgpsa', None, 'Echo position (GPS-A)', None, None, self.mh),
+             ('remove', None, 'Remove', None, None, self.mh),
+             ('reset', None, 'Reset', None, None, self.mh),
+             ('forget', None, 'Forget', None, None, self.mh),
+             ('lookup', None, 'Lookup (QRZ)', None, None, self.mh)]
+
+        xml = """
+<ui>
+  <popup name="Menu">
+    <menuitem action='echoposgps'/>
+    <menuitem action='echoposgpsa'/>
+    <separator/>
+    <menuitem action='remove'/>
+    <menuitem action='reset'/>
+    <menuitem action='forget'/>
+  </popup>
+</ui>
+"""
+
+        ag = gtk.ActionGroup("Menu")
+        ag.add_actions(a)
+
+        uim = gtk.UIManager()
+        uim.insert_action_group(ag, 0)
+        uim.add_ui_from_string(xml)
+
+        return uim.get_widget("/Menu")
+ 
+
+    def mouse_cb(self, view, event, data=None):
+        if event.button != 3:
+            return
+
+        list, paths = self.view.get_selection().get_selected_rows()
+
+        menu = self.make_menu()
+        menu.popup(None,None,None,event.button,event.time)
+
     def make_display(self):
         self.col_call = 0
         self.col_disp = 1
@@ -1596,7 +1654,9 @@ class CallCatcher:
 
         def cb(view, path, col, me):
             me.but_address(None)
+
         self.view.connect("row-activated", cb, self)
+        self.view.connect("button_press_event", self.mouse_cb)
 
         self.view.show()
 
@@ -1645,20 +1705,6 @@ class CallCatcher:
         clear.show()
         vbox.pack_start(clear, 0,0,0)
 
-        lookup = gtk.Button("Lookup")
-        lookup.set_size_request(75, 30)
-        lookup.connect("clicked", self.but_lookup)
-        self.gui.tips.set_tip(lookup, "Lookup call on QRZ")
-        lookup.show()
-        vbox.pack_start(lookup, 0,0,0)
-
-        echo = gtk.Button("Echo Position")
-        echo.set_size_request(75, 30)
-        echo.connect("clicked", self.but_echo_position, False)
-        self.gui.tips.set_tip(echo, "Re-broadcast position of selected station")
-        echo.show()
-        vbox.pack_start(echo, 0,0,0)
-
         vbox.show()
         
         return vbox
@@ -1667,7 +1713,7 @@ class CallCatcher:
         (list, paths) = self.view.get_selection().get_selected_rows()
         return list, list.get_iter(paths[0])
 
-    def but_lookup(self, widget):
+    def mnu_lookup(self, widget):
         list, iter = self._get_first_selected()
         (call,) = list.get(iter, self.col_call)
 
@@ -1728,7 +1774,7 @@ class CallCatcher:
         self.mainapp.seen_callsigns = {}
         self.refresh()
 
-    def but_echo_position(self, widget, aprs=False):
+    def mnu_echo_position(self, widget, aprs=False):
         (list, paths) = self.view.get_selection().get_selected_rows()
 
         mycall = self.mainapp.config.get("user", "callsign")
