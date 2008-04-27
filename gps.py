@@ -305,6 +305,55 @@ class GPSPosition:
 
         return "$$CRC%04X,%s\n" % (GPSA_checksum(s), s)
 
+    def parse_GPSA(self, string):
+        elements = string.split(",")
+
+        if not elements[0].startswith("$$CRC"):
+            print "Missing $$CRC..."
+            return
+
+        crc = re.search("^\$\$CRC([A-Z0-9]{4})", elements[0]).group(1)
+        
+        print "CRC: %s" % crc
+        
+        src, dst = elements[1].split(">")
+
+        print "From %s to %s" % (src, dst)
+
+        path, data = elements[2].split(":")
+
+        latlon, extra = data.split(">")
+
+        lat, lon = latlon[1:].split("/")
+
+        if lat[-1] == "N":
+            Lm = 1
+        else:
+            Lm = -1
+
+        if lon[-1] == "E":
+            lm = 1
+        else:
+            lm = -1
+
+        # parse and store lat/lon
+        self.latitude = nmea2deg(float(lat[:-1]))
+        self.longitude = nmea2deg(float(lon[:-1]))
+
+        self.date = time.strftime("%H:%M:%S")
+        
+        self.valid = True
+
+    def from_APRS(self, string):
+        self.valid = False
+        try:
+            self.parse_GPSA(string)
+        except Exception, e:
+            print "APRS: %s" % e
+            return False
+
+        return self.valid        
+
     def from_NMEA_GGA(self, string):
         string = string.replace('\r', ' ')
         string = string.replace('\n', ' ') 
@@ -571,3 +620,8 @@ if __name__ == "__main__":
     string = "AE5PL-T>API282,DSTAR*:!3302.39N/09644.66W>/\r"
 
     print "%X" % GPSA_checksum(string)
+
+    string = "$$CRCCE3E,%s" % string
+
+    P.from_APRS(string)
+    print P
