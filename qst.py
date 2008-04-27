@@ -148,6 +148,15 @@ class QSTGPS(QSTText):
         else:
             return None
 
+class QSTGPSA(QSTGPS):
+    def do_qst(self):
+        fix = self.mainapp.get_position()
+        fix.comment = self.text
+        if fix.valid:
+            return fix.to_APRS()
+        else:
+            return None
+
 class SelectGUI:
     def sync_gui(self, load=True):
         pass
@@ -395,7 +404,7 @@ class QSTGUI(SelectGUI):
 
     def make_b_controls(self):
         times = ["1", "5", "10", "20", "30", "60", ":15", ":30", ":45"]
-        types = ["Text", "Exec", "File", "GPS"]
+        types = ["Text", "Exec", "File", "GPS", "GPS-A"]
 
         self.msg = gtk.TextBuffer()
         self.entry = gtk.TextView(self.msg)
@@ -414,7 +423,7 @@ class QSTGUI(SelectGUI):
         self.tips.set_tip(self.entry, "Enter new QST text")
         self.tips.set_tip(b_add, "Add new QST")
         self.tips.set_tip(self.c_tme, "Minutes between transmissions")
-        self.tips.set_tip(self.c_typ, "`Text' sends a message, `Exec' runs a program, `File' sends the contents of a text file")
+        self.tips.set_tip(self.c_typ, "`Text' sends a message, `Exec' runs a program, `File' sends the contents of a text file", "`GPS' sends a position beacon, `GPS-A' sends an APRS beacon")
 
         vbox = gtk.VBox(True, 5)
 
@@ -458,7 +467,7 @@ class QSTGUI(SelectGUI):
             if d.run() == gtk.RESPONSE_OK:
                 self.msg.set_text(d.get_filename())
             d.destroy()   
-        elif widget.get_active_text() in ["GPS"]:
+        elif widget.get_active_text() in ["GPS", "GPS-A"]:
             self.msg.set_text("ON D-RATS")
 
     def load_qst(self, section):
@@ -599,6 +608,8 @@ def get_qst_class(typestr):
         return QSTFile
     elif typestr == "GPS":
         return QSTGPS
+    elif typestr == "GPS-A":
+        return QSTGPSA
     else:
         return None
 
