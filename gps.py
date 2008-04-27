@@ -419,8 +419,8 @@ class APRSGPSPosition(GPSPosition):
             lm = -1
 
         # parse and store lat/lon
-        self.latitude = nmea2deg(float(lat[:-1]))
-        self.longitude = nmea2deg(float(lon[:-1]))
+        self.latitude = nmea2deg(float(lat[:-1])) * Lm
+        self.longitude = nmea2deg(float(lon[:-1])) * lm
 
         self.date = time.strftime("%H:%M:%S")
         
