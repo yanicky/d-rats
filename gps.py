@@ -252,21 +252,26 @@ class GPSPosition:
         else:
             return "GPS: (Invalid GPS data)"
 
+    def _NMEA_format(self, val, latitude):
+        if latitude:
+            if val > 0:
+                d = "N"
+            else:
+                d = "S"
+        else:
+            if val > 0:
+                d = "E"
+            else:
+                d = "W"
+
+        return "%.3f,%s" % (deg2nmea(abs(val)), d)
+
     def to_NMEA_GGA(self):
         """Returns an NMEA-compliant GPGGA sentence"""
         date = time.strftime("%H%M%S")
 
-        if self.latitude > 0:
-            lat = "%.3f,%s" % (deg2nmea(self.latitude), "N")
-        else:
-            lat = "%.3f,%s" % (deg2nmea(self.latitude * -1), "S")
-
-
-
-        if self.longitude > 0:
-            lon = "%.3f,%s" % (deg2nmea(self.longitude), "E")
-        else:
-            lon = "%.3f,%s" % (deg2nmea(self.longitude * -1), "W")
+        lat = self._NMEA_format(self.latitude, True)
+        lon = self._NMEA_format(self.longitude, False)
 
         data = "GPGGA,%s,%s,%s,1,%i,0,%.1f,M,0,M,," % ( \
             date,
@@ -274,6 +279,37 @@ class GPSPosition:
             lon,
             self.satellites,
             self.altitude)
+
+        return "$%s%s\r\n%-8.8s,%-20.20s\r\n" % (data,
+                                                 NMEA_checksum(data),
+                                                 self.station,
+                                                 self.comment)
+
+    def to_NMEA_RMC(self):
+        """Returns an NMEA-compliant GPRMC sentence"""
+        tstamp = time.strftime("%H%M%S")
+        dstamp = time.strftime("%d%m%y")
+
+        lat = self._NMEA_format(self.latitude, True)
+        lon = self._NMEA_format(self.longitude, False)
+
+        if self.speed:
+            speed = "%03.1f" % self.speed
+        else:
+            speed = "000.0"
+
+        if self.direction:
+            dir = "%03.1f" % self.direction
+        else:
+            dir = "000.0"
+
+        data = "GPRMC,%s,A,%s,%s,%s,%s,%s,000.0,W" % ( \
+            tstamp,
+            lat,
+            lon,
+            speed,
+            dir,
+            dstamp)
 
         return "$%s%s\r\n%-8.8s,%-20.20s\r\n" % (data,
                                                  NMEA_checksum(data),
@@ -386,8 +422,6 @@ class NMEAGPSPosition(GPSPosition):
         csum = csum.upper()
         _csum = NMEA_checksum(segment).upper()
 
-        print "Checksum %s == %s: %s" % (csum, _csum, csum==_csum)
-
         return csum == _csum
 
     def _parse_GPGGA(self, string):
@@ -431,9 +465,9 @@ class NMEAGPSPosition(GPSPosition):
             "(%s),(%s),"  \
             "(%s),(%s),"  \
             "(%s),(%s),"  \
-            "([EW]),?S?(.*)" % (csvel, csvel, csvel, csvel,
-                            csvel, csvel, csvel, csvel,
-                            csvel, csvel)
+            "([EW]),?S?(\*..)\r?" % (csvel, csvel, csvel, csvel,
+                                     csvel, csvel, csvel, csvel,
+                                     csvel, csvel)
         
         # NB: My GPS seems to put a ",S" before the checksum, so that
         # the last field (magnetic variance) looks like:
@@ -671,6 +705,8 @@ def parse_GPS(string):
     try:
         if "$GPGGA" in string:
             return NMEAGPSPosition(string[string.index("$GPGGA"):])
+        elif "$GPRMC" in string:
+            return NMEAGPSPosition(string[string.index("$GPRMC"):])
         elif "$$CRC" in string:
             return APRSGPSPosition(string[string.index("$$CRC"):])
     except Exception, e:
@@ -734,6 +770,9 @@ if __name__ == "__main__":
 
     string = "$GPRMC,220516,A,5133.82,N,00042.24,W,173.8,231.8,130694,004.2,W*70"
 
+    print "RMC:"
     PPP = NMEAGPSPosition(string)
     print PPP
     print PPP.to_APRS()
+    print PPP.to_NMEA_RMC()
+    print str(parse_GPS(PPP.to_NMEA_RMC()))
