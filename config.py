@@ -103,6 +103,7 @@ class AppConfig:
         mset("settings", "compression", "True")
         mset("settings", "gpsport", "")
         mset("settings", "gpsenabled", "False")
+        mset("settings", "aprsssid", "0")
 
         mset("quick", None, None)
 
@@ -155,6 +156,7 @@ class AppConfig:
                 "units" : "Units",
                 "gpsport" : "External GPS serial port",
                 "gpsenabled" : "Update position from external GPS",
+                "aprsssid" : "D/APRS SSID",
                 }
 
     id2tip = {"write_chunk" : "Stage DDT blocks into small chunks of this many bytes",
@@ -171,6 +173,7 @@ class AppConfig:
               "altitude" : "Altitude in meters",
               "gpsport" : "Set this to the serial port of your external NMEA GPS",
               "gpsenabled" : "When enabled, update position from GPS data",
+              "aprsssid" : "0=Home, 9=Mobile, 12=Portable, etc",
               }
 
     xfers = {"DDT" : ddt.DDTTransfer}
@@ -428,6 +431,8 @@ class AppConfig:
                                      make_choice(ports)), 0,0,0)
         vbox.pack_start(self.make_sb("gpsenabled",
                                      self.make_bool()), 0,0,0)
+        vbox.pack_start(self.make_sb("aprsssid",
+                                     gtk.Entry()), 0,0,0)
 
 
         vbox.show()
@@ -615,7 +620,8 @@ D-RATS has been started in safe mode, which means the configuration file has not
                   ("prefs", "signon"),
                   ("prefs", "signoff"),
                   ("user", "latitude"),
-                  ("user", "longitude")]
+                  ("user", "longitude"),
+                  ("settings", "aprsssid")]
 
         bool_v = [("prefs", "autoreceive"),
                   ("prefs", "dosignon"),

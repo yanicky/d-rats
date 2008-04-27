@@ -259,9 +259,18 @@ class GPSPosition:
                                                  self.station,
                                                  self.comment)
 
-    def to_APRS(self, dest="APRATS"):
+    def to_APRS(self, dest="APRATS", ssid=None):
         """Returns a GPS-A (APRS-compliant) string"""
-        s = "%s>%s,DSTAR*:!" % (self.station, dest)
+
+        if ssid:
+            if len(self.station) == 7:
+                sta = "%s%s" % (self.station, ssid)
+            else:
+                sta = "%s-%s" % (self.station, ssid)
+        else:
+            sta = self.station
+
+        s = "%s>%s,DSTAR*:!" % (sta, dest)
 
         if self.latitude > 0:
             ns = "N"
