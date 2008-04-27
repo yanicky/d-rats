@@ -1574,6 +1574,7 @@ class CallCatcher:
                                    gobject.TYPE_STRING)
 
         self.view = gtk.TreeView(self.store)
+        self.view.get_selection().set_mode(gtk.SELECTION_MULTIPLE)
 
         r = gtk.CellRendererText()
         c = gtk.TreeViewColumn("Callsign", r, text=self.col_call)
@@ -1655,27 +1656,38 @@ class CallCatcher:
         
         return vbox
 
+    def _get_first_selected(self):
+        (list, paths) = self.view.get_selection().get_selected_rows()
+        return list, list.get_iter(paths[0])
+
     def but_lookup(self, widget):
-        (list, iter) = self.view.get_selection().get_selected()
+        list, iter = self._get_first_selected()
         (call,) = list.get(iter, self.col_call)
 
         url = "http://qrz.com/%s" % call
         self.mainapp.config.platform.open_html_file(url)
 
     def but_remove(self, widget):
-        (list, iter) = self.view.get_selection().get_selected()
-        (call,) = list.get(iter, self.col_call)
+        (list, paths) = self.view.get_selection().get_selected_rows()
 
-        try:
-            del self.mainapp.seen_callsigns[call]
-            self.gui.map.del_marker(call)
-        except Exception, e:
-            print "Failed to delete: %s" % e
+        calls = []
 
-        list.remove(iter)
+        for path in paths:
+            iter = list.get_iter(path)
+            (call,) = list.get(iter, self.col_call)
+            calls.append(call)
+
+        for call in calls:
+            try:
+                del self.mainapp.seen_callsigns[call]
+                self.gui.map.del_marker(call)
+            except Exception, e:
+                print "Failed to delete: %s" % e
+
+        self.refresh()
 
     def but_address(self, widget):
-        (list, iter) = self.view.get_selection().get_selected()
+        list, iter = self._get_first_selected()
         (call,) = list.get(iter, self.col_call)
 
         text = self.gui.entry.get_text()
@@ -1684,21 +1696,24 @@ class CallCatcher:
         self.gui.entry.grab_focus()
 
     def but_reset(self, widget, now):
-        (list, iter) = self.view.get_selection().get_selected()
-        (call,) = list.get(iter, self.col_call)
+        (list, paths) = self.view.get_selection().get_selected_rows()
 
-        if self.mainapp.seen_callsigns.has_key(call):
-            (_, pos) = self.mainapp.seen_callsigns[call]
-        else:
-            pos = None
+        for path in paths:
+            iter = list.get_iter(path)
+            (call,) = list.get(iter, self.col_call)
 
-        try:
-            if now:
-                self.mainapp.seen_callsigns[call] = (time.time(), pos)
+            if self.mainapp.seen_callsigns.has_key(call):
+                (_, pos) = self.mainapp.seen_callsigns[call]
             else:
-                self.mainapp.seen_callsigns[call] = (0, pos)
-        except:
-            pass
+                pos = None
+
+            try:
+                if now:
+                    self.mainapp.seen_callsigns[call] = (time.time(), pos)
+                else:
+                    self.mainapp.seen_callsigns[call] = (0, pos)
+            except Exception, e:
+                pass
 
         self.refresh()
 
