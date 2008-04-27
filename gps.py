@@ -191,6 +191,27 @@ class GPSPosition:
 
         self._from_coords(lat, lon)
 
+    def __iadd__(self, update):
+        if not update.valid:
+            return
+
+        if update.satellites:
+            self.satellites = update.satellites
+
+        if update.altitude:
+            self.altitude = update.altitude
+
+        self.latitiude = update.latitude
+        self.longitude = update.longitude
+        self.date = update.date
+
+        if update.speed:
+            self.speed = update.speed
+        if update.direction:
+            self.direction = update.direction
+
+        return self
+
     def __str__(self):
         if self.valid:
             if self.current:
@@ -365,6 +386,8 @@ class NMEAGPSPosition(GPSPosition):
         csum = csum.upper()
         _csum = NMEA_checksum(segment).upper()
 
+        print "Checksum %s == %s: %s" % (csum, _csum, csum==_csum)
+
         return csum == _csum
 
     def _parse_GPGGA(self, string):
@@ -408,18 +431,24 @@ class NMEAGPSPosition(GPSPosition):
             "(%s),(%s),"  \
             "(%s),(%s),"  \
             "(%s),(%s),"  \
-            "([EW])(.*)" % (csvel, csvel, csvel, csvel,
+            "([EW]),?S?(.*)" % (csvel, csvel, csvel, csvel,
                             csvel, csvel, csvel, csvel,
                             csvel, csvel)
         
+        # NB: My GPS seems to put a ",S" before the checksum, so that
+        # the last field (magnetic variance) looks like:
+        #   17.1,E,S*XY
+        # instead of:
+        #   17.1,E,*XY
+
         m = re.search(expr, string)
         if not m:
             raise Exception("Unable to parse GPMRC")
 
         if m.group(2) != "A":
-            self.valid = False
+            #self.valid = False
             print "GPRMC marked invalid by GPS"
-            return
+            #return
 
         t = m.group(1)
         d = m.group(9)
@@ -600,7 +629,10 @@ class GPSSource:
                     position = NMEAGPSPosition(line)
 
                     self.last_valid = position.valid
-                    if position.valid:
+                    if position.valid and self.position:
+                        self.position += position
+                        print "ME: %s" % self.position                        
+                    elif position.valid:
                         self.position = position
                     else:
                         print "Could not parse: %s" % line
