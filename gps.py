@@ -253,7 +253,7 @@ class GPSPosition:
                                                  self.station,
                                                  self.comment)
 
-    def to_APRS(self, dest="APDPRS"):
+    def to_APRS(self, dest="APRATS"):
         """Returns a GPS-A (APRS-compliant) string"""
         s = "%s>%s,DSTAR*:!" % (self.station, dest)
 
