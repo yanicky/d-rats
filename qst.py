@@ -143,19 +143,8 @@ class QSTGPS(QSTText):
     def do_qst(self):
         fix = self.mainapp.get_position()
         fix.comment = self.text[:20]
-        if not fix.valid:
-            return None
-        
-        s = ""
-
-        if self.config.getboolean("settings", "sendnmeagpgga"):
-            s += fix.to_NMEA_GGA()
-
-        if self.config.getboolean("settings", "sendgpsa"):
-            s += fix.to_APRS()
-
-        if s:
-            return s
+        if fix.valid:
+            return fix.to_NMEA_GGA()
         else:
             return None
 
