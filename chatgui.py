@@ -1654,7 +1654,7 @@ class CallCatcher:
 
         echo = gtk.Button("Echo Position")
         echo.set_size_request(75, 30)
-        echo.connect("clicked", self.but_echo_position)
+        echo.connect("clicked", self.but_echo_position, False)
         self.gui.tips.set_tip(echo, "Re-broadcast position of selected station")
         echo.show()
         vbox.pack_start(echo, 0,0,0)
@@ -1728,7 +1728,7 @@ class CallCatcher:
         self.mainapp.seen_callsigns = {}
         self.refresh()
 
-    def but_echo_position(self, widget):
+    def but_echo_position(self, widget, aprs=False):
         (list, paths) = self.view.get_selection().get_selected_rows()
 
         mycall = self.mainapp.config.get("user", "callsign")
@@ -1743,9 +1743,12 @@ class CallCatcher:
             if not pos:
                 continue
 
-            q = QSTGPS(self.gui,
-                       self.mainapp.config,
-                       "VIA %s" % mycall)
+            if aprs:
+                c = QSTGPSA
+            else:
+                c = QSTGPS
+
+            q = c(self.gui, self.mainapp.config, "via %s" % mycall)
             q.set_fix(pos)
 
             qsts.append(q)
