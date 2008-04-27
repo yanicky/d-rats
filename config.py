@@ -103,6 +103,8 @@ class AppConfig:
         mset("settings", "compression", "True")
         mset("settings", "gpsport", "")
         mset("settings", "gpsenabled", "False")
+        mset("settings", "sendnmeagpgga", "True")
+        mset("settings", "sendgpsa", "False")
 
         mset("quick", None, None)
 
@@ -155,6 +157,8 @@ class AppConfig:
                 "units" : "Units",
                 "gpsport" : "External GPS serial port",
                 "gpsenabled" : "Update position from external GPS",
+                "sendnmeagpgga" : "Send NMEA GPS messages",
+                "sendgpsa" : "Send GPS-A GPS messages",
                 }
 
     id2tip = {"write_chunk" : "Stage DDT blocks into small chunks of this many bytes",
@@ -171,6 +175,8 @@ class AppConfig:
               "altitude" : "Altitude in meters",
               "gpsport" : "Set this to the serial port of your external NMEA GPS",
               "gpsenabled" : "When enabled, update position from GPS data",
+              "sendnmeagpgga" : "Compatible with all radios",
+              "sendgpsa" : "Compatible with IC-92AD, IC-2820, and APRS",
               }
 
     xfers = {"DDT" : ddt.DDTTransfer}
@@ -428,6 +434,10 @@ class AppConfig:
                                      make_choice(ports)), 0,0,0)
         vbox.pack_start(self.make_sb("gpsenabled",
                                      self.make_bool()), 0,0,0)
+        vbox.pack_start(self.make_sb("sendnmeagpgga",
+                                     self.make_bool()), 0,0,0)
+        vbox.pack_start(self.make_sb("sendgpsa",
+                                     self.make_bool()), 0,0,0)
 
 
         vbox.show()
@@ -626,7 +636,9 @@ D-RATS has been started in safe mode, which means the configuration file has not
                   ("settings", "swflow"),
                   ("settings", "compression"),
                   ("prefs", "logresume"),
-                  ("settings", "gpsenabled")]
+                  ("settings", "gpsenabled"),
+                  ("settings", "sendnmeagpgga"),
+                  ("settings", "sendgpsa")]
 
         choicetext_v = [("settings", "port"),
                         ("settings", "gpsport")]
