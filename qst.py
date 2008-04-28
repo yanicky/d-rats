@@ -159,8 +159,13 @@ class QSTGPS(QSTText):
 
 class QSTGPSA(QSTGPS):
     def do_qst(self):
-        fix = self.mainapp.get_position()
+        if not self.fix:
+            fix = self.mainapp.get_position()
+        else:
+            fix = self.fix
+
         fix.comment = self.text
+
         if fix.valid:
             return fix.to_APRS(ssid=self.config.get("settings", "aprsssid"))
         else:
