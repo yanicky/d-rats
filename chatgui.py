@@ -1568,7 +1568,7 @@ class CallCatcher:
         if action == "lookup":
             self.mnu_lookup(None)
         elif action == "echoposgps":
-            self.but_echo_position(None, False)
+            self.mnu_echo_position(None, False)
         elif action == "echoposgpsa":
             self.mnu_echo_position(None, True)
         elif action == "remove":
