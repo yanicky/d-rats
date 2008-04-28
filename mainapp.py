@@ -299,7 +299,7 @@ class MainApp:
             print "Invalid static position: %s" % e
 
         print "Static position: %s,%s" % (lat,lon)
-        return gps.StaticGPSSource(lat, lon)
+        return gps.StaticGPSSource(lat, lon, alt)
 
     def refresh_gps(self):
         port = self.config.get("settings", "gpsport")
