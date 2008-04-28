@@ -124,6 +124,9 @@ def deg2nmea(deg):
 
     return (deg * 100) + min
 
+def meters2feet(meters):
+    return meters * 3.2808399
+
 def distance(lat_a, lon_a, lat_b, lon_b):
     lat_a = deg2rad(lat_a)
     lon_a = deg2rad(lon_a)
@@ -266,23 +269,26 @@ class GPSPosition:
 
         return "%.3f,%s" % (deg2nmea(abs(val)), d)
 
-    def to_NMEA_GGA(self):
+    def to_NMEA_GGA(self, ssid=" "):
         """Returns an NMEA-compliant GPGGA sentence"""
         date = time.strftime("%H%M%S")
 
         lat = self._NMEA_format(self.latitude, True)
         lon = self._NMEA_format(self.longitude, False)
 
-        data = "GPGGA,%s,%s,%s,1,%i,0,%.1f,M,0,M,," % ( \
+        data = "GPGGA,%s,%s,%s,1,%i,0,%i,M,0,M,," % ( \
             date,
             lat,
             lon,
             self.satellites,
             self.altitude)
 
+        sta = "%-7.7s%1.1s" % (self.station,
+                               ssid)
+
         return "$%s%s\r\n%-8.8s,%-20.20s\r\n" % (data,
                                                  NMEA_checksum(data),
-                                                 self.station,
+                                                 sta,
                                                  self.comment)
 
     def to_NMEA_RMC(self):
@@ -351,6 +357,9 @@ class GPSPosition:
         if self.comment:
             s += "%s" % self.comment
             
+        if self.altitude:
+            s += "/A=%06i" % meters2feet(float(self.altitude))
+
         s += "\r"
 
         return "$$CRC%04X,%s\n" % (GPSA_checksum(s), s)
@@ -683,11 +692,13 @@ class GPSSource:
             return "GPS Not Locked"
 
 class StaticGPSSource(GPSSource):
-    def __init__(self, lat, lon):
+    def __init__(self, lat, lon, alt=0):
         self.lat = lat
         self.lon = lon
+        self.alt = alt
 
         self.position = GPSPosition(self.lat, self.lon)
+        self.position.altitude = int(float(alt))
 
     def start(self):
         pass
