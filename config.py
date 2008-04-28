@@ -67,7 +67,7 @@ class AppConfig:
         mset("user", "callsign", "W1AW")
         mset("user", "latitude", "0.0")
         mset("user", "longitude", "0.0")
-        mset("user", "altitude", "0.0")
+        mset("user", "altitude", "0")
         mset("user", "units", "Imperial")
 
         mset("prefs", "autoreceive", "False")
@@ -103,7 +103,7 @@ class AppConfig:
         mset("settings", "compression", "True")
         mset("settings", "gpsport", "")
         mset("settings", "gpsenabled", "False")
-        mset("settings", "aprsssid", "0")
+        mset("settings", "aprsssid", "")
 
         mset("quick", None, None)
 
@@ -361,7 +361,7 @@ class AppConfig:
         vbox.pack_start(self.make_sb("longitude",
                                      miscwidgets.LatLonEntry()), 0,0,0)
         vbox.pack_start(self.make_sb("altitude",
-                                     self.make_spin(0.1, 0.0, 29028.0, 1)),
+                                     self.make_spin(1.0, 0.0, 29028.0, 0)),
                         0,0,0)                                     
 
         units = ["Imperial", "Metric"]
@@ -432,7 +432,7 @@ class AppConfig:
         vbox.pack_start(self.make_sb("gpsenabled",
                                      self.make_bool()), 0,0,0)
         vbox.pack_start(self.make_sb("aprsssid",
-                                     gtk.Entry()), 0,0,0)
+                                     gtk.Entry(1)), 0,0,0)
 
 
         vbox.show()
