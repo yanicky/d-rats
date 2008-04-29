@@ -1733,7 +1733,7 @@ class CallCatcher:
         for call in calls:
             try:
                 del self.mainapp.seen_callsigns[call]
-                self.gui.map.del_marker(call)
+                self.gui.map.del_marker(call, "Stations")
             except Exception, e:
                 print "Failed to delete: %s" % e
 
