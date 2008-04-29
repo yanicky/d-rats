@@ -375,7 +375,11 @@ class GPSPosition:
             s += "%.1f/%.1f" % (float(self.speed), float(self.direction))
 
         if self.comment:
-            s += "%s" % self.comment
+            l = 43
+            if self.altitude:
+                l -= len("/A=xxxxxx")
+
+            s += "%s" % self.comment[:l]
             
         if self.altitude:
             s += "%s/A=%06i" % (self.comment and " " or "",
