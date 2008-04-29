@@ -167,7 +167,8 @@ class QSTGPSA(QSTGPS):
         fix.comment = self.text
 
         if fix.valid:
-            return fix.to_APRS()
+            return fix.to_APRS(symtab=self.config.get("settings", "aprssymtab"),
+                               symbol=self.config.get("settings", "aprssymbol"))
         else:
             return None
 

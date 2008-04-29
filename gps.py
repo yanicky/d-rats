@@ -333,7 +333,7 @@ class GPSPosition:
                                                  sta,
                                                  self.comment)
 
-    def to_APRS(self, dest="APRATS"):
+    def to_APRS(self, dest="APRATS", symtab="/", symbol=">"):
         """Returns a GPS-A (APRS-compliant) string"""
 
         stamp = time.strftime("%H%M%S")
@@ -359,8 +359,10 @@ class GPSPosition:
             ew = "W"            
             lm = -1
 
-        s += "%.2f%s/%08.2f%s>" % (deg2nmea(self.latitude * Lm), ns,
-                                  deg2nmea(self.longitude * lm), ew)
+        s += "%.2f%s%s%08.2f%s%s" % (deg2nmea(self.latitude * Lm), ns,
+                                     symtab,
+                                     deg2nmea(self.longitude * lm), ew,
+                                     symbol)
         if self.speed and self.direction:
             s += "%.1f/%.1f" % (float(self.speed), float(self.direction))
 
