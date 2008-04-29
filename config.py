@@ -104,6 +104,8 @@ class AppConfig:
         mset("settings", "gpsport", "")
         mset("settings", "gpsenabled", "False")
         mset("settings", "aprsssid", "")
+        mset("settings", "aprssymtab", "/")
+        mset("settings", "aprssymbol", ">")
 
         mset("quick", None, None)
 
@@ -157,6 +159,8 @@ class AppConfig:
                 "gpsport" : "External GPS serial port",
                 "gpsenabled" : "Update position from external GPS",
                 "aprsssid" : "D/APRS SSID",
+                "aprssymtab" : "D/APRS Symbol Table ID",
+                "aprssymbol" : "D/APRS Symbol ID",
                 }
 
     id2tip = {"write_chunk" : "Stage DDT blocks into small chunks of this many bytes",
@@ -174,6 +178,8 @@ class AppConfig:
               "gpsport" : "Set this to the serial port of your external NMEA GPS",
               "gpsenabled" : "When enabled, update position from GPS data",
               "aprsssid" : "0=Home, 9=Mobile, 12=Portable, etc",
+              "aprssymtab" : "Default is `/'",
+              "aprssymbol" : "Default is `>' (Car)",
               }
 
     xfers = {"DDT" : ddt.DDTTransfer}
@@ -433,6 +439,10 @@ class AppConfig:
                                      self.make_bool()), 0,0,0)
         vbox.pack_start(self.make_sb("aprsssid",
                                      gtk.Entry(1)), 0,0,0)
+        vbox.pack_start(self.make_sb("aprssymtab",
+                                     gtk.Entry(1)), 0,0,0)
+        vbox.pack_start(self.make_sb("aprssymbol",
+                                     gtk.Entry(1)), 0,0,0)
 
 
         vbox.show()
@@ -621,7 +631,9 @@ D-RATS has been started in safe mode, which means the configuration file has not
                   ("prefs", "signoff"),
                   ("user", "latitude"),
                   ("user", "longitude"),
-                  ("settings", "aprsssid")]
+                  ("settings", "aprsssid"),
+                  ("settings", "aprssymtab"),
+                  ("settings", "aprssymbol")]
 
         bool_v = [("prefs", "autoreceive"),
                   ("prefs", "dosignon"),
