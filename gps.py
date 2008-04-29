@@ -358,7 +358,8 @@ class GPSPosition:
             s += "%s" % self.comment
             
         if self.altitude:
-            s += "/A=%06i" % meters2feet(float(self.altitude))
+            s += "%s/A=%06i" % (self.comment and " " or "",
+                                meters2feet(float(self.altitude)))
 
         s += "\r"
 
