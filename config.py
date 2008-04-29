@@ -172,7 +172,6 @@ class AppConfig:
               "logresume" : "Loads the last bit of the log for context at startup",
               "latitude" : "Current latitude (dd.dddd or dd hh mm)",
               "longitude" : "Current longitude (dd.dddd or dd hh mm)",
-              "altitude" : "Altitude in meters",
               "gpsport" : "Set this to the serial port of your external NMEA GPS",
               "gpsenabled" : "When enabled, update position from GPS data",
               "aprssymtab" : "Default is `/'",
