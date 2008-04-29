@@ -127,6 +127,9 @@ def deg2nmea(deg):
 def meters2feet(meters):
     return meters * 3.2808399
 
+def feet2meters(feet):
+    return feet * 0.3048
+
 def distance(lat_a, lon_a, lat_b, lon_b):
     lat_a = deg2rad(lat_a)
     lon_a = deg2rad(lon_a)
@@ -563,15 +566,34 @@ class APRSGPSPosition(GPSPosition):
 
         path, data = elements[2].split(":")
 
-        latlon, extra = data.split(">")
+        expr = "^(@[0-9]{6}/|/[0-9]{6}z|!)([0-9]{4}\.[0-9]{2})([NS])(.)" +\
+            "([0-9]{5}\.[0-9]{2})([EW])(.)([^/]*)(/A=[0-9]{6})?"
 
-        lat, lon = latlon[1:].split("/")
+        m = re.search(expr, data)
+        if not m:
+            print "Did not match GPS-A: `%s'" % data
+            return
 
-        self.latitude = nmea2deg(float(lat[:-1]), lat[-1])
-        self.longitude = nmea2deg(float(lon[:-1]), lon[-1])
+        if m.group(1) == "!":
+            stamp = time.strftime("%H%M%S")
+        elif m.group(1).startswith("@"):
+            stamp = m.group(1)[1:-1]
+        elif m.group(1).startswith("/"):
+            stamp = m.group(1)[1:-1] # FIXME: Convert from zulu?
+        else:
+            print "Not a valid timestamp or `!': %s" % m.group(1)
+            return
 
-        self.date = time.strftime("%H:%M:%S")
-        
+        self.date = "%s:%s:%s" % (stamp[0:2], stamp[2:4], stamp[4:6])
+
+        self.latitude = nmea2deg(float(m.group(2)), m.group(3))
+        self.longitude = nmea2deg(float(m.group(5)), m.group(6))
+        self.comment = m.group(8)
+
+        if len(m.groups()) == 9:
+            _, alt = m.group(9).split("=")
+            self.altitude = feet2meters(int(alt))
+
         self.valid = True
 
     def _from_APRS(self, string):
@@ -800,3 +822,8 @@ if __name__ == "__main__":
     print PPP.to_APRS()
     print PPP.to_NMEA_RMC()
     print str(parse_GPS(PPP.to_NMEA_RMC()))
+
+    string = "$$CRCFB8D,KI4IFW-1>APRATS,DSTAR*:@193553/4531.50N/12254.98W>APRS test beacon /A=000022"
+
+    aprs = APRSGPSPosition(string)
+    
