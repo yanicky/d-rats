@@ -246,11 +246,16 @@ class GPSPosition:
             else:
                 dir = ""
 
-            return "GPS: %s reporting %.4f,%.4f@%.1f at %s%s%s%s" % ( \
+            if EARTH_UNITS == "mi":
+                alt = "%i ft" % meters2feet(self.altitude)
+            else:
+                alt = "%i m" % self.altitude
+
+            return "GPS: %s reporting %.4f,%.4f@%s at %s%s%s%s" % ( \
                 self.station,
                 self.latitude,
                 self.longitude,
-                self.altitude,
+                alt,
                 self.date,
                 comment,
                 distance,
@@ -734,6 +739,10 @@ class StaticGPSSource(GPSSource):
 
         self.position = GPSPosition(self.lat, self.lon)
         self.position.altitude = int(float(alt))
+        if EARTH_UNITS == "mi":
+            # This is kinda ugly, but assume we're given altitude in the same
+            # type of units as we've been asked to display
+            self.position.altitude = feet2meters(self.position.altitude)
 
     def start(self):
         pass
