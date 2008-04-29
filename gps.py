@@ -325,6 +325,8 @@ class GPSPosition:
     def to_APRS(self, dest="APRATS", ssid=None):
         """Returns a GPS-A (APRS-compliant) string"""
 
+        stamp = time.strftime("%H%M%S")
+
         if ssid:
             if len(self.station) == 7:
                 sta = "%s%s" % (self.station, ssid)
@@ -333,7 +335,7 @@ class GPSPosition:
         else:
             sta = self.station
 
-        s = "%s>%s,DSTAR*:!" % (sta, dest)
+        s = "%s>%s,DSTAR*:@%s/" % (sta, dest, stamp)
 
         if self.latitude > 0:
             ns = "N"
