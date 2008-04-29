@@ -351,7 +351,7 @@ class GPSPosition:
         else:
             sta = self.station
 
-        s = "%s>%s,DSTAR*:@%s/" % (sta, dest, stamp)
+        s = "%s>%s,DSTAR*:@%sh" % (sta, dest, stamp)
 
         if self.latitude > 0:
             ns = "N"
@@ -571,7 +571,7 @@ class APRSGPSPosition(GPSPosition):
 
         path, data = elements[2].split(":")
 
-        expr = "^(@[0-9]{6}/|/[0-9]{6}z|!)([0-9]{4}\.[0-9]{2})([NS])(.)" +\
+        expr = "^(@[0-9]{6}/|@[0-9]{6}h|/[0-9]{6}z|!)([0-9]{4}\.[0-9]{2})([NS])(.)" +\
             "([0-9]{5}\.[0-9]{2})([EW])(.)([^/]*)(/A=[0-9]{6})?"
 
         m = re.search(expr, data)
@@ -582,7 +582,12 @@ class APRSGPSPosition(GPSPosition):
         if m.group(1) == "!":
             stamp = time.strftime("%H%M%S")
         elif m.group(1).startswith("@"):
-            stamp = m.group(1)[1:-1]
+            if m.group(1)[-1] == "h":
+                stamp = m.group(1)[1:-1]
+            elif m.group(1)[-1] == "/":
+                stamp = "%s00" % m.group(1)[3:-1]
+            else:
+                stamp = "000000"
         elif m.group(1).startswith("/"):
             stamp = m.group(1)[1:-1] # FIXME: Convert from zulu?
         else:
