@@ -269,6 +269,16 @@ class GPSPosition:
 
         return "%.3f,%s" % (deg2nmea(abs(val)), d)
 
+    def station_format(self):
+        if " " in self.station:
+            call, extra = self.station.split(" ", 1)
+            sta = "%-7.7s%1.1s" % (call.strip(),
+                                   extra.strip())
+        else:
+            sta = self.station
+
+        return sta
+
     def to_NMEA_GGA(self, ssid=" "):
         """Returns an NMEA-compliant GPGGA sentence"""
         date = time.strftime("%H%M%S")
@@ -283,8 +293,7 @@ class GPSPosition:
             self.satellites,
             self.altitude)
 
-        sta = "%-7.7s%1.1s" % (self.station,
-                               ssid)
+        sta = self.station_format()
 
         return "$%s%s\r\n%-8.8s,%-20.20s\r\n" % (data,
                                                  NMEA_checksum(data),
@@ -317,21 +326,20 @@ class GPSPosition:
             dir,
             dstamp)
 
+        sta = self.station_format()
+
         return "$%s%s\r\n%-8.8s,%-20.20s\r\n" % (data,
                                                  NMEA_checksum(data),
-                                                 self.station,
+                                                 sta,
                                                  self.comment)
 
-    def to_APRS(self, dest="APRATS", ssid=None):
+    def to_APRS(self, dest="APRATS"):
         """Returns a GPS-A (APRS-compliant) string"""
 
         stamp = time.strftime("%H%M%S")
 
-        if ssid:
-            if len(self.station) == 7:
-                sta = "%s%s" % (self.station, ssid)
-            else:
-                sta = "%s-%s" % (self.station, ssid)
+        if " " in self.station:
+            sta = self.station.replace(" ", "-")
         else:
             sta = self.station
 

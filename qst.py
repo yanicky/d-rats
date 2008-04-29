@@ -153,7 +153,7 @@ class QSTGPS(QSTText):
         fix.comment = self.text[:20]
 
         if fix.valid:
-            return fix.to_NMEA_GGA(ssid=self.config.get("settings", "aprsssid"))
+            return fix.to_NMEA_GGA()
         else:
             return None
 
@@ -167,7 +167,7 @@ class QSTGPSA(QSTGPS):
         fix.comment = self.text
 
         if fix.valid:
-            return fix.to_APRS(ssid=self.config.get("settings", "aprsssid"))
+            return fix.to_APRS()
         else:
             return None
 
