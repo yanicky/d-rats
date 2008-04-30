@@ -23,11 +23,14 @@ def parse_dms(string):
     string = string.replace('  ', ' ')
     string = string.strip()
     
-    (d, m, s) = string.split(' ', 3)
+    try:
+        (d, m, s) = string.split(' ', 3)
     
-    deg = int(d)
-    min = int(m)
-    sec = float(s)
+        deg = int(d)
+        min = int(m)
+        sec = float(s)
+    except Exception, e:
+        deg = min = sec = 0
 
     if deg < 0:
         mul = -1
