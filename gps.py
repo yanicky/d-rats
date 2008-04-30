@@ -575,37 +575,54 @@ class APRSGPSPosition(GPSPosition):
 
         path, data = elements[2].split(":")
 
-        expr = "^(@[0-9]{6}/|@[0-9]{6}h|/[0-9]{6}z|!)([0-9]{4}\.[0-9]{2})([NS])(.)" +\
-            "([0-9]{5}\.[0-9]{2})([EW])(.)([^/]*)(/A=[0-9]{6})?"
+        # 1 = Entire stamp or ! or =
+        # 2 = stamp prefix
+        # 3 = stamp suffix
+        # 4 = latitude
+        # 5 = N/S
+        # 6 = symbol table
+        # 7 = longitude
+        # 8 = E/W
+        # 9 = symbol
+        #10 = comment
+        #11 = altitude string
+        
+        expr = "^(([@/])[0-9]{6}([/hz])|!|=)" + \
+            "([0-9]{4}\.[0-9]{2})([NS])(.)" + \
+            "([0-9]{5}\.[0-9]{2})([EW])(.)" + \
+            "([^/]*)(/A=[0-9]{6})?"
 
         m = re.search(expr, data)
         if not m:
             print "Did not match GPS-A: `%s'" % data
             return
 
-        if m.group(1) == "!":
+        if m.group(1) in "!=":
             stamp = time.strftime("%H%M%S")
-        elif m.group(1).startswith("@"):
-            if m.group(1)[-1] == "h":
+        elif m.group(2) in "@/":
+            if m.group(3) == "z":
+                # FIXME: zulu
+                stamp = "%s00" % m.group(1)[3:7]
+            elif m.group(3) == "h":
                 stamp = m.group(1)[1:-1]
-            elif m.group(1)[-1] == "/":
-                stamp = "%s00" % m.group(1)[3:-1]
+            elif m.group(3) == "/":
+                stamp = "%s00" % m.group(1)[3:7]
             else:
+                print "Unknown timestamp suffix: `%s'" % m.group(3)
                 stamp = "000000"
-        elif m.group(1).startswith("/"):
-            stamp = m.group(1)[1:-1] # FIXME: Convert from zulu?
         else:
-            print "Not a valid timestamp or `!': %s" % m.group(1)
-            return
+            print "Unknown timestamp prefix: %s" % m.group(1)
+            stamp = "000000"
 
         self.date = "%s:%s:%s" % (stamp[0:2], stamp[2:4], stamp[4:6])
+        print "Date: %s" % self.date
+        
+        self.latitude = nmea2deg(float(m.group(4)), m.group(5))
+        self.longitude = nmea2deg(float(m.group(7)), m.group(8))
+        self.comment = m.group(10)
 
-        self.latitude = nmea2deg(float(m.group(2)), m.group(3))
-        self.longitude = nmea2deg(float(m.group(5)), m.group(6))
-        self.comment = m.group(8)
-
-        if len(m.groups()) == 9:
-            _, alt = m.group(9).split("=")
+        if len(m.groups()) == 11:
+            _, alt = m.group(11).split("=")
             self.altitude = feet2meters(int(alt))
 
         self.valid = True
@@ -841,7 +858,7 @@ if __name__ == "__main__":
     print PPP.to_NMEA_RMC()
     print str(parse_GPS(PPP.to_NMEA_RMC()))
 
-    string = "$$CRCFB8D,KI4IFW-1>APRATS,DSTAR*:@193553/4531.50N/12254.98W>APRS test beacon /A=000022"
+    string = "$$CRCFB8D,KI4IFW-1>APRATS,DSTAR*:@193553h4531.50N/12254.98W>APRS test beacon /A=000022"
 
     aprs = APRSGPSPosition(string)
     
