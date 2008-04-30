@@ -533,6 +533,30 @@ class MapWindow(gtk.Window):
             self.map.queue_draw()
         elif action == "clearcache":
             self.clear_map_cache()
+        elif action == "loadstatic":
+            d = gtk.FileChooserDialog("Select overlay file",
+                                      None,
+                                      gtk.FILE_CHOOSER_ACTION_OPEN,
+                                      (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
+                                       gtk.STOCK_OPEN, gtk.RESPONSE_OK))
+            r = d.run()
+            if r == gtk.RESPONSE_CANCEL:
+                d.destroy()
+                return
+
+            fn = d.get_filename()
+            d.destroy()
+
+            if self.load_static_points(fn):
+                dir = platform.get_platform().config_dir()
+                shutil.copy(fn, os.path.join(dir,
+                                             "static_locations",
+                                             os.path.basename(fn)))
+                return
+
+            d = gtk.MessageDialog(buttons=gtk.BUTTONS_OK)
+            d.set_property("text", "Failed to load overlay file")
+
 
     def make_menu(self):
         menu_xml = """
@@ -541,6 +565,7 @@ class MapWindow(gtk.Window):
     <menu action="map">
       <menuitem action="refresh"/>
       <menuitem action="clearcache"/>
+      <menuitem action="loadstatic"/>
     </menu>
   </menubar>
 </ui>
@@ -549,6 +574,7 @@ class MapWindow(gtk.Window):
         actions = [('map', None, "_Map", None, None, self.mh),
                    ('refresh', None, "_Refresh", None, None, self.mh),
                    ('clearcache', None, "_Clear Cache", None, None, self.mh),
+                   ('loadstatic', None, "_Load Static Overlay", None, None, self.mh),
                    ]
 
         uim = gtk.UIManager()
