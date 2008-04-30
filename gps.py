@@ -621,7 +621,7 @@ class APRSGPSPosition(GPSPosition):
         self.longitude = nmea2deg(float(m.group(7)), m.group(8))
         self.comment = m.group(10)
 
-        if len(m.groups()) == 11:
+        if len(m.groups()) == 11 and m.group(11):
             _, alt = m.group(11).split("=")
             self.altitude = feet2meters(int(alt))
 
