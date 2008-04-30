@@ -2,6 +2,7 @@ import re
 import time
 import tempfile
 import platform
+import datetime
 
 import threading
 import serial
@@ -191,7 +192,7 @@ class GPSPosition:
         self.station = station
         self.comment = ""
         self.current = None
-        self.date = "00:00:00"
+        self.date = datetime.datetime.now()
         self.speed = None
         self.direction = None
 
@@ -256,7 +257,7 @@ class GPSPosition:
                 self.latitude,
                 self.longitude,
                 alt,
-                self.date,
+                self.date.strftime("%H:%M:%S"),
                 comment,
                 distance,
                 dir)
@@ -344,7 +345,7 @@ class GPSPosition:
     def to_APRS(self, dest="APRATS", symtab="/", symbol=">"):
         """Returns a GPS-A (APRS-compliant) string"""
 
-        stamp = time.strftime("%H%M%S")
+        stamp = time.strftime("%H%M%S", time.gmtime())
 
         if " " in self.station:
             sta = self.station.replace(" ", "-")
@@ -468,10 +469,8 @@ class NMEAGPSPosition(GPSPosition):
         if not m:
             raise Exception("Unable to parse GPGGA")
 
-        t = m.group(1)
-        self.date = "%02i:%02i:%02i" % (int(t[0:2]),
-                                        int(t[2:4]),
-                                        int(t[4:6]))
+        t = time.strftime("%m%d%y") + m.group(1)
+        self.date = datetime.datetime.strptime(t, "%m%d%y%H%M%S")
 
         self.latitude = nmea2deg(float(m.group(2)), m.group(3))
         self.longitude = nmea2deg(float(m.group(4)), m.group(5))
@@ -521,9 +520,7 @@ class NMEAGPSPosition(GPSPosition):
         t = m.group(1)
         d = m.group(9)
 
-        self.date = "%02i:%02i:%02i %02i-%02i-%02i" % (
-            int(t[0:2]), int(t[2:4]), int(t[4:6]),
-            int(d[0:2]), int(t[2:4]), int(t[4:6]))
+        self.date = datetime.datetime.strptime(d+t, "%d%m%y%H%M%S")
 
         self.latitude = nmea2deg(float(m.group(3)), m.group(4))
         self.longitude = nmea2deg(float(m.group(5)), m.group(6))
@@ -562,6 +559,32 @@ class NMEAGPSPosition(GPSPosition):
             print "Unsupported GPS sentence type: %s" % sentence    
 
 class APRSGPSPosition(GPSPosition):
+    def _parse_date(self, string):
+        prefix = string[0]
+        suffix = string[-1]
+        digits = string[1:-1]
+
+        if suffix == "z":
+            ds = digits[0:2] + \
+                time.strftime("%m%y", time.gmtime()) + \
+                digits[2:] + "00"
+        elif suffix == "/":
+            ds = digits[0:2] + time.strfime("%m%y") + digits[2:] + "00"
+        elif suffix == "h":
+            ds = time.strftime("%d%m%y", time.gmtime()) + digits
+        else:
+            print "Unknown APRS date suffix: `%s'" % suffix
+            return datetime.datetime.now()
+
+        d = datetime.datetime.strptime(ds, "%d%m%y%H%M%S")
+
+        if suffix in "zh":
+            delta = datetime.datetime.utcnow() - datetime.datetime.now()
+        else:
+            delta = datetime.timedelta(0)
+
+        return d - delta
+
     def _parse_GPSA(self, string):
         elements = string.split(",")
 
@@ -598,25 +621,13 @@ class APRSGPSPosition(GPSPosition):
             return
 
         if m.group(1) in "!=":
-            stamp = time.strftime("%H%M%S")
+            self.date = datetime.datetime.now()
         elif m.group(2) in "@/":
-            if m.group(3) == "z":
-                # FIXME: zulu
-                stamp = "%s00" % m.group(1)[3:7]
-            elif m.group(3) == "h":
-                stamp = m.group(1)[1:-1]
-            elif m.group(3) == "/":
-                stamp = "%s00" % m.group(1)[3:7]
-            else:
-                print "Unknown timestamp suffix: `%s'" % m.group(3)
-                stamp = "000000"
+            self.date = self._parse_date(m.group(1))
         else:
             print "Unknown timestamp prefix: %s" % m.group(1)
-            stamp = "000000"
+            self.date = datetime.datetime.now()
 
-        self.date = "%s:%s:%s" % (stamp[0:2], stamp[2:4], stamp[4:6])
-        print "Date: %s" % self.date
-        
         self.latitude = nmea2deg(float(m.group(4)), m.group(5))
         self.longitude = nmea2deg(float(m.group(7)), m.group(8))
         self.comment = m.group(10)
@@ -858,7 +869,11 @@ if __name__ == "__main__":
     print PPP.to_NMEA_RMC()
     print str(parse_GPS(PPP.to_NMEA_RMC()))
 
-    string = "$$CRCFB8D,KI4IFW-1>APRATS,DSTAR*:@193553h4531.50N/12254.98W>APRS test beacon /A=000022"
+    string = "$$CRCFB8D,KI4IFW-1>APRATS,DSTAR*:@291930/4531.50N/12254.98W>APRS test beacon /A=000022"
 
-    aprs = APRSGPSPosition(string)
+    print "Pierre"
+
+#    string = "$$CRCDF8A,VA2PBI>APU25N,DSTAR*:=4539.33N/07330.28W-73 de Pierre D-Star Montreal {UIV32N}"
+
+    print APRSGPSPosition(string)
     
