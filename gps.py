@@ -589,14 +589,22 @@ class APRSGPSPosition(GPSPosition):
         return d - delta
 
     def _parse_GPSA(self, string):
-        elements = string.split(",")
+        m = re.match("^\$\$CRC([A-Z0-9]{4}),(.*)$", string)
+        if not m:
+            return
 
+        crc = m.group(1)
+        _crc = "%04X" % GPSA_checksum(m.group(2))
+
+        if crc != _crc:
+            print "APRS CRC mismatch: %s != %s (%s)" % (crc, _crc, m.group(2))
+            return
+
+        elements = string.split(",")
         if not elements[0].startswith("$$CRC"):
             print "Missing $$CRC..."
             return
 
-        crc = re.search("^\$\$CRC([A-Z0-9]{4})", elements[0]).group(1)
-        
         self.station, dst = elements[1].split(">")
 
         path, data = elements[2].split(":")
