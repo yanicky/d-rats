@@ -44,6 +44,7 @@
 
 	    .field-content {
 	       font-family: Arial, Helvetica, sans-serif;
+	       white-space: pre;
 	    }
 
 	  </style>
