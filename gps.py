@@ -465,14 +465,16 @@ class NMEAGPSPosition(GPSPosition):
     def _parse_GPGGA(self, string):
         csvel = "[^,]+"
         expr = \
-            "\$GPGGA,(%s),(%s),([NS]),(%s),([EW]),([0-9]),(%s),(%s),(%s),([A-Z]),(%s),([A-Z]),,(%s),?(%s)?" % \
-        (csvel, csvel, csvel, csvel, csvel, csvel, csvel, csvel, csvel)
+            "\$GPGGA,(%s),(%s),([NS]),(%s),([EW]),([0-9]),(%s),(%s),(%s),([A-Z]),(%s),([A-Z]),(%s)?,(%s),?(%s)?" % \
+        (csvel, csvel, csvel, csvel, csvel, csvel, csvel, csvel, csvel, csvel)
 
         m = re.match(expr, string)
         if not m:
             raise Exception("Unable to parse GPGGA")
 
         t = time.strftime("%m%d%y") + m.group(1)
+        if "." in t:
+            t = t.split(".")[0]
         self.date = datetime.datetime.strptime(t, "%m%d%y%H%M%S")
 
         self.latitude = nmea2deg(float(m.group(2)), m.group(3))
@@ -482,12 +484,12 @@ class NMEAGPSPosition(GPSPosition):
 
         self.satellites = int(m.group(7))
         self.altitude = float(m.group(9))
-        if " "in m.group(13):
-            (csum, self.station) = m.group(13).split(' ', 1)
+        if " "in m.group(14):
+            (csum, self.station) = m.group(14).split(' ', 1)
             self.station = self.station.strip()
-            self.comment = m.group(14).strip()
+            self.comment = m.group(15).strip()
         else:
-            csum = m.group(13)
+            csum = "*" + m.group(14).split("*")[1]
             self.station = ""
             self.comment = ""
         
@@ -501,9 +503,9 @@ class NMEAGPSPosition(GPSPosition):
             "(%s),(%s),"  \
             "(%s),(%s),"  \
             "(%s),(%s),"  \
-            "([EW]),?S?(\*..)\r?" % (csvel, csvel, csvel, csvel,
-                                     csvel, csvel, csvel, csvel,
-                                     csvel, csvel)
+            "([EW]),?[A-Z]?(\*..)\r?" % (csvel, csvel, csvel, csvel,
+                                         csvel, csvel, csvel, csvel,
+                                         csvel, csvel)
         
         # NB: My GPS seems to put a ",S" before the checksum, so that
         # the last field (magnetic variance) looks like:
@@ -887,4 +889,19 @@ if __name__ == "__main__":
 #    string = "$$CRCDF8A,VA2PBI>APU25N,DSTAR*:=4539.33N/07330.28W-73 de Pierre D-Star Montreal {UIV32N}"
 
     print APRSGPSPosition(string)
-    
+
+    print "K7TRP"
+
+    k7trp = "$GPGGA,183327.518,4533.0875,N,12254.5933,W,2,03,7.9,48.2,M,-19.6,M,2.2,0000*74"
+
+    print NMEAGPSPosition(k7trp)
+
+    k7trp = "$GPGGA,183327.518,4533.0875,N,12254.5933,W,2,03,7.9,48.2,M,-19.6,M,,0000*74"
+
+    #print NMEAGPSPosition(k7trp)
+
+    print "Ben"
+
+    n7ogm = "$GPRMC,215348,A,4529.3672,N,12253.2060,W,0.0,353.8,030508,17.5,E,D*3C"
+
+    print NMEAGPSPosition(n7ogm)
