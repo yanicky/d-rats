@@ -61,8 +61,8 @@ def hexprint(data):
 def filter_to_ascii(string):
         c = '?'
         xlate = ([c] * 32) + \
-                [chr(x) for x in range(32,126)] + \
-                ([c] * 130)
+                [chr(x) for x in range(32,127)] + \
+                ([c] * 129)
 
         xlate[ord('\n')] = '\n'
         xlate[ord('\r')] = '\r'
