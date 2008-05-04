@@ -203,7 +203,7 @@ class GPSPosition:
 
     def __iadd__(self, update):
         if not update.valid:
-            return
+            return self
 
         if update.satellites:
             self.satellites = update.satellites
@@ -211,7 +211,7 @@ class GPSPosition:
         if update.altitude:
             self.altitude = update.altitude
 
-        self.latitiude = update.latitude
+        self.latitude = update.latitude
         self.longitude = update.longitude
         self.date = update.date
 
@@ -484,7 +484,7 @@ class NMEAGPSPosition(GPSPosition):
 
         self.satellites = int(m.group(7))
         self.altitude = float(m.group(9))
-        if " "in m.group(14):
+        if " " in m.group(14):
             (csum, self.station) = m.group(14).split(' ', 1)
             self.station = self.station.strip()
             self.comment = m.group(15).strip()
@@ -762,7 +762,7 @@ class GPSSource:
                     position = NMEAGPSPosition(line)
 
                     self.last_valid = position.valid
-                    if position.valid and self.position:
+                    if position.valid and self.position.valid:
                         self.position += position
                         print "ME: %s" % self.position                        
                     elif position.valid:
