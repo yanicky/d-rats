@@ -181,7 +181,7 @@ class MapWidget(gtk.DrawingArea):
         pl = self.create_pango_layout("")
         markup = '<span %s background="%s">%s</span>' % (size, color, text)
         pl.set_markup(markup)
-        self.window.draw_layout(gc, int(x), int(y), pl)
+        self.pixmap.draw_layout(gc, int(x), int(y), pl)
 
     def draw_cross_marker_at(self, x, y):
         width = 2
@@ -193,8 +193,8 @@ class MapWidget(gtk.DrawingArea):
         x = int(x)
         y = int(y)
 
-        self.window.draw_lines(gc, [(x, y-5), (x, y+5)])
-        self.window.draw_lines(gc, [(x-5, y), (x+5, y)])
+        self.pixmap.draw_lines(gc, [(x, y-5), (x, y+5)])
+        self.pixmap.draw_lines(gc, [(x-5, y), (x+5, y)])
 
     def latlon2xy(self, lat, lon):
         y = 1- ((lat - self.lat_min) / (self.lat_max - self.lat_min))
@@ -239,7 +239,7 @@ class MapWidget(gtk.DrawingArea):
                                   0, 0,
                                   -1, -1)
 
-        self.draw_markers()
+        #self.draw_markers()
 
     def calculate_bounds(self):
         topleft = self.map_tiles[0]
@@ -325,6 +325,8 @@ class MapWidget(gtk.DrawingArea):
 
         prog.set_text("Complete")
         prog.hide()
+
+        self.draw_markers()
 
     def export_to(self, filename):
         pb = gtk.gdk.Pixbuf(gtk.gdk.COLORSPACE_RGB, False, 8,
