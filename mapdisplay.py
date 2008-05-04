@@ -328,11 +328,22 @@ class MapWidget(gtk.DrawingArea):
 
         self.draw_markers()
 
-    def export_to(self, filename):
-        pb = gtk.gdk.Pixbuf(gtk.gdk.COLORSPACE_RGB, False, 8,
-                            self.tilesize * self.width,
-                            self.tilesize * self.height)
-        pb.get_from_drawable(self.pixmap, self.pixmap.get_colormap(), 0, 0, 0, 0, -1, -1)
+    def export_to(self, filename, bounds=None):
+        if not bounds:
+            x = 0
+            y = 0
+            bounds = (0,0,-1,-1)
+            width = self.tilesize * self.width
+            height = self.tilesize * self.height
+        else:
+            x = bounds[0]
+            y = bounds[1]
+            width = bounds[2] - bounds[0]
+            height = bounds[3] - bounds[1]
+
+        pb = gtk.gdk.Pixbuf(gtk.gdk.COLORSPACE_RGB, False, 8, width, height)
+        pb.get_from_drawable(self.pixmap, self.pixmap.get_colormap(),
+                             x, y, 0, 0, width, height)
         pb.save(filename, "jpeg", {"quality":"100"})
 
     def __init__(self, width, height, tilesize=256):
@@ -535,7 +546,7 @@ class MapWindow(gtk.Window):
             shutil.rmtree(dir, True)
             self.map.queue_draw()
         
-    def printable_map(self):
+    def printable_map(self, bounds=None):
         p = platform.get_platform()
 
         f = tempfile.NamedTemporaryFile()
@@ -557,13 +568,34 @@ class MapWindow(gtk.Window):
 </html>
 """ % (ts, mf)
 
-        self.map.export_to(mf)
+        self.map.export_to(mf, bounds)
 
         f = file(hf, "w")
         f.write(html)
         f.close()
 
         p.open_html_file(hf)        
+
+    def save_map(self, bounds=None):
+        d = gtk.FileChooserDialog("Save map image",
+                                  None,
+                                  gtk.FILE_CHOOSER_ACTION_SAVE,
+                                  (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
+                                   gtk.STOCK_SAVE, gtk.RESPONSE_OK))
+        r = d.run()
+        f = d.get_filename()
+        d.destroy()
+        if r == gtk.RESPONSE_OK:
+            if not f.endswith(".jpg"):
+                f += ".jpg"
+                self.map.export_to(f, bounds)
+
+    def get_visible_bounds(self):
+        ha = self.sw.get_hadjustment()
+        va = self.sw.get_vadjustment()
+
+        return (int(ha.value), int(va.value),
+                int(ha.value + ha.page_size), int(va.value + va.page_size))
 
     def mh(self, _action):
         action = _action.get_name()
@@ -598,20 +630,13 @@ class MapWindow(gtk.Window):
             d.set_property("text", "Failed to load overlay file")
 
         elif action == "save":
-            d = gtk.FileChooserDialog("Save map image",
-                                      None,
-                                      gtk.FILE_CHOOSER_ACTION_SAVE,
-                                      (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
-                                       gtk.STOCK_SAVE, gtk.RESPONSE_OK))
-            r = d.run()
-            f = d.get_filename()
-            d.destroy()
-            if r == gtk.RESPONSE_OK:
-                if not f.endswith(".jpg"):
-                    f += ".jpg"
-                    self.map.export_to(f)
-        elif action =="printable":
+            self.save_map()
+        elif action == "savevis":
+            self.save_map(self.get_visible_bounds())
+        elif action == "printable":
             self.printable_map()
+        elif action == "printablevis":
+            self.printable_map(self.get_visible_bounds())
 
     def make_menu(self):
         menu_xml = """
@@ -623,7 +648,9 @@ class MapWindow(gtk.Window):
       <menuitem action="loadstatic"/>
       <menu action="export">
         <menuitem action="printable"/>
+        <menuitem action="printablevis"/>
         <menuitem action="save"/>
+        <menuitem action="savevis"/>
       </menu>
     </menu>
   </menubar>
@@ -636,7 +663,9 @@ class MapWindow(gtk.Window):
                    ('loadstatic', None, "_Load Static Overlay", None, None, self.mh),
                    ('export', None, "_Export", None, None, self.mh),
                    ('printable', None, "_Printable", "<Control>p", None, self.mh),
+                   ('printablevis', None, "Printable (visible area)", "<Control><Alt>P", None, self.mh),
                    ('save', None, "_Save Image", "<Control>s", None, self.mh),
+                   ('savevis', None, 'Save Image (visible area)', "<Control><Alt>S", None, self.mh),
                    ]
 
         uim = gtk.UIManager()
