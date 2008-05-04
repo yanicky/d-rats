@@ -6,6 +6,7 @@ import urllib
 import time
 import random
 import shutil
+import tempfile
 
 import gtk
 import gobject
@@ -325,6 +326,13 @@ class MapWidget(gtk.DrawingArea):
         prog.set_text("Complete")
         prog.hide()
 
+    def export_to(self, filename):
+        pb = gtk.gdk.Pixbuf(gtk.gdk.COLORSPACE_RGB, False, 8,
+                            self.tilesize * self.width,
+                            self.tilesize * self.height)
+        pb.get_from_drawable(self.pixmap, self.pixmap.get_colormap(), 0, 0, 0, 0, -1, -1)
+        pb.save(filename, "jpeg", {"quality":"100"})
+
     def __init__(self, width, height, tilesize=256):
         gtk.DrawingArea.__init__(self)
 
@@ -525,6 +533,36 @@ class MapWindow(gtk.Window):
             shutil.rmtree(dir, True)
             self.map.queue_draw()
         
+    def printable_map(self):
+        p = platform.get_platform()
+
+        f = tempfile.NamedTemporaryFile()
+        fn = f.name
+        f.close()
+
+        mf = "%s.jpg" % fn
+        hf = "%s.html" % fn
+
+        ts = time.strftime("%H:%M:%S %d-%b-%Y")
+
+        html = """
+<html>
+<body>
+<h2>D-RATS Station map</h2>
+<h5>Generated at %s</h5>
+<img src="file://%s"/>
+</body>
+</html>
+""" % (ts, mf)
+
+        self.map.export_to(mf)
+
+        f = file(hf, "w")
+        f.write(html)
+        f.close()
+
+        p.open_html_file(hf)        
+
     def mh(self, _action):
         action = _action.get_name()
 
@@ -557,6 +595,23 @@ class MapWindow(gtk.Window):
             d = gtk.MessageDialog(buttons=gtk.BUTTONS_OK)
             d.set_property("text", "Failed to load overlay file")
 
+        elif action == "save":
+            d = gtk.FileChooserDialog("Save map image",
+                                      None,
+                                      gtk.FILE_CHOOSER_ACTION_SAVE,
+                                      (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
+                                       gtk.STOCK_SAVE, gtk.RESPONSE_OK))
+            r = d.run()
+            f = d.get_filename()
+            d.destroy()
+            if r == gtk.RESPONSE_CANCEL:
+                return
+
+            if not f.endswith(".jpg"):
+                f += ".jpg"
+            self.map.export_to(f)
+        elif action =="printable":
+            self.printable_map()
 
     def make_menu(self):
         menu_xml = """
@@ -566,6 +621,10 @@ class MapWindow(gtk.Window):
       <menuitem action="refresh"/>
       <menuitem action="clearcache"/>
       <menuitem action="loadstatic"/>
+      <menu action="export">
+        <menuitem action="printable"/>
+        <menuitem action="save"/>
+      </menu>
     </menu>
   </menubar>
 </ui>
@@ -575,6 +634,9 @@ class MapWindow(gtk.Window):
                    ('refresh', None, "_Refresh", None, None, self.mh),
                    ('clearcache', None, "_Clear Cache", None, None, self.mh),
                    ('loadstatic', None, "_Load Static Overlay", None, None, self.mh),
+                   ('export', None, "_Export", None, None, self.mh),
+                   ('printable', None, "_Printable", None, None, self.mh),
+                   ('save', None, "_Save Image", None, None, self.mh),
                    ]
 
         uim = gtk.UIManager()
