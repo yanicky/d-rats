@@ -734,14 +734,24 @@ class GPSSource:
     def __init__(self, port):
         self.port = port
         self.enabled = False
+        self.broken = None
 
-        self.serial = serial.Serial(port=port, baudrate=4800, timeout=1)
+        try:
+            self.serial = serial.Serial(port=port, baudrate=4800, timeout=1)
+        except Exception, e:
+            print "Unable to open port `%s': %s" % (port, e)
+            self.broken = "Unable to open GPS port"
+
         self.thread = None
 
         self.last_valid = False
         self.position = GPSPosition()
 
     def start(self):
+        if self.broken:
+            print "Not starting broken GPSSource"
+            return
+
         self.enabled = True
         self.thread = threading.Thread(target=self.gpsthread)
         self.thread.start()
@@ -769,14 +779,14 @@ class GPSSource:
                         self.position = position
                     else:
                         print "Could not parse: %s" % line
-                    
-            time.sleep(1)
 
     def get_position(self):
         return self.position
 
     def status_string(self):
-        if self.last_valid and self.position.satellites >= 3:
+        if self.broken:
+            return self.broken
+        elif self.last_valid and self.position.satellites >= 3:
             return "GPS Locked (%i sats)" % self.position.satellites
         else:
             return "GPS Not Locked"
