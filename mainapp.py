@@ -39,7 +39,7 @@ import qst
 ASCII_XON = chr(17)
 ASCII_XOFF = chr(19)
 
-DRATS_VERSION = "0.1.16"
+DRATS_VERSION = "0.1.17"
 LOGTF = "%m-%d-%Y_%H:%M:%S"
 
 MAINAPP = None
