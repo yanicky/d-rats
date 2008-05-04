@@ -1147,6 +1147,8 @@ class QSTMonitor:
         c.set_resizable(True)
         self.view.append_column(c)
 
+        self.view.show()
+
         return self.view
 
     def reset_qst(self, view, path, col, data=None):
@@ -1238,7 +1240,11 @@ class QSTMonitor:
 
         self.tips = gtk.Tooltips()
 
-        self.root = self.make_display()
+        self.root = gtk.ScrolledWindow()
+        self.root.add(self.make_display())
+        self.root.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
+        self.root.show()
+
         self.enabled = False
         gobject.timeout_add(1000, self.update)
 
