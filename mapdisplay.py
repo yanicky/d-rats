@@ -606,12 +606,10 @@ class MapWindow(gtk.Window):
             r = d.run()
             f = d.get_filename()
             d.destroy()
-            if r == gtk.RESPONSE_CANCEL:
-                return
-
-            if not f.endswith(".jpg"):
-                f += ".jpg"
-            self.map.export_to(f)
+            if r == gtk.RESPONSE_OK:
+                if not f.endswith(".jpg"):
+                    f += ".jpg"
+                    self.map.export_to(f)
         elif action =="printable":
             self.printable_map()
 
@@ -637,8 +635,8 @@ class MapWindow(gtk.Window):
                    ('clearcache', None, "_Clear Cache", None, None, self.mh),
                    ('loadstatic', None, "_Load Static Overlay", None, None, self.mh),
                    ('export', None, "_Export", None, None, self.mh),
-                   ('printable', None, "_Printable", None, None, self.mh),
-                   ('save', None, "_Save Image", None, None, self.mh),
+                   ('printable', None, "_Printable", "<Control>p", None, self.mh),
+                   ('save', None, "_Save Image", "<Control>s", None, self.mh),
                    ]
 
         uim = gtk.UIManager()
@@ -648,6 +646,8 @@ class MapWindow(gtk.Window):
         
         uim.insert_action_group(self.menu_ag, 0)
         menuid = uim.add_ui_from_string(menu_xml)
+
+        self._accel_group = uim.get_accel_group()
 
         return uim.get_widget("/MenuBar")
 
@@ -765,6 +765,7 @@ class MapWindow(gtk.Window):
         self.menubar = self.make_menu()
         self.menubar.show()
         box.pack_start(self.menubar, 0,0,0)
+        self.add_accel_group(self._accel_group)
 
         self.sw = gtk.ScrolledWindow()
         self.sw.add_with_viewport(self.map)
