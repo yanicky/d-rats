@@ -442,15 +442,15 @@ class MapWindow(gtk.Window):
             (fix, _, color) = self.markers[group][vals[1]]
             self.markers[group][vals[1]] = (fix, vals[0], color)
             print "Setting %s to %s" % (vals[1], vals[0])
-            self.refresh_marker_list()
-            self.map.queue_draw()
         elif group == None:
             id = vals[1]
             for k,v in self.markers[id].items():
                 nv = (v[0], vals[0], v[2])
                 self.markers[id][k] = nv
-            self.refresh_marker_list()
-            self.map.queue_draw()
+
+        self.refresh_marker_list()
+        self.map.load_tiles()
+        self.map.queue_draw()
 
     def make_marker_list(self):
         cols = [(gobject.TYPE_BOOLEAN, "Show"),
