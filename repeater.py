@@ -39,7 +39,8 @@ OUT = 1
 PEEK = 2
 
 def DEBUG(str):
-    print str
+    pass
+    #print str
 
 class DataPath:
     def __init__(self, id, condition):
@@ -96,10 +97,13 @@ class DataPath:
                               self.l_append_buffer, OUT, buf)
 
     def stop(self):
+        print "Stopping %s" % self.id
         self.enabled = False
 
         if self.thread:
             self.thread.join()
+
+        print "Stopped %s" % self.id
     
 class LoopDataPath(DataPath):
     def hasIncoming(self):
@@ -149,15 +153,25 @@ class SerialDataPath(DataPath):
 
     def serial_thread(self):
         while self.enabled:
-            self.serial_outgoing()
-            self.serial_incoming()
+            try:
+                self.serial_outgoing()
+            except Exception, e:
+                print "Got exception during write: %s" % e
+
+            try:
+                self.serial_incoming()
+            except Exception, e:
+                print "Got Exception during read: %s" % e
 
         self.pipe.close()
 
     def __init__(self, id, condition, port, rate):
         DataPath.__init__(self, id, condition)
 
-        self.pipe = SWFSerial(port=port, baudrate=rate, timeout=0.1)
+        self.pipe = SWFSerial(port=port,
+                              baudrate=rate,
+                              timeout=0.1,
+                              writeTimeout=5)
         self.thread = threading.Thread(target=self.serial_thread)
         self.thread.start()
 
@@ -294,6 +308,7 @@ class Repeater:
             except:
                 print "Removing stale %s" % t.id
                 self.paths.remove(t)
+                t.stop()
 
     def _repeat(self):
         while self.enabled:
@@ -312,6 +327,7 @@ class Repeater:
                 except:
                     print "%s closed" % p.id
                     self.paths.remove(p)
+                    p.stop()
 
     def repeat(self):
         self.repeat_thread = threading.Thread(target=self._repeat)
@@ -743,6 +759,14 @@ class RepeaterGUI:
 
 if __name__=="__main__":
     import sys
+
+    if True:
+        f = file("repeater.log", "w", 0)
+        if f:
+            sys.stdout = f
+            sys.stderr = f
+        else:
+            print "Failed to open log"
 
     g = RepeaterGUI()
     gtk.main()
