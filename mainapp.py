@@ -71,6 +71,8 @@ class SWFSerial(serial.Serial):
         elif len(char) == 1:
             print "Aiee! Read a non-XOFF char: 0x%02x `%s`" % (ord(char),
                                                                    char)
+            self.state = True
+            print "Assuming IXANY behavior"
 
         return self.state
 
