@@ -287,9 +287,14 @@ class MapWidget(gtk.DrawingArea):
         count = 0
         total = self.width * self.height
 
-        self.pixmap = gtk.gdk.Pixmap(self.window,
-                                     self.width * self.tilesize,
-                                     self.height * self.tilesize)
+        try:
+            self.pixmap = gtk.gdk.Pixmap(self.window,
+                                         self.width * self.tilesize,
+                                         self.height * self.tilesize)
+        except Exception, e:
+            print "Unable to load tiles (window is probably not loaded)"
+            return
+
         gc = self.pixmap.new_gc()
 
         for i in range(0, self.width):
@@ -389,6 +394,7 @@ class MapWidget(gtk.DrawingArea):
 
     def set_marker(self, id, lat, lon, color="yellow"):
         self.markers[id] = (lat, lon, color)
+        self.load_tiles()
         self.queue_draw()
 
     def del_marker(self, id):
