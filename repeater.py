@@ -38,6 +38,9 @@ IN = 0
 OUT = 1
 PEEK = 2
 
+def DEBUG(str):
+    print str
+
 class DataPath:
     def __init__(self, id, condition):
         self.id = id
@@ -159,6 +162,12 @@ class SerialDataPath(DataPath):
         self.thread.start()
 
 class TcpDataPath(DataPath):
+    def hasIncoming(self):
+        if not self.enabled:
+            raise Exception("Socket Closed")
+        else:
+            return DataPath.hasIncoming(self)
+
     def tcp_outgoing(self):
         out = call_with_lock(self.lock,
                              self.l_drain_buffer, OUT)
@@ -174,20 +183,37 @@ class TcpDataPath(DataPath):
 
         while True:
             try:
-                #print "Read"
+                DEBUG("Read...")
                 inp = self.socket.recv(64)
+                DEBUG("Read returned")
                 if inp == "":
-                    print "Socket Closed"
+                    DEBUG("Socket returned nothing; closed")
                     self.enabled = False
                     break
                 data += inp
             except socket.error, info:
-                break # timeout
+                if "timed out" in str(info):
+                    DEBUG("Socket read timed out")
+                else:
+                    DEBUG("Socket error: %s" % info)
+                    self.enabled = False
+                break
+            except Exception, e:
+                DEBUG("Exception during socket read: %s" % e)
+                self.enabled = False
+                break
+
+            DEBUG("Socket returned data: %s" % inp)
 
             if len(data) > self.min_buffer:
+                # If the data is above the low water mark, go ahead
+                # and start filling the output buffer
+                DEBUG("Hit low-water mark")
                 call_with_lock(self.lock,
                                self.l_append_buffer, IN, data)
                 data = ""
+
+        DEBUG("Done with tcp_incoming")
 
         if data:
             call_with_lock(self.lock,
@@ -278,14 +304,14 @@ class Repeater:
 
             data = {}
             for p in self.paths:
-                if p.hasIncoming():
-                    print "Got data from %s" % p.id
-                    try:
+                try:
+                    if p.hasIncoming():
+                        print "Got data from %s" % p.id
                         data = p.read()
                         self.send_data(p, data)
-                    except:
-                        print "%s closed" % p.id
-                        self.paths.remove(p)
+                except:
+                    print "%s closed" % p.id
+                    self.paths.remove(p)
 
     def repeat(self):
         self.repeat_thread = threading.Thread(target=self._repeat)
