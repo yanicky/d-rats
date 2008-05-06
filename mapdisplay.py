@@ -349,7 +349,7 @@ class MapWidget(gtk.DrawingArea):
         pb = gtk.gdk.Pixbuf(gtk.gdk.COLORSPACE_RGB, False, 8, width, height)
         pb.get_from_drawable(self.pixmap, self.pixmap.get_colormap(),
                              x, y, 0, 0, width, height)
-        pb.save(filename, "jpeg", {"quality":"100"})
+        pb.save(filename, "png")
 
     def __init__(self, width, height, tilesize=256):
         gtk.DrawingArea.__init__(self)
@@ -559,7 +559,7 @@ class MapWindow(gtk.Window):
         fn = f.name
         f.close()
 
-        mf = "%s.jpg" % fn
+        mf = "%s.png" % fn
         hf = "%s.html" % fn
 
         ts = time.strftime("%H:%M:%S %d-%b-%Y")
@@ -588,13 +588,14 @@ class MapWindow(gtk.Window):
                                   gtk.FILE_CHOOSER_ACTION_SAVE,
                                   (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
                                    gtk.STOCK_SAVE, gtk.RESPONSE_OK))
+        d.set_current_name("map_%s.png" % time.strftime("%m%d%Y%_H%M%S"))
         r = d.run()
         f = d.get_filename()
         d.destroy()
         if r == gtk.RESPONSE_OK:
-            if not f.endswith(".jpg"):
-                f += ".jpg"
-                self.map.export_to(f, bounds)
+            if not f.endswith(".png"):
+                f += ".png"
+            self.map.export_to(f, bounds)
 
     def get_visible_bounds(self):
         ha = self.sw.get_hadjustment()
