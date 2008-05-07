@@ -98,7 +98,7 @@ class AppConfig:
         mset("settings", "write_chunk", "0")
         mset("settings", "chunk_delay", "1.5")
         mset("settings", "ddt_block_size", "1024")
-        mset("settings", "swflow", "False")
+        mset("settings", "swflow", "True")
         mset("settings", "encoding", "yenc")
         mset("settings", "compression", "True")
         mset("settings", "gpsport", "")
@@ -165,7 +165,7 @@ class AppConfig:
               "chunk_delay" : "Delay this many seconds between chunks",
               "ddt_block_size" : "Size (in KB) of data blocks to send with DDT",
               "debuglog" : "Requires D-RATS restart to take effect",
-              "swflow" : "Try this if using a USB-to-serial adapter",
+              "swflow" : "You want this unless you know you don't",
               "callsigns" : "Mark callsigns by these countries",
               "encoding" : "yenc is fastest, base64 is safest (currently)",
               "compression" : "Compress outgoing blocks",
