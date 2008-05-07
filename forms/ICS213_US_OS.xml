@@ -1,6 +1,6 @@
 <xml>
 <form id='ICS213_US_OS'>
-<title>ISC-213 Form</title>
+<title>ICS-213 Form</title>
 <field id='incident'>
 <caption>Incident Name</caption>
 <entry type='text'/>
