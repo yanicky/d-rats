@@ -81,8 +81,9 @@ class UnixPlatform(Platform):
         if pid1 == 0:
             pid2 = os.fork()
             if pid2 == 0:
-                print "calling `gedit %s'" % path
-                os.execlp("gedit", "gedit", path)
+                editor = self._editor()
+                print "calling `%s %s'" % (editor, path)
+                os.execlp(editor, editor, path)
             else:
                 sys.exit(0)
         else:
@@ -137,3 +138,5 @@ if __name__ == "__main__":
     print "Log file (foo): %s" % p.log_file("foo")
     print "Serial ports: %s" % p.list_serial_ports()
     
+
+    p.open_text_file("d-rats.py")
