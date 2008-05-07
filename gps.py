@@ -482,15 +482,17 @@ class NMEAGPSPosition(GPSPosition):
 
         self.satellites = int(elements[7])
         self.altitude = float(elements[9])
-        if " " in elements[14]:
-            (csum, self.station) = elements[14].split(' ', 1)
-            self.station = self.station.strip()
-            self.comment = elements[15].strip()
-        else:
-            csum = "*" + elements[14].split("*")[1]
-            self.station = ""
-            self.comment = ""
-        
+
+        m = re.match("^([0-9]*)(\*[A-z0-9]{2})\r?\n?(.*)$", elements[14])
+        if not m:
+            raise Exception("No checksum (%s)" % elements[14])
+
+        csum = m.group(2)
+        if "," in m.group(3):
+            sta, com = m.group(3).split(",", 1)
+            self.station = sta.strip()
+            self.comment = com.strip()
+
         self.valid = self._test_checksum(string, csum)
 
     def _parse_GPRMC(self, string):
@@ -521,7 +523,9 @@ class NMEAGPSPosition(GPSPosition):
 
         csum = m.group(1)
         if "," in m.group(2):
-            self.station, self.comment = m.group(2).split(",", 1)
+            sta, com = m.group(2).split(",", 1)
+            self.station = sta.strip()
+            self.comment = com.strip()
 
         self.valid = self._test_checksum(string, csum)
 
@@ -823,13 +827,14 @@ if __name__ == "__main__":
         "$GPRMC,010922,A,4603.6695,N,07307.3033,W,0.6,66.8,060508,16.1,W,A*1D\r\nVE2SE  9,MV  VE2SE@RAC.CA*32",
         "$GPGGA,203008.78,4524.9729,N,12246.9580,W,1,03,3.8,00133,M,,,,*39",
         "$GPGGA,183324.518,4533.0875,N,12254.5939,W,2,04,3.4,48.6,M,-19.6,M,1.2,0000*74",
-        "$GPRMC,215348,A,4529.3672,N,12253.2060,W,0.0,353.8,030508,17.5,E,D*3C"
+        "$GPRMC,215348,A,4529.3672,N,12253.2060,W,0.0,353.8,030508,17.5,E,D*3C",
+        "$GPGGA,075519,4531.254,N,12259.400,W,1,3,0,0.0,M,0,M,,*55\r\nK7HIO   ,GPS Info",
         ]
                      
     for s in nmea_strings:
         p = NMEAGPSPosition(s)
         if p.valid:
-            print "Pass: %s" % s
+            print "Pass: %s" % str(p)
         else:
             print "** FAIL: %s" % s
         
@@ -842,7 +847,7 @@ if __name__ == "__main__":
     for s in aprs_strings:
         p = APRSGPSPosition(s)
         if p.valid:
-            print "Pass: %s" % s
+            print "Pass: %s" % str(p)
         else:
             print "** FAIL: %s" % s
 
