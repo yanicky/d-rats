@@ -460,80 +460,68 @@ class NMEAGPSPosition(GPSPosition):
         csum = csum.upper()
         _csum = NMEA_checksum(segment).upper()
 
+        if csum != _csum:
+            print "Failed checksum: %s != %s" % (csum, _csum)
+
         return csum == _csum
 
     def _parse_GPGGA(self, string):
-        csvel = "[^,]+"
-        expr = \
-            "\$GPGGA,(%s),(%s),([NS]),(%s),([EW]),([0-9]),(%s),(%s),(%s),([A-Z]),(%s),([A-Z]),(%s)?,(%s),?(%s)?" % \
-        (csvel, csvel, csvel, csvel, csvel, csvel, csvel, csvel, csvel, csvel)
+        elements = string.split(",", 14)
+        if len(elements) < 15:
+            raise Exception("Unable to split GPGGA" % len(elements))
 
-        m = re.match(expr, string)
-        if not m:
-            raise Exception("Unable to parse GPGGA")
-
-        t = time.strftime("%m%d%y") + m.group(1)
+        t = time.strftime("%m%d%y") + elements[1]
         if "." in t:
             t = t.split(".")[0]
         self.date = datetime.datetime.strptime(t, "%m%d%y%H%M%S")
 
-        self.latitude = nmea2deg(float(m.group(2)), m.group(3))
-        self.longitude = nmea2deg(float(m.group(4)), m.group(5))
+        self.latitude = nmea2deg(float(elements[2]), elements[3])
+        self.longitude = nmea2deg(float(elements[4]), elements[5])
 
         print "%f,%f" % (self.latitude, self.longitude)
 
-        self.satellites = int(m.group(7))
-        self.altitude = float(m.group(9))
-        if " " in m.group(14):
-            (csum, self.station) = m.group(14).split(' ', 1)
+        self.satellites = int(elements[7])
+        self.altitude = float(elements[9])
+        if " " in elements[14]:
+            (csum, self.station) = elements[14].split(' ', 1)
             self.station = self.station.strip()
-            self.comment = m.group(15).strip()
+            self.comment = elements[15].strip()
         else:
-            csum = "*" + m.group(14).split("*")[1]
+            csum = "*" + elements[14].split("*")[1]
             self.station = ""
             self.comment = ""
         
         self.valid = self._test_checksum(string, csum)
 
     def _parse_GPRMC(self, string):
-        csvel = "[^,]+"
-        expr = "\$GPRMC," \
-            "(%s),(%s),"  \
-            "(%s),(%s),"  \
-            "(%s),(%s),"  \
-            "(%s),(%s),"  \
-            "(%s),(%s),"  \
-            "([EW]),?[A-Z]?(\*..)\r?" % (csvel, csvel, csvel, csvel,
-                                         csvel, csvel, csvel, csvel,
-                                         csvel, csvel)
-        
-        # NB: My GPS seems to put a ",S" before the checksum, so that
-        # the last field (magnetic variance) looks like:
-        #   17.1,E,S*XY
-        # instead of:
-        #   17.1,E,*XY
+        elements = string.split(",", 12)
+        if len(elements) < 13:
+            raise Exception("Unable to split GPRMC (%i)" % len(elements))
 
-        m = re.search(expr, string)
-        if not m:
-            raise Exception("Unable to parse GPMRC")
-
-        if m.group(2) != "A":
-            #self.valid = False
+        if elements[2] != "A":
+            self.valid = False
             print "GPRMC marked invalid by GPS"
-            #return
+            return
 
-        t = m.group(1)
-        d = m.group(9)
+        t = elements[1]
+        d = elements[9]
 
         self.date = datetime.datetime.strptime(d+t, "%d%m%y%H%M%S")
 
-        self.latitude = nmea2deg(float(m.group(3)), m.group(4))
-        self.longitude = nmea2deg(float(m.group(5)), m.group(6))
+        self.latitude = nmea2deg(float(elements[3]), elements[4])
+        self.longitude = nmea2deg(float(elements[5]), elements[6])
 
-        self.speed = float(m.group(7))
-        self.direction = float(m.group(8))
+        self.speed = float(elements[7])
+        self.direction = float(elements[8])
 
-        csum = m.group(12)
+        m = re.match("^.?(\*[A-z0-9]{2})\r?\n?(.*)$", elements[12])
+        if not m:
+            print "Invalid end: %s" % elements[12]
+            return
+
+        csum = m.group(1)
+        if "," in m.group(2):
+            self.station, self.comment = m.group(2).split(",", 1)
 
         self.valid = self._test_checksum(string, csum)
 
@@ -574,7 +562,7 @@ class APRSGPSPosition(GPSPosition):
                 time.strftime("%m%y", time.gmtime()) + \
                 digits[2:] + "00"
         elif suffix == "/":
-            ds = digits[0:2] + time.strfime("%m%y") + digits[2:] + "00"
+            ds = digits[0:2] + time.strftime("%m%y") + digits[2:] + "00"
         elif suffix == "h":
             ds = time.strftime("%d%m%y", time.gmtime()) + digits
         else:
@@ -831,87 +819,30 @@ def parse_GPS(string):
 
 if __name__ == "__main__":
 
-#    p = parse_GPS("08:44:37: " + TEST)
-    P = GPSPosition(nmea2deg(3302.39), nmea2deg(9644.66, "W"))
-    #P.from_coords(45.525012, -122.916434)
-    #P.from_coords(,
-    #              )
-#    p.set_relative_to_current(P)
-#    if not p:
-#        print "Failed"
-#    else:
-#        print "Date:       %s" % p.date
-#        print "Latitude:   %s" % p.latitude
-#        print "Longitude:  %s" % p.longitude
-#        print "# Sats:     %s" % p.satellites
-#        print "Altitude:   %s" % p.altitude
-#        print "Station:    %s" % p.station
-#        print "Comment:    %s" % p.comment
-#
-#        print "\n%s" % str(p)
-#        print "\n%s" % p.to_NMEA_GGA().replace("\r", "\n")
-#
-#        print "Checksum of TEST: %s" % NMEA_checksum("GPGGA,180718.02,4531.3740,N,12255.4599,W,1,07,1.4,50.6,M,-21.4,M,,")
-#
-#        print "Distance: %s" % P.distance_from(p)
-#        print "Bearing: %s" % P.bearing_to(p)
-#        
-#        print P.fuzzy_to(p)
-#
-    P.station = "AE5PL-T"
-    #P.comment = "Dan Mobile"
-#
-#        print P.to_NMEA_GGA().replace("\r", "\n")
-
-    print P.to_APRS(dest="API282")
+    nmea_strings = [
+        "$GPRMC,010922,A,4603.6695,N,07307.3033,W,0.6,66.8,060508,16.1,W,A*1D\r\nVE2SE  9,MV  VE2SE@RAC.CA*32",
+        "$GPGGA,203008.78,4524.9729,N,12246.9580,W,1,03,3.8,00133,M,,,,*39",
+        "$GPGGA,183324.518,4533.0875,N,12254.5939,W,2,04,3.4,48.6,M,-19.6,M,1.2,0000*74",
+        "$GPRMC,215348,A,4529.3672,N,12253.2060,W,0.0,353.8,030508,17.5,E,D*3C"
+        ]
+                     
+    for s in nmea_strings:
+        p = NMEAGPSPosition(s)
+        if p.valid:
+            print "Pass: %s" % s
+        else:
+            print "** FAIL: %s" % s
         
-#    gps = GPSSource("/dev/ttyS0")
-#    gps.start()
-#
-#    for i in range(30):
-#        time.sleep(1)
-#
-#    print "Stopping"
-#    gps.stop()
+    aprs_strings = [
+        "$$CRCCE3E,AE5PL-T>API282,DSTAR*:!3302.39N/09644.66W>/\r",
+        "$$CRC1F72,KI4IFW-1>APRATS,DSTAR*:@291930/4531.50N/12254.98W>APRS test beacon /A=000022",
+        "$$CRC80C3,VA2PBI>APU25N,DSTAR*:=4539.33N/07330.28W-73 de Pierre D-Star Montreal {UIV32N}",
+        ]
 
-    string = "AE5PL-T>API282,DSTAR*:!3302.39N/09644.66W>/\r"
+    for s in aprs_strings:
+        p = APRSGPSPosition(s)
+        if p.valid:
+            print "Pass: %s" % s
+        else:
+            print "** FAIL: %s" % s
 
-    print "%X" % GPSA_checksum(string)
-
-    string = "$$CRCCE3E,%s" % string
-
-    PP = APRSGPSPosition(string)
-    print PP
-
-    string = "$GPRMC,220516,A,5133.82,N,00042.24,W,173.8,231.8,130694,004.2,W*70"
-
-    print "RMC:"
-    PPP = NMEAGPSPosition(string)
-    print PPP
-    print PPP.to_APRS()
-    print PPP.to_NMEA_RMC()
-    print str(parse_GPS(PPP.to_NMEA_RMC()))
-
-    string = "$$CRCFB8D,KI4IFW-1>APRATS,DSTAR*:@291930/4531.50N/12254.98W>APRS test beacon /A=000022"
-
-    print "Pierre"
-
-#    string = "$$CRCDF8A,VA2PBI>APU25N,DSTAR*:=4539.33N/07330.28W-73 de Pierre D-Star Montreal {UIV32N}"
-
-    print APRSGPSPosition(string)
-
-    print "K7TRP"
-
-    k7trp = "$GPGGA,183327.518,4533.0875,N,12254.5933,W,2,03,7.9,48.2,M,-19.6,M,2.2,0000*74"
-
-    print NMEAGPSPosition(k7trp)
-
-    k7trp = "$GPGGA,183327.518,4533.0875,N,12254.5933,W,2,03,7.9,48.2,M,-19.6,M,,0000*74"
-
-    #print NMEAGPSPosition(k7trp)
-
-    print "Ben"
-
-    n7ogm = "$GPRMC,215348,A,4529.3672,N,12253.2060,W,0.0,353.8,030508,17.5,E,D*3C"
-
-    print NMEAGPSPosition(n7ogm)
