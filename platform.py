@@ -82,7 +82,7 @@ class Platform:
                                   gtk.FILE_CHOOSER_ACTION_SAVE,
                                   (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
                                    gtk.STOCK_SAVE, gtk.RESPONSE_OK))
-        if start_dir and os.path.is_dir(start_dir):
+        if start_dir and os.path.isdir(start_dir):
             d.set_current_folder(start_dir)
 
         if default_name:
@@ -93,6 +93,26 @@ class Platform:
         d.destroy()
 
         if r == gtk.RESPONSE_OK:
+            return f
+        else:
+            return None
+
+    def gui_select_dir(self, start_dir=None):
+        import gtk
+
+        d = gtk.FileChooserDialog("Choose folder",
+                                  None,
+                                  gtk.FILE_CHOOSER_ACTION_SELECT_FOLDER,
+                                  (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
+                                   gtk.STOCK_SAVE, gtk.RESPONSE_OK))
+        if start_dir and os.path.isdir(start_dir):
+            d.set_current_folder(start_dir)
+
+        r = d.run()
+        f = d.get_filename()
+        d.destroy()
+
+        if r == gtk.RESPONSE_OK and os.path.isdir(f):
             return f
         else:
             return None
@@ -189,6 +209,18 @@ class Win32Platform(Platform):
 
         return f
 
+    def gui_select_dir(self, start_dir=None):
+        from win32com.shell import shell
+
+        try:
+            pidl, _, _ = shell.SHBrowseForFolder()
+            f = shell.SHGetPathFromIDList(pidl)
+        except Exception, e:
+            print "Failed to get directory: %s" % e
+            return None
+
+        return f
+
 def get_platform():
     if os.name == "nt":
         return Win32Platform()
@@ -204,7 +236,8 @@ if __name__ == "__main__":
     print "Serial ports: %s" % p.list_serial_ports()
     
 
-    p.open_text_file("d-rats.py")
+    #p.open_text_file("d-rats.py")
 
     #print "Open file: %s" % p.gui_open_file()
-    print "Save file: %s" % p.gui_save_file(default_name="Foo.txt")
+    #print "Save file: %s" % p.gui_save_file(default_name="Foo.txt")
+    print "Open folder: %s" % p.gui_select_dir("/tmp")
