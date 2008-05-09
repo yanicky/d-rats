@@ -367,7 +367,18 @@ class LatLonEntry(gtk.Entry):
             return True
         except:
             return False
-            
+
+class YesNoDialog(gtk.Dialog):
+    def __init__(self, title="", parent=None, buttons=None):
+        gtk.Dialog.__init__(self, title=title, parent=parent, buttons=buttons)
+
+        self._label = gtk.Label("")
+        self._label.show()
+
+        self.vbox.pack_start(self._label, 1,1,1)
+
+    def set_text(self, text):
+        self._label.set_text(text)
 
 if __name__=="__main__":
     w = gtk.Window(gtk.WINDOW_TOPLEVEL)
