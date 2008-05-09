@@ -635,7 +635,8 @@ class MapWindow(gtk.Window):
 
             d = gtk.MessageDialog(buttons=gtk.BUTTONS_OK)
             d.set_property("text", "Failed to load overlay file")
-
+        elif action == "remstatic":
+            self.remove_current_static()
         elif action == "save":
             self.save_map()
         elif action == "savevis":
@@ -653,6 +654,7 @@ class MapWindow(gtk.Window):
       <menuitem action="refresh"/>
       <menuitem action="clearcache"/>
       <menuitem action="loadstatic"/>
+      <menuitem action="remstatic"/>
       <menu action="export">
         <menuitem action="printable"/>
         <menuitem action="printablevis"/>
@@ -668,6 +670,7 @@ class MapWindow(gtk.Window):
                    ('refresh', None, "_Refresh", None, None, self.mh),
                    ('clearcache', None, "_Clear Cache", None, None, self.mh),
                    ('loadstatic', None, "_Load Static Overlay", None, None, self.mh),
+                   ('remstatic', None, "_Remove Static Overlay", None, None, self.mh),
                    ('export', None, "_Export", None, None, self.mh),
                    ('printable', None, "_Printable", "<Control>p", None, self.mh),
                    ('printablevis', None, "Printable (visible area)", "<Control><Alt>P", None, self.mh),
@@ -922,7 +925,7 @@ class MapWindow(gtk.Window):
     def set_center(self, lat, lon):
         self.map.set_center(lat, lon)
 
-    def parse_static_line(self, line, group):
+    def parse_static_line(self, line, group, add=True):
         if line.startswith("//"):
             return
         elif "#" in line:
@@ -930,11 +933,14 @@ class MapWindow(gtk.Window):
             
         (id, lat, lon, alt) = line.split(",", 4)
             
-        pos = GPSPosition(station=id.strip(),
-                          lat=float(lat),
-                          lon=float(lon))
+        if add:
+            pos = GPSPosition(station=id.strip(),
+                              lat=float(lat),
+                              lon=float(lon))
 
-        self.set_marker(pos, "orange", group)
+            self.set_marker(pos, "orange", group)
+        else:
+            self.del_marker(id.strip(), group)
 
     def load_static_points(self, filename, group=None):
         if not group:
@@ -953,7 +959,68 @@ class MapWindow(gtk.Window):
             except Exception, e:
                 print "Failed to parse line `%s': %s" % (line, e)
 
+        f.close()
+
         return True
+
+    def remove_static_points(self, group):
+        p = platform.get_platform()
+        filename = os.path.join(p.config_dir(),
+                                "static_locations",
+                                group + ".csv")
+
+        try:
+            f = file(filename)
+        except Exception, e:
+            print "Failed to open static points `%s': %s" % (filename, e)
+            return False
+
+        lines = f.read().split("\n")
+        for line in lines:
+            try:
+                self.parse_static_line(line, group, add=False)
+            except Exception, e:
+                print "Failed to parse line `%s': %s" % (line, e)
+
+        f.close()
+        os.remove(filename)
+
+        try:
+            print "Deleting marker group `%s'" % group
+            del self.markers[group]
+            self.marker_list.del_item(None, group)
+        except Exception, e:
+            print "Failed to remove group `%s': %s" % (group, e)
+
+        return True
+
+    def remove_current_static(self):
+        try:
+            items = self.marker_list.get_selected()
+        except Exception, e:
+            return
+        
+        group = items[1]
+
+        if not self.markers.has_key(group):
+            d = gtk.MessageDialog(buttons=gtk.BUTTONS_OK, parent=self)
+            d.set_property("text", "Please select a top-level overlay group")
+            d.run()
+            d.destroy()
+            return
+
+        d = miscwidgets.YesNoDialog(title="Confirm Delete",
+                                    parent=self,
+                                    buttons=(gtk.STOCK_YES, gtk.RESPONSE_YES,
+                                             gtk.STOCK_NO, gtk.RESPONSE_NO))
+        d.set_text("Really delete overlay %s?" % group)
+        r = d.run()
+        d.destroy()
+        if r == gtk.RESPONSE_NO:
+            return
+
+        print "Removing group %s" % group
+        self.remove_static_points(group)
 
 if __name__ == "__main__":
 
