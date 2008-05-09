@@ -54,6 +54,49 @@ class Platform:
     def default_dir(self):
         return "."
 
+    def gui_open_file(self, start_dir=None):
+        import gtk
+
+        d = gtk.FileChooserDialog("Select a file to open",
+                                  None,
+                                  gtk.FILE_CHOOSER_ACTION_OPEN,
+                                  (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
+                                   gtk.STOCK_OPEN, gtk.RESPONSE_OK))
+        if start_dir and os.path.isdir(start_dir):
+            d.set_current_folder(start_dir)
+
+        r = d.run()
+        f = d.get_filename()
+        d.destroy()
+
+        if r == gtk.RESPONSE_OK:
+            return f
+        else:
+            return None
+
+    def gui_save_file(self, start_dir=None, default_name=None):
+        import gtk
+
+        d = gtk.FileChooserDialog("Save file as",
+                                  None,
+                                  gtk.FILE_CHOOSER_ACTION_SAVE,
+                                  (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
+                                   gtk.STOCK_SAVE, gtk.RESPONSE_OK))
+        if start_dir and os.path.is_dir(start_dir):
+            d.set_current_folder(start_dir)
+
+        if default_name:
+            d.set_current_name(default_name)
+
+        r = d.run()
+        f = d.get_filename()
+        d.destroy()
+
+        if r == gtk.RESPONSE_OK:
+            return f
+        else:
+            return None
+
 class UnixPlatform(Platform):
     def config_dir(self):
         dir = os.path.abspath(os.path.join(os.getenv("HOME"), ".d-rats"))
@@ -124,6 +167,28 @@ class Win32Platform(Platform):
     def list_serial_ports(self):
         return ["COM%i" % x for x in range(1,8)]
 
+    def gui_open_file(self, start_dir=None):
+        import win32gui
+
+        try:
+            f, _, _ = win32gui.GetOpenFileNameW()
+        except Exception, e:
+            print "Failed to get filename: %s" % e
+            return None
+
+        return f
+
+    def gui_save_file(self, start_dir=None, default_name=None):
+        import win32gui
+
+        try:
+            f, _, _ = win32gui.GetSaveFileNameW(File=default_name)
+        except Exception, e:
+            print "Failed to get filename: %s" % e
+            return None
+
+        return f
+
 def get_platform():
     if os.name == "nt":
         return Win32Platform()
@@ -140,3 +205,6 @@ if __name__ == "__main__":
     
 
     p.open_text_file("d-rats.py")
+
+    #print "Open file: %s" % p.gui_open_file()
+    print "Save file: %s" % p.gui_save_file(default_name="Foo.txt")
