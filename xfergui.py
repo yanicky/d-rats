@@ -27,6 +27,7 @@ import gobject
 
 import ddt
 import formgui
+import platform
 
 class FileTransferGUI(gtk.Dialog):
 
@@ -224,20 +225,14 @@ class FileTransferGUI(gtk.Dialog):
         gobject.idle_add(self._update, status, vals)
 
     def do_send(self):
-        fc = gtk.FileChooserDialog("Select file to send",
-                                   None,
-                                   gtk.FILE_CHOOSER_ACTION_OPEN,
-                                   (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
-                                    gtk.STOCK_OPEN, gtk.RESPONSE_OK))
-        d = self.chatgui.config.get("prefs", "download_dir")
-        fc.set_current_folder(d)
+        p = platform.get_platform()
+        self.filename = p.gui_open_file(self.chatgui.config.get("prefs",
+                                                                "download_dir"))
+        if not self.filename:
+            return
 
-        result = fc.run()
-        self.filename = fc.get_filename()
-        fc.destroy()
-        if result == gtk.RESPONSE_OK:
-            self.is_send = True
-            self.run()
+        self.is_send = True
+        self.run()
 
     def do_recv(self):
         d = self.chatgui.config.get("prefs", "download_dir")
@@ -245,20 +240,11 @@ class FileTransferGUI(gtk.Dialog):
             self.filename = d
             result = gtk.RESPONSE_OK
         else:
-            title = "Select destination folder"
-            stock = gtk.FILE_CHOOSER_ACTION_SELECT_FOLDER
-            fc = gtk.FileChooserDialog(title,
-                                       None,
-                                       stock,
-                                       (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
-                                        gtk.STOCK_SAVE, gtk.RESPONSE_OK))
-            fc.set_current_folder(d)
-            
-            result = fc.run()
-            self.filename = fc.get_filename()
-            fc.destroy()
+            p = platform.get_platform()
+            self.filename = p.gui_select_dir(d)
+            if not self.filename:
+                return
 
-        if result == gtk.RESPONSE_OK:
             print "Receiving file to: %s" % self.filename
             self.is_send = False
             self.run()

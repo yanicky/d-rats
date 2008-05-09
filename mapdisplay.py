@@ -583,19 +583,15 @@ class MapWindow(gtk.Window):
         p.open_html_file(hf)        
 
     def save_map(self, bounds=None):
-        d = gtk.FileChooserDialog("Save map image",
-                                  None,
-                                  gtk.FILE_CHOOSER_ACTION_SAVE,
-                                  (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
-                                   gtk.STOCK_SAVE, gtk.RESPONSE_OK))
-        d.set_current_name("map_%s.png" % time.strftime("%m%d%Y%_H%M%S"))
-        r = d.run()
-        f = d.get_filename()
-        d.destroy()
-        if r == gtk.RESPONSE_OK:
-            if not f.endswith(".png"):
-                f += ".png"
-            self.map.export_to(f, bounds)
+        p = platform.get_platform()
+        f = p.gui_save_file(default_name="map_%s.png" % \
+                                time.strftime("%m%d%Y%_H%M%S"))
+        if not f:
+            return
+
+        if not f.endswith(".png"):
+            f += ".png"
+        self.map.export_to(f, bounds)
 
     def get_visible_bounds(self):
         ha = self.sw.get_hadjustment()
@@ -613,24 +609,16 @@ class MapWindow(gtk.Window):
         elif action == "clearcache":
             self.clear_map_cache()
         elif action == "loadstatic":
-            d = gtk.FileChooserDialog("Select overlay file",
-                                      None,
-                                      gtk.FILE_CHOOSER_ACTION_OPEN,
-                                      (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
-                                       gtk.STOCK_OPEN, gtk.RESPONSE_OK))
-            r = d.run()
-            if r == gtk.RESPONSE_CANCEL:
-                d.destroy()
+            p = platform.get_platform()
+            f = p.gui_open_file()
+            if not f:
                 return
 
-            fn = d.get_filename()
-            d.destroy()
-
-            if self.load_static_points(fn):
+            if self.load_static_points(f):
                 dir = platform.get_platform().config_dir()
-                shutil.copy(fn, os.path.join(dir,
-                                             "static_locations",
-                                             os.path.basename(fn)))
+                shutil.copy(f, os.path.join(dir,
+                                            "static_locations",
+                                            os.path.basename(f)))
                 return
 
             d = gtk.MessageDialog(buttons=gtk.BUTTONS_OK)

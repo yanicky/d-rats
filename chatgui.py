@@ -503,23 +503,11 @@ class MainChatGUI(ChatGUI):
         self.tx_msg("%s\n%s" % (notice, filedata))
 
     def send_text_file(self):
-        fc = gtk.FileChooserDialog("Select a text file to send",
-                                   None,
-                                   gtk.FILE_CHOOSER_ACTION_OPEN,
-                                   (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
-                                    gtk.STOCK_OPEN, gtk.RESPONSE_OK))
-        d = self.config.get("prefs", "download_dir")
-        fc.set_current_folder(d)
-
-        result = fc.run()
-        if result == gtk.RESPONSE_CANCEL:
-            fc.destroy()
-            return
-        else:
-            filename = fc.get_filename()
-            fc.destroy()
+        f = self.config.platform.gui_open_file(self.config.get("prefs",
+                                                               "download_dir"))
+        if f:
             self.mainapp.comm.stop_watch()
-            self.tx_file(filename)
+            self.tx_file(f)
             self.mainapp.comm.start_watch()
   
     def select_page(self, tabs, page, page_num, data=None):
@@ -624,28 +612,24 @@ class MainChatGUI(ChatGUI):
                 break
 
     def do_mcast_send(self):
-        d = gtk.FileChooserDialog("Select file to send",
-                                  None,
-                                  gtk.FILE_CHOOSER_ACTION_OPEN,
-                                  (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
-                                   gtk.STOCK_OPEN, gtk.RESPONSE_OK))
-        r = d.run()
-        f = d.get_filename()
-        d.destroy()
-        if r == gtk.RESPONSE_OK:
-            try:
-                bsize = self.config.getint("settings", "ddt_block_size")
-            except:
-                bsize = 512
+        f = self.config.platform.gui_open_file(self.config.get("prefs",
+                                                               "download_dir"))
+        if not f:
+            return
 
-            self.toggle_sendable(False)
-            d = MulticastGUI(f,
-                             self.mainapp.comm.path,
-                             bsize,
-                             parent=self.window)
-            d.run()
-            d.destroy()
-            self.toggle_sendable(True)
+        try:
+            bsize = self.config.getint("settings", "ddt_block_size")
+        except:
+            bsize = 512
+
+        self.toggle_sendable(False)
+        d = MulticastGUI(f,
+                         self.mainapp.comm.path,
+                         bsize,
+                         parent=self.window)
+        d.run()
+        d.destroy()
+        self.toggle_sendable(True)
         
     def do_file_transfer(self, send):
         xfer = self.config.xfer()

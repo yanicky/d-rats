@@ -24,6 +24,7 @@ import datetime
 from commands import getstatusoutput as run
 from config import make_choice
 import mainapp
+import platform
 
 class QSTText:
     def __init__(self, gui, config, text=None, freq=None):
@@ -476,12 +477,12 @@ class QSTGUI(SelectGUI):
 
     def type_changed(self, widget, data=None):
         if widget.get_active_text() in ["File", "Exec"]:
-            d = gtk.FileChooserDialog("Select QST file",
-                                      buttons=(gtk.STOCK_OPEN, gtk.RESPONSE_OK,
-                                               gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL))
-            if d.run() == gtk.RESPONSE_OK:
-                self.msg.set_text(d.get_filename())
-            d.destroy()   
+            p = platform.get_platform()
+            f = p.gui_open_file()
+            if not f:
+                return
+
+            self.msg.set_text(f)
         elif widget.get_active_text() in ["GPS", "GPS-A"]:
             self.msg.set_text("ON D-RATS")
 

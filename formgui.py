@@ -26,6 +26,7 @@ import gtk
 
 from config import make_choice
 import mainapp
+import platform
 
 test = """
 <xml>
@@ -390,25 +391,20 @@ class FormField:
 
 class Form(gtk.Dialog):
     def but_save(self, widget, data=None):
-        d = gtk.FileChooserDialog(title="Export form as text",
-                                  action=gtk.FILE_CHOOSER_ACTION_SAVE,
-                                  buttons=(gtk.STOCK_SAVE, gtk.RESPONSE_OK,
-                                           gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL))
-        d.set_current_name("%s.html" % self.id)
-        r = d.run()
-        if r != gtk.RESPONSE_CANCEL:
-            try:
-                self.export(d.get_filename())
-            except Exception, e:
-                ed = gtk.MessageDialog(buttons=gtk.BUTTONS_OK,
-                                       parent=self)
-                ed.text = "Unable to open file"
-                ed.format_secondary_text("Unable to open %s (%s)" % \
-                                             (d.get_filename(), e))
-                ed.run()
-                ed.destroy()
+        p = platform.get_platform()
+        f = p.gui_save_file(default_name="%s.html" % self.id)
+        if not f:
+            return
 
-        d.destroy()
+        try:
+            self.export(f)
+        except Exception, e:
+            ed = gtk.MessageDialog(buttons=gtk.BUTTONS_OK,
+                                   parent=self)
+            ed.text = "Unable to open file"
+            ed.format_secondary_text("Unable to open %s (%s)" % (f, e))
+            ed.run()
+            ed.destroy()
 
     def but_printable(self, widget, data=None):
         f = tempfile.NamedTemporaryFile(suffix=".html")
