@@ -490,8 +490,8 @@ class NMEAGPSPosition(GPSPosition):
         csum = m.group(2)
         if "," in m.group(3):
             sta, com = m.group(3).split(",", 1)
-            self.station = sta.strip()
-            self.comment = com.strip()
+            self.station = sta.strip()[0:8]
+            self.comment = com.strip()[0:20]
 
         self.valid = self._test_checksum(string, csum)
 
