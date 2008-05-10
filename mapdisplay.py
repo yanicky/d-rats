@@ -427,31 +427,41 @@ class MapWidget(gtk.DrawingArea):
         self.window.draw_layout(gc, x-pixels, y-shift, pl)        
 
 class MapWindow(gtk.Window):
-    def zoom_in(self, widget, data=None):
-        self.map.set_zoom(self.map.get_zoom() + 1)
+    def zoom(self, widget, data=None):
+        adj = widget.get_adjustment()
 
-    def zoom_out(self, widget, data=None):
-        self.map.set_zoom(self.map.get_zoom() - 1)
-    
+        self.map.set_zoom(int(adj.value))
+
     def make_zoom_controls(self):
-        box = gtk.HBox(False, 2)
-
-        zi = gtk.Button("+")
-        zi.connect("clicked", self.zoom_in)
-        zi.set_size_request(75,75)
-        zi.show()
-
-        zo = gtk.Button("-")
-        zo.connect("clicked", self.zoom_out)
-        zo.set_size_request(75,75)
-        zo.show()
-
-        box.pack_start(zo, 0,0,0)
-        box.pack_start(zi, 0,0,0)
-
+        box = gtk.HBox(False, 3)
+        box.set_border_width(3)
         box.show()
 
-        return box
+        l = gtk.Label("Min")
+        l.show()
+        box.pack_start(l, 0,0,0)
+
+        adj = gtk.Adjustment(value=14,
+                             lower=9,
+                             upper=15,
+                             step_incr=1,
+                             page_incr=1)
+        sb = gtk.HScrollbar(adj)
+        sb.connect("value-changed", self.zoom)
+        sb.show()
+        box.pack_start(sb, 1,1,1)
+
+        l = gtk.Label("Max")
+        l.show()
+        box.pack_start(l, 0,0,0)
+
+        frame = gtk.Frame("Zoom")
+        frame.set_label_align(0.5, 0.5)
+        frame.set_size_request(150, 50)
+        frame.show()
+        frame.add(box)
+
+        return frame
 
     def toggle_show(self, group, *vals):
         if self.markers.has_key(group):
