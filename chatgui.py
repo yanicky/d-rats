@@ -556,11 +556,16 @@ class MainChatGUI(ChatGUI):
         d = gtk.AboutDialog()
         d.set_transient_for(self.window)
 
+        verinfo = "GTK %s\nPyGTK %s\n" % ( \
+            ".".join([str(x) for x in gtk.gtk_version]),
+            ".".join([str(x) for x in gtk.pygtk_version]))
+
         d.set_name("D-RATS")
         d.set_version(mainapp.DRATS_VERSION)
         d.set_copyright("Copyright 2008 Dan Smith (KI4IFW)")
         d.set_website("http://d-rats.danplanet.com")
         d.set_authors(("Dan Smith <dsmith@danplanet.com>",))
+        d.set_comments(verinfo)
         
         d.run()
         d.destroy()
