@@ -250,9 +250,8 @@ class MapWidget(gtk.DrawingArea):
 
     def broken_tile(self):
         broken = [
-            "48 16 4 1",
-            "       c None",
-            ".      c #000000000000",
+            "48 16 3 1",
+            "       c #FFFFFFFFFFFF",
             "x      c #FFFF00000000",
             "X      c #000000000000",
             "xx             xx   XX   X   XXX                ",
@@ -292,7 +291,7 @@ class MapWidget(gtk.DrawingArea):
                                          self.width * self.tilesize,
                                          self.height * self.tilesize)
         except Exception, e:
-            print "Unable to load tiles (window is probably not loaded)"
+            # Window is not loaded, thus can't load tiles
             return
 
         gc = self.pixmap.new_gc()
