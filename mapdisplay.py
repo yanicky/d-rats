@@ -1011,28 +1011,33 @@ class MapWindow(gtk.Window):
 
 if __name__ == "__main__":
 
-    m = MapWindow()
-    m.set_center(45.525012, -122.916434)
-    m.set_zoom(14)
+    import sys
+    import gps
 
-    m.set_marker(GPSPosition(station="KI4IFW_H", lat=45.520, lon=-122.916434))
-    m.set_marker(GPSPosition(station="KE7FTE", lat=45.5363, lon=-122.9105))
-    m.set_marker(GPSPosition(station="KA7VQH", lat=45.4846, lon=-122.8278))
-    m.set_marker(GPSPosition(station="N7QQU", lat=45.5625, lon=-122.8645))
-    m.del_marker("N7QQU")
+    if len(sys.argv) == 3:
+        m = MapWindow()
+        m.set_center(gps.parse_dms(sys.argv[1]),
+                     gps.parse_dms(sys.argv[2]))
+        m.set_zoom(15)
+    else:
+        m = MapWindow()
+        m.set_center(45.525012, -122.916434)
+        m.set_zoom(14)
 
-    m.load_static_points("/home/dan/.d-rats/static_locations/Washington County ARES.csv")
+        m.set_marker(GPSPosition(station="KI4IFW_H", lat=45.520, lon=-122.916434))
+        m.set_marker(GPSPosition(station="KE7FTE", lat=45.5363, lon=-122.9105))
+        m.set_marker(GPSPosition(station="KA7VQH", lat=45.4846, lon=-122.8278))
+        m.set_marker(GPSPosition(station="N7QQU", lat=45.5625, lon=-122.8645))
+        m.del_marker("N7QQU")
+
+        m.load_static_points("/home/dan/.d-rats/static_locations/Washington County ARES.csv")
 
     m.show()
-
-    print m.sw.get_vadjustment().get_value()
 
     try:
         gtk.main()
     except:
         pass
-
-    print m.sw.get_vadjustment().get_value()
 
 
 #    area = gtk.DrawingArea()
