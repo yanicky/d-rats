@@ -149,6 +149,12 @@ class MapDownloader(gtk.Window):
         d.run()
         d.destroy()
 
+    def show_range_error(self, field):
+        d = gtk.MessageDialog(buttons=gtk.BUTTONS_OK, parent=self)
+        d.set_property("text", "Invalid range for %s" % field)
+        d.run()
+        d.destroy()
+
     def do_start(self, widget, data=None):
         vals = {}
 
@@ -161,6 +167,18 @@ class MapDownloader(gtk.Window):
             except ValueError, e:
                 self.show_field_error(self.val_keys[k])
                 return
+
+        if vals["lat_min"] >= vals["lat_max"]:
+            self.show_range_error("latitude")
+            return
+
+        if vals["lon_min"] >= vals["lon_max"]:
+            self.show_range_error("longitude")
+            return
+
+        if vals["zoom_min"] > vals["zoom_max"]:
+            self.show_range_error("zoom")
+            return
 
         self.start_button.set_sensitive(False)
         self.stop_button.set_sensitive(True)
