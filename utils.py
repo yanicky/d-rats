@@ -67,5 +67,5 @@ def filter_to_ascii(string):
         xlate[ord('\n')] = '\n'
         xlate[ord('\r')] = '\r'
 
-        return string.translate("".join(xlate))
+        return string.translate(u"".join(xlate))
 
