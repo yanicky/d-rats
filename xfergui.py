@@ -238,16 +238,15 @@ class FileTransferGUI(gtk.Dialog):
         d = self.chatgui.config.get("prefs", "download_dir")
         if self.chatgui.config.getboolean("prefs", "autoreceive"):
             self.filename = d
-            result = gtk.RESPONSE_OK
         else:
             p = platform.get_platform()
             self.filename = p.gui_select_dir(d)
             if not self.filename:
                 return
 
-            print "Receiving file to: %s" % self.filename
-            self.is_send = False
-            self.run()
+        print "Receiving file to: %s" % self.filename
+        self.is_send = False
+        self.run()
 
     def wait_for_completion(self):
         self.xfer_thread.join()
