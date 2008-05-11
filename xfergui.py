@@ -111,7 +111,7 @@ class FileTransferGUI(gtk.Dialog):
         self.status.show()
         self.bar.show()
 
-        self.set_geometry_hints(None, min_width=300, min_height=150)
+        self.set_size_request(300,150)
         self.set_resizable(False)
 
     def set_status_msg(self, status):
