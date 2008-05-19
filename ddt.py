@@ -480,7 +480,7 @@ class DDTTransfer:
         return result
 
     def send_start_file(self, filename):
-        frame = DDTXferStartFrame(filename)
+        frame = DDTXferStartFrame(str(filename))
 
         self.filename = frame.get_filename()
         self.total_size = frame.get_size()

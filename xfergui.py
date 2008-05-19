@@ -172,6 +172,7 @@ class FileTransferGUI(gtk.Dialog):
             else:
                 x.recv_file(self.filename)
         except Exception, e:
+            print "File transfer exception: %s" % e
             gobject.idle_add(self.set_status_msg, str(e))
             self.cancel_xfer(None, None)
             return
