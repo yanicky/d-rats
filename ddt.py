@@ -313,8 +313,8 @@ class DDTTransfer:
         self.filename = "--"
 
         # Limits
-        self.limit_tries = 10
-        self.limit_timeout = 10
+        self.limit_tries = 20
+        self.limit_timeout = 4
 
         # Stats
         self.total_errors = 0
@@ -373,7 +373,7 @@ class DDTTransfer:
         ack = DDTAckFrame()
 
         result = ""
-        to = Timeout(self.limit_timeout + 10)
+        to = Timeout(self.limit_timeout)
         while self.enabled and \
                 not result.endswith(ENCODED_TRAILER) and \
                 not to.expired():
