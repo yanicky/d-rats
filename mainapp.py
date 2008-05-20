@@ -57,6 +57,7 @@ class SWFSerial(serial.Serial):
         serial.Serial.__init__(self, **kwargs)
 
         self.state = True
+        self.xoff_limit = 3
 
     def is_xon(self):
         char = serial.Serial.read(self, 1)
@@ -76,9 +77,7 @@ class SWFSerial(serial.Serial):
 
         return self.state
 
-    def write(self, data):
-        old_to = self.timeout
-        self.timeout = 0.01
+    def _write(self, data):
         chunk = 8
         pos = 0
         while pos < len(data):
@@ -87,12 +86,25 @@ class SWFSerial(serial.Serial):
             serial.Serial.write(self, data[pos:pos+chunk])
             self.flush()
             pos += chunk
+            start = time.time()
             while not self.is_xon():
                 if self.__swf_debug:
-                    print "We're XOFF, waiting"
+                    print "We're XOFF, waiting: %s" % self.state
                 time.sleep(0.01)
+                
+                if time.time() - start > self.xoff_limit:
+                    print "XOFF for too long, breaking loop!"
+                    raise Exception("Write error (flow)")
+
+    def write(self, data):
+        old_to = self.timeout
+        self.timeout = 0.01
+
+        ret = self._write(data)
 
         self.timeout = old_to
+
+        return ret
 
     def read(self, len):
         return serial.Serial.read(self, len)
