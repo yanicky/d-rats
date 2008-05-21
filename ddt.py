@@ -81,6 +81,37 @@ def detect_frame_type(data):
         print "*** Unknown frame type: %i" % type
         return None
 
+def strip_echo(string):
+    try:
+        trailer = string.rindex(ENCODED_TRAILER)
+    except ValueError, e:
+        print "No trailer on frame"
+        return string
+
+    exposure = string[:20]
+
+    # FIXME: Remove this and other insane debug in here
+    print "Checking for echo in `%s...'" % exposure
+
+    for i in range(0, len(ENCODED_TRAILER)):
+        sub = ENCODED_TRAILER[i:]
+        
+        print "Checking for substring: `%s'" % sub
+
+        if exposure.startswith(sub):
+            print "Found echo `%s' in `%s...'" % (sub, exposure)
+            return string[len(sub):]
+    
+    if ENCODED_TRAILER not in exposure:
+        print "No echo found"
+        return string
+
+    idx = exposure.index(ENCODED_TRAILER) + len(ENCODED_TRAILER)
+
+    print "Found echo `%s' in `%s...'" % (string[:idx], exposure)
+
+    return string[idx:]
+
 class DDTFrame:
     def __init__(self):
         self.data = None
@@ -380,6 +411,7 @@ class DDTTransfer:
             result += self.pipe.read(128)
 
         try:
+            result = strip_echo(result)
             ack.unpack(result)
         except:
             print "ACK unpack failed"
@@ -439,6 +471,8 @@ class DDTTransfer:
 
         print "Got frame"
         self.wire_size += len(data)
+
+        data = strip_echo(data)
 
         type = detect_frame_type(data)
         if type is None:
