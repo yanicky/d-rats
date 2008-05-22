@@ -432,7 +432,12 @@ class DDTTransfer:
             if not self.enabled:
                 break
 
-            result = self._send_block(packed)
+            try:
+                result = self._send_block(packed)
+            except comm.DataPathIOError, e:
+                print "IO error while sending block: %s" % e
+                continue
+
             print "Sent data, waiting for ack"
             if result.is_ack():
                 print "Sent block %i" % num
