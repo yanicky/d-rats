@@ -616,7 +616,7 @@ class APRSGPSPosition(GPSPosition):
         #11 = altitude string
         
         expr = "^(([@/])[0-9]{6}([/hz])|!|=)" + \
-            "([0-9]{4}\.[0-9]{2})([NS])(.)" + \
+            "([0-9]{4}\.[0-9]{2})([NS])(.)?" + \
             "([0-9]{5}\.[0-9]{2})([EW])(.)" + \
             "([^/]*)(/A=[0-9]{6})?"
 
@@ -635,7 +635,7 @@ class APRSGPSPosition(GPSPosition):
 
         self.latitude = nmea2deg(float(m.group(4)), m.group(5))
         self.longitude = nmea2deg(float(m.group(7)), m.group(8))
-        self.comment = m.group(10)
+        self.comment = m.group(10).strip()
 
         if len(m.groups()) == 11 and m.group(11):
             _, alt = m.group(11).split("=")
@@ -842,6 +842,7 @@ if __name__ == "__main__":
         "$$CRCCE3E,AE5PL-T>API282,DSTAR*:!3302.39N/09644.66W>/\r",
         "$$CRC1F72,KI4IFW-1>APRATS,DSTAR*:@291930/4531.50N/12254.98W>APRS test beacon /A=000022",
         "$$CRC80C3,VA2PBI>APU25N,DSTAR*:=4539.33N/07330.28W-73 de Pierre D-Star Montreal {UIV32N}",
+        "$$CRCA31F,VA2PBI>API282,DSTAR*:/221812z4526.56N07302.34W/\r",
         ]
 
     for s in aprs_strings:
