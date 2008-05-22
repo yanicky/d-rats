@@ -36,9 +36,6 @@ import comm
 from utils import hexprint,filter_to_ascii
 import qst
 
-ASCII_XON = chr(17)
-ASCII_XOFF = chr(19)
-
 DRATS_VERSION = "0.1.18"
 LOGTF = "%m-%d-%Y_%H:%M:%S"
 
@@ -48,66 +45,6 @@ gobject.threads_init()
 
 class SocketClosedError(Exception):
     pass
-
-class SWFSerial(serial.Serial):
-    __swf_debug = False
-
-    def __init__(self, **kwargs):
-        print "Software XON/XOFF control initialized"
-        serial.Serial.__init__(self, **kwargs)
-
-        self.state = True
-        self.xoff_limit = 3
-
-    def is_xon(self):
-        char = serial.Serial.read(self, 1)
-        if char == ASCII_XOFF:
-            if self.__swf_debug:
-                print "************* Got XOFF"
-            self.state = False
-        elif char == ASCII_XON:
-            if self.__swf_debug:
-                print "------------- Got XON"
-            self.state = True
-        elif len(char) == 1:
-            print "Aiee! Read a non-XOFF char: 0x%02x `%s`" % (ord(char),
-                                                                   char)
-            self.state = True
-            print "Assuming IXANY behavior"
-
-        return self.state
-
-    def _write(self, data):
-        chunk = 8
-        pos = 0
-        while pos < len(data):
-            if self.__swf_debug:
-                print "Sending %i-%i of %i" % (pos, pos+chunk, len(data))
-            serial.Serial.write(self, data[pos:pos+chunk])
-            self.flush()
-            pos += chunk
-            start = time.time()
-            while not self.is_xon():
-                if self.__swf_debug:
-                    print "We're XOFF, waiting: %s" % self.state
-                time.sleep(0.01)
-                
-                if time.time() - start > self.xoff_limit:
-                    print "XOFF for too long, breaking loop!"
-                    raise Exception("Write error (flow)")
-
-    def write(self, data):
-        old_to = self.timeout
-        self.timeout = 0.01
-
-        ret = self._write(data)
-
-        self.timeout = old_to
-
-        return ret
-
-    def read(self, len):
-        return serial.Serial.read(self, len)
 
 class ChatBuffer:
     def __init__(self, path, infunc, connfunc):

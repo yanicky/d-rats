@@ -12,6 +12,70 @@ class DataPathNotConnectedError(DataPathError):
 class DataPathIOError(DataPathError):
     pass
 
+ASCII_XON = chr(17)
+ASCII_XOFF = chr(19)
+
+class SWFSerial(serial.Serial):
+    __swf_debug = True
+
+    def __init__(self, **kwargs):
+        print "Software XON/XOFF control initialized"
+        serial.Serial.__init__(self, **kwargs)
+
+        self.state = True
+        self.xoff_limit = 1
+
+    def is_xon(self):
+        char = serial.Serial.read(self, 1)
+        if char == ASCII_XOFF:
+            if self.__swf_debug:
+                print "************* Got XOFF"
+            self.state = False
+        elif char == ASCII_XON:
+            if self.__swf_debug:
+                print "------------- Got XON"
+            self.state = True
+        elif len(char) == 1:
+            print "Aiee! Read a non-XOFF char: 0x%02x `%s`" % (ord(char),
+                                                                   char)
+            self.state = True
+            print "Assuming IXANY behavior"
+
+        return self.state
+
+    def _write(self, data):
+        chunk = 8
+        pos = 0
+        while pos < len(data):
+            if self.__swf_debug:
+                print "Sending %i-%i of %i" % (pos, pos+chunk, len(data))
+            serial.Serial.write(self, data[pos:pos+chunk])
+            self.flush()
+            pos += chunk
+            start = time.time()
+            while not self.is_xon():
+                if self.__swf_debug:
+                    print "We're XOFF, waiting: %s" % self.state
+                time.sleep(0.01)
+                
+                if time.time() - start > self.xoff_limit:
+                    print "XOFF for too long, breaking loop!"
+                    raise DataPathIOError("Write error (flow)")
+
+    def write(self, data):
+        old_to = self.timeout
+        self.timeout = 0.01
+
+        ret = self._write(data)
+
+        self.timeout = old_to
+
+        return ret
+
+    def read(self, len):
+        return serial.Serial.read(self, len)
+
+
 class DataPath:
     def __init__(self, pathspec, timeout=0.25):
         self.timeout = timeout
@@ -49,11 +113,11 @@ class SerialDataPath(DataPath):
 
     def connect(self):
         try:
-            self._serial = mainapp.SWFSerial(port=self.port,
-                                             baudrate=self.baud,
-                                             timeout=self.timeout,
-                                             writeTimeout=self.timeout,
-                                             xonxoff=0)
+            self._serial = SWFSerial(port=self.port,
+                                     baudrate=self.baud,
+                                     timeout=self.timeout,
+                                     writeTimeout=self.timeout,
+                                     xonxoff=0)
         except Exception, e:
             print "Serial exception on connect: %s" % e
             raise DataPathNotConnectedError("Unable to open serial port")
