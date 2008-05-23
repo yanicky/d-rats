@@ -52,7 +52,10 @@ class BlockQueue:
 
     def peek(self):
         self._lock.acquire()
-        el = self._queue[0]
+        try:
+            el = self._queue[0]
+        except:
+            el = None
         self._lock.release()
         
         return el
