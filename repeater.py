@@ -284,8 +284,11 @@ class Repeater:
         path = TcpDataPath("Network (%s:%s)" % csocket.getpeername(),
                            self.condition,
                            csocket)
-        path.write(self.id)
-        self.paths.append(path)
+        try:
+            path.write(self.id)
+            self.paths.append(path)
+        except:
+            path.close()
 
     def listen_on(self, port):
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
