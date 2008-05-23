@@ -465,12 +465,15 @@ class SessionManager:
         except Exception, e:
             print "No session %s to deregister" % id
 
-    def new_session(self, id, name, dest):
-        if dest:
-            s = StatefulSession(name)
+    def new_session(self, id, name, dest, cls=None):
+        if not cls:
+            if dest:
+                s = StatefulSession(name)
+            else:
+                s = StatelessSession(name)
+                dest = "CQCQCQ"
         else:
-            s = StatelessSession(name)
-            dest = "CQCQCQ"
+            s = cls(name)
 
         self._register_session(id, s, dest)
 
@@ -480,10 +483,10 @@ class SessionManager:
         
         return s
 
-    def start_session(self, name, dest=None):
+    def start_session(self, name, dest=None, cls=None):
         for id in range(0, 256):
             if id not in self.sessions.keys():
-                return self.new_session(id, name, dest)
+                return self.new_session(id, name, dest, cls)
 
         return None
 
@@ -509,6 +512,7 @@ if __name__ == "__main__":
 
     import comm
     import sys
+    import sessions
 
     #if sys.argv[1] == "KI4IFW":
     #    p = comm.SerialDataPath(("/dev/ttyUSB0", 9600))
@@ -519,7 +523,12 @@ if __name__ == "__main__":
     #p.make_fake_data("SOMEONE", "CQCQCQ")
     p.connect()
     sm = SessionManager(p, sys.argv[1])
-    s = sm.start_session("chat")
+    s = sm.start_session("chat", dest="CQCQCQ", cls=sessions.ChatSession)
+
+    def cb(data, args):
+        print "---------[ CHAT DATA ]------------"
+
+    s.register_cb(cb)
 
     s.write("This is %s online" % sys.argv[1])
 
