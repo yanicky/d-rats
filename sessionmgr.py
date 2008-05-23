@@ -57,10 +57,16 @@ class Session:
     _id = None
     _st = None
 
+    ST_OPEN = 0
+    ST_CLSD = 1
+    ST_SYNC = 2
+
     def __init__(self, name):
         self.name = name
         self.inq = transport.BlockQueue()
         self.handler = None
+        self.state_event = threading.Event()
+        self.state = self.ST_CLSD
 
     def send_blocks(self, blocks):
         for b in blocks:
@@ -76,24 +82,76 @@ class Session:
     def notify(self):
         pass
 
+    def read(self):
+        pass
+
+    def write(self, dest="CQCQCQ"):
+        pass
+
+    def set_state(self, state):
+        if state not in [self.ST_OPEN, self.ST_CLSD, self.ST_SYNC]:
+            return False
+
+        self.state = state
+        self.state_event.set()
+
+    def get_state(self):
+        return self.state
+
+    def wait_for_state_change(self, timeout=None):
+        before = self.state
+
+        self.state_event.clear()
+        self.state_event.wait(timeout)
+
+        return self.state != before
+
 class ControlSession(Session):
     stateless = True
 
-    T_NEW = 0
+    T_PNG = 0
     T_END = 1
     T_ACK = 2
+    T_NEW_STRM = 3
+    T_NEW_XFER = 4
+    T_NEW = 5 # General purpose session
+
+    def ack_req(self, dest, data):
+        f = DDT2EncodedFrame()
+        f.type = self.T_ACK
+        f.seq = 0
+        f.d_station = dest
+        f.data = data
+        self._sm.outgoing(self, f)
 
     def ctl(self, frame):
         if frame.type == self.T_ACK:
             try:
                 id = int(frame.data)
-                ev = self.pending_reqs[id]
-                ev.set()
+                session = self._sm.sessions[id]
+                session.set_state(session.ST_OPEN)
                 print "Signaled waiting session thread"
             except Exception, e:
                 print "Failed to lookup new session event: %s" % e
         elif frame.type == self.T_END:
             print "End of session %s" % frame.data
+
+            try:
+                id = int(frame.data)
+            except Exception, e:
+                print "Session end request had invalid ID: %s" % e
+                return
+
+            try:
+                session = self._sm.sessions[id]
+                session.set_state(session.ST_CLSD)
+                self._sm.stop_session(session)
+            except Exception, e:
+                print "Session %s ended but not registered" % id
+                return
+
+            self.ack_req(frame.s_station, frame.data)
+
         elif frame.type == self.T_NEW:
             try:
                 id = int(frame.data)
@@ -106,25 +164,19 @@ class ControlSession(Session):
             s = StatefulSession("session")
             self._sm._register_session(id, s, frame.s_station)
 
-            f = DDT2EncodedFrame()
-            f.type = self.T_ACK
-            f.seq = 0
-            f.d_station = frame.s_station
-            f.data = frame.data
-            self._sm.outgoing(self, f)
+            self.ack_req(frame.s_station, frame.data)
         else:
             print "Unknown control message type %i" % frame.type
             
 
-    def new_session(self, name, dest, id):
-        ev = threading.Event()
-        self.pending_reqs[id] = ev
-
+    def new_session(self, session):
         f = DDT2EncodedFrame()
         f.type = self.T_NEW
         f.seq = 0
-        f.d_station = dest
-        f.data = str(id)
+        f.d_station = session._st
+        f.data = str(session._id)
+
+        wait_time = 5
 
         for i in range(0,10):
             self._sm.outgoing(self, f)
@@ -133,21 +185,52 @@ class ControlSession(Session):
             f.event.clear()
 
             print "Sent request, blocking..."
-            ev.wait(5)
+            session.wait_for_state_change(wait_time)
 
-            if not ev.isSet():
+            state = session.get_state()
+
+            if state == session.ST_CLSD:
                 print "Trying again..."
+            elif state == session.ST_SYNC:
+                print "Waiting for synchronization"
+                wait_time = 15
             else:
                 print "Established session"
-                del self.pending_reqs[id]
+                session.set_state(session.ST_OPEN)
                 return True
 
-
-        del self.pending_reqs[id]
+        session.set_state(session.ST_CLSD)
         print "Failed to establish session"
         return False
         
+    def end_session(self, session):
+        if session.stateless:
+            return
 
+        while session.get_state() == session.ST_SYNC:
+            print "Waiting for session in SYNC"
+            session.wait_for_state_change(2)
+
+        f = DDT2EncodedFrame()
+        f.type = self.T_END
+        f.seq = 0
+        f.d_station = session._st
+        f.data = str(session._id)
+
+        for i in range(0, 10):
+            print "Sending End-of-Session"
+            self._sm.outgoing(self, f)
+
+            f.event.wait(10)
+            f.event.clear()
+
+            print "Sent, waiting for response"
+            session.wait_for_state_change(15)
+
+        session.set_state(session.ST_CLSD)
+        print "Session closed"
+        return False
+            
     def __init__(self):
         self.name = "control"
         self.handler = self.ctl
@@ -157,13 +240,27 @@ class ControlSession(Session):
 class StatelessSession(Session):
     stateless = True
 
+    def read(self):
+        f = self.inq.dequeue()
+
+        return f.s_station, f.d_station, f.data
+
+    def write(self, data, dest="CQCQCQ"):
+        f = DDT2EncodedFrame()
+
+        f.seq = 0
+        f.type = 0
+        f.d_station = dest
+        f.data = data
+
+        self._sm.outgoing(self, f)
+
 class StatefulSession(Session):
     stateless = False
 
     T_SYN = 0
     T_ACK = 1
     T_NAK = 2
-    T_FIN = 3
     T_DAT = 4
 
     def __init__(self, name, bsize=512):
@@ -193,9 +290,13 @@ class StatefulSession(Session):
 
         Session.close(self)
 
-    def send_blocks(self):
+    def queue_next(self):
         if not self.outstanding:
             self.outstanding = self.outq.dequeue()
+            self.ts = 0
+
+    def send_blocks(self):
+        self.queue_next()
 
         if self.outstanding and time.time() - self.ts > 3:
             self._sm.outgoing(self, self.outstanding)
@@ -243,12 +344,23 @@ class StatefulSession(Session):
             return a.seq - b.seq
 
         while self.enabled:
-            if not self.event.isSet():
-                self.event.wait(3)
-                self.event.clear()
-            print "Session loop"
             self.send_blocks()
             self.recv_blocks()
+
+            if not self.outstanding and self.outq.peek():
+                print "Short-circuit"
+                continue # Short circuit because we have things to send
+
+            print "Session loop"
+
+            if not self.event.isSet():
+                print "Waiting..."
+                self.event.wait(3)
+                if self.event.isSet():
+                    print "Session woke up"
+                else:
+                    print "Session timed out waiting for stuff"
+                self.event.clear()
 
     def read(self, count):
         buf = ""
@@ -260,6 +372,8 @@ class StatefulSession(Session):
         return b
 
     def write(self, buf):
+        f = None
+
         while buf:
             chunk = buf[:self.bsize]
             buf = buf[self.bsize:]
@@ -273,7 +387,13 @@ class StatefulSession(Session):
 
             self.oseq = (self.oseq + 1) % 256
 
+        self.queue_next()
         self.event.set()
+
+    def close(self):
+        self.enabled = False
+        self.thread.join()
+        self._sm.stop_session(self)
 
 class SessionManager:
     def __init__(self, pipe, station):
@@ -288,6 +408,7 @@ class SessionManager:
         self._register_session(0, self.control, "CQCQCQ")
 
     def shutdown(self):
+        del self.sessions[self.control._id]
         for s in self.sessions.values():
             print "Stopping session `%s'" % s.name
             s.close()
@@ -338,16 +459,25 @@ class SessionManager:
         session._st = dest
         self.sessions[id] = session
 
+    def _deregister_session(self, id):
+        try:
+            del self.sessions[id]
+        except Exception, e:
+            print "No session %s to deregister" % id
+
     def new_session(self, id, name, dest):
         if dest:
             s = StatefulSession(name)
-            if not self.control.new_session(name, dest, id):
-                return None
         else:
             s = StatelessSession(name)
             dest = "CQCQCQ"
-        
+
         self._register_session(id, s, dest)
+
+        if dest != "CQCQCQ":
+            if not self.control.new_session(s):
+                self._deregister_session(id)
+        
         return s
 
     def start_session(self, name, dest=None):
@@ -360,10 +490,19 @@ class SessionManager:
     def stop_session(self, session):
         for id, s in self.sessions.items():
             if session.name == s.name:
-                del self.sessions[id]
+                if session.get_state() != session.ST_CLSD:
+                    self.control.end_session(session)
+                self._deregister_session(id)
+                session.close()
                 return True
 
         return False
+
+    def end_session(self, id):
+        try:
+            del self.sessions[id]
+        except Exception, e:
+            print "Unable to deregister session"
 
 if __name__ == "__main__":
     #p = transport.TestPipe(dst="KI4IFW")
@@ -371,16 +510,18 @@ if __name__ == "__main__":
     import comm
     import sys
 
-    if sys.argv[1] == "KI4IFW":
-        p = comm.SerialDataPath(("/dev/ttyUSB0", 9600))
-    else:
-        p = comm.SerialDataPath(("/dev/ttyUSB0", 38400))
+    #if sys.argv[1] == "KI4IFW":
+    #    p = comm.SerialDataPath(("/dev/ttyUSB0", 9600))
+    #else:
+    #    p = comm.SerialDataPath(("/dev/ttyUSB0", 38400))
 
-    #p = comm.SocketDataPath(("localhost", 9000))
+    p = comm.SocketDataPath(("localhost", 9000))
     #p.make_fake_data("SOMEONE", "CQCQCQ")
     p.connect()
     sm = SessionManager(p, sys.argv[1])
     s = sm.start_session("chat")
+
+    s.write("This is %s online" % sys.argv[1])
 
     if sys.argv[1] == "KI4IFW":
         f = file("inputdialog.py")
@@ -388,15 +529,12 @@ if __name__ == "__main__":
         if S:
             S.write(f.read())
 
-    try:
-        time.sleep(300)
-    except:
-        pass
-
-    
+    time.sleep(30)
+    print "------- Closing"
+    S.close()
 
     sm.shutdown()
 
-    blocks = s.recv_blocks()
-    for b in blocks:
-        print "Chat message: %s: %s" % (b.get_info()[2], b.get_data())
+#    blocks = s.recv_blocks()
+#    for b in blocks:
+#        print "Chat message: %s: %s" % (b.get_info()[2], b.get_data())
