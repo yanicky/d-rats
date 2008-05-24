@@ -32,146 +32,18 @@ import config
 import ddt
 import gps
 import comm
+import sessionmgr
+import sessions
 
 from utils import hexprint,filter_to_ascii
 import qst
 
-DRATS_VERSION = "0.1.18"
+DRATS_VERSION = "0.2.0"
 LOGTF = "%m-%d-%Y_%H:%M:%S"
 
 MAINAPP = None
 
 gobject.threads_init()
-
-class SocketClosedError(Exception):
-    pass
-
-class ChatBuffer:
-    def __init__(self, path, infunc, connfunc):
-        self.enabled = False
-
-        self.inbuf = ""
-        self.outbuf = ""
-
-        self.infunc = infunc
-        self.connfunc = connfunc
-
-        self.path = path
-
-        self.lock = Lock()
-        self.thread = None
-
-    def connect(self):
-        try:
-            self.path.connect()
-            self.connfunc(self.path.is_connected())
-        except Exception, e:
-            self.infunc("Unable to connect: %s" % e)
-            self.connfunc(False)
-            return False
-
-        self.infunc("Connected: %s" % str(self.path))
-        return True
-
-    def write(self, buf):
-        self.lock.acquire()
-        self.outbuf += buf
-        self.lock.release()
-
-    def read(self, count):
-        self.lock.acquire()
-        data = self.inbuf[:count]
-        self.lock.release()
-
-        if len(data) == count:
-            print "Got enough"
-            return data
-
-        print "Delaying for another read"
-        time.sleep(0.2)
-
-        self.lock.acquire()
-        data += self.inbuf[:count - len(data)]
-        self.lock.release()
-
-        return data        
-
-    def close(self):
-        if self.enabled:
-            self.stop_watch()
-        self.path.disconnect()
-
-    def incoming(self, data):
-        gobject.idle_add(self.infunc, data)
-
-    def disconnected(self):
-        self.path.disconnect()
-        self.enabled = False
-        gobject.idle_add(self.connfunc, False)
-
-    def start_watch(self):
-        if not self.path.is_connected():
-            if not self.connect():
-                print "Unable to connect: %s" % e
-                return
-
-        if self.enabled:
-            print "Attempt to reconnect main comm channel!"
-            return
-
-        self.enabled = True
-        self.thread = Thread(target=self.serial_thread)
-        self.thread.start()
-
-    def stop_watch(self):
-        self.enabled = False
-        if self.thread:
-            self.thread.join()
-
-    def serial_thread(self):
-        while self.enabled:
-            self.lock.acquire()
-            out = self.outbuf
-            self.outbuf = ""
-            self.lock.release()
-
-            if out:
-                try:
-                    self.path.write(out)
-                except comm.DataPathIOError, e:
-                    self.incoming("Write error")
-                except comm.DataPathNotConnectedError, e:
-                    self.incoming("Disconnected")
-                    self.disconnected()
-
-            try:
-                inp = ""
-                while True:
-                    _inp = self.path.read(64)
-                    if len(_inp) == 0:
-                        break
-                    else:
-                        inp += _inp
-            except comm.DataPathIOError, e:
-                self.incoming("Read error")
-            except comm.DataPathNotConnectedError, e:
-                self.incoming("Disconnected")
-                self.disconnected()
-
-            if inp:
-                print "Got data %s" % filter_to_ascii(inp)
-                self.lock.acquire()
-                self.inbuf += inp
-                self.lock.release()
-                self.incoming(inp)
-
-            if not inp and not out:
-                time.sleep(0.2)
-
-    def send_text(self, text):
-        self.lock.acquire()
-        self.outbuf += text
-        self.lock.release()
 
 class MainApp:
     def setup_autoid(self):
@@ -215,27 +87,35 @@ class MainApp:
     def connected(self, is_connected):
         self.chatgui.set_connected(is_connected)
 
+    def incoming_chat(self, data, args):
+        line = "%s -> %s: %s" % (args["From"],
+                                 args["To"],
+                                 args["Msg"])
+        self.chatgui.display_line(line, "incomingcolor")
+
     def refresh_comm(self, rate, port):
+        if self.sm:
+            self.sm.shutdown()
+
         if self.comm:
             self.comm.close()
-            
-        try:
-            swf = self.config.getboolean("settings", "swflow")
-        except:
-            swf = False
+
 
         if ":" in port:
             (_, host, port) = port.split(":")
-            self.comm = ChatBuffer(comm.SocketDataPath((host, int(port))),
-                                   self.incoming_chat,
-                                   self.connected)
+            self.comm = comm.SocketDataPath((host, int(port)))
         else:
-            self.comm = ChatBuffer(comm.SerialDataPath((port, int(rate))),
-                                   self.incoming_chat,
-                                   self.connected)
+            self.comm = comm.SerialDataPath((port, int(rate)))
                                    
-        if self.comm.connect():
-            self.comm.start_watch()
+        if not self.comm.connect():
+            print "COMM did not connect!"
+
+        self.sm = sessionmgr.SessionManager(self.comm,
+                                            self.config.get("user", "callsign"))
+        self.chat_session = self.sm.start_session("chat",
+                                                  dest="CQCQCQ",
+                                                  cls=sessions.ChatSession)
+        self.chat_session.register_cb(self.incoming_chat)
 
     def _static_gps(self):
         lat = 0.0
@@ -328,6 +208,8 @@ class MainApp:
         MAINAPP = self
 
         self.comm = None
+        self.sm = None
+        self.chat_session = None
         self.qsts = []
         self.seen_callsigns = {}
         self.position = None
