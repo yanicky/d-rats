@@ -177,7 +177,7 @@ class ChatGUI:
             message = string
 
         ChatGUI.display_line(self, message, "outgoingcolor")
-        self.mainapp.comm.send_text(message)
+        self.mainapp.chat_session.write(string)
 
         if self.logfn:
             self.logfn(message)
