@@ -17,9 +17,15 @@
 
 import time
 import threading
+import os
+import struct
 
 from ddt2 import DDT2EncodedFrame
 import transport
+
+T_STATELESS = 0
+T_GENERAL   = 1
+T_FILEXFER  = 2
 
 class Block:
     def __init__(self):
@@ -56,6 +62,7 @@ class Session:
     _sm = None
     _id = None
     _st = None
+    type = None
 
     ST_OPEN = 0
     ST_CLSD = 1
@@ -115,9 +122,7 @@ class ControlSession(Session):
     T_PNG = 0
     T_END = 1
     T_ACK = 2
-    T_NEW_STRM = 3
-    T_NEW_XFER = 4
-    T_NEW = 5 # General purpose session
+    T_NEW = 3
 
     def ack_req(self, dest, data):
         f = DDT2EncodedFrame()
@@ -155,7 +160,7 @@ class ControlSession(Session):
 
             self.ack_req(frame.s_station, frame.data)
 
-        elif frame.type == self.T_NEW:
+        elif frame.type >= self.T_NEW:
             try:
                 id = int(frame.data)
             except Exception, e:
@@ -164,7 +169,14 @@ class ControlSession(Session):
 
             print "ACK'ing session request for %i" % id
 
-            s = StatefulSession("session")
+            try:
+                c = self.stypes[frame.type]
+                print "Got type: %s" % c
+                s = c("session")
+            except Exception, e:
+                print "Can't start session type `%s': %s" % (frame.type, e)
+                return
+                
             self._sm._register_session(id, s, frame.s_station)
 
             self.ack_req(frame.s_station, frame.data)
@@ -174,7 +186,7 @@ class ControlSession(Session):
 
     def new_session(self, session):
         f = DDT2EncodedFrame()
-        f.type = self.T_NEW
+        f.type = self.T_NEW + session.type
         f.seq = 0
         f.d_station = session._st
         f.data = str(session._id)
@@ -235,13 +247,16 @@ class ControlSession(Session):
         return False
             
     def __init__(self):
-        self.name = "control"
+        Session.__init__(self, "control")
         self.handler = self.ctl
 
-        self.pending_reqs = {}
+        self.stypes = { self.T_NEW + T_GENERAL  : StatefulSession,
+                        self.T_NEW + T_FILEXFER : FileTransferSession,
+                        }
 
 class StatelessSession(Session):
     stateless = True
+    type = T_STATELESS
 
     def read(self):
         f = self.inq.dequeue()
@@ -260,6 +275,7 @@ class StatelessSession(Session):
 
 class StatefulSession(Session):
     stateless = False
+    type = T_GENERAL
 
     T_SYN = 0
     T_ACK = 1
@@ -369,10 +385,14 @@ class StatefulSession(Session):
         buf = ""
         i = 0
 
-        while i < count and i+len(self.data.peek()) < count:
-            b += self.data.pop()
+        while True:
+            next = self.data.peek() or ''
+            if len(next) > 0 and (len(next) + i) < count:
+                buf += self.data.dequeue()
+            else:
+                break
 
-        return b
+        return buf
 
     def write(self, buf):
         f = None
@@ -392,6 +412,79 @@ class StatefulSession(Session):
 
         self.queue_next()
         self.event.set()
+
+class FileTransferSession(StatefulSession):
+    type = T_FILEXFER
+
+    def __init__(self, name):
+        StatefulSession.__init__(self, name)
+
+    def send_file(self, filename):
+        stat = os.stat(filename)
+        if not stat:
+            return False
+
+        f = file(filename, "rb")
+        if not f:
+            return False
+
+        self.write(struct.pack("I", stat.st_size) + \
+                       os.path.basename(filename))
+
+        for i in range(10):
+            print "Waiting for start"
+            resp = self.read(1000)
+
+            if not resp:
+                print "No response"
+            elif resp == "OK":
+                print "Started"
+                break
+            else:
+                print "Got unknown start: `%s'" % resp
+
+            time.sleep(2)
+
+        if resp != "OK":
+            return False
+
+        self.write(f.read())
+        f.close()
+
+        print "Finished sending file"
+
+    def recv_file(self, dir):
+        
+        for i in range(10):
+            data = self.read(1000) # FIXME
+            if data:
+                break
+            else:
+                time.sleep(2)
+
+        if not data:
+            print "No start block!"
+            return False
+
+        size, = struct.unpack("I", data[:4])
+        name = data[4:]
+
+        print "Receiving file %s of size %i" % (name, size)
+        
+        f = file(os.path.join(dir, name), "wb", 0)
+        if not f:
+            print "Can't open file %s/%s" + (dir, name)
+            return False
+
+        self.write("OK")
+
+        while True:
+            d = self.read(512)
+            f.write(d)
+
+        f.close()
+
+        print "Bailing"
 
 class SessionManager:
     def __init__(self, pipe, station):
@@ -531,10 +624,23 @@ if __name__ == "__main__":
     s.write("This is %s online" % sys.argv[1])
 
     if sys.argv[1] == "KI4IFW":
-        f = file("inputdialog.py")
-        S = sm.start_session("xfer", "K7TAY")
-        if S:
-            S.write(f.read())
+        S = sm.start_session("xfer", "K7TAY", cls=FileTransferSession)
+        S.send_file("inputdialog.py")
+        #f = file("inputdialog.py")
+        #S = sm.start_session("xfer", "K7TAY")
+        #if S:
+        #    S.write(f.read())
+    else:
+        for i in range(10):
+            if sm.sessions.has_key(2):
+                print "Found session, receiving"
+                sm.sessions[2].recv_file("/tmp")
+                print "Done"
+                break
+            else:
+                print "No session yet"
+                time.sleep(2)
+                
 
     time.sleep(30)
     print "------- Closing"
