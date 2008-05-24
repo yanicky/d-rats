@@ -442,7 +442,7 @@ class MapWindow(gtk.Window):
         box.pack_start(l, 0,0,0)
 
         adj = gtk.Adjustment(value=14,
-                             lower=9,
+                             lower=2,
                              upper=15,
                              step_incr=1,
                              page_incr=1)
