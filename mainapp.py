@@ -98,7 +98,7 @@ class MainApp:
             self.sm.shutdown()
 
         if self.comm:
-            self.comm.close()
+            self.comm.disconnect()
 
 
         if ":" in port:
@@ -250,11 +250,11 @@ class MainApp:
         print "Saving config..."
         self.config.save()
 
-        print "Disabling watch thread..."
-        self.comm.stop_watch()
+        print "Stopping session manager..."
+        self.sm.shutdown(True)
 
         print "Closing serial..."
-        self.comm.close()
+        self.comm.disconnect()
 
         if self.gps:
             print "Stopping GPS..."
