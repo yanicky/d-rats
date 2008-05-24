@@ -75,7 +75,10 @@ class Session:
     def recv_blocks(self):
         return self.inq.dequeue_all()
 
-    def close(self):
+    def close(self, force=False):
+        if force:
+            self.state = self.ST_CLSD
+
         if self._sm:
             self._sm.stop_session(self)
 
@@ -284,11 +287,11 @@ class StatefulSession(Session):
     def notify(self):
         self.event.set()
 
-    def close(self):
+    def close(self, force=False):
         self.enabled = False
         self.thread.join()
 
-        Session.close(self)
+        Session.close(self, force)
 
     def queue_next(self):
         if not self.outstanding:
@@ -390,11 +393,6 @@ class StatefulSession(Session):
         self.queue_next()
         self.event.set()
 
-    def close(self):
-        self.enabled = False
-        self.thread.join()
-        self._sm.stop_session(self)
-
 class SessionManager:
     def __init__(self, pipe, station):
         self.pipe = pipe
@@ -407,11 +405,11 @@ class SessionManager:
         self.control = ControlSession()
         self._register_session(0, self.control, "CQCQCQ")
 
-    def shutdown(self):
+    def shutdown(self, force=False):
         del self.sessions[self.control._id]
         for s in self.sessions.values():
             print "Stopping session `%s'" % s.name
-            s.close()
+            s.close(force)
 
         self.tport.disable()
 
