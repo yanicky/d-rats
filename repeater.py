@@ -288,7 +288,7 @@ class Repeater:
             path.write(self.id)
             self.paths.append(path)
         except:
-            path.close()
+            path.disconnect()
 
     def listen_on(self, port):
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
