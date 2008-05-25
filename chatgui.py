@@ -39,6 +39,7 @@ import formgui
 import formbuilder
 import gps
 import mapdisplay
+import sessiongui
 
 from mc_xfergui import MulticastGUI, MulticastRecvGUI
 
@@ -862,6 +863,11 @@ class MainChatGUI(ChatGUI):
         cc.show()
         nb.append_page(cc.root, gtk.Label("Callsigns"))
         self.adv_controls.append(cc)
+
+        sg = sessiongui.SessionGUI(self)
+        sg.show()
+        nb.append_page(sg.root, gtk.Label("Sessions"))
+        self.adv_controls.append(sg)
 
         return nb
 
