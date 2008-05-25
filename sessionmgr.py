@@ -27,6 +27,9 @@ T_STATELESS = 0
 T_GENERAL   = 1
 T_FILEXFER  = 2
 
+class SessionClosedError(Exception):
+    pass
+
 class Block:
     def __init__(self):
         self.seq = 0
@@ -75,6 +78,9 @@ class Session:
         self.handler = None
         self.state_event = threading.Event()
         self.state = self.ST_CLSD
+
+        self.sent_size = self.recv_size = 0
+        self.retries = 0
 
     def send_blocks(self, blocks):
         for b in blocks:
@@ -146,6 +152,8 @@ class ControlSession(Session):
                 session.set_state(session.ST_OPEN)
             elif session.get_state() == session.ST_CLSW:
                 session.set_state(session.ST_CLSD)
+            elif session.get_state() == session.ST_OPEN:
+                pass
             else:
                 print "ACK for session in invalid state: %i" % session.get_state()
         elif frame.type == self.T_END:
@@ -360,12 +368,14 @@ class StatefulSession(Session):
                 if self.outstanding:
                     print "Got ACK for %s" % b.data
                     self.outstanding.ackd_event.set()
+                    self.sent_size += len(self.outstanding.data)
                     self.outstanding = None
                 else:
                     print "Got ACK but no block sent!"
             elif b.type == self.T_DAT:
                 print "Sending ACK for %s" % b.data
                 self.send_ack(b.seq)
+                self.recv_size += len(b.data)
                 if b.seq == self.iseq + 1:
                     print "Queuing data for %i" % b.seq
                     self.data.enqueue(b.data)
@@ -413,10 +423,16 @@ class StatefulSession(Session):
             else:
                 break
 
+        if not buf and self.get_state() != self.ST_OPEN:
+            raise SessionClosedError()
+
         return buf
 
     def write(self, buf, timeout=0):
         f = None
+        
+        #if self.get_state() != self.ST_OPEN:
+        #    raise SessionClosedError("State is %s" % self.get_state())
 
         while buf:
             chunk = buf[:self.bsize]
@@ -442,8 +458,29 @@ class StatefulSession(Session):
 class FileTransferSession(StatefulSession):
     type = T_FILEXFER
 
-    def __init__(self, name):
+    def internal_status(self, vals):
+        print "XFER STATUS: %s" % vals["msg"]
+
+    def status(self, msg):
+        vals = { "msg" : msg,
+                 "sent_bytes" : self.sent_size,
+                 "recv_bytes" : self.recv_size,
+                 "retries"    : self.retries,
+                 "filename"   : self.filename}
+
+        self.status_cb(vals)
+
+    def __init__(self, name, status_cb=None):
         StatefulSession.__init__(self, name)
+
+        if not status_cb:
+            self.status_cb = self.internal_status
+        else:
+            self.status_cb = status_cb
+
+        self.sent_size = self.recv_size = 0
+        self.retries = 0
+        self.filename = ""
 
     def send_file(self, filename):
         stat = os.stat(filename)
@@ -457,14 +494,16 @@ class FileTransferSession(StatefulSession):
         self.write(struct.pack("I", stat.st_size) + \
                        os.path.basename(filename))
 
+        self.filename = os.path.basename(filename)
+
         for i in range(10):
             print "Waiting for start"
             resp = self.read()
 
             if not resp:
-                print "No response"
+                self.status("Waiting for response")
             elif resp == "OK":
-                print "Started"
+                self.status("Negotiation Complete")
                 break
             else:
                 print "Got unknown start: `%s'" % resp
@@ -474,15 +513,30 @@ class FileTransferSession(StatefulSession):
         if resp != "OK":
             return False
 
+        while True:
+            d = f.read(1024)
+            if not d:
+                break
+
+            self.status("Sending block")
+            try:
+                self.write(d, timeout=20)
+            except SessionClosedError:
+                break
+
+            self.status("Sent")
+
         self.write(f.read(), timeout=20)
         f.close()
+
+        self.status("Complete")
 
         self.close()
 
         print "Finished sending file"
 
     def recv_file(self, dir):
-        
+        self.status("Waiting for transfer to start")
         for i in range(10):
             data = self.read()
             if data:
@@ -491,13 +545,13 @@ class FileTransferSession(StatefulSession):
                 time.sleep(2)
 
         if not data:
-            print "No start block!"
+            self.status("No start block received!")
             return False
 
         size, = struct.unpack("I", data[:4])
         name = data[4:]
 
-        print "Receiving file %s of size %i" % (name, size)
+        self.status("Receiving file %s of size %i" % (name, size))
         
         f = file(os.path.join(dir, name), "wb", 0)
         if not f:
@@ -505,14 +559,21 @@ class FileTransferSession(StatefulSession):
             return False
 
         self.write("OK")
+        self.status("Negotiation Complete")
 
         while True:
-            d = self.read(512)
-            f.write(d)
+            try:
+                d = self.read(512)
+            except SessionClosedError:
+                break
+
+            if d:
+                f.write(d)
+                self.status("Recevied block")
 
         f.close()
 
-        print "Bailing"
+        self.status("Complete")
 
 class SessionManager:
     def __init__(self, pipe, station):
