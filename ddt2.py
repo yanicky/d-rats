@@ -71,7 +71,8 @@ class DDT2Frame:
         self.data = ""
         self.magic = 0xDD
 
-        self.event = threading.Event()
+        self.sent_event = threading.Event()
+        self.ackd_event = threading.Event()
 
     def get_packed(self):
         data = zlib.compress(self.data, 9)

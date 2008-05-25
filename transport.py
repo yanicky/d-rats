@@ -107,7 +107,7 @@ class Transporter:
 
             print "Sending block: %s" % f
             self.pipe.write(f.get_packed())
-            f.event.set()
+            f.sent_event.set()
 
     def worker(self):
         while self.enabled:
