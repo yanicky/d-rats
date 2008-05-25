@@ -18,6 +18,7 @@
 import gtk
 import gobject
 import threading
+import os
 
 import mainapp
 import miscwidgets
@@ -25,9 +26,10 @@ import sessionmgr
 import sessions
 
 class SessionThread:
-    def __init__(self, session, data):
+    def __init__(self, session, data, gui):
         self.enabled = True
         self.session = session
+        self.gui = gui
 
         self.thread = threading.Thread(target=self.worker, args=(data,))
         self.thread.start()
@@ -37,14 +39,46 @@ class SessionThread:
         self.thread.join()
 
 class FileRecvThread(SessionThread):
+    def status_cb(self, vals):
+        print "GUI Status:"
+        for k,v in vals.items():
+            print "   -> %s: %s" % (k, v)
+
+        gobject.idle_add(self.gui.update, self.session._id,
+                         "%s (%i bytes, %i retries)" % (vals["msg"],
+                                                        vals["recv_bytes"],
+                                                        vals["retries"]))
+
     def worker(self, path):
         print "----------> receiving file"
+        self.session.status_cb = self.status_cb
         self.session.recv_file(path)
         print "----------> done receiving file"
+        self.gui.update(self.session._id, "Transfer Complete")
+
+class FileSendThread(SessionThread):
+    def status_cb(self, vals):
+        print "GUI Status:"
+        for k,v in vals.items():
+            print "   -> %s: %s" % (k,v)
+
+    
+        gobject.idle_add(self.gui.update, self.session._id,
+                         "%s (%i bytes, %i retries)" % (vals["msg"],
+                                                        vals["sent_bytes"],
+                                                        vals["retries"]))
+
+    def worker(self, path):
+        print "-------> Sending File %s" % path
+        self.session.status_cb = self.status_cb
+        self.session.send_file(path)
+        print "-------> Done sending file"
+        self.gui.update(self.session._id, "Transfer Complete")
 
 class SessionGUI:
     def build_list(self):
-        cols = [(gobject.TYPE_STRING, "Name"),
+        cols = [(gobject.TYPE_INT, "ID"),
+                (gobject.TYPE_STRING, "Name"),
                 (gobject.TYPE_STRING, "Type"),
                 (gobject.TYPE_STRING, "Remote Station"),
                 (gobject.TYPE_STRING, "Status")]
@@ -65,6 +99,18 @@ class SessionGUI:
     def hide(self):
         self.root.hide()
 
+    def update(self, sessionid, status):
+        vals = self.list.get_values()
+        newvals = []
+
+        for id, name, type, sta, stat in vals:
+            if id == sessionid:
+                stat = status
+
+            newvals.append((id, name, type, sta, stat))
+
+        self.list.set_values(newvals)
+
     def refresh(self):
         try:
             if not self.registered:
@@ -74,28 +120,53 @@ class SessionGUI:
         except Exception, e:
             print "Failed to register session CB: %s" % e
 
-    def new_session(self, type, session):
-        self.list.add_item(session.name, type, session._st, "Idle")
+    def new_session(self, type, session, direction):
+        if self.sthreads.has_key(session._id):
+            print "Already know about session %s" % id
+            return
+        print "New session!!!!"
 
-        if isinstance(session, sessionmgr.FileTransferSession):
-            self.sthreads.append(FileRecvThread(session, "/tmp"))
+        self.list.add_item(session._id, session.name, type, session._st, "Idle")
+
+        if isinstance(session, sessions.FileTransferSession):
+            if direction == "in":
+                self.sthreads[session._id] = FileRecvThread(session,
+                                                            "/tmp",
+                                                            self)
+            elif direction == "out":
+                self.sthreads[session._id] = FileSendThread(session,
+                                                            self.outgoing_files.pop(),
+                                                            self)
 
     def session_cb(self, data, reason, session):
         t = str(session.__class__).replace("Session", "")
         if "." in t:
             t = t.split(".")[1]
 
-        if reason == "new":
-            self.new_session(t, session)
+        if reason.startswith("new,"):
+            self.new_session(t, session, reason.split(",", 2)[1])
         elif reason == "end":
             # FIXME
             pass
+
+    def send_file(self, dest, filename):
+        self.outgoing_files.insert(0, filename)
+        print "Outgoing files: %s" % self.outgoing_files
+
+        t = threading.Thread(target=self.mainapp.sm.start_session,
+                             kwargs={"name" : os.path.basename(filename),
+                                     "dest" : dest,
+                                     "cls"  : sessions.FileTransferSession})
+        t.start()
+        print "Started Session"
+        
 
     def __init__(self, chatgui):
         self.chatgui = chatgui
         self.mainapp = mainapp.get_mainapp()
         self.build_gui()
 
-        self.sthreads = []
+        self.sthreads = {}
         self.registered = False
 
+        self.outgoing_files = []

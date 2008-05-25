@@ -638,17 +638,23 @@ class MainChatGUI(ChatGUI):
         self.toggle_sendable(True)
         
     def do_file_transfer(self, send):
-        xfer = self.config.xfer()
-        
-        self.toggle_sendable(False)
-        xfer = FileTransferGUI(self, xfer, parent=self.window)
-        if send:
-            xfer.do_send()
-        else:
-            xfer.do_recv()
-        xfer.destroy()
-        self.toggle_sendable(True)
+        d = TextInputDialog(title="Send file to station", parent=self.window)
+        d.label.set_text("Enter destination station:")
+        r = d.run()
+        station = d.text.get_text()
+        d.destroy()
+        if r != gtk.RESPONSE_OK:
+            return
 
+        ddir = self.config.get("prefs", "download_dir")
+        f = self.config.platform.gui_open_file(ddir)
+        if not f:
+            return
+
+        print "Going to request file send of %s to %s" % (f, station)
+        # FIXME!!!!
+        self.adv_controls[-1].send_file(station, f)
+        
     def menu_handler(self, _action):
         action = _action.get_name()
 
