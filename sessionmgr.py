@@ -66,7 +66,8 @@ class Session:
 
     ST_OPEN = 0
     ST_CLSD = 1
-    ST_SYNC = 2
+    ST_CLSW = 2
+    ST_SYNC = 3
 
     def __init__(self, name):
         self.name = name
@@ -107,7 +108,7 @@ class Session:
 
     def get_state(self):
         return self.state
-
+    
     def wait_for_state_change(self, timeout=None):
         before = self.state
 
@@ -137,10 +138,16 @@ class ControlSession(Session):
             try:
                 id = int(frame.data)
                 session = self._sm.sessions[id]
-                session.set_state(session.ST_OPEN)
                 print "Signaled waiting session thread"
             except Exception, e:
                 print "Failed to lookup new session event: %s" % e
+
+            if session.get_state() == session.ST_CLSD:
+                session.set_state(session.ST_OPEN)
+            elif session.get_state() == session.ST_CLSW:
+                session.set_state(session.ST_CLSD)
+            else:
+                print "ACK for session in invalid state: %i" % session.get_state()
         elif frame.type == self.T_END:
             print "End of session %s" % frame.data
 
@@ -158,7 +165,10 @@ class ControlSession(Session):
                 print "Session %s ended but not registered" % id
                 return
 
-            self.ack_req(frame.s_station, frame.data)
+            #self.ack_req(frame.s_station, frame.data)
+
+            frame.d_station = frame.s_station
+            self._sm.outgoing(self, frame)
 
         elif frame.type >= self.T_NEW:
             try:
@@ -196,8 +206,8 @@ class ControlSession(Session):
         for i in range(0,10):
             self._sm.outgoing(self, f)
 
-            f.event.wait(10)
-            f.event.clear()
+            f.sent_event.wait(10)
+            f.sent_event.clear()
 
             print "Sent request, blocking..."
             session.wait_for_state_change(wait_time)
@@ -232,18 +242,24 @@ class ControlSession(Session):
         f.d_station = session._st
         f.data = str(session._id)
 
+        session.set_state(session.ST_CLSW)
+
         for i in range(0, 10):
             print "Sending End-of-Session"
             self._sm.outgoing(self, f)
 
-            f.event.wait(10)
-            f.event.clear()
+            f.sent_event.wait(10)
+            f.sent_event.clear()
 
             print "Sent, waiting for response"
             session.wait_for_state_change(15)
 
+            if session.get_state() == session.ST_CLSD:
+                print "Session closed"
+                return True
+
         session.set_state(session.ST_CLSD)
-        print "Session closed"
+        print "Session closed because no response"
         return False
             
     def __init__(self):
@@ -321,8 +337,8 @@ class StatefulSession(Session):
             self._sm.outgoing(self, self.outstanding)
             t = time.time()
             print "Waiting for block to be sent..." 
-            self.outstanding.event.wait()
-            self.outstanding.event.clear()
+            self.outstanding.sent_event.wait()
+            self.outstanding.sent_event.clear()
             print "Block sent after: %f" % (time.time() - t)
 
             self.ts = time.time()
@@ -343,6 +359,7 @@ class StatefulSession(Session):
                 # FIXME: lock here
                 if self.outstanding:
                     print "Got ACK for %s" % b.data
+                    self.outstanding.ackd_event.set()
                     self.outstanding = None
                 else:
                     print "Got ACK but no block sent!"
@@ -381,9 +398,13 @@ class StatefulSession(Session):
                     print "Session timed out waiting for stuff"
                 self.event.clear()
 
-    def read(self, count):
+    def read(self, count=None):
         buf = ""
         i = 0
+
+        if count == None:
+            b = self.data.dequeue_all()
+            return "".join(b)
 
         while True:
             next = self.data.peek() or ''
@@ -394,7 +415,7 @@ class StatefulSession(Session):
 
         return buf
 
-    def write(self, buf):
+    def write(self, buf, timeout=0):
         f = None
 
         while buf:
@@ -412,6 +433,11 @@ class StatefulSession(Session):
 
         self.queue_next()
         self.event.set()
+
+        if timeout and f:
+            print "Waiting for last block to be ack'd"
+            f.ackd_event.wait(timeout)
+            print "ACKED"
 
 class FileTransferSession(StatefulSession):
     type = T_FILEXFER
@@ -433,7 +459,7 @@ class FileTransferSession(StatefulSession):
 
         for i in range(10):
             print "Waiting for start"
-            resp = self.read(1000)
+            resp = self.read()
 
             if not resp:
                 print "No response"
@@ -448,15 +474,17 @@ class FileTransferSession(StatefulSession):
         if resp != "OK":
             return False
 
-        self.write(f.read())
+        self.write(f.read(), timeout=20)
         f.close()
+
+        self.close()
 
         print "Finished sending file"
 
     def recv_file(self, dir):
         
         for i in range(10):
-            data = self.read(1000) # FIXME
+            data = self.read()
             if data:
                 break
             else:
@@ -495,8 +523,23 @@ class SessionManager:
 
         self.tport = transport.Transporter(self.pipe, self.incoming)
 
+        self.session_cb = {}
+
         self.control = ControlSession()
         self._register_session(0, self.control, "CQCQCQ")
+
+    def fire_session_cb(self, session, reason):
+        for f,d in self.session_cb.items():
+            try:
+                f(d, reason, session)
+            except Exception, e:
+                print "Exception in session CB: %s" % e
+
+    def register_session_cb(self, function, data):
+        self.session_cb[function] = data
+
+        for i,s in self.sessions.items():
+            self.fire_session_cb(s, "new")
 
     def shutdown(self, force=False):
         del self.sessions[self.control._id]
@@ -550,7 +593,12 @@ class SessionManager:
         session._st = dest
         self.sessions[id] = session
 
+        self.fire_session_cb(session, "new")
+
     def _deregister_session(self, id):
+        if self.sessions.has_key(id):
+            self.fire_session_cb(self.sessions[id], "end")
+
         try:
             del self.sessions[id]
         except Exception, e:
@@ -623,24 +671,22 @@ if __name__ == "__main__":
 
     s.write("This is %s online" % sys.argv[1])
 
-    if sys.argv[1] == "KI4IFW":
-        S = sm.start_session("xfer", "K7TAY", cls=FileTransferSession)
+    if sys.argv[1] == "K7TAY":
+        S = sm.start_session("xfer", "KI4IFW", cls=FileTransferSession)
         S.send_file("inputdialog.py")
         #f = file("inputdialog.py")
         #S = sm.start_session("xfer", "K7TAY")
         #if S:
         #    S.write(f.read())
     else:
-        for i in range(10):
-            if sm.sessions.has_key(2):
-                print "Found session, receiving"
-                sm.sessions[2].recv_file("/tmp")
+        def h(data, reason, session):
+            print "Session CB: %s" % reason
+            if reason == "new":
+                print "Receiving file"
+                session.recv_file("/tmp")
                 print "Done"
-                break
-            else:
-                print "No session yet"
-                time.sleep(2)
-                
+
+        sm.register_session_cb(h, None)
 
     time.sleep(30)
     print "------- Closing"
