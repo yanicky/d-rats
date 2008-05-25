@@ -15,11 +15,17 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import os
+import struct
+import time
+
 import sessionmgr
 
 class ChatSession(sessionmgr.StatelessSession):
     __cb = None
     __cb_data = None
+
+    type = sessionmgr.T_STATELESS
 
     def incoming_data(self, frame):
         if not self.__cb:
@@ -39,3 +45,125 @@ class ChatSession(sessionmgr.StatelessSession):
         self.__cb_data = data
 
         self.handler = self.incoming_data
+
+class FileTransferSession(sessionmgr.StatefulSession):
+    type = sessionmgr.T_FILEXFER
+
+    def internal_status(self, vals):
+        print "XFER STATUS: %s" % vals["msg"]
+
+    def status(self, msg):
+        vals = { "msg" : msg,
+                 "sent_bytes" : self.sent_size,
+                 "recv_bytes" : self.recv_size,
+                 "retries"    : self.retries,
+                 "filename"   : self.filename}
+
+        self.status_cb(vals)
+
+    def __init__(self, name, status_cb=None):
+        sessionmgr.StatefulSession.__init__(self, name)
+
+        if not status_cb:
+            self.status_cb = self.internal_status
+        else:
+            self.status_cb = status_cb
+
+        self.sent_size = self.recv_size = 0
+        self.retries = 0
+        self.filename = ""
+
+    def send_file(self, filename):
+        stat = os.stat(filename)
+        if not stat:
+            return False
+
+        f = file(filename, "rb")
+        if not f:
+            return False
+
+        self.write(struct.pack("I", stat.st_size) + \
+                       os.path.basename(filename))
+
+        self.filename = os.path.basename(filename)
+
+        for i in range(10):
+            print "Waiting for start"
+            resp = self.read()
+
+            if not resp:
+                self.status("Waiting for response")
+            elif resp == "OK":
+                self.status("Negotiation Complete")
+                break
+            else:
+                print "Got unknown start: `%s'" % resp
+
+            time.sleep(2)
+
+        if resp != "OK":
+            return False
+
+        while True:
+            d = f.read(1024)
+            if not d:
+                break
+
+            self.status("Sending block")
+            try:
+                self.write(d, timeout=20)
+            except SessionClosedError:
+                break
+
+            self.status("Sent")
+
+        self.write(f.read(), timeout=20)
+        f.close()
+
+        self.status("Complete")
+
+        self.close()
+
+        print "Finished sending file"
+
+    def recv_file(self, dir):
+        self.status("Waiting for transfer to start")
+        for i in range(10):
+            data = self.read()
+            if data:
+                break
+            else:
+                time.sleep(2)
+
+        if not data:
+            self.status("No start block received!")
+            return False
+
+        size, = struct.unpack("I", data[:4])
+        name = data[4:]
+
+        self.status("Receiving file %s of size %i" % (name, size))
+        
+        f = file(os.path.join(dir, name), "wb", 0)
+        if not f:
+            print "Can't open file %s/%s" + (dir, name)
+            return False
+
+        self.write("OK")
+        self.status("Negotiation Complete")
+
+        while True:
+            try:
+                d = self.read(512)
+            except sessionmgr.SessionClosedError:
+                print "SESSION IS CLOSED"
+                break
+
+            if d:
+                f.write(d)
+                self.status("Recevied block")
+
+        f.close()
+
+        self.status("Complete")
+
