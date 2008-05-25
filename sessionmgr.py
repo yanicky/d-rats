@@ -82,6 +82,8 @@ class Session:
         self.sent_size = self.recv_size = 0
         self.retries = 0
 
+        self.user_ctx = None
+
     def send_blocks(self, blocks):
         for b in blocks:
             self._sm.outgoing(self, b)
@@ -148,12 +150,12 @@ class ControlSession(Session):
             except Exception, e:
                 print "Failed to lookup new session event: %s" % e
 
-            if session.get_state() == session.ST_CLSD:
-                session.set_state(session.ST_OPEN)
-            elif session.get_state() == session.ST_CLSW:
+            if session.get_state() == session.ST_CLSW:
                 session.set_state(session.ST_CLSD)
             elif session.get_state() == session.ST_OPEN:
                 pass
+            elif session.get_state() == session.ST_SYNC:
+                session.set_state(session.ST_OPEN)
             else:
                 print "ACK for session in invalid state: %i" % session.get_state()
         elif frame.type == self.T_END:
@@ -191,11 +193,12 @@ class ControlSession(Session):
                 c = self.stypes[frame.type]
                 print "Got type: %s" % c
                 s = c("session")
+                s.set_state(s.ST_OPEN)
             except Exception, e:
                 print "Can't start session type `%s': %s" % (frame.type, e)
                 return
                 
-            self._sm._register_session(id, s, frame.s_station)
+            self._sm._register_session(id, s, frame.s_station, "new,in")
 
             self.ack_req(frame.s_station, frame.data)
         else:
@@ -223,7 +226,8 @@ class ControlSession(Session):
             state = session.get_state()
 
             if state == session.ST_CLSD:
-                print "Trying again..."
+                print "Session is closed"
+                break
             elif state == session.ST_SYNC:
                 print "Waiting for synchronization"
                 wait_time = 15
@@ -274,8 +278,10 @@ class ControlSession(Session):
         Session.__init__(self, "control")
         self.handler = self.ctl
 
+        import sessions
+
         self.stypes = { self.T_NEW + T_GENERAL  : StatefulSession,
-                        self.T_NEW + T_FILEXFER : FileTransferSession,
+                        self.T_NEW + T_FILEXFER : sessions.FileTransferSession,
                         }
 
 class StatelessSession(Session):
@@ -306,7 +312,7 @@ class StatefulSession(Session):
     T_NAK = 2
     T_DAT = 4
 
-    def __init__(self, name, bsize=512):
+    def __init__(self, name, bsize=1024):
         Session.__init__(self, name)
         self.outq = transport.BlockQueue()
         self.enabled = True
@@ -406,11 +412,18 @@ class StatefulSession(Session):
                     print "Session woke up"
                 else:
                     print "Session timed out waiting for stuff"
-                self.event.clear()
+            self.event.clear()
 
     def read(self, count=None):
         buf = ""
         i = 0
+
+        if self.get_state() not in [self.ST_OPEN, self.ST_SYNC]:
+            raise SessionClosedError("State is %i" % self.get_state())
+
+        while self.get_state() != self.ST_OPEN:
+            print "Waiting for session to open"
+            self.wait_for_state_change(5)
 
         if count == None:
             b = self.data.dequeue_all()
@@ -431,8 +444,12 @@ class StatefulSession(Session):
     def write(self, buf, timeout=0):
         f = None
         
-        #if self.get_state() != self.ST_OPEN:
-        #    raise SessionClosedError("State is %s" % self.get_state())
+        if self.get_state() not in [self.ST_OPEN, self.ST_SYNC]:
+            raise SessionClosedError("State is %s" % self.get_state())
+
+        while self.get_state() != self.ST_OPEN:
+            print "Waiting for session to open"
+            self.wait_for_state_change(5)
 
         while buf:
             chunk = buf[:self.bsize]
@@ -455,126 +472,6 @@ class StatefulSession(Session):
             f.ackd_event.wait(timeout)
             print "ACKED"
 
-class FileTransferSession(StatefulSession):
-    type = T_FILEXFER
-
-    def internal_status(self, vals):
-        print "XFER STATUS: %s" % vals["msg"]
-
-    def status(self, msg):
-        vals = { "msg" : msg,
-                 "sent_bytes" : self.sent_size,
-                 "recv_bytes" : self.recv_size,
-                 "retries"    : self.retries,
-                 "filename"   : self.filename}
-
-        self.status_cb(vals)
-
-    def __init__(self, name, status_cb=None):
-        StatefulSession.__init__(self, name)
-
-        if not status_cb:
-            self.status_cb = self.internal_status
-        else:
-            self.status_cb = status_cb
-
-        self.sent_size = self.recv_size = 0
-        self.retries = 0
-        self.filename = ""
-
-    def send_file(self, filename):
-        stat = os.stat(filename)
-        if not stat:
-            return False
-
-        f = file(filename, "rb")
-        if not f:
-            return False
-
-        self.write(struct.pack("I", stat.st_size) + \
-                       os.path.basename(filename))
-
-        self.filename = os.path.basename(filename)
-
-        for i in range(10):
-            print "Waiting for start"
-            resp = self.read()
-
-            if not resp:
-                self.status("Waiting for response")
-            elif resp == "OK":
-                self.status("Negotiation Complete")
-                break
-            else:
-                print "Got unknown start: `%s'" % resp
-
-            time.sleep(2)
-
-        if resp != "OK":
-            return False
-
-        while True:
-            d = f.read(1024)
-            if not d:
-                break
-
-            self.status("Sending block")
-            try:
-                self.write(d, timeout=20)
-            except SessionClosedError:
-                break
-
-            self.status("Sent")
-
-        self.write(f.read(), timeout=20)
-        f.close()
-
-        self.status("Complete")
-
-        self.close()
-
-        print "Finished sending file"
-
-    def recv_file(self, dir):
-        self.status("Waiting for transfer to start")
-        for i in range(10):
-            data = self.read()
-            if data:
-                break
-            else:
-                time.sleep(2)
-
-        if not data:
-            self.status("No start block received!")
-            return False
-
-        size, = struct.unpack("I", data[:4])
-        name = data[4:]
-
-        self.status("Receiving file %s of size %i" % (name, size))
-        
-        f = file(os.path.join(dir, name), "wb", 0)
-        if not f:
-            print "Can't open file %s/%s" + (dir, name)
-            return False
-
-        self.write("OK")
-        self.status("Negotiation Complete")
-
-        while True:
-            try:
-                d = self.read(512)
-            except SessionClosedError:
-                break
-
-            if d:
-                f.write(d)
-                self.status("Recevied block")
-
-        f.close()
-
-        self.status("Complete")
-
 class SessionManager:
     def __init__(self, pipe, station):
         self.pipe = pipe
@@ -587,9 +484,10 @@ class SessionManager:
         self.session_cb = {}
 
         self.control = ControlSession()
-        self._register_session(0, self.control, "CQCQCQ")
+        self._register_session(0, self.control, "CQCQCQ", "new,out")
 
     def fire_session_cb(self, session, reason):
+        print "=-=-=-=-=-=-=-=- FIRING SESSION CB"
         for f,d in self.session_cb.items():
             try:
                 f(d, reason, session)
@@ -600,7 +498,7 @@ class SessionManager:
         self.session_cb[function] = data
 
         for i,s in self.sessions.items():
-            self.fire_session_cb(s, "new")
+            self.fire_session_cb(s, "new,existing")
 
     def shutdown(self, force=False):
         del self.sessions[self.control._id]
@@ -647,14 +545,15 @@ class SessionManager:
 
         self.tport.send_frame(block)
 
-    def _register_session(self, id, session, dest):
+    def _register_session(self, id, session, dest, reason):
         print "Registered session %i: %s" % (id, session.name)
         session._sm = self
         session._id = id
         session._st = dest
         self.sessions[id] = session
 
-        self.fire_session_cb(session, "new")
+        print ""
+        self.fire_session_cb(session, reason)
 
     def _deregister_session(self, id):
         if self.sessions.has_key(id):
@@ -675,7 +574,8 @@ class SessionManager:
         else:
             s = cls(name)
 
-        self._register_session(id, s, dest)
+        s.set_state(s.ST_SYNC)
+        self._register_session(id, s, dest, "new,out")
 
         if dest != "CQCQCQ":
             if not self.control.new_session(s):
@@ -732,26 +632,26 @@ if __name__ == "__main__":
 
     s.write("This is %s online" % sys.argv[1])
 
-    if sys.argv[1] == "K7TAY":
-        S = sm.start_session("xfer", "KI4IFW", cls=FileTransferSession)
+    if sys.argv[1] == "KI4IFW":
+        S = sm.start_session("xfer", "KI4IFW", cls=sessions.FileTransferSession)
         S.send_file("inputdialog.py")
-        #f = file("inputdialog.py")
-        #S = sm.start_session("xfer", "K7TAY")
-        #if S:
-        #    S.write(f.read())
     else:
         def h(data, reason, session):
             print "Session CB: %s" % reason
-            if reason == "new":
+            if reason == "new,in":
                 print "Receiving file"
-                session.recv_file("/tmp")
+                t = threading.Thread(target=session.recv_file,
+                                     args=("/tmp",))
+                t.start()
                 print "Done"
 
         sm.register_session_cb(h, None)
 
-    time.sleep(30)
-    print "------- Closing"
-    S.close()
+    try:
+        while True:
+            time.sleep(30)
+    except Exception, e:
+        print "------- Closing"
 
     sm.shutdown()
 
