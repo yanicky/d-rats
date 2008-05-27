@@ -44,9 +44,14 @@ class FileRecvThread(SessionThread):
         for k,v in vals.items():
             print "   -> %s: %s" % (k, v)
 
+        if vals["total_size"]:
+            pct = (float(vals["recv_size"]) / vals["total_size"]) * 100.0
+        else:
+            pct = 0.0
+
         gobject.idle_add(self.gui.update, self.session._id,
-                         "%s (%i bytes, %i retries)" % (vals["msg"],
-                                                        vals["recv_bytes"],
+                         "%s (%02.0f%%, %i retries)" % (vals["msg"],
+                                                        pct,
                                                         vals["retries"]))
 
     def worker(self, path):
@@ -63,10 +68,15 @@ class FileSendThread(SessionThread):
             print "   -> %s: %s" % (k,v)
 
     
+        if vals["total_size"]:
+            pct = (float(vals["sent_size"]) / vals["total_size"]) * 100.0
+        else:
+            pct = 0.0
+
         gobject.idle_add(self.gui.update, self.session._id,
-                         "%s (%i bytes, %i retries)" % (vals["msg"],
-                                                        vals["sent_bytes"],
-                                                        vals["retries"]))
+                         "%s (%02.0f%%, %i retries)" % (vals["msg"],
+                                                       pct,
+                                                       vals["retries"]))
 
     def worker(self, path):
         print "-------> Sending File %s" % path
@@ -129,6 +139,8 @@ class SessionGUI:
         self.list.add_item(session._id, session.name, type, session._st, "Idle")
 
         if isinstance(session, sessions.FileTransferSession):
+            self.chatgui.display("File transfer started with %s" % session._st,
+                                 "italic")
             if direction == "in":
                 self.sthreads[session._id] = FileRecvThread(session,
                                                             "/tmp",
