@@ -53,11 +53,10 @@ class FileTransferSession(sessionmgr.StatefulSession):
         print "XFER STATUS: %s" % vals["msg"]
 
     def status(self, msg):
-        vals = { "msg" : msg,
-                 "sent_bytes" : self.sent_size,
-                 "recv_bytes" : self.recv_size,
-                 "retries"    : self.retries,
-                 "filename"   : self.filename}
+        vals = dict(self.stats)
+
+        vals["msg"] = msg
+        vals["filename"] = self.filename
 
         self.status_cb(vals)
 
@@ -73,10 +72,14 @@ class FileTransferSession(sessionmgr.StatefulSession):
         self.retries = 0
         self.filename = ""
 
+        self.stats["total_size"] = 0
+
     def send_file(self, filename):
         stat = os.stat(filename)
         if not stat:
             return False
+
+        self.stats["total_size"] = stat.st_size
 
         f = file(filename, "rb")
         if not f:
@@ -109,7 +112,7 @@ class FileTransferSession(sessionmgr.StatefulSession):
             if not d:
                 break
 
-            self.status("Sending block")
+            self.status("Sending")
             try:
                 self.write(d, timeout=20)
             except SessionClosedError:
@@ -144,6 +147,8 @@ class FileTransferSession(sessionmgr.StatefulSession):
 
         self.status("Receiving file %s of size %i" % (name, size))
         
+        self.stats["total_size"] = size
+
         f = file(os.path.join(dir, name), "wb", 0)
         if not f:
             print "Can't open file %s/%s" + (dir, name)
@@ -155,6 +160,7 @@ class FileTransferSession(sessionmgr.StatefulSession):
         while True:
             try:
                 d = self.read(512)
+                self.status("Receiving")
             except sessionmgr.SessionClosedError:
                 print "SESSION IS CLOSED"
                 break
