@@ -79,10 +79,12 @@ class Session:
         self.state_event = threading.Event()
         self.state = self.ST_CLSD
 
-        self.sent_size = self.recv_size = 0
-        self.retries = 0
-
-        self.user_ctx = None
+        self.stats = { "sent_size" : 0,
+                       "recv_size" : 0,
+                       "sent_wire" : 0,
+                       "recv_wire" : 0,
+                       "retries"   : 0,
+                       }
 
     def send_blocks(self, blocks):
         for b in blocks:
@@ -347,7 +349,8 @@ class StatefulSession(Session):
     def send_blocks(self):
         self.queue_next()
 
-        if self.outstanding and time.time() - self.ts > 3:
+        if self.outstanding and time.time() - self.ts > 8:
+            self.stats["retries"] += 1
             self._sm.outgoing(self, self.outstanding)
             t = time.time()
             print "Waiting for block to be sent..." 
@@ -374,16 +377,18 @@ class StatefulSession(Session):
                 if self.outstanding:
                     print "Got ACK for %s" % b.data
                     self.outstanding.ackd_event.set()
-                    self.sent_size += len(self.outstanding.data)
+                    self.stats["sent_size"] += len(self.outstanding.data)
+                    self.stats["retries"] -= 1
                     self.outstanding = None
                 else:
                     print "Got ACK but no block sent!"
             elif b.type == self.T_DAT:
                 print "Sending ACK for %s" % b.data
                 self.send_ack(b.seq)
-                self.recv_size += len(b.data)
+                self.stats["recv_wire"] += len(b.data)
                 if b.seq == self.iseq + 1:
                     print "Queuing data for %i" % b.seq
+                    self.stats["recv_size"] += len(b.data)
                     self.data.enqueue(b.data)
                     self.iseq = (self.iseq + 1) % 256
                 else:
