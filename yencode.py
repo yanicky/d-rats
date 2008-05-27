@@ -15,7 +15,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-DEFAULT_BANNED = "\x11\x13\x1A\00"
+import sys
+
+DEFAULT_BANNED = "\x11\x13\x1A\00\xFD\xFE\xFF"
+OFFSET = 64
 
 def yencode_buffer(buf, banned=None):
     if not banned:
@@ -26,7 +29,7 @@ def yencode_buffer(buf, banned=None):
         
     for char in buf:
         if char in banned:
-            out += "=" + chr((ord(char) + 64) % 256)
+            out += "=" + chr((ord(char) + OFFSET) % 256)
         else:
             out += char
 
@@ -40,10 +43,10 @@ def ydecode_buffer(buf):
         char = buf[i]
         if char == "=":
             i += 1
-            v = ord(buf[i]) - 64
+            v = ord(buf[i]) - OFFSET
             if v < 0:
                 print >>sys.stderr, "V is %i" % v
-                v += 255
+                v += 256
             out += chr(v)
         else:
             out += char
