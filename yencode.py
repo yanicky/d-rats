@@ -45,7 +45,6 @@ def ydecode_buffer(buf):
             i += 1
             v = ord(buf[i]) - OFFSET
             if v < 0:
-                print >>sys.stderr, "V is %i" % v
                 v += 256
             out += chr(v)
         else:
