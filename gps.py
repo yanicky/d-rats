@@ -497,7 +497,7 @@ class NMEAGPSPosition(GPSPosition):
 
     def _parse_GPRMC(self, string):
         elements = string.split(",", 12)
-        if len(elements) < 13:
+        if len(elements) < 12:
             raise Exception("Unable to split GPRMC (%i)" % len(elements))
 
         if elements[2] != "A":
@@ -508,6 +508,9 @@ class NMEAGPSPosition(GPSPosition):
         t = elements[1]
         d = elements[9]
 
+        if "." in t:
+            t = t.split(".", 2)[0]
+
         self.date = datetime.datetime.strptime(d+t, "%d%m%y%H%M%S")
 
         self.latitude = nmea2deg(float(elements[3]), elements[4])
@@ -516,9 +519,16 @@ class NMEAGPSPosition(GPSPosition):
         self.speed = float(elements[7])
         self.direction = float(elements[8])
 
-        m = re.match("^.?(\*[A-z0-9]{2})\r?\n?(.*)$", elements[12])
+        if len(elements) == 12:
+            end = 11 # NMEA <=2.0
+        elif len(elements) == 13:
+            end = 12 # NMEA 2.3
+        else:
+            raise Exception("GPRMC has too many fields (%i)" % len(elements))
+
+        m = re.match("^.?(\*[A-z0-9]{2})\r?\n?(.*)$", elements[end])
         if not m:
-            print "Invalid end: %s" % elements[12]
+            print "Invalid end: %s" % elements[end]
             return
 
         csum = m.group(1)
@@ -829,6 +839,7 @@ if __name__ == "__main__":
         "$GPGGA,183324.518,4533.0875,N,12254.5939,W,2,04,3.4,48.6,M,-19.6,M,1.2,0000*74",
         "$GPRMC,215348,A,4529.3672,N,12253.2060,W,0.0,353.8,030508,17.5,E,D*3C",
         "$GPGGA,075519,4531.254,N,12259.400,W,1,3,0,0.0,M,0,M,,*55\r\nK7HIO   ,GPS Info",
+        "$GPRMC,074919.04,A,4524.9698,N,12246.9520,W,00.0,000.0,260508,19.,E*79",
         ]
                      
     for s in nmea_strings:

@@ -16,7 +16,7 @@ ASCII_XON = chr(17)
 ASCII_XOFF = chr(19)
 
 class SWFSerial(serial.Serial):
-    __swf_debug = True
+    __swf_debug = False
 
     def __init__(self, **kwargs):
         print "Software XON/XOFF control initialized"

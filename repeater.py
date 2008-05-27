@@ -400,14 +400,18 @@ class RepeaterGUI:
         rates = ["300", "1200", "4800", "9600",
                  "19200", "38400", "115200"]
         ports = p.list_serial_ports()
-
+        if len(ports) > 0:
+            default_port = ports[0]
+        else:
+            default_port = None
+        
         hbox = gtk.HBox(False, 2)
 
         lab = gtk.Label("Add serial or net path:")
         lab.show()
         hbox.pack_start(lab, 0,0,0)
 
-        serial = make_choice(ports, True, ports[0])
+        serial = make_choice(ports, True, default_port)
         serial.show()
         hbox.pack_start(serial, 1,1,1)
 
