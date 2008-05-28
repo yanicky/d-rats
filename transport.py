@@ -60,6 +60,13 @@ class BlockQueue:
         
         return el
 
+    def peek_all(self):
+        self._lock.acquire()
+        q = self._queue
+        self._lock.release()
+
+        return q
+
 class Transporter:
     def __init__(self, pipe, inhandler=None):
         self.inq = BlockQueue()
