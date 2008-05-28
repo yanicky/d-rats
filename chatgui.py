@@ -1383,31 +1383,7 @@ class FormManager:
         (list, iter) = self.view.get_selection().get_selected()
         (filename, ) = self.store.get(iter, self.col_filen)
 
-        self.gui.adv_controls[-1].send_file(dest, filename)
-
-    def recv_cb(self, data, success, filename, actual):
-        print "Receive Callback for: %s" % filename
-
-        fqfn = os.path.join(self.form_store_dir, filename)
-
-        stamp = self.get_stamp()
-
-        iter = self.list_add_form(0, "Received Form", fqfn)
-        self.store.set(iter, self.col_xfert, stamp)
-        self.reg_form("Received Form", fqfn, stamp)
-
-    def recv(self, widget, data=None):
-        ft = FormTransferGUI(self.gui,
-                             self.config.xfer(),
-                             parent=self.gui.window)
-        ft.register_cb(self.recv_cb, None)
-
-        newfn = time.strftime(os.path.join(self.form_store_dir,
-                                           "form_%m%d%Y_%H%M%S.xml"))
-        self.gui.toggle_sendable(False)
-        ft.do_recv(newfn)
-        ft.destroy()
-        self.gui.toggle_sendable(True)
+        self.gui.adv_controls[-1].send_form(dest, filename)
 
     def edit(self, widget, data=None):
         (list, iter) = self.view.get_selection().get_selected()
@@ -1461,12 +1437,6 @@ class FormManager:
         sendb.connect("clicked", self.send, None)
         sendb.show()
         box.pack_start(sendb, 0,0,0)
-
-        recvb = gtk.Button("Receive")
-        recvb.set_size_request(75, 30)
-        recvb.connect("clicked", self.recv, None)
-        recvb.show()
-        box.pack_start(recvb, 0,0,0)
 
         box.show()
 
