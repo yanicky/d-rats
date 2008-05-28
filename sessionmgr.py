@@ -327,6 +327,7 @@ class StatefulSession(Session):
         self.outstanding = None
 
         self.data = transport.BlockQueue()
+        self.data_waiting = threading.Condition()
 
         self.ts = 0
 
@@ -391,7 +392,12 @@ class StatefulSession(Session):
                 if b.seq == self.iseq + 1:
                     print "Queuing data for %i" % b.seq
                     self.stats["recv_size"] += len(b.data)
+
+                    self.data_waiting.acquire()
                     self.data.enqueue(b.data)
+                    self.data_waiting.notify()
+                    self.data_waiting.release()
+
                     self.iseq = (self.iseq + 1) % 256
                 else:
                     print "Dropping duplicate block %i" % b.seq
@@ -421,10 +427,40 @@ class StatefulSession(Session):
                     print "Session timed out waiting for stuff"
             self.event.clear()
 
-    def read(self, count=None):
-        buf = ""
-        i = 0
+    def _block_read_for(self, count):
+        waiting = self.data.peek_all()
 
+        if not count and not waiting:
+            self.data_waiting.wait(1)
+            return
+
+        if count > len("".join(waiting)):
+            self.data_waiting.wait(1)
+            return
+
+    def _read(self, count):
+        self.data_waiting.acquire()
+
+        self._block_read_for(count)
+
+        if count == None:
+            b = self.data.dequeue_all()
+            buf = "".join(b)
+        else:
+            buf = ""
+            i = 0
+            while True:
+                next = self.data.peek() or ''
+                if len(next) > 0 and (len(next) + i) < count:
+                    buf += self.data.dequeue()
+                else:
+                    break
+
+        self.data_waiting.release()
+
+        return buf
+
+    def read(self, count=None):
         if self.get_state() not in [self.ST_OPEN, self.ST_SYNC]:
             raise SessionClosedError("State is %i" % self.get_state())
 
@@ -432,16 +468,7 @@ class StatefulSession(Session):
             print "Waiting for session to open"
             self.wait_for_state_change(5)
 
-        if count == None:
-            b = self.data.dequeue_all()
-            return "".join(b)
-
-        while True:
-            next = self.data.peek() or ''
-            if len(next) > 0 and (len(next) + i) < count:
-                buf += self.data.dequeue()
-            else:
-                break
+        buf = self._read(count)
 
         if not buf and self.get_state() != self.ST_OPEN:
             raise SessionClosedError()
