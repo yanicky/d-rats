@@ -85,9 +85,11 @@ class ChatGUI:
                 if ucall not in self.mainapp.seen_callsigns.keys():
                     self.mainapp.seen_callsigns[ucall] = (0, pos)
 
-        for item in self.mainapp.chatgui.adv_controls:
-            if isinstance(item, CallCatcher):
-                item.refresh()
+        try:
+            cc = self.mainapp.chatgui.adv_controls["calls"]
+            cc.refresh()
+        except Exception, e:
+            print "Exception while refreshing call catcher: %s" % e
 
     def highlight_callsigns(self, string, start):
         if "--(EOB)--" in string:
@@ -650,8 +652,7 @@ class MainChatGUI(ChatGUI):
             return
 
         print "Going to request file send of %s to %s" % (f, station)
-        # FIXME!!!!
-        self.adv_controls[-1].send_file(station, f)
+        self.adv_controls["sessions"].send_file(station, f)
         
     def menu_handler(self, _action):
         action = _action.get_name()
@@ -780,7 +781,7 @@ class MainChatGUI(ChatGUI):
         return uim.get_widget("/MenuBar")
 
     def refresh_advanced(self):
-        for i in self.adv_controls:
+        for i in self.adv_controls.values():
             i.refresh()
 
     def refresh_window(self, size):
@@ -842,32 +843,32 @@ class MainChatGUI(ChatGUI):
         nb = gtk.Notebook()
         nb.set_tab_pos(gtk.POS_BOTTOM)
 
-        self.adv_controls = []
+        self.adv_controls = {}
 
         qm = QuickMessageControl(self, self.config)
         qm.show()
         nb.append_page(qm.root, gtk.Label("Quick Messages"))
-        self.adv_controls.append(qm)
+        self.adv_controls["quick"] = qm
 
         qm = QSTMonitor(self, self.mainapp)
         qm.show()
         nb.append_page(qm.root, gtk.Label("QST Monitor"))
-        self.adv_controls.append(qm)
+        self.adv_controls["qsts"] = qm
 
         fm = FormManager(self)
         fm.show()
         nb.append_page(fm.root, gtk.Label("Form Manager"))
-        self.adv_controls.append(fm)
+        self.adv_controls["forms"] = fm
 
         cc = CallCatcher(self)
         cc.show()
         nb.append_page(cc.root, gtk.Label("Callsigns"))
-        self.adv_controls.append(cc)
+        self.adv_controls["calls"] = cc
 
         sg = sessiongui.SessionGUI(self)
         sg.show()
         nb.append_page(sg.root, gtk.Label("Sessions"))
-        self.adv_controls.append(sg)
+        self.adv_controls["sessions"] = sg
 
         return nb
 
@@ -1383,7 +1384,7 @@ class FormManager:
         (list, iter) = self.view.get_selection().get_selected()
         (filename, ) = self.store.get(iter, self.col_filen)
 
-        self.gui.adv_controls[-1].send_form(dest, filename)
+        self.gui.adv_controls["sessions"].send_form(dest, filename)
 
     def edit(self, widget, data=None):
         (list, iter) = self.view.get_selection().get_selected()
