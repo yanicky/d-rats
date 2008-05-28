@@ -507,9 +507,7 @@ class MainChatGUI(ChatGUI):
         f = self.config.platform.gui_open_file(self.config.get("prefs",
                                                                "download_dir"))
         if f:
-            self.mainapp.comm.stop_watch()
             self.tx_file(f)
-            self.mainapp.comm.start_watch()
   
     def select_page(self, tabs, page, page_num, data=None):
         page = tabs.get_nth_page(page_num)
@@ -662,8 +660,6 @@ class MainChatGUI(ChatGUI):
             self.sig_destroy(None)
         elif action == "send":
             self.do_file_transfer(True)
-        elif action == "recv":
-            self.do_file_transfer(False)
         elif action == "config":
             self.config.show()
         elif action == "qsts":
@@ -707,7 +703,6 @@ class MainChatGUI(ChatGUI):
             <menu action='file'>
               <menuitem action='sendtext'/>
               <menuitem action='send'/>
-              <menuitem action='recv'/>
               <menuitem action='msend'/>
               <menuitem action='mrecv'/>
               <separator/>
@@ -738,7 +733,6 @@ class MainChatGUI(ChatGUI):
 
         actions = [('file', None, "_File", None, None, self.menu_handler),
                    ('send', None, "_Send File", "F1", None, self.menu_handler),
-                   ('recv', None, "_Receive File", "F2", None, self.menu_handler),
                    ('msend', None, "_Multi Send File", "F3", None, self.menu_handler),
                    ('mrecv', None, "_Multi Recv File", "F4", None, self.menu_handler),
                    ('config', None, "Main _Settings", None, None, self.menu_handler),
@@ -1384,28 +1378,12 @@ class FormManager:
         os.remove(filename)
 
     def send(self, widget, data=None):
-        ft = FormTransferGUI(self.gui,
-                             self.config.xfer(),
-                             parent=self.gui.window)
+        dest = "K7TAY" # FIXME
 
         (list, iter) = self.view.get_selection().get_selected()
-
         (filename, ) = self.store.get(iter, self.col_filen)
 
-        #FIXME: Only update if successful
-        self.store.set(iter, self.col_xfert, self.get_stamp())
-
-        self.gui.toggle_sendable(False)
-
-        try:
-            ft.do_send(filename)
-        except Exception, e:
-            d = ExceptionDialog(e, parent=self.gui.window)
-            d.run()
-            d.destroy()
-
-        ft.destroy()
-        self.gui.toggle_sendable(True)            
+        self.gui.adv_controls[-1].send_file(dest, filename)
 
     def recv_cb(self, data, success, filename, actual):
         print "Receive Callback for: %s" % filename
