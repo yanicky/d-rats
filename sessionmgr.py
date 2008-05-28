@@ -26,6 +26,7 @@ import transport
 T_STATELESS = 0
 T_GENERAL   = 1
 T_FILEXFER  = 2
+T_FORMXFER  = 3
 
 class SessionClosedError(Exception):
     pass
@@ -284,6 +285,7 @@ class ControlSession(Session):
 
         self.stypes = { self.T_NEW + T_GENERAL  : StatefulSession,
                         self.T_NEW + T_FILEXFER : sessions.FileTransferSession,
+                        self.T_NEW + T_FORMXFER : sessions.FormTransferSession,
                         }
 
 class StatelessSession(Session):

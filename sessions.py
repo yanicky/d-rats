@@ -173,3 +173,6 @@ class FileTransferSession(sessionmgr.StatefulSession):
 
         self.status("Complete")
 
+
+class FormTransferSession(FileTransferSession):
+    type = sessionmgr.T_FORMXFER
