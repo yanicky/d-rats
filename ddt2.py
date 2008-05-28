@@ -18,6 +18,7 @@
 import struct
 import zlib
 import base64
+import yencode
 
 import threading
 
@@ -54,10 +55,10 @@ def calc_checksum(data):
     return checksum
 
 def encode(data):
-    return base64.encodestring(data)
+    return yencode.yencode_buffer(data)
 
 def decode(data):
-    return base64.decodestring(data)
+    return yencode.ydecode_buffer(data)
 
 class DDT2Frame:
     format = "!BHBBHH8s8s"
