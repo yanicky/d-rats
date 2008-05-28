@@ -38,52 +38,62 @@ class SessionThread:
         self.enabled = False
         self.thread.join()
 
-class FileRecvThread(SessionThread):
+class FileBaseThread(SessionThread):
+    progress_key = "recv_size"
+
     def status_cb(self, vals):
         print "GUI Status:"
         for k,v in vals.items():
             print "   -> %s: %s" % (k, v)
 
         if vals["total_size"]:
-            pct = (float(vals["recv_size"]) / vals["total_size"]) * 100.0
+            pct = (float(vals[self.progress_key]) / vals["total_size"]) * 100.0
         else:
             pct = 0.0
 
-        gobject.idle_add(self.gui.update, self.session._id,
+        gobject.idle_add(self.gui.update,
+                         self.session._id,
                          "%s (%02.0f%%, %i retries)" % (vals["msg"],
                                                         pct,
                                                         vals["retries"]))
 
-    def worker(self, path):
-        print "----------> receiving file"
+    def completed(self):
+        gobject.idle_add(self.gui.update,
+                         self.session._id,
+                         "Transfer Completed")
+
+    def __init__(self, *args):
+        SessionThread.__init__(self, *args)
+
         self.session.status_cb = self.status_cb
-        self.session.recv_file(path)
-        print "----------> done receiving file"
-        self.gui.update(self.session._id, "Transfer Complete")
 
-class FileSendThread(SessionThread):
-    def status_cb(self, vals):
-        print "GUI Status:"
-        for k,v in vals.items():
-            print "   -> %s: %s" % (k,v)
-
+class FileRecvThread(FileBaseThread):
+    progress_key = "recv_size"
     
-        if vals["total_size"]:
-            pct = (float(vals["sent_size"]) / vals["total_size"]) * 100.0
-        else:
-            pct = 0.0
+    def worker(self, path):
+        self.session.recv_file(path)
+        self.completed()
 
-        gobject.idle_add(self.gui.update, self.session._id,
-                         "%s (%02.0f%%, %i retries)" % (vals["msg"],
-                                                       pct,
-                                                       vals["retries"]))
+class FileSendThread(FileBaseThread):
+    progress_key = "sent_size"
 
     def worker(self, path):
-        print "-------> Sending File %s" % path
-        self.session.status_cb = self.status_cb
         self.session.send_file(path)
-        print "-------> Done sending file"
-        self.gui.update(self.session._id, "Transfer Complete")
+        self.completed()
+
+class FormRecvThread(FileBaseThread):
+    progress_key = "recv_size"
+
+    def worker(self, path):
+        self.session.recv_file(path)
+        self.completed()
+
+class FormSendThread(FileBaseThread):
+    progress_key = "sent_size"
+
+    def worker(self, path):
+        self.session.send_file(path)
+        self.completed()
 
 class SessionGUI:
     def build_list(self):
@@ -130,6 +140,26 @@ class SessionGUI:
         except Exception, e:
             print "Failed to register session CB: %s" % e
 
+    def new_file_xfer(self, session, direction):
+        self.chatgui.display("File transfer started with %s" % session._st,
+                             "italic")
+        if direction == "in":
+            dd = self.mainapp.config.get("prefs", "download_dir")
+            self.sthreads[session._id] = FileRecvThread(session, dd, self)
+        elif direction == "out":
+            of = self.outgoing_files.pop()
+            self.sthreads[session._id] = FileSendThread(session, of, self)
+
+    def new_form_xfer(self, session, direction):
+        self.chatgui.display("Form transfer started with %s" % session._st,
+                             "italic")
+        if direction == "in":
+            dd = self.mainapp.config.form_store_dir()
+            self.sthreads[session._id] = FormRecvThread(session, dd, self)
+        elif direction == "out":
+            of = self.outgoing_forms.pop()
+            self.sthreads[session._id] = FormSendThread(session, of, self)
+
     def new_session(self, type, session, direction):
         if self.sthreads.has_key(session._id):
             print "Already know about session %s" % id
@@ -138,17 +168,12 @@ class SessionGUI:
 
         self.list.add_item(session._id, session.name, type, session._st, "Idle")
 
-        if isinstance(session, sessions.FileTransferSession):
-            self.chatgui.display("File transfer started with %s" % session._st,
-                                 "italic")
-            if direction == "in":
-                self.sthreads[session._id] = FileRecvThread(session,
-                                                            "/tmp",
-                                                            self)
-            elif direction == "out":
-                self.sthreads[session._id] = FileSendThread(session,
-                                                            self.outgoing_files.pop(),
-                                                            self)
+        print "New session of type: %s" % session.__class__
+
+        if session.__class__ == sessions.FileTransferSession:
+            self.new_file_xfer(session, direction)
+        elif session.__class__ == sessions.FormTransferSession:
+            self.new_form_xfer(session, direction)
 
     def session_cb(self, data, reason, session):
         t = str(session.__class__).replace("Session", "")
@@ -172,6 +197,16 @@ class SessionGUI:
         t.start()
         print "Started Session"
         
+    def send_form(self, dest, filename):
+        self.outgoing_forms.insert(0, filename)
+        print "Outgoing forms: %s" % self.outgoing_forms
+
+        t = threading.Thread(target=self.mainapp.sm.start_session,
+                             kwargs={"name" : "form",
+                                     "dest" : dest,
+                                     "cls"  : sessions.FormTransferSession})
+        t.start()
+        print "Started form session"
 
     def __init__(self, chatgui):
         self.chatgui = chatgui
@@ -182,3 +217,4 @@ class SessionGUI:
         self.registered = False
 
         self.outgoing_files = []
+        self.outgoing_forms = []
