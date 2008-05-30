@@ -606,7 +606,7 @@ class SessionManager:
                 id = _id
                 break
 
-        if not id:
+        if id is None:
             print "No free slots?  I can't believe it!"
 
         print "Registered session %i: %s" % (id, session.name)
