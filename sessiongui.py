@@ -182,9 +182,6 @@ class SessionGUI:
             self.sthreads[session._id] = FormSendThread(session, of, self)
 
     def new_session(self, type, session, direction):
-        if self.sthreads.has_key(session._id):
-            print "Already know about session %s" % id
-            return
         print "New session!!!!"
 
         self.list.add_item(session._id, session.name, type, session._st, "Idle")
