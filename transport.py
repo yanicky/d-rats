@@ -88,7 +88,8 @@ class Transporter:
                 self.inbuf += chunk
 
     def parse_blocks(self):
-        while ddt2.ENCODED_HEADER in self.inbuf:
+        while ddt2.ENCODED_HEADER in self.inbuf and \
+                ddt2.ENCODED_TRAILER in self.inbuf:
             s = self.inbuf.index(ddt2.ENCODED_HEADER)
             e = self.inbuf.index(ddt2.ENCODED_TRAILER) + \
                 len(ddt2.ENCODED_TRAILER)
