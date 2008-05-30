@@ -52,7 +52,7 @@ class ChoiceDialog(gtk.Dialog):
         self.vbox.pack_start(self.label, 1, 1, 0)
         self.label.show()
 
-        self.choice = make_choice(choices, self.editable, choices[0])
+        self.choice = make_choice(sorted(choices), self.editable, choices[0])
         self.vbox.pack_start(self.choice, 1, 1, 0)
         self.choice.show()
 
