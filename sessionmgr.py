@@ -66,6 +66,7 @@ class Session:
     _sm = None
     _id = None
     _st = None
+    _rs = None
     type = None
 
     ST_OPEN = 0
@@ -145,11 +146,16 @@ class ControlSession(Session):
         self._sm.outgoing(self, f)
 
     def ctl(self, frame):
+        if frame.d_station != self._sm.station:
+            print "Control ignoring frame for station %s" % frame.d_station
+            return
+
         if frame.type == self.T_ACK:
             try:
-                id = int(frame.data)
-                session = self._sm.sessions[id]
-                print "Signaled waiting session thread"
+                l, r = struct.unpack("BB", frame.data)
+                session = self._sm.sessions[l]
+                session._rs = r
+                print "Signaled waiting session thread (l=%i r=%i)" % (l, r)
             except Exception, e:
                 print "Failed to lookup new session event: %s" % e
 
@@ -181,6 +187,10 @@ class ControlSession(Session):
             #self.ack_req(frame.s_station, frame.data)
 
             frame.d_station = frame.s_station
+            if session._rs:
+                frame.data = str(session._rs)
+            else:
+                frame.data = str(session._id)
             self._sm.outgoing(self, frame)
 
         elif frame.type >= self.T_NEW:
@@ -190,20 +200,24 @@ class ControlSession(Session):
                 print "Session request had invalid ID: %s" % e
                 return
 
+            # Check for existing session
+
             print "ACK'ing session request for %i" % id
 
             try:
                 c = self.stypes[frame.type]
                 print "Got type: %s" % c
                 s = c("session")
+                s._rs = int(frame.data)
                 s.set_state(s.ST_OPEN)
             except Exception, e:
                 print "Can't start session type `%s': %s" % (frame.type, e)
                 return
                 
-            self._sm._register_session(id, s, frame.s_station, "new,in")
+            num = self._sm._register_session(s, frame.s_station, "new,in")
 
-            self.ack_req(frame.s_station, frame.data)
+            data = struct.pack("BB", id, num)
+            self.ack_req(frame.s_station, data)
         else:
             print "Unknown control message type %i" % frame.type
             
@@ -235,7 +249,7 @@ class ControlSession(Session):
                 print "Waiting for synchronization"
                 wait_time = 15
             else:
-                print "Established session"
+                print "Established session %i:%i" % (session._id, session._rs)
                 session.set_state(session.ST_OPEN)
                 return True
 
@@ -255,7 +269,10 @@ class ControlSession(Session):
         f.type = self.T_END
         f.seq = 0
         f.d_station = session._st
-        f.data = str(session._id)
+        if session._rs:
+            f.data = str(session._rs)
+        else:
+            f.data = str(session._id)
 
         session.set_state(session.ST_CLSW)
 
@@ -518,7 +535,7 @@ class SessionManager:
         self.session_cb = {}
 
         self.control = ControlSession()
-        self._register_session(0, self.control, "CQCQCQ", "new,out")
+        self._register_session(self.control, "CQCQCQ", "new,out")
 
     def fire_session_cb(self, session, reason):
         print "=-=-=-=-=-=-=-=- FIRING SESSION CB"
@@ -575,19 +592,33 @@ class SessionManager:
             
         block.s_station = self.station
 
-        block.session = session._id
+        if session._rs:
+            block.session = session._rs
+        else:
+            block.session = session._id
 
         self.tport.send_frame(block)
 
-    def _register_session(self, id, session, dest, reason):
+    def _register_session(self, session, dest, reason):
+        id = None
+        for _id in range(0, 256):
+            if _id not in self.sessions.keys():
+                id = _id
+                break
+
+        if not id:
+            print "No free slots?  I can't believe it!"
+
         print "Registered session %i: %s" % (id, session.name)
+
         session._sm = self
         session._id = id
         session._st = dest
         self.sessions[id] = session
 
-        print ""
         self.fire_session_cb(session, reason)
+
+        return id
 
     def _deregister_session(self, id):
         if self.sessions.has_key(id):
@@ -598,7 +629,7 @@ class SessionManager:
         except Exception, e:
             print "No session %s to deregister" % id
 
-    def new_session(self, id, name, dest, cls=None):
+    def start_session(self, name, dest=None, cls=None):
         if not cls:
             if dest:
                 s = StatefulSession(name)
@@ -609,20 +640,13 @@ class SessionManager:
             s = cls(name)
 
         s.set_state(s.ST_SYNC)
-        self._register_session(id, s, dest, "new,out")
+        id = self._register_session(s, dest, "new,out")
 
         if dest != "CQCQCQ":
             if not self.control.new_session(s):
                 self._deregister_session(id)
         
         return s
-
-    def start_session(self, name, dest=None, cls=None):
-        for id in range(0, 256):
-            if id not in self.sessions.keys():
-                return self.new_session(id, name, dest, cls)
-
-        return None
 
     def stop_session(self, session):
         for id, s in self.sessions.items():
