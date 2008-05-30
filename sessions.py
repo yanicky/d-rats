@@ -140,19 +140,23 @@ class FileTransferSession(sessionmgr.StatefulSession):
 
         if not data:
             self.status("No start block received!")
-            return False
+            return None
 
         size, = struct.unpack("I", data[:4])
         name = data[4:]
 
+        if os.path.isdir(dir):
+            filename = os.path.join(dir, name)
+        else:
+            filename = dir
+
         self.status("Receiving file %s of size %i" % (name, size))
-        
         self.stats["total_size"] = size
 
-        f = file(os.path.join(dir, name), "wb", 0)
+        f = file(filename, "wb", 0)
         if not f:
             print "Can't open file %s/%s" + (dir, name)
-            return False
+            return None
 
         self.write("OK")
         self.status("Negotiation Complete")
@@ -173,6 +177,7 @@ class FileTransferSession(sessionmgr.StatefulSession):
 
         self.status("Complete")
 
+        return filename
 
 class FormTransferSession(FileTransferSession):
     type = sessionmgr.T_FORMXFER
