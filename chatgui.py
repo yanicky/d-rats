@@ -43,6 +43,21 @@ import sessiongui
 
 from mc_xfergui import MulticastGUI, MulticastRecvGUI
 
+def prompt_for_station(parent=None):
+    ma = mainapp.get_mainapp()
+    calls = ma.seen_callsigns.keys()
+    d = EditableChoiceDialog(calls,
+                             title="Destination Station",
+                             parent=parent)
+    d.label.set_text("Select (or enter) a destination station")
+    r = d.run()
+    dest = d.choice.get_active_text()
+    d.destroy()
+    if r == gtk.RESPONSE_CANCEL:
+        return None
+    else:
+        return dest
+
 class ChatGUI:
     def ev_delete(self, widget, event, data=None):
         return False
@@ -638,12 +653,8 @@ class MainChatGUI(ChatGUI):
         self.toggle_sendable(True)
         
     def do_file_transfer(self, send):
-        d = TextInputDialog(title="Send file to station", parent=self.window)
-        d.label.set_text("Enter destination station:")
-        r = d.run()
-        station = d.text.get_text()
-        d.destroy()
-        if r != gtk.RESPONSE_OK:
+        station = prompt_for_station(self.window)
+        if not station:
             return
 
         ddir = self.config.get("prefs", "download_dir")
@@ -1379,15 +1390,8 @@ class FormManager:
         os.remove(filename)
 
     def send(self, widget, data=None):
-        calls = self.gui.mainapp.seen_callsigns.keys()
-        d = EditableChoiceDialog(calls,
-                                 title="Destination Station",
-                                 parent=self.gui.window)
-        d.label.set_text("Select (or enter) a destination station")
-        r = d.run()
-        dest = d.choice.get_active_text()
-        d.destroy()
-        if r == gtk.RESPONSE_CANCEL:
+        dest = prompt_for_station(self.gui.window)
+        if not dest:
             return
 
         (list, iter) = self.view.get_selection().get_selected()
