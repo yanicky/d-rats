@@ -19,6 +19,7 @@ import gtk
 import gobject
 import threading
 import os
+import time
 
 import mainapp
 import miscwidgets
@@ -62,6 +63,13 @@ class FileBaseThread(SessionThread):
                          self.session._id,
                          "Transfer Completed")
 
+    def failed(self, reason=None):
+        s = "Transfer Failed"
+        if reason:
+            s += " " + reason
+
+        gobject.idle_add(self.gui.update, self.session._id, s)
+
     def __init__(self, *args):
         SessionThread.__init__(self, *args)
 
@@ -85,8 +93,21 @@ class FormRecvThread(FileBaseThread):
     progress_key = "recv_size"
 
     def worker(self, path):
-        self.session.recv_file(path)
-        self.completed()
+        fm = self.gui.chatgui.adv_controls["forms"]
+        newfn = time.strftime(os.path.join(fm.form_store_dir,
+                                           "form_%m%d%Y_%H%M%S.xml"))
+        fn = self.session.recv_file(newfn)
+
+        if fn == newfn:
+            fm.reg_form("Received Form", fn, "Never")
+            fm.list_add_form(0, "Received form", fn)
+
+            print "Registering form %s" % fn
+            self.completed()
+
+        else:
+            self.failed()
+            print "<--- Form transfer failed -->"
 
 class FormSendThread(FileBaseThread):
     progress_key = "sent_size"
