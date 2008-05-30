@@ -31,7 +31,7 @@ import ddt
 
 from xfergui import FileTransferGUI, FormTransferGUI
 from qst import QSTGUI, QuickMsgGUI, QSTGPS, QSTGPSA
-from inputdialog import TextInputDialog, ChoiceDialog, ExceptionDialog
+from inputdialog import TextInputDialog, ChoiceDialog, ExceptionDialog, EditableChoiceDialog
 from utils import filter_to_ascii
 from callsigns import find_callsigns
 import mainapp
@@ -1379,7 +1379,16 @@ class FormManager:
         os.remove(filename)
 
     def send(self, widget, data=None):
-        dest = "K7TAY" # FIXME
+        calls = self.gui.mainapp.seen_callsigns.keys()
+        d = EditableChoiceDialog(calls,
+                                 title="Destination Station",
+                                 parent=self.gui.window)
+        d.label.set_text("Select (or enter) a destination station")
+        r = d.run()
+        dest = d.choice.get_active_text()
+        d.destroy()
+        if r == gtk.RESPONSE_CANCEL:
+            return
 
         (list, iter) = self.view.get_selection().get_selected()
         (filename, ) = self.store.get(iter, self.col_filen)
