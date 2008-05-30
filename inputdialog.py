@@ -40,6 +40,8 @@ class TextInputDialog(gtk.Dialog):
         self.text.show()
 
 class ChoiceDialog(gtk.Dialog):
+    editable = False
+
     def __init__(self, choices, **args):
         buttons = (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
                    gtk.STOCK_OK, gtk.RESPONSE_OK)
@@ -50,9 +52,12 @@ class ChoiceDialog(gtk.Dialog):
         self.vbox.pack_start(self.label, 1, 1, 0)
         self.label.show()
 
-        self.choice = make_choice(choices, False, choices[0])
+        self.choice = make_choice(choices, self.editable, choices[0])
         self.vbox.pack_start(self.choice, 1, 1, 0)
         self.choice.show()
+
+class EditableChoiceDialog(ChoiceDialog):
+    editable = True
 
 class ExceptionDialog(gtk.MessageDialog):
     def __init__(self, exception, **args):
