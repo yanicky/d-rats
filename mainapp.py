@@ -107,8 +107,11 @@ class MainApp:
         else:
             self.comm = comm.SerialDataPath((port, int(rate)))
                                    
-        if not self.comm.connect():
-            print "COMM did not connect!"
+        try:
+            self.comm.connect()
+        except comm.DataPathNotConnectedError, e:
+            print "COMM did not connect: %s" % e
+            return
 
         self.sm = sessionmgr.SessionManager(self.comm,
                                             self.config.get("user", "callsign"))
