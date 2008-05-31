@@ -1,7 +1,9 @@
 #!/bin/bash
 
 SRC=/cygdrive/z
-VERSION=0.1.11b
+LOCAL_VERSION=
+eval $(cat $SRC/mainapp.py | grep ^DRATS_VERSION | sed 's/ //g')
+VERSION=${DRATS_VERSION}${LOCAL_VERSION}
 DST=build-d-rats-$VERSION-win32
 ZIP=$(pwd)/d-rats-$VERSION-win32.zip
 LOG=d-rats_build.log
@@ -33,7 +35,7 @@ copy_data() {
 	mkdir -p $DST/dist/forms
 	cp -r $SRC/forms/*.x[ms]l $DST/dist/forms >> $LOG
 	cp -r install_default_forms.bat $DST/dist >> $LOG
-	list="COPYING d-rats_safemode.bat"
+	list="COPYING build/d-rats_safe_mode.bat"
 	for i in $list; do
 		cp -v $SRC/$i $DST/dist >> $LOG
 	done
@@ -48,7 +50,7 @@ make_installer() {
 	echo Making Installer...
 	cat > $DST/d-rats.nsi <<EOF
 Name "D-RATS Installer"
-OutFile "..\d-rats-$VERSION.exe"
+OutFile "..\d-rats-${VERSION}-installer.exe"
 InstallDir \$PROGRAMFILES\D-RATS
 DirText "This will install D-RATS v$VERSION"
 Icon d-rats.ico
@@ -60,6 +62,9 @@ Section ""
   CreateDirectory "\$SMPROGRAMS\D-RATS"
   CreateShortCut "\$SMPROGRAMS\D-RATS\D-RATS Communications Tool.lnk" "\$INSTDIR\d-rats.exe"
   CreateShortCut "\$SMPROGRAMS\D-RATS\D-RATS Repeater.lnk" "\$INSTDIR\repeater.exe"
+  CreateShortCut "\$SMPROGRAMS\D-RATS\D-RATS Map Downloader.lnk" "\$INSTDIR\mapdownloader.exe"
+  CreateDirectory "\$APPDATA\D-RATS\Form_Templates"
+  CopyFiles \$INSTDIR\forms\*.* "\$APPDATA\D-RATS\Form_Templates"
 SectionEnd
 EOF
 	unix2dos $DST/d-rats.nsi
@@ -83,7 +88,7 @@ if [ "$1" = "-z" ]; then
 	make_zip
 elif [ "$1" = "-i" ]; then
 	make_installer
-else
+elif [ -z "$1" ]; then
 	make_zip
 	make_installer
 fi
