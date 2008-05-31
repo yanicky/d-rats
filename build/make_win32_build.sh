@@ -1,56 +1,42 @@
 #!/bin/bash
 
-SRC=/cygdrive/z
 LOCAL_VERSION=
-eval $(cat $SRC/mainapp.py | grep ^DRATS_VERSION | sed 's/ //g')
+eval $(cat mainapp.py | grep ^DRATS_VERSION | sed 's/ //g')
 VERSION=${DRATS_VERSION}${LOCAL_VERSION}
-DST=build-d-rats-$VERSION-win32
-ZIP=$(pwd)/d-rats-$VERSION-win32.zip
+OUTPUT='c:\cygwin\home\dan\builds\'
+ZIP=${OUTPUT}d-rats-$VERSION-win32.zip
+IST=${OUTPUT}d-rats-$VERSION-installer.exe
 LOG=d-rats_build.log
-
-clean() {
-	echo Cleaning old build directories
-	rm -Rf $DST
-	rm -f $ZIP
-}
-
-clone_src() {
-	mkdir $DST
-
-	echo Copying source files...
-	cp -rv $SRC/*.py $SRC/*.ico $DST
-}
 
 build_win32() {
 	echo Building Win32 executable...
-	(cd $DST && /cygdrive/c/Python25/python.exe setup.py py2exe) >> $LOG
+	/cygdrive/c/Python25/python.exe setup.py py2exe >> $LOG
 }
 
 copy_lib() {
 	echo Copying GTK lib, etc, share...
-	cp -r /cygdrive/c/GTK/{lib,etc,share} $DST/dist
+	cp -r /cygdrive/c/GTK/{lib,etc,share} dist
 }
 
 copy_data() {
-	mkdir -p $DST/dist/forms
-	cp -r $SRC/forms/*.x[ms]l $DST/dist/forms >> $LOG
-	cp -r install_default_forms.bat $DST/dist >> $LOG
-	list="COPYING build/d-rats_safe_mode.bat"
+	mkdir -p dist/forms
+	cp -r forms/*.x[ms]l dist/forms >> $LOG
+	list="COPYING build/d-rats_safe_mode.bat build/install_default_forms.bat"
 	for i in $list; do
-		cp -v $SRC/$i $DST/dist >> $LOG
+		cp -v $i dist >> $LOG
 	done
 }
 
 make_zip() {
 	echo Making ZIP archive...
-	(cd $DST/dist && zip -9 -r $ZIP .) >> $LOG
+	(cd dist && zip -9 -r $ZIP .) >> $LOG
 }
 
 make_installer() {
 	echo Making Installer...
-	cat > $DST/d-rats.nsi <<EOF
+	cat > d-rats.nsi <<EOF
 Name "D-RATS Installer"
-OutFile "..\d-rats-${VERSION}-installer.exe"
+OutFile "${IST}"
 InstallDir \$PROGRAMFILES\D-RATS
 DirText "This will install D-RATS v$VERSION"
 Icon d-rats.ico
@@ -67,19 +53,12 @@ Section ""
   CopyFiles \$INSTDIR\forms\*.* "\$APPDATA\D-RATS\Form_Templates"
 SectionEnd
 EOF
-	unix2dos $DST/d-rats.nsi
-	/cygdrive/c/Program\ Files/NSIS/makensis $DST/d-rats.nsi
+	unix2dos d-rats.nsi
+	/cygdrive/c/Program\ Files/NSIS/makensis d-rats.nsi
 }
 
 rm -f $LOG
 
-if [ "$1" = "-nc" ]; then
-	shift
-else
-	clean
-fi
-
-clone_src
 copy_data
 build_win32
 copy_lib
