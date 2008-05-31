@@ -20,9 +20,19 @@ copy_source() {
 
 do_build() {
     tmp=$1
+    out=$2
 
-    ssh $HOST "cd $tmp && ./build/make_win32_build.sh"
+    ssh $HOST "cd $tmp && ./build/make_win32_build.sh $out"
 }
-tmp=$(temp_dir)
-copy_source $tmp
-do_build $tmp
+
+grab_builds() {
+    out=$1
+
+    scp -r "$HOST:$out/*" .
+}
+
+tmp1=$(temp_dir)
+tmp2=$(temp_dir)
+copy_source $tmp1
+do_build $tmp1 $tmp2
+grab_builds $tmp2

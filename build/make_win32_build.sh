@@ -1,12 +1,15 @@
 #!/bin/bash
 
-LOCAL_VERSION=
+OUTPUT=$(echo "c:\\cygwin\\${1}/" | sed 's/\//\\/'g)
+
+LOCAL_VERSION=beta1
 eval $(cat mainapp.py | grep ^DRATS_VERSION | sed 's/ //g')
 VERSION=${DRATS_VERSION}${LOCAL_VERSION}
-OUTPUT='c:\cygwin\home\dan\builds\'
 ZIP=${OUTPUT}d-rats-$VERSION-win32.zip
 IST=${OUTPUT}d-rats-$VERSION-installer.exe
 LOG=d-rats_build.log
+
+shift
 
 build_win32() {
 	echo Building Win32 executable...
