@@ -21,8 +21,11 @@ import glob
 from subprocess import Popen
 
 class Platform:
+    def __init__(self, basepath):
+        self._base = basepath
+
     def config_dir(self):
-        return "."
+        return self._base
 
     def log_dir(self):
         dir = os.path.join(self.config_dir(), "logs")
@@ -118,12 +121,15 @@ class Platform:
             return None
 
 class UnixPlatform(Platform):
-    def config_dir(self):
-        dir = os.path.abspath(os.path.join(os.getenv("HOME"), ".d-rats"))
-        if not os.path.isdir(dir):
-            os.mkdir(dir)
+    def __init__(self, basepath):
+        if not basepath:
+            basepath = os.path.abspath(os.path.join(self.default_dir(),
+                                                    ".d-rats"))
+        
+        if not os.path.isdir(basepath):
+            os.mkdir(basepath)
 
-        return dir
+        Platform.__init__(self, basepath)
 
     def default_dir(self):
         return os.path.abspath(os.getenv("HOME"))
@@ -160,12 +166,14 @@ class UnixPlatform(Platform):
         return sorted(glob.glob("/dev/ttyS*") + glob.glob("/dev/ttyUSB*"))
 
 class Win32Platform(Platform):
-    def config_dir(self):
-        dir = os.path.abspath(os.path.join(os.getenv("APPDATA"), "D-RATS"))
+    def __init__(self, basepath=None):
+        if not basepath:
+            dir = os.path.abspath(os.path.join(os.getenv("APPDATA"), "D-RATS"))
+
         if not os.path.isdir(dir):
             os.mkdir(dir)
 
-        return dir
+        Platform.__init__(self, basepath)
 
     def default_dir(self):
         return os.path.abspath(os.path.join(os.getenv("USERPROFILE"),
@@ -221,11 +229,20 @@ class Win32Platform(Platform):
 
         return f
 
-def get_platform():
+def _get_platform(basepath):
     if os.name == "nt":
-        return Win32Platform()
+        return Win32Platform(basepath)
     else:
-        return UnixPlatform()
+        return UnixPlatform(basepath)
+
+PLATFORM = None
+def get_platform(basepath=None):
+    global PLATFORM
+
+    if not PLATFORM:
+        PLATFORM = _get_platform(basepath)
+
+    return PLATFORM
 
 if __name__ == "__main__":
     p = get_platform()

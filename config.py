@@ -678,7 +678,7 @@ D-RATS has been started in safe mode, which means the configuration file has not
     def load_config(self, file):
         self.config.read(file)
 
-    def __init__(self, mainapp, _file=None, safe=False):
+    def __init__(self, mainapp, safe=False):
         self.mainapp = mainapp
         self.safe = safe
 
@@ -690,10 +690,7 @@ D-RATS has been started in safe mode, which means the configuration file has not
 
         self.tips = gtk.Tooltips()
 
-        if _file:
-            self._file = _file
-        else:
-            self._file = self.default_filename()
+        self._file = self.platform.config_file("d-rats.config")
 
         self.config = ConfigParser.ConfigParser()
         if not self.safe:

@@ -17,6 +17,7 @@
 
 import sys
 import mainapp
+import platform
 
 from optparse import OptionParser
 
@@ -28,8 +29,12 @@ if __name__ == "__main__":
                  help="Safe mode (ignore configuration)")
     o.add_option("-c", "--config",
                  dest="config",
-                 help="Use alternate configuration file")
+                 help="Use alternate configuration directory")
     (opts, args) = o.parse_args()
-    app = mainapp.MainApp(_file=opts.config, safe=opts.safe)
+
+    if opts.config:
+        platform.get_platform(opts.config)
+
+    app = mainapp.MainApp(safe=opts.safe)
     sys.exit(app.main())
 
