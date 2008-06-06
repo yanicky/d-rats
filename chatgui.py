@@ -1322,7 +1322,7 @@ class FormManager:
 
         return sw
 
-    def list_add_form(self, index, ident, filen, stamp=None):
+    def list_add_form(self, index, ident, filen, stamp=None, xfert="Never"):
         if not stamp:
             stamp = self.get_stamp()
 
@@ -1332,7 +1332,7 @@ class FormManager:
                        self.col_ident, ident,
                        self.col_stamp, stamp,
                        self.col_filen, filen,
-                       self.col_xfert, "Never")
+                       self.col_xfert, xfert)
         return iter
 
     def new(self, widget, data=None):
@@ -1465,7 +1465,7 @@ class FormManager:
         self.reg.write(f)
         f.close()
 
-    def reg_form(self, id, file, editstamp):
+    def reg_form(self, id, file, editstamp, xferstamp="Never"):
         sec = os.path.basename(file)
 
         if not self.reg.has_section(sec):
@@ -1475,6 +1475,7 @@ class FormManager:
             self.reg.set(sec, "id", id)
             self.reg.set(sec, "filename", file)
             self.reg.set(sec, "editstamp", editstamp)
+            self.reg.set(sec, "xferstamp", xferstamp)
             self.reg_save()
         except Exception, e:
             print "Failed to register new form: %s" % e
@@ -1495,7 +1496,8 @@ class FormManager:
                 id = self.reg.get(i, "id")
                 filename = self.reg.get(i, "filename")
                 stamp = self.reg.get(i, "editstamp")
-                self.list_add_form(0, id, filename, stamp)
+                xfert = self.reg.get(i, "xferstamp")
+                self.list_add_form(0, id, filename, stamp, xfert)
             except Exception, e:
                 print "Failed to load form: %s" % e
                 self.reg.remove_section(i)
