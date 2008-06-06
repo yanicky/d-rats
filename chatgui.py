@@ -195,7 +195,11 @@ class ChatGUI:
             message = string
 
         ChatGUI.display_line(self, message, "outgoingcolor")
-        self.mainapp.chat_session.write(string)
+        if self.mainapp.chat_session:
+            self.mainapp.chat_session.write(string)
+        else:
+            self.display_line("Not connected", "italic", "red")
+            return
 
         if self.logfn:
             self.logfn(message)
