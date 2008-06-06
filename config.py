@@ -95,10 +95,7 @@ class AppConfig:
         mset("settings", "port", self.default_port)
         mset("settings", "rate", "9600")
         mset("settings", "xfer", "DDT")
-        mset("settings", "write_chunk", "0")
-        mset("settings", "chunk_delay", "1.5")
         mset("settings", "ddt_block_size", "1024")
-        mset("settings", "swflow", "True")
         mset("settings", "encoding", "yenc")
         mset("settings", "compression", "True")
         mset("settings", "gpsport", "")
@@ -142,10 +139,7 @@ class AppConfig:
                 "debuglog" : "Enable debug logging",
                 "eolstrip" : "End-of-line stripping",
                 "font" : "Chat font",
-                "write_chunk" : "<span foreground='red'>Write chunk size (bytes)</span>",
-                "chunk_delay" : "<span foreground='red'>Chunk delay (sec)</span>",
                 "ddt_block_size" : "Outgoing block size (KB)",
-                "swflow" : "D-RATS does flow control",
                 "callsigns" : "Mark callsigns by these countries",
                 "encoding" : "Type of ASCII-armoring to use",
                 "compression" : "Compress blocks",
@@ -161,11 +155,8 @@ class AppConfig:
                 "aprssymbol" : "D/APRS Symbol ID",
                 }
 
-    id2tip = {"write_chunk" : "Stage DDT blocks into small chunks of this many bytes",
-              "chunk_delay" : "Delay this many seconds between chunks",
-              "ddt_block_size" : "Size (in KB) of data blocks to send with DDT",
+    id2tip = {"ddt_block_size" : "Size (in KB) of data blocks to send with DDT",
               "debuglog" : "Requires D-RATS restart to take effect",
-              "swflow" : "You want this unless you know you don't",
               "callsigns" : "Mark callsigns by these countries",
               "encoding" : "yenc is fastest, base64 is safest (currently)",
               "compression" : "Compress outgoing blocks",
@@ -427,8 +418,6 @@ class AppConfig:
                                      ), 0,0,0)
         vbox.pack_start(self.make_sb("xfer",
                                      make_choice(self.xfers.keys(), False)), 0,0,0)
-        vbox.pack_start(self.make_sb("swflow", self.make_bool()), 0,0,0)
-
         vbox.pack_start(self.make_sb("gpsport",
                                      make_choice(ports)), 0,0,0)
         vbox.pack_start(self.make_sb("gpsenabled",
@@ -450,10 +439,6 @@ class AppConfig:
 
         vbox.pack_start(self.make_sb("ddt_block_size",
                                      make_choice(block_sizes, False)), 0,0,0)
-        vbox.pack_start(self.make_sb("write_chunk",
-                                     self.make_spin(32, 0, 512)), 0,0,0)
-        vbox.pack_start(self.make_sb("chunk_delay",
-                                     self.make_spin(0.1, 0.1, 3.0)), 0,0,0)
         vbox.pack_start(self.make_sb("compression",
                                      self.make_bool()), 0,0,0)
         vbox.pack_start(self.make_sb("encoding",
@@ -502,7 +487,7 @@ class AppConfig:
         nb.show()
 
         # Disable unsupported functions
-        for i in []:
+        for i in ["xfer", "autoreceive", "encoding", "ddt_block_size"]:
             self.fields[i].set_sensitive(False)
 
         mainvbox = gtk.VBox(False, 5)
@@ -634,7 +619,6 @@ D-RATS has been started in safe mode, which means the configuration file has not
                   ("prefs", "eolstrip"),
                   ("prefs", "logenabled"),
                   ("prefs", "debuglog"),
-                  ("settings", "swflow"),
                   ("settings", "compression"),
                   ("prefs", "logresume"),
                   ("settings", "gpsenabled")]
@@ -658,9 +642,7 @@ D-RATS has been started in safe mode, which means the configuration file has not
 
         font_v = [("prefs", "font")]
 
-        spin_v = [("settings", "write_chunk"),
-                  ("settings", "chunk_delay"),
-                  ("prefs", "scrollback"),
+        spin_v = [("prefs", "scrollback"),
                   ("user", "altitude")]
 
         list_v = [("prefs", "callsigns")]
