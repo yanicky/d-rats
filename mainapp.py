@@ -253,8 +253,9 @@ class MainApp:
         print "Saving config..."
         self.config.save()
 
-        print "Stopping session manager..."
-        self.sm.shutdown(True)
+        if self.sm:
+            print "Stopping session manager..."
+            self.sm.shutdown(True)
 
         print "Closing serial..."
         self.comm.disconnect()
