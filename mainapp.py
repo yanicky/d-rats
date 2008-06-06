@@ -96,7 +96,7 @@ class MainApp:
             to = ":"
 
         line = "%s%s %s" % (sender, to, args["Msg"])
-        self.chatgui.display_line(line, "incomingcolor")
+        gobject.idle_add(self.chatgui.display_line, line, "incomingcolor")
 
     def refresh_comm(self, rate, port):
         if self.sm:
