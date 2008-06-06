@@ -23,7 +23,7 @@ class SWFSerial(serial.Serial):
         serial.Serial.__init__(self, **kwargs)
 
         self.state = True
-        self.xoff_limit = 1
+        self.xoff_limit = 15
 
     def is_xon(self):
         char = serial.Serial.read(self, 1)

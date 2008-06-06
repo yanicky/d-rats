@@ -21,7 +21,7 @@ import os
 import glob
 
 from config import make_choice
-from formgui import Form,FormFile
+from formgui import Form,FormFile,xml_escape,xml_unescape
 import formgui
 
 class FormElementEditor(gtk.Dialog):
@@ -196,8 +196,10 @@ class FormBuilderGUI(gtk.Dialog):
             d.destroy()
             return
 
+        iv = d.get_initial_value()
+
         print "Type: %s" % d.get_type()
-        print "Initial: %s" % d.get_initial_value()
+        print "Initial: %s" % iv
         print "Opts: %s" % d.get_options()
 
         iter = self.store.append()
@@ -205,7 +207,7 @@ class FormBuilderGUI(gtk.Dialog):
                        self.col_id, "foo",
                        self.col_type, d.get_type(),
                        self.col_cap, "Untitled",
-                       self.col_value, d.get_initial_value(),
+                       self.col_value, iv,
                        self.col_opts, d.get_options(),
                        self.col_inst, "")
 
@@ -299,6 +301,8 @@ class FormBuilderGUI(gtk.Dialog):
                                                      self.col_value,
                                                      self.col_opts,
                                                      self.col_inst)
+
+        val = xml_escape(val)
 
         print "\n\nField type: %s" % type
         cap_xml = "<caption>%s</caption>" % cap
@@ -465,13 +469,20 @@ class FormBuilderGUI(gtk.Dialog):
 class FormManagerGUI:
 
     def add_form(self, filename):
-        form = FormFile("", filename)
+        try:
+            form = FormFile("", filename)
+            id = form.id
+            title = form.title_text
+            form.destroy()        
+        except Exception, e:
+            id = "broken"
+            title = "Broken Form - Delete me"
+
         iter = self.store.append()
         self.store.set(iter,
-                       self.col_id, form.id,
-                       self.col_title, form.title_text,
+                       self.col_id, id,
+                       self.col_title, title,
                        self.col_file, filename)
-        form.destroy()        
 
     def but_new(self, widget, data=None):
         d = FormBuilderGUI()

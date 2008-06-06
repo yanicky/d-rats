@@ -48,6 +48,58 @@ test = """
 
 """
 
+xml_escapes = [("<", "&lt;"),
+               (">", "&gt;"),
+               ("&", "&amp;"),
+               ('"', "&quot;"),
+               ("'", "&apos;")]
+
+def xml_escape(string):
+    d = {}
+    for char, esc in xml_escapes:
+        d[char] = esc
+
+    out = ""
+    for i in string:
+        out += d.get(i, i)
+
+    return out
+
+def xml_unescape(string):
+    d = {}
+    for char, esc in xml_escapes:
+        d[esc] = char
+
+    out = ""
+    i = 0
+    while i < len(string):
+        if string[i] != "&":
+            out += string[i]
+            i += 1
+        else:
+            try:
+                semi = string[i:].index(";") + i + 1
+            except:
+                print "XML Error: & with no ;"
+                i += 1
+                continue
+
+            esc = string[i:semi]
+
+            if not esc:
+                print "No escape: %i:%i" % (i, semi)
+                i += 1
+                continue
+
+            if d.has_key(string[i:semi]):
+                out += d[esc]
+            else:
+                print "XML Error: No such escape: `%s'" % esc
+                
+            i += len(esc)
+
+    return out
+
 class FormWriter:
     def write(formxml, outfile):
         doc = libxml2.parseMemory(formxml, len(formxml))
@@ -116,7 +168,7 @@ class FieldWidget:
 
             child = child.next
 
-        value = self.get_value()
+        value = xml_escape(self.get_value())
         if value:
             self.node.addContent(value)
 
@@ -125,7 +177,7 @@ class TextWidget(FieldWidget):
         FieldWidget.__init__(self, node)
 
         if node.children:
-            text = node.getContent().strip()
+            text = xml_unescape(node.getContent().strip())
         else:
             text = ""
 
@@ -161,7 +213,7 @@ class MultilineWidget(FieldWidget):
         FieldWidget.__init__(self, node)
 
         if node.children:
-            text = node.children.getContent().strip()
+            text = xml_unescape(node.children.getContent().strip())
         else:
             text = ""
 
@@ -293,7 +345,7 @@ class ChoiceWidget(FieldWidget):
             return
 
         try:
-            content = node.children.getContent().strip()
+            content = xml_unescape(node.children.getContent().strip())
             self.choices.append(content)
             if node.prop("set"):
                 self.default = content
