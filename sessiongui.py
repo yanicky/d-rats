@@ -39,6 +39,9 @@ class SessionThread:
         self.enabled = False
         self.thread.join()
 
+    def worker(self, **args):
+        print "**** EMPTY SESSION THREAD ****"
+
 class FileBaseThread(SessionThread):
     progress_key = "recv_size"
 

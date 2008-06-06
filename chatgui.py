@@ -1824,12 +1824,3 @@ class CallCatcher:
         self.root = box
 
         gobject.timeout_add(60 * 1000, self.update_all_times)
-        
-
-if __name__ == "__main__":
-    import config
-    gui = MainChatGUI(config.UnixAppConfig(None, safe=True), None)
-    try:
-        gui.main()
-    except KeyboardInterrupt:
-        gui.sig_destroy(None)

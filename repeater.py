@@ -104,7 +104,7 @@ class DataPath:
             self.thread.join()
 
         print "Stopped %s" % self.id
-    
+
 class LoopDataPath(DataPath):
     def hasIncoming(self):
         return False
@@ -288,7 +288,7 @@ class Repeater:
             path.write(self.id)
             self.paths.append(path)
         except:
-            path.disconnect()
+            path.stop()
 
     def listen_on(self, port):
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

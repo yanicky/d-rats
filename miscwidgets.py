@@ -85,7 +85,7 @@ class ListWidget(gtk.HBox):
     def _remove_item(self, model, path, iter, match):
         vals = model.get(iter, *tuple(range(0, self._ncols)))
         if vals == match:
-            mode.remove(iter)
+            model.remove(iter)
 
     def remove_item(self, *vals):
         if len(vals) != self._ncols:

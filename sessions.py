@@ -115,7 +115,7 @@ class FileTransferSession(sessionmgr.StatefulSession):
             self.status("Sending")
             try:
                 self.write(d, timeout=20)
-            except SessionClosedError:
+            except sessionmgr.SessionClosedError:
                 break
 
             self.status("Sent")

@@ -105,11 +105,11 @@ class MulticastGUI(gtk.Dialog):
         display.show()
         stats.show()
 
-    def button_start(self, widget, data=None):
+    def _button_start(self, widget, data=None):
         self.button_start.set_sensitive(False)
         self.transfer.start_transfer()
 
-    def button_cancel(self, widget, data=None):
+    def _button_cancel(self, widget, data=None):
         widget.set_sensitive(False)
         print "Cancel"        
         self.transfer.cancel()
@@ -117,7 +117,7 @@ class MulticastGUI(gtk.Dialog):
         self.button_cancel.set_sensitive(False)
         self.button_close.set_sensitive(True)
 
-    def button_close(self, widget, data=None):
+    def _button_close(self, widget, data=None):
         self.response(gtk.RESPONSE_OK)
 
     def _update(self, msg, vals):
@@ -165,17 +165,17 @@ class MulticastGUI(gtk.Dialog):
     def build_action(self):
 
         bstart = gtk.Button("Start")
-        bstart.connect("clicked", self.button_start, None)
+        bstart.connect("clicked", self._button_start, None)
         bstart.set_sensitive(False)
         bstart.show()
 
         bcancel = gtk.Button("Cancel")
-        bcancel.connect("clicked", self.button_cancel, None)
+        bcancel.connect("clicked", self._button_cancel, None)
         bcancel.set_sensitive(True)
         bcancel.show()
 
         bclose = gtk.Button("Close")
-        bclose.connect("clicked", self.button_close, None)
+        bclose.connect("clicked", self._button_close, None)
         bclose.set_sensitive(False)
         bclose.show()
 

@@ -111,7 +111,7 @@ class QSTExec(QSTText):
     def do_qst(self):
         s, o = run(self.text)
         if s:
-            print "Command failed with status %i" % status
+            print "Command failed with status %i" % s
 
         if o and len(o) <= self.size_limit:
             print "Sending command output: %s" % o
@@ -226,9 +226,9 @@ class SelectGUI:
             print "Non-integral new text: %s" % new_text
 
     def make_b_controls(self):
-        b = gtk.Button("Foo")
-        b.show()
-        return b
+        self.entry = gtk.Button("Foo")
+        self.entry.show()
+        return self.entry
 
     def make_s_controls(self):
         vbox = gtk.VBox(True, 0)
@@ -351,7 +351,8 @@ class SelectGUI:
 
     def __init__(self, title="--"):
         self.tips = gtk.Tooltips()
-        # SET LIST STORE
+        self.list_store = None
+        self.columns = []
         self.window = gtk.Window(gtk.WINDOW_TOPLEVEL)
         self.window.set_title(title)
 
@@ -366,7 +367,7 @@ class SelectGUI:
         
         vbox.pack_start(self.make_action_buttons(), 0,0,0)
         vbox.show()
-
+        
         self.entry.grab_focus()
 
         self.window.add(vbox)
@@ -628,17 +629,3 @@ def get_qst_class(typestr):
         return QSTGPSA
     else:
         return None
-
-if __name__ == "__main__":
-    #g = SelectGUI("Test GUI")
-    import config
-
-    c = config.UnixAppConfig(None)
-    
-    g = QSTGUI(c)
-    g.show()
-
-    m = QuickMsgGUI(c)
-    m.show()
-    
-    gtk.main()

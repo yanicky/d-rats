@@ -101,7 +101,7 @@ def xml_unescape(string):
     return out
 
 class FormWriter:
-    def write(formxml, outfile):
+    def write(self, formxml, outfile):
         doc = libxml2.parseMemory(formxml, len(formxml))
         doc.saveFile(outfile)
         doc.freeDoc()
@@ -132,6 +132,7 @@ class FieldWidget:
         self.caption = "Untitled Field"
         self.id = "unknown"
         self.type = (self.__class__.__name__.replace("Widget", "")).lower()
+        self.widget = None
 
     def set_caption(self, caption):
         self.caption = caption

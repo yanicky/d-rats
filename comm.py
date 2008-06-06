@@ -66,11 +66,9 @@ class SWFSerial(serial.Serial):
         old_to = self.timeout
         self.timeout = 0.01
 
-        ret = self._write(data)
+        self._write(data)
 
         self.timeout = old_to
-
-        return ret
 
     def read(self, len):
         return serial.Serial.read(self, len)
@@ -138,12 +136,10 @@ class SerialDataPath(DataPath):
 
     def write(self, buf):
         try:
-            count = self._serial.write(buf)
+            self._serial.write(buf)
         except Exception ,e:
             print "Serial write exception: %s" % e
             raise DataPathIOError("Failed to write to serial port")
-
-        return count
 
     def is_connected(self):
         return self._serial != None
