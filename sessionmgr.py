@@ -129,6 +129,12 @@ class Session:
 
         return self.state != before
 
+    def get_station(self):
+        return self._st
+
+    def get_name(self):
+        return self.name
+
 class ControlSession(Session):
     stateless = True
 

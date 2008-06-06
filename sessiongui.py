@@ -99,8 +99,12 @@ class FormRecvThread(FileBaseThread):
         fn = self.session.recv_file(newfn)
 
         if fn == newfn:
-            fm.reg_form("Received Form", fn, "Never")
-            fm.list_add_form(0, "Received form", fn)
+            fm.reg_form("Received from %s" % self.session.get_station(),
+                        fn,
+                        "Never")
+            fm.list_add_form(0,
+                             "Received from %s" % self.session.get_station(),
+                             fn)
 
             print "Registering form %s" % fn
             self.completed()
@@ -162,8 +166,8 @@ class SessionGUI:
             print "Failed to register session CB: %s" % e
 
     def new_file_xfer(self, session, direction):
-        self.chatgui.display("File transfer started with %s" % session._st,
-                             "italic")
+        self.chatgui.display_line("File transfer started with %s" % session._st,
+                                  "italic")
         if direction == "in":
             dd = self.mainapp.config.get("prefs", "download_dir")
             self.sthreads[session._id] = FileRecvThread(session, dd, self)
@@ -172,8 +176,8 @@ class SessionGUI:
             self.sthreads[session._id] = FileSendThread(session, of, self)
 
     def new_form_xfer(self, session, direction):
-        self.chatgui.display("Form transfer started with %s" % session._st,
-                             "italic")
+        self.chatgui.display_line("Form transfer started with %s" % session._st,
+                                  "italic")
         if direction == "in":
             dd = self.mainapp.config.form_store_dir()
             self.sthreads[session._id] = FormRecvThread(session, dd, self)
