@@ -15,7 +15,7 @@ for i in ${INCLUDE}; do
 done
 
 for i in ${EXCLUDE}; do
-    rm ${TMP}/${RELDIR}/$i
+    rm -f ${TMP}/${RELDIR}/$i
 done
 
 (cd $TMP && tar czf - $RELDIR) > ${RELDIR}.tar.gz
