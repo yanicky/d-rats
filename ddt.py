@@ -22,6 +22,7 @@ import serial
 import base64
 import struct
 import zlib
+import comm
 
 from utils import hexprint
 
@@ -312,7 +313,11 @@ class DDTAckFrame(DDTEncodedFrame):
         raise Exception("File transfer start blocks have no user data")
 
     def ack_parse(self):
-        (char, block) = struct.unpack("!BH", self.data)
+        try:
+            (char, block) = struct.unpack("!BH", self.data)
+        except Exception, e:
+            print "Failed to unpack ACK frame"
+            return ('-', -1)
 
         return (chr(char), block)
 
@@ -672,9 +677,7 @@ class DDTTransfer:
                 self.transfer_size += len(frame.get_data())
                 self.status("Receiving")
             else:
-                print "Failed, bad frame type: %s" % frame.__class__
-                self.status("ERROR: Bad frame type returned from recv_block()")
-                return False
+                print "Bad frame type (expecting Data or END): %s" % frame.__class__
 
         if not self.enabled:
             self.status("Cancelled")
