@@ -36,7 +36,7 @@ import comm
 from utils import hexprint,filter_to_ascii
 import qst
 
-DRATS_VERSION = "0.1.18"
+DRATS_VERSION = "0.1.19"
 LOGTF = "%m-%d-%Y_%H:%M:%S"
 
 MAINAPP = None
