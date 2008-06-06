@@ -372,19 +372,30 @@ class StatefulSession(Session):
             self.outstanding = self.outq.dequeue()
             self.ts = 0
 
+    def is_timeout(self):
+        if self.ts == 0:
+            return True
+
+        if (time.time() - self._sm.last_frame) < 3:
+            return False
+
+        if (time.time() - self.ts) < 8:
+            return False
+
+        return True
+
     def send_blocks(self):
         self.queue_next()
 
-        if self.outstanding and time.time() - self.ts > 8:
+        if self.outstanding and self.is_timeout():
             self.stats["retries"] += 1
             self._sm.outgoing(self, self.outstanding)
             t = time.time()
             print "Waiting for block to be sent..." 
             self.outstanding.sent_event.wait()
             self.outstanding.sent_event.clear()
-            print "Block sent after: %f" % (time.time() - t)
-
             self.ts = time.time()
+            print "Block sent after: %f" % (self.ts - t)
 
     def send_ack(self, seq):
         f = DDT2EncodedFrame()
@@ -439,7 +450,7 @@ class StatefulSession(Session):
                 print "Short-circuit"
                 continue # Short circuit because we have things to send
 
-            print "Session loop"
+            print "Session loop (%s:%s)" % (self._id, self.name)
 
             if not self.event.isSet():
                 print "Waiting..."
@@ -534,11 +545,12 @@ class SessionManager:
         self.pipe = pipe
         self.station = station
 
+        
+        self.last_frame = 0
         self.sessions = {}
+        self.session_cb = {}
 
         self.tport = transport.Transporter(self.pipe, self.incoming)
-
-        self.session_cb = {}
 
         self.control = ControlSession()
         self._register_session(self.control, "CQCQCQ", "new,out")
@@ -566,6 +578,8 @@ class SessionManager:
         self.tport.disable()
 
     def incoming(self, frame):
+        self.last_frame = time.time()
+
         if frame.d_station != "CQCQCQ" and \
                 frame.d_station != self.station:
             print "Received frame for station `%s'" % frame.d_station
@@ -593,6 +607,8 @@ class SessionManager:
                                                          session.name)
 
     def outgoing(self, session, block):
+        self.last_frame = time.time()
+
         if not block.d_station:
             block.d_station = session._st
             
