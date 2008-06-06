@@ -101,10 +101,13 @@ class FormRecvThread(FileBaseThread):
         if fn == newfn:
             fm.reg_form("Received from %s" % self.session.get_station(),
                         fn,
-                        "Never")
+                        "Never",
+                        fm.get_stamp())
             fm.list_add_form(0,
                              "Received from %s" % self.session.get_station(),
-                             fn)
+                             fn,
+                             stamp="Never",
+                             xfert=fm.get_stamp())
 
             print "Registering form %s" % fn
             self.completed()
