@@ -1,0 +1,7 @@
+.*\.pyc
+test./.*
+.*~$
+\.orig$
+\.exe$
+\.zip$
+\.tar\.gz$
