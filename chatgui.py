@@ -82,30 +82,6 @@ class ChatGUI:
         if self.window.get_urgency_hint():
             self.window.set_urgency_hint(False)
 
-    def note_callsigns(self, string):
-        calls = find_callsigns(self.config, string)
-        
-        for call in calls:
-            ucall = call.upper()
-
-            if self.mainapp.seen_callsigns.has_key(ucall):
-                (_, pos) = self.mainapp.seen_callsigns[ucall]
-            else:
-                pos = None
-
-            if "%s>" % call in string:
-                stamp = int(time.time())
-                self.mainapp.seen_callsigns[ucall] = (stamp, pos)
-            else:
-                if ucall not in self.mainapp.seen_callsigns.keys():
-                    self.mainapp.seen_callsigns[ucall] = (0, pos)
-
-        try:
-            cc = self.mainapp.chatgui.adv_controls["calls"]
-            cc.refresh()
-        except Exception, e:
-            print "Exception while refreshing call catcher: %s" % e
-
     def highlight_callsigns(self, string, start):
         if "--(EOB)--" in string:
             return
@@ -123,8 +99,6 @@ class ChatGUI:
                 self.main_buffer.remove_all_tags(b, e)
                 self.main_buffer.apply_tag_by_name("callsigncolor", b, e)
             self.main_buffer.apply_tag_by_name("bold", b, e)
-
-        self.note_callsigns(string)
 
     def highlight_notices(self, string, start):
         expr = self.config.get("prefs", "noticere")

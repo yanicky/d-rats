@@ -81,16 +81,21 @@ class MainApp:
 
             self.qsts.append(qstinst)
 
-    def incoming_chat(self, data):
-        self.chatgui.display_line(data, "incomingcolor")
-
     def connected(self, is_connected):
         self.chatgui.set_connected(is_connected)
 
     def incoming_chat(self, data, args):
-        line = "%s -> %s: %s" % (args["From"],
-                                 args["To"],
-                                 args["Msg"])
+        sender = args["From"]
+        _, pos = self.seen_callsigns.get(sender, (None, None))
+        self.seen_callsigns[sender] = (int(time.time()), None)
+        gobject.idle_add(self.chatgui.adv_controls["calls"].refresh)
+
+        if args["To"] != "CQCQCQ":
+            to = " -> %s:" % args["To"]
+        else:
+            to = ":"
+
+        line = "%s%s %s" % (sender, to, args["Msg"])
         self.chatgui.display_line(line, "incomingcolor")
 
     def refresh_comm(self, rate, port):
