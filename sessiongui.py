@@ -133,6 +133,57 @@ class FormSendThread(FileBaseThread):
             self.failed()
 
 class SessionGUI:
+    def cancel_selected_session(self):
+        (list, iter) = self.view.get_selection().get_selected()
+
+        id = int(list.get(iter, 0)[0])
+
+        print "Cancel ID: %s" % id
+
+        if id < 2:
+            # Don't let them cancel Control or Chat
+            return
+
+        try:
+            session = self.mainapp.sm.sessions[id]
+        except Exception, e:
+            print "Session `%i' not found: %s" % (id, e)
+            return        
+
+        session.close()
+
+    def mh(self, _action):
+        action = _action.get_name()
+
+        if action == "cancel":
+            self.cancel_selected_session()
+
+    def make_menu(self):
+        a = [("cancel", None, "Cancel session", None, None, self.mh)]
+
+        xml = """
+<ui>
+  <popup name="menu">
+    <menuitem action="cancel"/>
+  </popup>
+</ui>
+"""
+        ag = gtk.ActionGroup("menu")
+        ag.add_actions(a)
+
+        uim = gtk.UIManager()
+        uim.insert_action_group(ag, 0)
+        uim.add_ui_from_string(xml)
+
+        return uim.get_widget("/menu")
+
+    def mouse_cb(self, view, event, data=None):
+        if event.button != 3:
+            return
+
+        menu = self.make_menu()
+        menu.popup(None, None, None, event.button, event.time)
+
     def build_list(self):
         cols = [(gobject.TYPE_INT,    gtk.CellRendererText, "ID"),
                 (gobject.TYPE_STRING, gtk.CellRendererText, "Name"),
@@ -144,6 +195,7 @@ class SessionGUI:
         self.store = gtk.ListStore(*types)
 
         self.view = gtk.TreeView(self.store)
+        self.view.connect("button_press_event", self.mouse_cb)
 
         i = 0
         for typ, renderer, caption in cols:
