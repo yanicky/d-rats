@@ -134,16 +134,30 @@ class FormSendThread(FileBaseThread):
 
 class SessionGUI:
     def build_list(self):
-        cols = [(gobject.TYPE_INT, "ID"),
-                (gobject.TYPE_STRING, "Name"),
-                (gobject.TYPE_STRING, "Type"),
-                (gobject.TYPE_STRING, "Remote Station"),
-                (gobject.TYPE_STRING, "Status")]
+        cols = [(gobject.TYPE_INT,    gtk.CellRendererText, "ID"),
+                (gobject.TYPE_STRING, gtk.CellRendererText, "Name"),
+                (gobject.TYPE_STRING, gtk.CellRendererText, "Type"),
+                (gobject.TYPE_STRING, gtk.CellRendererText, "Remote Station"),
+                (gobject.TYPE_STRING, gtk.CellRendererText, "Status")]
 
-        self.list = miscwidgets.ListWidget(cols)
-        self.list.show()
+        types = tuple([x for x, y, z in cols])
+        self.store = gtk.ListStore(*types)
 
-        return self.list
+        self.view = gtk.TreeView(self.store)
+
+        i = 0
+        for typ, renderer, caption in cols:
+            r = renderer()
+            c = gtk.TreeViewColumn(caption, r, text=i)
+            c.set_sort_column_id(i)
+
+            self.view.append_column(c)
+
+            i += 1
+
+        self.view.show()
+
+        return self.view
 
     def build_gui(self):
         self.root = gtk.HBox(False, 2)
@@ -156,17 +170,14 @@ class SessionGUI:
     def hide(self):
         self.root.hide()
 
+    def _update(self, model, path, iter, data):
+        id, status = data
+        _id = model.get(iter, 0)[0]
+        if _id == id:
+            model.set(iter, 4, status)
+
     def update(self, sessionid, status):
-        vals = self.list.get_values()
-        newvals = []
-
-        for id, name, type, sta, stat in vals:
-            if id == sessionid:
-                stat = status
-
-            newvals.append((id, name, type, sta, stat))
-
-        self.list.set_values(newvals)
+        self.store.foreach(self._update, (sessionid, status))
 
     def refresh(self):
         try:
@@ -198,9 +209,13 @@ class SessionGUI:
             self.sthreads[session._id] = FormSendThread(session, of, self)
 
     def new_session(self, type, session, direction):
-        print "New session!!!!"
-
-        self.list.add_item(session._id, session.name, type, session._st, "Idle")
+        iter = self.store.append()
+        self.store.set(iter,
+                       0, session._id,
+                       1, session.name,
+                       2, type,
+                       3, session._st,
+                       4, "Idle")
 
         print "New session of type: %s" % session.__class__
 
