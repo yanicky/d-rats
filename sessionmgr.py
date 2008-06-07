@@ -452,15 +452,21 @@ class StatefulSession(Session):
 
             print "Session loop (%s:%s)" % (self._id, self.name)
 
-            if not self.event.isSet():
-                print "Waiting..."
-                self.event.wait(3)
-                if self.event.isSet():
-                    print "Session woke up"
+            if self.outstanding:
+                print "Outstanding data, short sleep"
+                self.event.wait(1)
+            else:
+                print "Deep sleep"
+                self.event.wait(30)
+                if not self.event.isSet():
+                    print "Session timed out!"
+                    self.set_state(self.ST_CLSD)
+                    self.enabled = False                    
                 else:
-                    print "Session timed out waiting for stuff"
+                    print "Awoke from deep sleep to some data"
+                    
             self.event.clear()
-
+            
     def _block_read_for(self, count):
         waiting = self.data.peek_all()
 
