@@ -354,6 +354,7 @@ class StatefulSession(Session):
         self.data_waiting = threading.Condition()
 
         self.ts = 0
+        self.attempts = 0
 
         self.event = threading.Event()
         self.thread = threading.Thread(target=self.worker)
@@ -372,6 +373,7 @@ class StatefulSession(Session):
         if not self.outstanding:
             self.outstanding = self.outq.dequeue()
             self.ts = 0
+            self.attempts = 0
 
     def is_timeout(self):
         if self.ts == 0:
@@ -389,7 +391,18 @@ class StatefulSession(Session):
         self.queue_next()
 
         if self.outstanding and self.is_timeout():
-            self.stats["retries"] += 1
+            if self.attempts:
+                self.stats["retries"] += 1
+
+            if self.attempts == 10:
+                print "Too many retries, closing..."
+                self.set_state(self.ST_CLSD)
+                self.enabled = False
+                return
+
+            self.attempts += 1
+            print "Attempt %i" % self.attempts
+
             self._sm.outgoing(self, self.outstanding)
             t = time.time()
             print "Waiting for block to be sent..." 
