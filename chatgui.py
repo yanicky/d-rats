@@ -879,6 +879,9 @@ class MainChatGUI(ChatGUI):
             gobject.idle_add(refresh, self)
             self.needs_redraw = True
 
+    def ev_pane_sized(self, window, req):
+        self.config.set("state", "main_advanced", int(req.height))
+
     def make_window(self):
         self.window = gtk.Window(gtk.WINDOW_TOPLEVEL)
         self.is_maximized = False
@@ -886,6 +889,7 @@ class MainChatGUI(ChatGUI):
         self.advpane = self.make_advanced()
 
         self.pane = gtk.VPaned()
+        self.mainpane.connect("size-allocate", self.ev_pane_sized)
         self.pane.pack1(self.mainpane, False, False)
         self.pane.pack2(self.advpane, False, False)
         self.pane.show()
