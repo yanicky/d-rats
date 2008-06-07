@@ -52,7 +52,12 @@ class ChoiceDialog(gtk.Dialog):
         self.vbox.pack_start(self.label, 1, 1, 0)
         self.label.show()
 
-        self.choice = make_choice(sorted(choices), self.editable, choices[0])
+        try:
+            default = choices[0]
+        except IndexError:
+            default = None
+
+        self.choice = make_choice(sorted(choices), self.editable, default)
         self.vbox.pack_start(self.choice, 1, 1, 0)
         self.choice.show()
 
