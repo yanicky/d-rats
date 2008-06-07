@@ -79,8 +79,6 @@ class FileTransferSession(sessionmgr.StatefulSession):
         if not stat:
             return False
 
-        self.stats["total_size"] = stat.st_size
-
         f = file(filename, "rb")
         if not f:
             return False
@@ -106,6 +104,9 @@ class FileTransferSession(sessionmgr.StatefulSession):
 
         if resp != "OK":
             return False
+
+        self.stats["total_size"] = stat.st_size
+        self.stats["sent_size"] = 0
 
         while True:
             d = f.read(1024)
@@ -151,6 +152,7 @@ class FileTransferSession(sessionmgr.StatefulSession):
             filename = dir
 
         self.status("Receiving file %s of size %i" % (name, size))
+        self.stats["recv_size"] = 0
         self.stats["total_size"] = size
 
         f = file(filename, "wb", 0)
