@@ -124,11 +124,14 @@ class FileTransferSession(sessionmgr.StatefulSession):
         self.write(f.read(), timeout=20)
         f.close()
 
-        self.status("Complete")
-
         self.close()
 
-        print "Finished sending file"
+        if self.stats["sent_size"] != self.stats["total_size"]:
+            self.status("Failed to send file (incomplete)")
+            return False
+        else:
+            self.status("Complete")
+            return True
 
     def recv_file(self, dir):
         self.status("Waiting for transfer to start")
@@ -177,9 +180,12 @@ class FileTransferSession(sessionmgr.StatefulSession):
 
         f.close()
 
-        self.status("Complete")
-
-        return filename
+        if self.stats["recv_size"] != self.stats["total_size"]:
+            self.status("Failed to receive file (incomplete)")
+            return None
+        else:
+            self.status("Complete")
+            return filename
 
 class FormTransferSession(FileTransferSession):
     type = sessionmgr.T_FORMXFER
