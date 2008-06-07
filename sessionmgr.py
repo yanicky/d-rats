@@ -117,6 +117,7 @@ class Session:
 
         self.state = state
         self.state_event.set()
+        self.notify()
 
     def get_state(self):
         return self.state
