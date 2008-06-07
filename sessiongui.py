@@ -82,15 +82,19 @@ class FileRecvThread(FileBaseThread):
     progress_key = "recv_size"
     
     def worker(self, path):
-        self.session.recv_file(path)
-        self.completed()
+        if self.session.recv_file(path):
+            self.completed()
+        else:
+            self.failed()
 
 class FileSendThread(FileBaseThread):
     progress_key = "sent_size"
 
     def worker(self, path):
-        self.session.send_file(path)
-        self.completed()
+        if self.session.send_file(path):
+            self.completed()
+        else:
+            self.failed()
 
 class FormRecvThread(FileBaseThread):
     progress_key = "recv_size"
@@ -123,8 +127,10 @@ class FormSendThread(FileBaseThread):
     progress_key = "sent_size"
 
     def worker(self, path):
-        self.session.send_file(path)
-        self.completed()
+        if self.session.send_file(path):
+            self.completed()
+        else:
+            self.failed()
 
 class SessionGUI:
     def build_list(self):
