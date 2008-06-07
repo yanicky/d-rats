@@ -886,8 +886,8 @@ class MainChatGUI(ChatGUI):
         self.advpane = self.make_advanced()
 
         self.pane = gtk.VPaned()
-        self.pane.add1(self.mainpane)
-        self.pane.add2(self.advpane)
+        self.pane.pack1(self.mainpane, False, False)
+        self.pane.pack2(self.advpane, False, False)
         self.pane.show()
         
         try:
