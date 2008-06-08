@@ -491,6 +491,11 @@ class MainChatGUI(ChatGUI):
         filedata = f.read()
         f.close()
 
+        if len(filedata) > (2 << 12):
+            self.display_line("File to large (must be less than 8K)",
+                              "red", "italic")
+            return
+
         notice = "Sending file %s" % filename
         self.display_line(notice + os.linesep,
                           "blue", "italic")
