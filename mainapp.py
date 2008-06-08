@@ -98,13 +98,18 @@ class MainApp:
         line = "%s%s %s" % (sender, to, args["Msg"])
         gobject.idle_add(self.chatgui.display_line, line, "incomingcolor")
 
-    def refresh_comm(self, rate, port):
+    def stop_comms(self):
         if self.sm:
             self.sm.shutdown()
+            self.sm = None
+            self.chat_session = None
 
         if self.comm:
             self.comm.disconnect()
 
+    def start_comms(self):
+        rate = self.config.get("settings", "rate")
+        port = self.config.get("settings", "port")
 
         if ":" in port:
             (_, host, port) = port.split(":")
@@ -116,7 +121,7 @@ class MainApp:
             self.comm.connect()
         except comm.DataPathNotConnectedError, e:
             print "COMM did not connect: %s" % e
-            return
+            return False
 
         self.sm = sessionmgr.SessionManager(self.comm,
                                             self.config.get("user", "callsign"))
@@ -124,6 +129,12 @@ class MainApp:
                                                   dest="CQCQCQ",
                                                   cls=sessions.ChatSession)
         self.chat_session.register_cb(self.incoming_chat)
+        
+        return True
+
+    def refresh_comms(self):
+        self.stop_comms()
+        return self.start_comms()
 
     def _static_gps(self):
         lat = 0.0
@@ -170,7 +181,7 @@ class MainApp:
 
         gps.set_units(units)
 
-        self.refresh_comm(rate, port)
+        self.refresh_comms()
 
         self.chatgui.display("My Call: %s\n" % call, "blue", "italic")
 

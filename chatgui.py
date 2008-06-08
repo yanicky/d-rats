@@ -162,21 +162,18 @@ class ChatGUI:
         self.display(stamp + text + os.linesep, *attrs)
 
     def tx_msg(self, string, raw=False):
-        if not raw:
-            call = self.config.get("user", "callsign")
-            message = "%s> %s" % (call, string)
-        else:
-            message = string
-
-        ChatGUI.display_line(self, message, "outgoingcolor")
         if self.mainapp.chat_session:
-            self.mainapp.chat_session.write(string)
+            if raw:
+                self.mainapp.chat_session.write_raw(string)
+            else:
+                call = self.config.get("user", "callsign")
+                message = "%s> %s" % (call, string)
+                ChatGUI.display_line(self, message, "outgoingcolor")
+                self.mainapp.chat_session.write(string)
+                self.logfn(message)
         else:
             self.display_line("Not connected", "italic", "red")
             return
-
-        if self.logfn:
-            self.logfn(message)
 
         if self.config.getboolean("prefs", "blinkmsg"):
             self.window.set_urgency_hint(True)
@@ -805,7 +802,14 @@ class MainChatGUI(ChatGUI):
 
     def connect(self, action, data=None):
         connected = action.get_active()
-        self.toggle_sendable(connected)
+        if connected:
+            if self.mainapp.refresh_comms():
+                self.display_line("Connected", "italic", "red")
+            else:
+                self.display_line("Disconnected", "italic", "red")
+        else:
+            self.mainapp.stop_comms()
+            self.display_line("Disconnected", "italic", "red")
 
     def set_connected(self, bool):
         action = self.menu_ag.get_action("connect")

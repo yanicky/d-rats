@@ -145,6 +145,13 @@ class DDT2EncodedFrame(DDT2Frame):
 
         return DDT2Frame.unpack(self, decoded)
 
+class DDT2RawData(DDT2Frame):
+    def get_packed(self):
+        return self.data
+
+    def unpack(self, string):
+        return self.data
+
 def test_symmetric():
     fin = DDT2EncodedFrame()
     fin.type = 1

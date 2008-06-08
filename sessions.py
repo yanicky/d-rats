@@ -20,6 +20,7 @@ import struct
 import time
 
 import sessionmgr
+from ddt2 import DDT2RawData
 
 class ChatSession(sessionmgr.StatelessSession):
     __cb = None
@@ -45,6 +46,14 @@ class ChatSession(sessionmgr.StatelessSession):
         self.__cb_data = data
 
         self.handler = self.incoming_data
+
+    def write_raw(self, data):
+        f = DDT2RawData()
+        f.data = data
+
+        print "Sending raw: %s" % data
+
+        self._sm.outgoing(self, f)
 
 class FileTransferSession(sessionmgr.StatefulSession):
     type = sessionmgr.T_FILEXFER
