@@ -241,10 +241,10 @@ class SessionGUI:
 
     def refresh(self):
         try:
-            if not self.registered:
-                self.mainapp.sm.register_session_cb(self.session_cb, None)
-                print "Registered Session CB"
-                self.registered = True
+            self.store.clear()
+            self.mainapp.sm.register_session_cb(self.session_cb, None)
+            print "Registered Session CB"
+            self.registered = True
         except Exception, e:
             print "Failed to register session CB: %s" % e
 
@@ -269,6 +269,10 @@ class SessionGUI:
             self.sthreads[session._id] = FormSendThread(session, of, self)
 
     def new_session(self, type, session, direction):
+        iter = self.iter_of(0, session._id)
+        if iter:
+            self.store.remove(iter)
+
         iter = self.store.append()
         self.store.set(iter,
                        0, session._id,
@@ -287,7 +291,9 @@ class SessionGUI:
     def end_session(self, id):
         iter = self.iter_of(0, id)
         if iter:
-            self.store.set(iter, 0, -1)
+            self.store.set(iter,
+                           0, -1,
+                           4, "Closed")
 
     def session_cb(self, data, reason, session):
         t = str(session.__class__).replace("Session", "")

@@ -125,6 +125,12 @@ class MainApp:
 
         self.sm = sessionmgr.SessionManager(self.comm,
                                             self.config.get("user", "callsign"))
+
+        try:
+            self.chatgui.refresh_advanced()
+        except Exception, e:
+            print "Failed to refresh advanced section"
+
         self.chat_session = self.sm.start_session("chat",
                                                   dest="CQCQCQ",
                                                   cls=sessions.ChatSession)

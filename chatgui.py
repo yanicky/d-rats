@@ -295,6 +295,7 @@ class ChatGUI:
 
     def refresh_config(self, first_time=False):
         self._refresh_colors(first_time)
+        self.refresh_advanced()
 
     def set_window_defaults(self, window):
         window.set_geometry_hints(None, min_width=400, min_height=200)
