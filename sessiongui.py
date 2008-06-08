@@ -167,24 +167,61 @@ class SessionGUI:
 
         session.close()
 
+    def clear_selected_session(self):
+        (list, iter) = self.view.get_selection().get_selected()
+        list.remove(iter)
+
+    def clear_all_finished_sessions(self):
+        def clear_finished(model, path, iter):
+            id = model.get(iter, 0)[0]
+            if id == -1:
+                model.remove(iter)
+
+        self.store.foreach(clear_finished)
+
     def mh(self, _action):
         action = _action.get_name()
 
         if action == "cancel":
             self.cancel_selected_session()
+        elif action == "clear":
+            self.clear_selected_session()
+        elif action == "clearall":
+            self.clear_all_finished_sessions()
 
     def make_menu(self):
-        a = [("cancel", None, "Cancel session", None, None, self.mh)]
+        (list, iter) = self.view.get_selection().get_selected()
+        if not iter:
+            return
 
         xml = """
 <ui>
   <popup name="menu">
     <menuitem action="cancel"/>
+    <menuitem action="clear"/>
+    <menuitem action="clearall"/>
   </popup>
 </ui>
 """
+
         ag = gtk.ActionGroup("menu")
-        ag.add_actions(a)
+
+        cancel = gtk.Action("cancel", "Cancel", None, None)
+        cancel.connect("activate", self.mh)
+        ag.add_action(cancel)
+
+        clear = gtk.Action("clear", "Clear", None, None)
+        clear.connect("activate", self.mh)
+        ag.add_action(clear)
+
+        clearall = gtk.Action("clearall", "Clear all finished", None, None)
+        clearall.connect("activate", self.mh)
+        ag.add_action(clearall)
+
+        if list.get(iter, 0)[0] == -1:
+            cancel.set_sensitive(False)
+        else:
+            clear.set_sensitive(False)
 
         uim = gtk.UIManager()
         uim.insert_action_group(ag, 0)
@@ -197,7 +234,8 @@ class SessionGUI:
             return
 
         menu = self.make_menu()
-        menu.popup(None, None, None, event.button, event.time)
+        if menu:
+            menu.popup(None, None, None, event.button, event.time)
 
     def build_list(self):
         cols = [(gobject.TYPE_INT,    gtk.CellRendererText, "ID"),
