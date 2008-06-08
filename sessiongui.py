@@ -222,14 +222,22 @@ class SessionGUI:
     def hide(self):
         self.root.hide()
 
-    def _update(self, model, path, iter, data):
-        id, status = data
-        _id = model.get(iter, 0)[0]
-        if _id == id:
-            model.set(iter, 4, status)
+    def iter_of(self, col, match):
+        iter = self.store.get_iter_first()
+
+        while iter is not None:
+            val = self.store.get(iter, col)[0]
+            if val == match:
+                return iter
+
+            iter = self.store.iter_next(iter)
+
+        return None
 
     def update(self, sessionid, status):
-        self.store.foreach(self._update, (sessionid, status))
+        iter = self.iter_of(0, sessionid)
+        if iter:
+            self.store.set(iter, 4, status)
 
     def refresh(self):
         try:
@@ -276,6 +284,11 @@ class SessionGUI:
         elif session.__class__ == sessions.FormTransferSession:
             self.new_form_xfer(session, direction)
 
+    def end_session(self, id):
+        iter = self.iter_of(0, id)
+        if iter:
+            self.store.set(iter, 0, -1)
+
     def session_cb(self, data, reason, session):
         t = str(session.__class__).replace("Session", "")
         if "." in t:
@@ -284,8 +297,7 @@ class SessionGUI:
         if reason.startswith("new,"):
             self.new_session(t, session, reason.split(",", 2)[1])
         elif reason == "end":
-            # FIXME
-            pass
+            self.end_session(session._id)
 
     def send_file(self, dest, filename):
         self.outgoing_files.insert(0, filename)
