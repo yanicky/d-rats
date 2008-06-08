@@ -168,7 +168,7 @@ class FileTransferSession(sessionmgr.StatefulSession):
 
         while True:
             try:
-                d = self.read(512)
+                d = self.read()
                 self.status("Receiving")
             except sessionmgr.SessionClosedError:
                 print "SESSION IS CLOSED"
