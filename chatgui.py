@@ -32,6 +32,7 @@ import ddt
 from xfergui import FileTransferGUI, FormTransferGUI
 from qst import QSTGUI, QuickMsgGUI, QSTGPS, QSTGPSA
 from inputdialog import TextInputDialog, ChoiceDialog, ExceptionDialog
+from miscwidgets import YesNoDialog
 from utils import filter_to_ascii
 from callsigns import find_callsigns
 import mainapp
@@ -1366,6 +1367,16 @@ class FormManager:
         self.reg_form(formid, newfn, stamp)
 
     def delete(self, widget, data=None):
+        d = YesNoDialog(parent=self.gui.window,
+                        title="Confirm Delete",
+                        buttons=(gtk.STOCK_YES, gtk.RESPONSE_YES,
+                                 gtk.STOCK_NO, gtk.RESPONSE_NO))
+        d.set_text("Really delete this form?")
+        r = d.run()
+        d.destroy()
+        if r != gtk.RESPONSE_YES:
+            return
+
         (list, iter) = self.view.get_selection().get_selected()
 
         (filename, id) = self.store.get(iter, self.col_filen, self.col_ident)
