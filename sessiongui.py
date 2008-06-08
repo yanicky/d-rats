@@ -26,6 +26,9 @@ import miscwidgets
 import sessionmgr
 import sessions
 
+def gui_display(gui, *args):
+    gobject.idle_add(gui.display_line, *args)
+
 class SessionThread:
     def __init__(self, session, data, gui):
         self.enabled = True
@@ -61,10 +64,19 @@ class FileBaseThread(SessionThread):
                                                         pct,
                                                         vals["retries"]))
 
-    def completed(self):
+    def completed(self, objname=None):
         gobject.idle_add(self.gui.update,
                          self.session._id,
                          "Transfer Completed")
+
+        if objname:
+            msg = " of %s" % objname
+        else:
+            msg = ""
+
+        gui_display(self.gui.chatgui,
+                    "Transfer%s complete" % msg,
+                    "italic")
 
     def failed(self, reason=None):
         s = "Transfer Failed"
@@ -72,6 +84,8 @@ class FileBaseThread(SessionThread):
             s += " " + reason
 
         gobject.idle_add(self.gui.update, self.session._id, s)
+
+        gui_display(self.gui.chatgui, s, "italic")
 
     def __init__(self, *args):
         SessionThread.__init__(self, *args)
@@ -82,8 +96,9 @@ class FileRecvThread(FileBaseThread):
     progress_key = "recv_size"
     
     def worker(self, path):
-        if self.session.recv_file(path):
-            self.completed()
+        fn = self.session.recv_file(path)
+        if fn:
+            self.completed("file %s" % os.path.basename(fn))
         else:
             self.failed()
 
@@ -92,7 +107,7 @@ class FileSendThread(FileBaseThread):
 
     def worker(self, path):
         if self.session.send_file(path):
-            self.completed()
+            self.completed("file %s" % os.path.basename(path))
         else:
             self.failed()
 
@@ -117,7 +132,7 @@ class FormRecvThread(FileBaseThread):
                              xfert=fm.get_stamp())
 
             print "Registering form %s" % fn
-            self.completed()
+            self.completed("form")
 
         else:
             self.failed()
@@ -249,8 +264,10 @@ class SessionGUI:
             print "Failed to register session CB: %s" % e
 
     def new_file_xfer(self, session, direction):
-        self.chatgui.display_line("File transfer started with %s" % session._st,
-                                  "italic")
+        gui_display(self.chatgui,
+                    "File transfer started with %s" % session._st,
+                    "italic")
+
         if direction == "in":
             dd = self.mainapp.config.get("prefs", "download_dir")
             self.sthreads[session._id] = FileRecvThread(session, dd, self)
@@ -259,8 +276,10 @@ class SessionGUI:
             self.sthreads[session._id] = FileSendThread(session, of, self)
 
     def new_form_xfer(self, session, direction):
-        self.chatgui.display_line("Form transfer started with %s" % session._st,
-                                  "italic")
+        gui_display(self.chatgui,
+                    "Form transfer started with %s" % session._st,
+                    "italic")
+
         if direction == "in":
             dd = self.mainapp.config.form_store_dir()
             self.sthreads[session._id] = FormRecvThread(session, dd, self)
