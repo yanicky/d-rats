@@ -351,8 +351,6 @@ class SelectGUI:
 
     def __init__(self, title="--"):
         self.tips = gtk.Tooltips()
-        self.list_store = None
-        self.columns = []
         self.window = gtk.Window(gtk.WINDOW_TOPLEVEL)
         self.window.set_title(title)
 
