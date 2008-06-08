@@ -326,6 +326,8 @@ class SessionGUI:
             self.sthreads[session._id] = FormSendThread(session, of, self)
 
     def new_session(self, type, session, direction):
+        print "New session (%s) of type: %s" % (direction, session.__class__)
+
         iter = self.iter_of(0, session._id)
         if iter:
             self.store.remove(iter)
@@ -337,8 +339,6 @@ class SessionGUI:
                        2, type,
                        3, session._st,
                        4, "Idle")
-
-        print "New session of type: %s" % session.__class__
 
         if session.__class__ == sessions.FileTransferSession:
             self.new_file_xfer(session, direction)
@@ -357,6 +357,8 @@ class SessionGUI:
         if "." in t:
             t = t.split(".")[1]
 
+        print "Session GUI callback: %s %s" % (reason, session._id)
+            
         if reason.startswith("new,"):
             self.new_session(t, session, reason.split(",", 2)[1])
         elif reason == "end":
