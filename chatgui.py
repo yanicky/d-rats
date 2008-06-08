@@ -438,6 +438,11 @@ class MainChatGUI(ChatGUI):
 
         self.map.set_marker(pos, group="Stations")
 
+        try:
+            self.adv_controls["calls"].refresh()
+        except Exception, e:
+            print "Failed to refresh calls: %s" % e
+
     def display_line(self, string, *attrs):
         do_main = True
 

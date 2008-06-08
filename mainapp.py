@@ -87,8 +87,9 @@ class MainApp:
     def incoming_chat(self, data, args):
         sender = args["From"]
         _, pos = self.seen_callsigns.get(sender, (None, None))
-        self.seen_callsigns[sender] = (int(time.time()), None)
-        gobject.idle_add(self.chatgui.adv_controls["calls"].refresh)
+        if sender != "CQCQCQ":
+            self.seen_callsigns[sender] = (int(time.time()), None)
+            gobject.idle_add(self.chatgui.adv_controls["calls"].refresh)
 
         if args["To"] != "CQCQCQ":
             to = " -> %s:" % args["To"]
