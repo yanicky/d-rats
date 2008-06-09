@@ -111,6 +111,7 @@ class MainApp:
     def start_comms(self):
         rate = self.config.get("settings", "rate")
         port = self.config.get("settings", "port")
+        cpat = self.config.get("settings", "compatmode")
 
         if ":" in port:
             (_, host, port) = port.split(":")
@@ -125,7 +126,8 @@ class MainApp:
             return False
 
         self.sm = sessionmgr.SessionManager(self.comm,
-                                            self.config.get("user", "callsign"))
+                                            self.config.get("user", "callsign"),
+                                            compat=cpat)
 
         try:
             self.chatgui.refresh_advanced()

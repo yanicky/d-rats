@@ -102,6 +102,7 @@ class AppConfig:
         mset("settings", "gpsenabled", "False")
         mset("settings", "aprssymtab", "/")
         mset("settings", "aprssymbol", ">")
+        mset("settings", "compatmode", "False")
 
         mset("quick", None, None)
 
@@ -153,6 +154,7 @@ class AppConfig:
                 "gpsenabled" : "Update position from external GPS",
                 "aprssymtab" : "D/APRS Symbol Table ID",
                 "aprssymbol" : "D/APRS Symbol ID",
+                "compatmode" : "Receive raw text as chat data"
                 }
 
     id2tip = {"ddt_block_size" : "Size (in KB) of data blocks to send with DDT",
@@ -167,6 +169,7 @@ class AppConfig:
               "gpsenabled" : "When enabled, update position from GPS data",
               "aprssymtab" : "Default is `/'",
               "aprssymbol" : "Default is `>' (Car)",
+              "compatmode" : "Pass through raw text as chat data for use with D-RATS 0.1.x and D-CHAT users"
               }
 
     xfers = {"DDT" : ddt.DDTTransfer}
@@ -426,7 +429,8 @@ class AppConfig:
                                      gtk.Entry(1)), 0,0,0)
         vbox.pack_start(self.make_sb("aprssymbol",
                                      gtk.Entry(1)), 0,0,0)
-
+        vbox.pack_start(self.make_sb("compatmode",
+                                     self.make_bool()), 0,0,0)
 
         vbox.show()
         return vbox
@@ -621,7 +625,8 @@ D-RATS has been started in safe mode, which means the configuration file has not
                   ("prefs", "debuglog"),
                   ("settings", "compression"),
                   ("prefs", "logresume"),
-                  ("settings", "gpsenabled")]
+                  ("settings", "gpsenabled"),
+                  ("settings", "compatmode")]
 
         choicetext_v = [("settings", "port"),
                         ("settings", "gpsport")]

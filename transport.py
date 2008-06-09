@@ -68,13 +68,14 @@ class BlockQueue:
         return q
 
 class Transporter:
-    def __init__(self, pipe, inhandler=None):
+    def __init__(self, pipe, inhandler=None, compat=False):
         self.inq = BlockQueue()
         self.outq = BlockQueue()
         self.pipe = pipe
         self.inbuf = ""
         self.enabled = True
         self.inhandler = inhandler
+        self.compat = compat
 
         self.thread = threading.Thread(target=self.worker)
         self.thread.start()
@@ -166,7 +167,11 @@ class Transporter:
             self.parse_blocks()
             self.parse_gps()
             if self.inbuf:
-                print "### Unconverted data: %s" % self.inbuf
+                if self.compat:
+                    self._send_text_block(self.inbuf)
+                else:
+                    print "### Unconverted data: %s" % self.inbuf
+                
             self.inbuf = ""
             self.send_frames()
 

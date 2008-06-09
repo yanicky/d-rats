@@ -561,7 +561,7 @@ class StatefulSession(Session):
             print "ACKED"
 
 class SessionManager:
-    def __init__(self, pipe, station):
+    def __init__(self, pipe, station, compat=False):
         self.pipe = pipe
         self.station = station
 
@@ -570,7 +570,9 @@ class SessionManager:
         self.sessions = {}
         self.session_cb = {}
 
-        self.tport = transport.Transporter(self.pipe, self.incoming)
+        self.tport = transport.Transporter(self.pipe,
+                                           inhandler=self.incoming,
+                                           compat=compat)
 
         self.control = ControlSession()
         self._register_session(self.control, "CQCQCQ", "new,out")
