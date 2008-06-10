@@ -278,6 +278,10 @@ class ChatGUI:
             tag.set_property("style", pango.STYLE_ITALIC)
             tags.add(tag)
 
+            tag = gtk.TextTag("broken")
+            tag.set_property("background", "#FFDD33")
+            tags.add(tag)
+
         regular = ["incomingcolor", "outgoingcolor",
                   "noticecolor", "ignorecolor"]
         reverse = ["callsigncolor"]

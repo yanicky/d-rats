@@ -96,8 +96,13 @@ class MainApp:
         else:
             to = ":"
 
+        if args["From"] == "CQCQCQ":
+            color = "broken"
+        else:
+            color = "incomingcolor"
+
         line = "%s%s %s" % (sender, to, args["Msg"])
-        gobject.idle_add(self.chatgui.display_line, line, "incomingcolor")
+        gobject.idle_add(self.chatgui.display_line, line, color)
 
     def stop_comms(self):
         if self.sm:
