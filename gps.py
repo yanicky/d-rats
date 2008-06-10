@@ -170,6 +170,28 @@ def distance(lat_a, lon_a, lat_b, lon_b):
 
     return distance * earth_radius
 
+def parse_date(string, fmt):
+    try:
+        return datetime.datetime.strptime(string, fmt)
+    except AttributeError, e:
+        print "Enabling strptime() workaround for Python <= 2.4.x"
+
+    vals = {}
+
+    for c in "mdyHMS":
+        i = fmt.index(c)
+        vals[c] = int(string[i-1:i+1])
+
+    if len(vals.keys()) != (len(fmt) / 2):
+        raise Exception("Not all date bits converted")
+
+    return datetime.datetime(vals["y"] + 2000,
+                             vals["m"],
+                             vals["d"],
+                             vals["H"],
+                             vals["M"],
+                             vals["S"])
+
 class GPSPosition:
     """Represents a position on the globe, either from GPS data or a static
     positition"""
@@ -473,7 +495,7 @@ class NMEAGPSPosition(GPSPosition):
         t = time.strftime("%m%d%y") + elements[1]
         if "." in t:
             t = t.split(".")[0]
-        self.date = datetime.datetime.strptime(t, "%m%d%y%H%M%S")
+        self.date = parse_date(t, "%m%d%y%H%M%S")
 
         self.latitude = nmea2deg(float(elements[2]), elements[3])
         self.longitude = nmea2deg(float(elements[4]), elements[5])
@@ -511,7 +533,7 @@ class NMEAGPSPosition(GPSPosition):
         if "." in t:
             t = t.split(".", 2)[0]
 
-        self.date = datetime.datetime.strptime(d+t, "%d%m%y%H%M%S")
+        self.date = parse_date(d+t, "%d%m%y%H%M%S")
 
         self.latitude = nmea2deg(float(elements[3]), elements[4])
         self.longitude = nmea2deg(float(elements[5]), elements[6])
@@ -583,7 +605,7 @@ class APRSGPSPosition(GPSPosition):
             print "Unknown APRS date suffix: `%s'" % suffix
             return datetime.datetime.now()
 
-        d = datetime.datetime.strptime(ds, "%d%m%y%H%M%S")
+        d = parse_date(ds, "%d%m%y%H%M%S")
 
         if suffix in "zh":
             delta = datetime.datetime.utcnow() - datetime.datetime.now()
