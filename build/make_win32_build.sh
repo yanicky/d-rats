@@ -2,7 +2,7 @@
 
 OUTPUT=$(echo "c:\\cygwin\\${1}/" | sed 's/\//\\/'g)
 
-LOCAL_VERSION=beta3
+LOCAL_VERSION=
 eval $(cat mainapp.py | grep ^DRATS_VERSION | sed 's/ //g')
 VERSION=${DRATS_VERSION}${LOCAL_VERSION}
 ZIP=${OUTPUT}d-rats-$VERSION-win32.zip
