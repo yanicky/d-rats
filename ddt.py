@@ -350,7 +350,7 @@ class DDTTransfer:
 
         # Limits
         self.limit_tries = 20
-        self.limit_timeout = 4
+        self.limit_timeout = 10
 
         # Stats
         self.total_errors = 0

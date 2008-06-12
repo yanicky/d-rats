@@ -3,6 +3,7 @@ import time
 import tempfile
 import platform
 import datetime
+import subst
 
 import threading
 import serial
@@ -283,7 +284,7 @@ class GPSPosition:
                 self.longitude,
                 alt,
                 self.date.strftime("%H:%M:%S"),
-                comment,
+                subst.subst_string(comment),
                 distance,
                 dir)
         else:
