@@ -58,11 +58,17 @@ class FileBaseThread(SessionThread):
         else:
             pct = 0.0
 
+        if vals["retries"] > 0:
+            retries = " (%i retries)" % vals["retries"]
+        else:
+            retries = ""
+
+
+        msg = "%s [%02.0f%%]%s" % (vals["msg"], pct, retries)
+
         gobject.idle_add(self.gui.update,
                          self.session._id,
-                         "%s (%02.0f%%, %i retries)" % (vals["msg"],
-                                                        pct,
-                                                        vals["retries"]))
+                         msg)
 
     def completed(self, objname=None):
         gobject.idle_add(self.gui.update,
