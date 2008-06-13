@@ -227,10 +227,15 @@ class SessionGUI:
         clearall.connect("activate", self.mh)
         ag.add_action(clearall)
 
-        if list.get(iter, 0)[0] == -1:
+        id = list.get(iter, 0)[0]
+
+        if id == -1:
             cancel.set_sensitive(False)
         else:
             clear.set_sensitive(False)
+
+        if id < 2:
+            cancel.set_sensitive(False)
 
         uim = gtk.UIManager()
         uim.insert_action_group(ag, 0)
