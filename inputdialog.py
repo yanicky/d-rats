@@ -61,6 +61,9 @@ class ChoiceDialog(gtk.Dialog):
         self.vbox.pack_start(self.choice, 1, 1, 0)
         self.choice.show()
 
+        self.set_default_response(gtk.RESPONSE_OK)
+        self.choice.child.set_property("activates-default", True)
+
 class EditableChoiceDialog(ChoiceDialog):
     editable = True
 
