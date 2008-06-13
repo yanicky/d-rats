@@ -120,7 +120,7 @@ class Transporter:
                 else:
                     print "Found a broken block"
             except Exception, e:
-                print "Failed to unpack what looked like a block"
+                print "Failed to unpack what looked like a block: %s" % e
 
     def _match_gps(self, type):
         return re.match("^(.*)(%s,.*\r\n.*\r)(.*)" % type, self.inbuf)
