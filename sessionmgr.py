@@ -297,7 +297,7 @@ class ControlSession(Session):
 
         session.set_state(session.ST_CLSW)
 
-        for i in range(0, 10):
+        for i in range(0, 3):
             print "Sending End-of-Session"
             self._sm.outgoing(self, f)
 
