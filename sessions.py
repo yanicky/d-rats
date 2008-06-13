@@ -92,14 +92,22 @@ class FileTransferSession(sessionmgr.StatefulSession):
         if not f:
             return False
 
-        self.write(struct.pack("I", stat.st_size) + \
-                       os.path.basename(filename))
+        try:
+            self.write(struct.pack("I", stat.st_size) + \
+                           os.path.basename(filename))
+        except sessionmgr.SessionClosedError, e:
+            print "Session closed while sending file information"
+            return False
 
         self.filename = os.path.basename(filename)
 
         for i in range(10):
             print "Waiting for start"
-            resp = self.read()
+            try:
+                resp = self.read()
+            except sessionmgr.SessionClosedError, e:
+                print "Session closed while waiting for start ack"
+                return False
 
             if not resp:
                 self.status("Waiting for response")
@@ -145,7 +153,12 @@ class FileTransferSession(sessionmgr.StatefulSession):
     def recv_file(self, dir):
         self.status("Waiting for transfer to start")
         for i in range(10):
-            data = self.read()
+            try:
+                data = self.read()
+            except sessionmgr.SessionClosedError, e:
+                print "Session closed while waiting for start"
+                return None
+
             if data:
                 break
             else:
@@ -172,7 +185,12 @@ class FileTransferSession(sessionmgr.StatefulSession):
             print "Can't open file %s/%s" + (dir, name)
             return None
 
-        self.write("OK")
+        try:
+            self.write("OK")
+        except sessionmgr.SessionClosedError, e:
+            print "Session closed while sending start ack"
+            return None
+
         self.status("Negotiation Complete")
 
         while True:
