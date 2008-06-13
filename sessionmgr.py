@@ -526,12 +526,12 @@ class StatefulSession(Session):
         return buf
 
     def read(self, count=None):
-        if self.get_state() not in [self.ST_OPEN, self.ST_SYNC]:
-            raise SessionClosedError("State is %i" % self.get_state())
-
-        while self.get_state() != self.ST_OPEN:
+        while self.get_state() == self.ST_SYNC:
             print "Waiting for session to open"
             self.wait_for_state_change(5)
+
+        if self.get_state() != self.ST_OPEN:
+            raise SessionClosedError("State is %i" % self.get_state())
 
         buf = self._read(count)
 
@@ -543,12 +543,12 @@ class StatefulSession(Session):
     def write(self, buf, timeout=0):
         f = None
         
-        if self.get_state() not in [self.ST_OPEN, self.ST_SYNC]:
-            raise SessionClosedError("State is %s" % self.get_state())
-
-        while self.get_state() != self.ST_OPEN:
+        while self.get_state() == self.ST_SYNC:
             print "Waiting for session to open"
             self.wait_for_state_change(5)
+
+        if self.get_state() != self.ST_OPEN:
+            raise SessionClosedError("State is %s" % self.get_state())
 
         while buf:
             chunk = buf[:self.bsize]
