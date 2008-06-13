@@ -59,7 +59,7 @@ def hexprint(data):
     return csum
 
 def filter_to_ascii(string):
-        c = '?'
+        c = '\x00'
         xlate = ([c] * 32) + \
                 [chr(x) for x in range(32,127)] + \
                 ([c] * 129)
@@ -67,5 +67,5 @@ def filter_to_ascii(string):
         xlate[ord('\n')] = '\n'
         xlate[ord('\r')] = '\r'
 
-        return str(string).translate("".join(xlate))
+        return str(string).translate("".join(xlate)).replace("\x00", "")
 
