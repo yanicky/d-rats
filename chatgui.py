@@ -44,9 +44,19 @@ import sessiongui
 
 from mc_xfergui import MulticastGUI, MulticastRecvGUI
 
+default_station = None
+
 def prompt_for_station(parent=None):
+    global default_station
+
     ma = mainapp.get_mainapp()
     calls = ma.seen_callsigns.keys()
+
+    if default_station:
+        if default_station in calls:
+            calls.remove(default_station)
+        calls.insert(0, default_station)
+
     d = EditableChoiceDialog(calls,
                              title="Destination Station",
                              parent=parent)
@@ -57,7 +67,8 @@ def prompt_for_station(parent=None):
     if r == gtk.RESPONSE_CANCEL:
         return None
     else:
-        return dest
+        default_station = dest.upper()
+        return dest.upper()
 
 class ChatGUI:
     def ev_delete(self, widget, event, data=None):
