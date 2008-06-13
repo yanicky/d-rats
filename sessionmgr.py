@@ -446,7 +446,7 @@ class StatefulSession(Session):
                     print "Got ACK for %s" % b.data
                     self.outstanding.ackd_event.set()
                     self.stats["sent_size"] += len(self.outstanding.data)
-                    self.stats["retries"] -= 1
+                    self.attempts = 0
                     self.outstanding = None
                 else:
                     print "Got ACK but no block sent!"
