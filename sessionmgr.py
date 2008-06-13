@@ -152,83 +152,94 @@ class ControlSession(Session):
         f.data = data
         self._sm.outgoing(self, f)
 
+    def ctl_ack(self, frame):
+        try:
+            l, r = struct.unpack("BB", frame.data)
+            session = self._sm.sessions[l]
+            session._rs = r
+            print "Signaled waiting session thread (l=%i r=%i)" % (l, r)
+        except Exception, e:
+            print "Failed to lookup new session event: %s" % e
+
+        if session.get_state() == session.ST_CLSW:
+            session.set_state(session.ST_CLSD)
+        elif session.get_state() == session.ST_OPEN:
+            pass
+        elif session.get_state() == session.ST_SYNC:
+            session.set_state(session.ST_OPEN)
+        else:
+            print "ACK for session in invalid state: %i" % session.get_state()
+        
+    def ctl_end(self, frame):
+        print "End of session %s" % frame.data
+
+        try:
+            id = int(frame.data)
+        except Exception, e:
+            print "Session end request had invalid ID: %s" % e
+            return
+
+        try:
+            session = self._sm.sessions[id]
+            session.set_state(session.ST_CLSD)
+            self._sm.stop_session(session)
+        except Exception, e:
+            print "Session %s ended but not registered" % id
+            return
+
+        frame.d_station = frame.s_station
+        if session._rs:
+            frame.data = str(session._rs)
+        else:
+            frame.data = str(session._id)
+        self._sm.outgoing(self, frame)
+
+    def ctl_new(self, frame):
+        try:
+            id = int(frame.data)
+        except Exception, e:
+            print "Session request had invalid ID: %s" % e
+            return
+
+        exist = self._sm.get_session(rid=id, rst=frame.s_station)
+        if exist:
+            print "Re-acking existing session %s:%i:%i" % (frame.s_station,
+                                                           id,
+                                                           exist._id)
+            self.ack_req(frame.s_station, struct.pack("BB", id, exist._id))
+            return
+
+        print "ACK'ing session request for %i" % id
+
+        try:
+            c = self.stypes[frame.type]
+            print "Got type: %s" % c
+            s = c("session")
+            s._rs = int(frame.data)
+            s.set_state(s.ST_OPEN)
+        except Exception, e:
+            print "Can't start session type `%s': %s" % (frame.type, e)
+            return
+                
+        num = self._sm._register_session(s, frame.s_station, "new,in")
+
+        data = struct.pack("BB", id, num)
+        self.ack_req(frame.s_station, data)
+
     def ctl(self, frame):
         if frame.d_station != self._sm.station:
             print "Control ignoring frame for station %s" % frame.d_station
             return
 
         if frame.type == self.T_ACK:
-            try:
-                l, r = struct.unpack("BB", frame.data)
-                session = self._sm.sessions[l]
-                session._rs = r
-                print "Signaled waiting session thread (l=%i r=%i)" % (l, r)
-            except Exception, e:
-                print "Failed to lookup new session event: %s" % e
-
-            if session.get_state() == session.ST_CLSW:
-                session.set_state(session.ST_CLSD)
-            elif session.get_state() == session.ST_OPEN:
-                pass
-            elif session.get_state() == session.ST_SYNC:
-                session.set_state(session.ST_OPEN)
-            else:
-                print "ACK for session in invalid state: %i" % session.get_state()
+            self.ctl_ack(frame)
         elif frame.type == self.T_END:
-            print "End of session %s" % frame.data
-
-            try:
-                id = int(frame.data)
-            except Exception, e:
-                print "Session end request had invalid ID: %s" % e
-                return
-
-            try:
-                session = self._sm.sessions[id]
-                session.set_state(session.ST_CLSD)
-                self._sm.stop_session(session)
-            except Exception, e:
-                print "Session %s ended but not registered" % id
-                return
-
-            #self.ack_req(frame.s_station, frame.data)
-
-            frame.d_station = frame.s_station
-            if session._rs:
-                frame.data = str(session._rs)
-            else:
-                frame.data = str(session._id)
-            self._sm.outgoing(self, frame)
-
+            self.ctl_end(frame)
         elif frame.type >= self.T_NEW:
-            try:
-                id = int(frame.data)
-            except Exception, e:
-                print "Session request had invalid ID: %s" % e
-                return
-
-            # Check for existing session
-
-            print "ACK'ing session request for %i" % id
-
-            try:
-                c = self.stypes[frame.type]
-                print "Got type: %s" % c
-                s = c("session")
-                s._rs = int(frame.data)
-                s.set_state(s.ST_OPEN)
-            except Exception, e:
-                print "Can't start session type `%s': %s" % (frame.type, e)
-                return
-                
-            num = self._sm._register_session(s, frame.s_station, "new,in")
-
-            data = struct.pack("BB", id, num)
-            self.ack_req(frame.s_station, data)
+            self.ctl_new(frame)
         else:
             print "Unknown control message type %i" % frame.type
             
-
     def new_session(self, session):
         f = DDT2EncodedFrame()
         f.type = self.T_NEW + session.type
@@ -708,6 +719,25 @@ class SessionManager:
             del self.sessions[id]
         except Exception, e:
             print "Unable to deregister session"
+
+    def get_session(self, rid=None, rst=None, lid=None):
+        if not (rid or rst or lid):
+            print "get_station() with no selectors!"
+            return None
+
+        for s in self.sessions.values():
+            if rid and s._rs != rid:
+                continue
+
+            if rst and s._st != rst:
+                continue
+
+            if lid and s._id != lid:
+                continue
+
+            return s
+
+        return None
 
 if __name__ == "__main__":
     #p = transport.TestPipe(dst="KI4IFW")
