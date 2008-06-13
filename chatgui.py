@@ -1275,26 +1275,32 @@ class QSTMonitor:
         self.root.hide()
 
 class FormManager:
-    def id_edited(self, r, path, new_text, colnum):
+    def val_edited(self, r, path, new_text, colnum):
         iter = self.store.get_iter(path)
 
-        (index, filename, stamp) = self.store.get(iter,
-                                                  self.col_index,
-                                                  self.col_filen,
-                                                  self.col_stamp)
+        self.store.set(iter, colnum, new_text)
 
-        self.store.set(iter, self.col_ident, new_text)
-
-        self.reg_form(new_text, filename, stamp)
+        (index, filename, stamp, statm, ident, xfert) = \
+            self.store.get(iter,
+                           self.col_index,
+                           self.col_filen,
+                           self.col_stamp,
+                           self.col_statm,
+                           self.col_ident,
+                           self.col_xfert)
+        
+        self.reg_form(ident, filename, stamp, xfert, statm)
     
     def make_display(self):
         self.col_index = 0
-        self.col_ident = 1
-        self.col_stamp = 2
-        self.col_filen = 3
-        self.col_xfert = 4
+        self.col_statm = 1
+        self.col_ident = 2
+        self.col_stamp = 3
+        self.col_filen = 4
+        self.col_xfert = 5
 
         self.store = gtk.ListStore(gobject.TYPE_INT,
+                                   gobject.TYPE_STRING,
                                    gobject.TYPE_STRING,
                                    gobject.TYPE_STRING,
                                    gobject.TYPE_STRING,
@@ -1303,6 +1309,20 @@ class FormManager:
         self.view = gtk.TreeView(self.store)
         self.view.set_rules_hint(True)
 
+        choices = gtk.ListStore(gobject.TYPE_STRING)
+        for i in ["New", "Low", "Med", "Hi", "Done"]:
+            choices.append([i])
+
+        r = gtk.CellRendererCombo()
+        r.set_property("model", choices)
+        r.set_property("text-column", 0)
+        r.set_property("editable", True)
+        r.connect("edited", self.val_edited, self.col_statm)
+        c = gtk.TreeViewColumn("Status", r, text=self.col_statm)
+        c.set_resizable(True)
+        c.set_sort_column_id(self.col_statm)
+        self.view.append_column(c)
+
         r = gtk.CellRendererText()
         c = gtk.TreeViewColumn("ID", r, text=self.col_ident)
         c.set_resizable(True)
@@ -1310,7 +1330,7 @@ class FormManager:
         self.view.append_column(c)
 
         r.set_property("editable", True)
-        r.connect("edited", self.id_edited, None)
+        r.connect("edited", self.val_edited, self.col_ident)
 
         r = gtk.CellRendererText()
         c = gtk.TreeViewColumn("Last Edited", r, text=self.col_stamp)
@@ -1331,7 +1351,13 @@ class FormManager:
 
         return sw
 
-    def list_add_form(self, index, ident, filen, stamp=None, xfert="Never"):
+    def list_add_form(self,
+                      index,
+                      ident,
+                      filen,
+                      stamp=None,
+                      xfert="Never",
+                      statm="New"):
         if not stamp:
             stamp = self.get_stamp()
 
@@ -1341,7 +1367,8 @@ class FormManager:
                        self.col_ident, ident,
                        self.col_stamp, stamp,
                        self.col_filen, filen,
-                       self.col_xfert, xfert)
+                       self.col_xfert, xfert,
+                       self.col_statm, statm)
         return iter
 
     def new(self, widget, data=None):
@@ -1484,7 +1511,7 @@ class FormManager:
         self.reg.write(f)
         f.close()
 
-    def reg_form(self, id, file, editstamp, xferstamp="Never"):
+    def reg_form(self, id, file, editstamp, xferstamp="Never", status="New"):
         sec = os.path.basename(file)
 
         if not self.reg.has_section(sec):
@@ -1495,6 +1522,7 @@ class FormManager:
             self.reg.set(sec, "filename", file)
             self.reg.set(sec, "editstamp", editstamp)
             self.reg.set(sec, "xferstamp", xferstamp)
+            self.reg.set(sec, "status", status)
             self.reg_save()
         except Exception, e:
             print "Failed to register new form: %s" % e
@@ -1515,8 +1543,12 @@ class FormManager:
                 id = self.reg.get(i, "id")
                 filename = self.reg.get(i, "filename")
                 stamp = self.reg.get(i, "editstamp")
-                xfert = self.reg.get(i, "xferstamp")
-                self.list_add_form(0, id, filename, stamp, xfert)
+                try:
+                    statm = self.reg.get(i, "status")
+                    xfert = self.reg.get(i, "xferstamp")
+                except:
+                    statm = "New"
+                self.list_add_form(0, id, filename, stamp, xfert, statm)
             except Exception, e:
                 print "Failed to load form: %s" % e
                 self.reg.remove_section(i)
