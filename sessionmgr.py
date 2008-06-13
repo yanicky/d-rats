@@ -382,6 +382,7 @@ class StatefulSession(Session):
 
     def close(self, force=False):
         self.enabled = False
+        self.notify()
         self.thread.join()
 
         Session.close(self, force)
