@@ -116,7 +116,7 @@ class MainApp:
     def start_comms(self):
         rate = self.config.get("settings", "rate")
         port = self.config.get("settings", "port")
-        cpat = self.config.get("settings", "compatmode")
+        cpat = self.config.getboolean("settings", "compatmode")
 
         if ":" in port:
             (_, host, port) = port.split(":")
