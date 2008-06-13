@@ -62,6 +62,8 @@ def decode(data):
 
 class DDT2Frame:
     format = "!BHBBHH8s8s"
+    cso = 6
+    csl = 2
 
     def __init__(self):
         self.seq = 0
@@ -79,7 +81,17 @@ class DDT2Frame:
         data = zlib.compress(self.data, 9)
         length = len(data)
         
-        checksum = calc_checksum(data)
+        val = struct.pack(self.format,
+                          self.magic,
+                          self.seq,
+                          self.session,
+                          self.type,
+                          0,
+                          length,
+                          self.s_station,
+                          self.d_station)
+
+        checksum = calc_checksum(val + data)
 
         val = struct.pack(self.format,
                           self.magic,
@@ -101,11 +113,23 @@ class DDT2Frame:
          checksum, length,
          self.s_station, self.d_station) = struct.unpack(self.format, header)
 
+        _header = struct.pack(self.format,
+                              magic,
+                              self.seq,
+                              self.session,
+                              self.type,
+                              0,
+                              length,
+                              self.s_station,
+                              self.d_station)
+
+        _checksum = calc_checksum(_header + data)
+
         self.s_station = self.s_station.replace("\x00", "")
         self.d_station = self.d_station.replace("\x00", "")
 
-        if calc_checksum(data) != checksum:
-            print "Checksum failed: %s" % calc_checksum(self.data)
+        if _checksum != checksum:
+            print "Checksum failed: %s != %s" % (checksum, _checksum)
             return False
 
         self.data = zlib.decompress(data)
@@ -173,7 +197,11 @@ def test_symmetric():
 
 def test_crap():
     f = DDT2EncodedFrame()
-    f.unpack("[SOB]foobar[EOB]")
+    try:
+        f.unpack("[SOB]foobar[EOB]")
+        print "FAIL"
+    except Exception, e:
+        print "PASS"
 
 if __name__ == "__main__":
     test_symmetric()
