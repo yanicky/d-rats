@@ -171,9 +171,14 @@ class ChatGUI:
         self.display(stamp + text + os.linesep, *attrs)
 
     def tx_msg(self, string, raw=False):
+        if self.config.getboolean("prefs", "sendeol"):
+            eol = "\r\n"
+        else:
+            eol = ""
+
         if not raw:
             call = self.config.get("user", "callsign")
-            message = "%s> %s" % (call, string)
+            message = "%s> %s%s" % (call, string, eol)
         else:
             message = string
 

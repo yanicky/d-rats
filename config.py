@@ -91,6 +91,7 @@ class AppConfig:
         mset("prefs", "callsigns", "%s" % str([(True, "US")]))
         mset("prefs", "logresume", "True")
         mset("prefs", "scrollback", "1024")
+        mset("prefs", "sendeol", "False")
 
         mset("settings", "port", self.default_port)
         mset("settings", "rate", "9600")
@@ -159,6 +160,7 @@ class AppConfig:
                 "gpsenabled" : "Update position from external GPS",
                 "aprssymtab" : "D/APRS Symbol Table ID",
                 "aprssymbol" : "D/APRS Symbol ID",
+                "sendeol" : "Send EOL in chat",
                 }
 
     id2tip = {"write_chunk" : "Stage DDT blocks into small chunks of this many bytes",
@@ -176,6 +178,7 @@ class AppConfig:
               "gpsenabled" : "When enabled, update position from GPS data",
               "aprssymtab" : "Default is `/'",
               "aprssymbol" : "Default is `>' (Car)",
+              "sendeol" : "For compatibility with d*Chat",
               }
 
     xfers = {"DDT" : ddt.DDTTransfer}
@@ -392,6 +395,8 @@ class AppConfig:
                                      gtk.ColorButton()), 0,0,0)
 
         vbox.pack_start(self.make_sb("eolstrip",
+                                     self.make_bool()), 0,0,0)
+        vbox.pack_start(self.make_sb("sendeol",
                                      self.make_bool()), 0,0,0)
 
         vbox.pack_start(self.make_sb("font",
@@ -632,6 +637,7 @@ D-RATS has been started in safe mode, which means the configuration file has not
                   ("prefs", "dosignon"),
                   ("prefs", "dosignoff"),
                   ("prefs", "eolstrip"),
+                  ("prefs", "sendeol"),
                   ("prefs", "logenabled"),
                   ("prefs", "debuglog"),
                   ("settings", "swflow"),
