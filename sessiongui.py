@@ -274,6 +274,17 @@ class SessionGUI:
 
             i += 1
 
+        def render_id(col, rend, model, iter, colnum):
+            v = model.get_value(iter, colnum)
+            if v < 2:
+                rend.set_property("text", "")
+            else:
+                rend.set_property("text", "%i" % v)
+            
+        idc = self.view.get_column(0)
+        idr = idc.get_cell_renderers()[0]
+        idc.set_cell_data_func(idr, render_id, 0)
+
         self.view.show()
 
         return self.view
