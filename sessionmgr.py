@@ -196,10 +196,13 @@ class ControlSession(Session):
 
     def ctl_new(self, frame):
         try:
-            id = int(frame.data)
+            (id,) = struct.unpack("B", frame.data[:1])
+            name = frame.data[1:]
         except Exception, e:
             print "Session request had invalid ID: %s" % e
             return
+
+        print "New session %i from remote" % id
 
         exist = self._sm.get_session(rid=id, rst=frame.s_station)
         if exist:
@@ -214,8 +217,8 @@ class ControlSession(Session):
         try:
             c = self.stypes[frame.type]
             print "Got type: %s" % c
-            s = c("session")
-            s._rs = int(frame.data)
+            s = c(name)
+            s._rs = id
             s.set_state(s.ST_OPEN)
         except Exception, e:
             print "Can't start session type `%s': %s" % (frame.type, e)
@@ -245,7 +248,7 @@ class ControlSession(Session):
         f.type = self.T_NEW + session.type
         f.seq = 0
         f.d_station = session._st
-        f.data = str(session._id)
+        f.data = struct.pack("B", int(session._id)) + session.name
 
         wait_time = 5
 
