@@ -81,6 +81,9 @@ class DDT2Frame:
         data = zlib.compress(self.data, 9)
         length = len(data)
         
+        s_station = self.s_station.ljust(8, "~")
+        d_station = self.d_station.ljust(8, "~")
+
         val = struct.pack(self.format,
                           self.magic,
                           self.seq,
@@ -88,8 +91,8 @@ class DDT2Frame:
                           self.type,
                           0,
                           length,
-                          self.s_station,
-                          self.d_station)
+                          s_station,
+                          d_station)
 
         checksum = calc_checksum(val + data)
 
@@ -100,8 +103,8 @@ class DDT2Frame:
                           self.type,
                           checksum,
                           length,
-                          self.s_station,
-                          self.d_station)
+                          s_station,
+                          d_station)
 
         return val + data
 
@@ -125,8 +128,8 @@ class DDT2Frame:
 
         _checksum = calc_checksum(_header + data)
 
-        self.s_station = self.s_station.replace("\x00", "")
-        self.d_station = self.d_station.replace("\x00", "")
+        self.s_station = self.s_station.replace("~", "")
+        self.d_station = self.d_station.replace("~", "")
 
         if _checksum != checksum:
             print "Checksum failed: %s != %s" % (checksum, _checksum)
