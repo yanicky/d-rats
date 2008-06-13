@@ -120,13 +120,16 @@ class FormRecvThread(FileBaseThread):
                                            "form_%m%d%Y_%H%M%S.xml"))
         fn = self.session.recv_file(newfn)
 
+        name = "%s from %s" % (self.session.name,
+                               self.session.get_station())
+
         if fn == newfn:
-            fm.reg_form("Received from %s" % self.session.get_station(),
+            fm.reg_form(name,
                         fn,
                         "Never",
                         fm.get_stamp())
             fm.list_add_form(0,
-                             "Received from %s" % self.session.get_station(),
+                             name,
                              fn,
                              stamp="Never",
                              xfert=fm.get_stamp())
@@ -303,7 +306,8 @@ class SessionGUI:
 
     def new_file_xfer(self, session, direction):
         gui_display(self.chatgui,
-                    "File transfer started with %s" % session._st,
+                    "File transfer started with %s (%s)" % (session._st,
+                                                            session.name),
                     "italic")
 
         if direction == "in":
@@ -315,7 +319,8 @@ class SessionGUI:
 
     def new_form_xfer(self, session, direction):
         gui_display(self.chatgui,
-                    "Form transfer started with %s" % session._st,
+                    "Form transfer started with %s (%s)" % (session._st,
+                                                            session.name),
                     "italic")
 
         if direction == "in":
@@ -375,12 +380,12 @@ class SessionGUI:
         t.start()
         print "Started Session"
         
-    def send_form(self, dest, filename):
+    def send_form(self, dest, filename, name="Form"):
         self.outgoing_forms.insert(0, filename)
         print "Outgoing forms: %s" % self.outgoing_forms
 
         t = threading.Thread(target=self.mainapp.sm.start_session,
-                             kwargs={"name" : "form",
+                             kwargs={"name" : name,
                                      "dest" : dest,
                                      "cls"  : sessions.FormTransferSession})
         t.start()

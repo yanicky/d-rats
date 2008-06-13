@@ -1418,9 +1418,9 @@ class FormManager:
             return
 
         (list, iter) = self.view.get_selection().get_selected()
-        (filename, ) = self.store.get(iter, self.col_filen)
+        (filename, name) = self.store.get(iter, self.col_filen, self.col_ident)
 
-        self.gui.adv_controls["sessions"].send_form(dest, filename)
+        self.gui.adv_controls["sessions"].send_form(dest, filename, name)
 
     def edit(self, widget, data=None):
         (list, iter) = self.view.get_selection().get_selected()
