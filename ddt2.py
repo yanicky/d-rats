@@ -77,8 +77,18 @@ class DDT2Frame:
         self.sent_event = threading.Event()
         self.ackd_event = threading.Event()
 
+        self.compress = True
+
+    def set_compress(self, compress=True):
+        self.compress = compress
+
     def get_packed(self):
-        data = zlib.compress(self.data, 9)
+        if self.compress:
+            data = zlib.compress(self.data, 9)
+        else:
+            data = self.data
+            self.magic = (~self.magic) & 0xFF
+
         length = len(data)
         
         s_station = self.s_station.ljust(8, "~")
@@ -109,6 +119,15 @@ class DDT2Frame:
         return val + data
 
     def unpack(self, val):
+        magic = ord(val[0])
+        if magic == 0xDD:
+            self.compress = True
+        elif magic == 0x22:
+            self.compress = False
+        else:
+            print "Magic 0x%X not recognized" % magic
+            return False
+
         header = val[:25]
         data = val[25:]
 
@@ -135,17 +154,25 @@ class DDT2Frame:
             print "Checksum failed: %s != %s" % (checksum, _checksum)
             return False
 
-        self.data = zlib.decompress(data)
+        if self.compress:
+            self.data = zlib.decompress(data)
+        else:
+            self.data = data
 
         return True
 
     def __str__(self):
-        return "DDT2: %i:%i:%i %s->%s (%s...)" % (self.seq,
-                                                  self.session,
-                                                  self.type,
-                                                  self.s_station,
-                                                  self.d_station,
-                                                  self.data[:20])
+        if self.compress:
+            c = "+"
+        else:
+            c = "-"
+        return "DDT2%s: %i:%i:%i %s->%s (%s...)" % (c,
+                                                    self.seq,
+                                                    self.session,
+                                                    self.type,
+                                                    self.s_station,
+                                                    self.d_station,
+                                                    self.data[:20])
 
 class DDT2EncodedFrame(DDT2Frame):
     def get_packed(self):
@@ -179,7 +206,7 @@ class DDT2RawData(DDT2Frame):
     def unpack(self, string):
         return self.data
 
-def test_symmetric():
+def test_symmetric(compress=True):
     fin = DDT2EncodedFrame()
     fin.type = 1
     fin.session = 2
@@ -187,7 +214,7 @@ def test_symmetric():
     fin.s_station = "FOO"
     fin.d_station = "BAR"
     fin.data = "This is a test"
-
+    fin.set_compress(compress)
     p = fin.get_packed()
 
     print p
@@ -201,11 +228,14 @@ def test_symmetric():
 def test_crap():
     f = DDT2EncodedFrame()
     try:
-        f.unpack("[SOB]foobar[EOB]")
-        print "FAIL"
+        if f.unpack("[SOB]foobar[EOB]"):
+            print "FAIL"
+        else:
+            print "PASS"
     except Exception, e:
         print "PASS"
 
 if __name__ == "__main__":
     test_symmetric()
+    test_symmetric(False)
     test_crap()
