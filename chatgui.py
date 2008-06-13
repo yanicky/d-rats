@@ -717,8 +717,8 @@ class MainChatGUI(ChatGUI):
             <menu action='file'>
               <menuitem action='sendtext'/>
               <menuitem action='send'/>
-              <menuitem action='msend'/>
-              <menuitem action='mrecv'/>
+              <!--menuitem action='msend'/-->
+              <!--menuitem action='mrecv'/-->
               <separator/>
               <menuitem action='config'/>
               <menuitem action='qsts'/>
