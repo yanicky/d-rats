@@ -329,6 +329,7 @@ class ControlSession(Session):
 class StatelessSession(Session):
     stateless = True
     type = T_STATELESS
+    compress = True
 
     def read(self):
         f = self.inq.dequeue()
@@ -342,6 +343,8 @@ class StatelessSession(Session):
         f.type = 0
         f.d_station = dest
         f.data = data
+
+        f.set_compress(self.compress)
 
         self._sm.outgoing(self, f)
 

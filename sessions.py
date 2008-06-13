@@ -28,6 +28,8 @@ class ChatSession(sessionmgr.StatelessSession):
 
     type = sessionmgr.T_STATELESS
 
+    compress = False
+
     def incoming_data(self, frame):
         if not self.__cb:
             return
