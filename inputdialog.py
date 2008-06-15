@@ -62,10 +62,14 @@ class ChoiceDialog(gtk.Dialog):
         self.choice.show()
 
         self.set_default_response(gtk.RESPONSE_OK)
-        self.choice.child.set_property("activates-default", True)
 
 class EditableChoiceDialog(ChoiceDialog):
     editable = True
+
+    def __init__(self, choices, **args):
+        ChoiceDialog.__init__(self, choices, **args)
+
+        self.choice.child.set_activates_default(True)
 
 class ExceptionDialog(gtk.MessageDialog):
     def __init__(self, exception, **args):
