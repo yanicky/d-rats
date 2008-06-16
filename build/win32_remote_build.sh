@@ -13,7 +13,7 @@ temp_dir() {
 
 copy_source() {
     tmp=$1
-    list=$(hg status -nmc)
+    list=$(hg status -nmca)
 
     rsync -arRv $list $HOST:$tmp
 }

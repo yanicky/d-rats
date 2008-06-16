@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -x
 
 OUTPUT=$(echo "c:\\cygwin\\${1}/" | sed 's/\//\\/'g)
 
@@ -10,6 +10,14 @@ IST=${OUTPUT}d-rats-$VERSION-installer.exe
 LOG=d-rats_build.log
 
 shift
+
+moduleize() {
+    echo "Moduleizing"
+    mv *.py d_rats
+    mv d_rats/setup.py .
+    mv d_rats/repeater.py repeater
+    mv d_rats/mapdownloader.py mapdownloader
+}
 
 build_win32() {
 	echo Building Win32 executable...
@@ -42,7 +50,7 @@ Name "D-RATS Installer"
 OutFile "${IST}"
 InstallDir \$PROGRAMFILES\D-RATS
 DirText "This will install D-RATS v$VERSION"
-Icon d-rats.ico
+Icon d-rats2.ico
 SetCompressor 'lzma'
 Section ""
   InitPluginsDir
@@ -62,6 +70,7 @@ EOF
 
 rm -f $LOG
 
+moduleize
 copy_data
 build_win32
 copy_lib

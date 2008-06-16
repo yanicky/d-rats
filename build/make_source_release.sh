@@ -9,14 +9,15 @@ EXCLUDE="ddt_mb.py ptyhelper.py"
 
 RELDIR=d-rats-${VERSION}
 
-mkdir -p ${TMP}/${RELDIR}
-for i in ${INCLUDE}; do
-    cp --parents -rav $i ${TMP}/${RELDIR}
-done
+DST="${TMP}/${RELDIR}"
 
-for i in ${EXCLUDE}; do
-    rm -f ${TMP}/${RELDIR}/$i
-done
+mkdir -p $DST
+
+cp -rav d_rats $DST
+cp -av *.py ${DST}/d_rats
+mv ${DST}/d_rats/setup.py ${DST}
+
+cp -rav --parents forms/*.x[ms]l COPYING d-rats ${DST}
 
 (cd $TMP && tar czf - $RELDIR) > ${RELDIR}.tar.gz
 
