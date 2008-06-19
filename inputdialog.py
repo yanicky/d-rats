@@ -77,10 +77,44 @@ class ExceptionDialog(gtk.MessageDialog):
         self.set_property("text", "An error has occurred")
         self.format_secondary_text(str(exception))
 
-if __name__ == "__main__":
-    d = TextInputDialog("Foo")
-    d.label.set_text("Enter a filter RegEx")
-    d.run()
-    d.destroy()
+class FieldDialog(gtk.Dialog):
+    def __init__(self, **kwargs):
+        if "buttons" not in kwargs.keys():
+            kwargs["buttons"] = (gtk.STOCK_OK, gtk.RESPONSE_OK,
+                                 gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL)
 
-    print d.text.get_text()
+        self.__fields = {}
+
+        gtk.Dialog.__init__(self, **kwargs)
+
+    def response(self, id):
+        print "Blocking response"
+        return
+
+    def add_field(self, label, widget, validator=None):
+        box = gtk.HBox(True, 2)
+
+        l = gtk.Label(label)
+        l.show()
+
+        widget.set_size_request(150, -1)
+        widget.show()
+
+        box.pack_start(l, 0,0,0)
+        box.pack_start(widget, 0,0,0)
+        box.show()
+
+        self.vbox.pack_start(box, 0,0,0)
+    
+        self.__fields[label] = widget
+
+    def get_field(self, label):
+        return self.__fields.get(label, None)
+
+if __name__ == "__main__":
+    d = FieldDialog(buttons=(gtk.STOCK_OK, gtk.RESPONSE_OK))
+    d.add_field("Foo", gtk.Entry())
+    d.add_field("Bar", make_choice(["A", "B"]))
+    d.run()
+    gtk.main()
+    d.destroy()
