@@ -181,12 +181,15 @@ class SessionGUI:
         list.remove(iter)
 
     def clear_all_finished_sessions(self):
-        def clear_finished(model, path, iter):
-            id = model.get(iter, 0)[0]
-            if id == -1:
-                model.remove(iter)
+        iter = self.store.get_iter_first()
 
-        self.store.foreach(clear_finished)
+        while iter is not None:
+            tmp = self.store.iter_next(iter)
+
+            (id,) = self.store.get(iter, 0)
+            if id == -1:
+                self.store.remove(iter)
+            iter = tmp
 
     def mh(self, _action):
         action = _action.get_name()
