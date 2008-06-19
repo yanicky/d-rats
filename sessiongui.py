@@ -267,6 +267,10 @@ class SessionGUI:
         self.view = gtk.TreeView(self.store)
         self.view.connect("button_press_event", self.mouse_cb)
 
+        sw = gtk.ScrolledWindow()
+        sw.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
+        sw.add(self.view)
+
         i = 0
         for typ, renderer, caption in cols:
             r = renderer()
@@ -289,8 +293,9 @@ class SessionGUI:
         idc.set_cell_data_func(idr, render_id, 0)
 
         self.view.show()
+        sw.show()
 
-        return self.view
+        return sw
 
     def build_gui(self):
         self.root = gtk.HBox(False, 2)
