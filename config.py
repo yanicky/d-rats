@@ -29,6 +29,7 @@ import ddt
 import miscwidgets
 import platform
 import callsigns
+import inputdialog
 
 from miscwidgets import make_choice
 
@@ -87,6 +88,8 @@ class AppConfig:
         mset("settings", "aprssymtab", "/")
         mset("settings", "aprssymbol", ">")
         mset("settings", "compatmode", "False")
+        mset("settings", "inports", "[]")
+        mset("settings", "outports", "[]")
 
         mset("quick", None, None)
 
@@ -153,7 +156,10 @@ class AppConfig:
               "gpsenabled" : "When enabled, update position from GPS data",
               "aprssymtab" : "Default is `/'",
               "aprssymbol" : "Default is `>' (Car)",
-              "compatmode" : "Pass through raw text as chat data for use with D-RATS 0.1.x and D-CHAT users"
+              "compatmode" : "Pass through raw text as chat data for use with D-RATS 0.1.x and D-CHAT users",
+              "outports" : "TCP ports to forward to remote stations",
+              "inports" : "TCP ports to forward for remote stations",
+              
               }
 
     xfers = {"DDT" : ddt.DDTTransfer}
@@ -455,6 +461,143 @@ class AppConfig:
         list.show()
         return list
 
+    def add_incoming(self, button, listw):
+        d = inputdialog.FieldDialog(parent=self.window)
+        d.add_field("Port", gtk.Entry())
+        d.add_field("Host", gtk.Entry())
+        while d.run() == gtk.RESPONSE_OK:
+            vals = []
+
+            for field, func in [("Port", int),
+                                ("Host", str)]:
+                try:
+                    s = d.get_field(field).get_text()
+                    if not s:
+                        raise Exception("Empty")
+                    vals.append(func(s))
+                except:
+                    ed = gtk.MessageDialog(buttons=gtk.BUTTONS_OK,
+                                           parent=d)
+                    ed.set_property("text", "Invalid value for '%s'" % field)
+                    ed.run()
+                    ed.destroy()
+                    break
+
+            if len(vals) == 2:
+                listw.add_item(*tuple(vals))
+                break
+
+        d.destroy()
+
+    def add_outgoing(self, button, listw):
+        d = inputdialog.FieldDialog(parent=self.window)
+        d.add_field("Local", gtk.Entry())
+        d.add_field("Remote", gtk.Entry())
+        d.add_field("Station", gtk.Entry())
+        while d.run() == gtk.RESPONSE_OK:
+            vals = []
+
+            for field, func in [("Local", int),
+                                ("Remote", int),
+                                ("Station", str)]:
+                try:
+                    s = d.get_field(field).get_text()
+                    if not s:
+                        raise Exception("Empty")
+                    vals.append(func(s))
+                except:
+                    ed = gtk.MessageDialog(buttons=gtk.BUTTONS_OK,
+                                           parent=d)
+                    ed.set_property("text", "Invalid value for '%s'" % field)
+                    ed.run()
+                    ed.destroy()
+                    break
+
+            if len(vals) == 3:
+                listw.add_item(*tuple(vals))
+                break
+
+        d.destroy()
+
+    def remove_current(self, button, listw):
+        listw.remove_selected()
+
+    def build_ports(self):
+        topvbox = gtk.VBox(False, 2)
+
+        oframe = gtk.Frame("Outgoing")
+
+        vbox = gtk.VBox(False, 2)
+        
+        list = miscwidgets.ListWidget([(gobject.TYPE_INT, "Local"),
+                                       (gobject.TYPE_INT, "Remote"),
+                                       (gobject.TYPE_STRING, "Station")])
+        self.make_setting("outports", list)
+        list.show()
+        sw = gtk.ScrolledWindow()
+        sw.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
+        sw.add_with_viewport(list)
+        sw.show()
+
+        removeb = gtk.Button("Remove", gtk.STOCK_REMOVE)
+        removeb.connect("clicked", self.remove_current, list)
+        removeb.show()
+
+        addb = gtk.Button("Add new", gtk.STOCK_ADD)
+        addb.connect("clicked", self.add_outgoing, list)
+        addb.show()
+
+        hbox = gtk.HBox(True, 2)
+        hbox.pack_start(addb, 0,0,0)
+        hbox.pack_start(removeb, 0,0,0)
+        hbox.show()
+
+        vbox.pack_start(sw, 1,1,1)
+        vbox.pack_start(hbox, 0,0,0)
+        vbox.show()        
+
+        oframe.add(vbox)
+        oframe.show()
+
+        iframe = gtk.Frame("Incoming")
+
+        vbox = gtk.VBox(False, 2)
+
+        list = miscwidgets.ListWidget([(gobject.TYPE_INT, "Port"),
+                                       (gobject.TYPE_STRING, "Host")])
+        self.make_setting("inports", list)
+        list.show()
+        sw = gtk.ScrolledWindow()
+        sw.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
+        sw.add_with_viewport(list)
+        sw.show()
+
+        removeb = gtk.Button("Remove", gtk.STOCK_REMOVE)
+        removeb.connect("clicked", self.remove_current, list)
+        removeb.show()
+
+        addb = gtk.Button("Add", gtk.STOCK_ADD)
+        addb.connect("clicked", self.add_incoming, list)
+        addb.show()
+
+        hbox = gtk.HBox(True, 2)
+        hbox.pack_start(addb, 0,0,0)
+        hbox.pack_start(removeb, 0,0,0)
+        hbox.show()
+
+        vbox.pack_start(sw, 1,1,1)
+        vbox.pack_start(hbox, 0,0,0)
+        vbox.show()
+
+        iframe.add(vbox)
+        iframe.show()
+
+        topvbox.pack_start(oframe, 1,1,1)
+        topvbox.pack_start(iframe, 1,1,1)
+        topvbox.show()
+
+        return topvbox
+
     def build_gui(self):
         self.window = gtk.Window(gtk.WINDOW_TOPLEVEL)
 
@@ -471,6 +614,7 @@ class AppConfig:
         nb.append_page(self.build_data(), gtk.Label("Data"))
         nb.append_page(self.build_ddt(), gtk.Label("DDT"))
         nb.append_page(self.build_callsigns(), gtk.Label("Callsigns"))
+        nb.append_page(self.build_ports(), gtk.Label("Ports"))
 
         nb.show()
 
@@ -634,7 +778,9 @@ D-RATS has been started in safe mode, which means the configuration file has not
         spin_v = [("prefs", "scrollback"),
                   ("user", "altitude")]
 
-        list_v = [("prefs", "callsigns")]
+        list_v = [("prefs", "callsigns"),
+                  ("settings", "inports"),
+                  ("settings", "outports")]
 
         self.sync_texts(text_v, load)
         self.sync_booleans(bool_v, load)
