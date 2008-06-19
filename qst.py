@@ -22,7 +22,7 @@ import time
 import datetime
 
 from commands import getstatusoutput as run
-from config import make_choice
+from miscwidgets import make_choice
 import mainapp
 import platform
 

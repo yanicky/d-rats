@@ -20,7 +20,7 @@ import gobject
 import os
 import glob
 
-from config import make_choice
+from miscwidgets import make_choice
 from formgui import Form,FormFile,xml_escape,xml_unescape
 import formgui
 

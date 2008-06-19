@@ -30,29 +30,13 @@ import miscwidgets
 import platform
 import callsigns
 
+from miscwidgets import make_choice
+
 def color_string(color):
     try:
         return color.to_string()
     except:
         return "#%04x%04x%04x" % (color.red, color.green, color.blue)
-
-def make_choice(options, editable=True, default=None):
-    if editable:
-        sel = gtk.combo_box_entry_new_text()
-    else:
-        sel = gtk.combo_box_new_text()
-
-    for o in options:
-        sel.append_text(o)
-
-    if default:
-        try:
-            idx = options.index(default)
-            sel.set_active(idx)
-        except:
-            pass
-
-    return sel
 
 class AppConfig:
     def init_config(self):

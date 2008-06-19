@@ -17,7 +17,7 @@
 
 import gtk
 
-from config import make_choice
+from miscwidgets import make_choice
 
 class TextInputDialog(gtk.Dialog):
     def respond_ok(self, entry, data=None):

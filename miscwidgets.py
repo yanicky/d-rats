@@ -380,6 +380,24 @@ class YesNoDialog(gtk.Dialog):
     def set_text(self, text):
         self._label.set_text(text)
 
+def make_choice(options, editable=True, default=None):
+    if editable:
+        sel = gtk.combo_box_entry_new_text()
+    else:
+        sel = gtk.combo_box_new_text()
+
+    for o in options:
+        sel.append_text(o)
+
+    if default:
+        try:
+            idx = options.index(default)
+            sel.set_active(idx)
+        except:
+            pass
+
+    return sel
+
 if __name__=="__main__":
     w = gtk.Window(gtk.WINDOW_TOPLEVEL)
     l = ListWidget([(gobject.TYPE_STRING, "Foo"),

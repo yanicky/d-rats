@@ -24,7 +24,7 @@ import libxslt
 
 import gtk
 
-from config import make_choice
+from miscwidgets import make_choice
 import mainapp
 import platform
 

@@ -24,7 +24,7 @@ import gtk
 import gobject
 
 from comm import SWFSerial
-from config import make_choice
+from miscwidgets import make_choice
 import miscwidgets
 import platform
 
