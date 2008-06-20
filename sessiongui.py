@@ -20,6 +20,7 @@ import gobject
 import threading
 import os
 import time
+import socket
 
 import mainapp
 import miscwidgets
@@ -155,6 +156,60 @@ class FormSendThread(FileBaseThread):
             self.completed()
         else:
             self.failed()
+
+class SocketThread(SessionThread):
+    def socket_read(self, sock, length, to=5):
+        data = ""
+        t = time.time()
+
+        while (time.time() - t) < to :
+            d = ""
+
+            try:
+                d = sock.recv(length - len(d))
+            except socket.timeout:
+                continue
+
+            if not d and not data:
+                raise Exception("Socket is closed")
+
+            data += d
+
+        return data
+
+    def worker(self, data):
+        (sock, timeout) = data
+
+        print "*** Socket thread alive (%i timeout)" % timeout
+
+        sock.settimeout(timeout)
+
+        while self.enabled:
+            t = time.time()
+            try:
+                sd = self.socket_read(sock, 512, timeout)
+            except Exception, e:
+                print str(e)
+                break
+            print "Waited %f sec for socket" % (time.time() - t)
+
+            try:
+                rd = self.session.read(512)
+            except sessionmgr.SessionClosedError, e:
+                print "Session closed"
+                self.enabled = False
+                break
+
+            if sd:
+                print "Sending socket data (%i)" % len(sd)
+                self.session.write(sd)
+
+            if rd:
+                print "Sending radio data (%i)" % len(rd)
+                sock.sendall(rd)
+        
+        print "*** Socket thread exiting"
+                
 
 class SessionGUI:
     def cancel_selected_session(self):
@@ -334,6 +389,32 @@ class SessionGUI:
         except Exception, e:
             print "Failed to register session CB: %s" % e
 
+        try:
+            ports = eval(self.mainapp.config.get("settings", "outports"))
+
+            for l in self.socket_listeners.values():
+                l.stop()
+                del self.socket_listeners[l.dport]
+
+            print "Refresh listeners: %s" % self.socket_listeners
+
+            for sport, dport, dest in ports:
+                if dport not in self.socket_listeners.keys():
+                    print "Starting a listener for port %i->%s:%i" % (sport,
+                                                                      dest,
+                                                                      dport)
+                    self.socket_listeners[dport] = \
+                        sessions.SocketListener(self.mainapp.sm,
+                                                dest,
+                                                sport,
+                                                dport)
+                    print "Started"
+
+        except Exception, e:
+            print "Failed to start listeners: %s" % e
+
+        print "Done with sessiongui refresh"
+
     def new_file_xfer(self, session, direction):
         gui_display(self.chatgui,
                     "File transfer started with %s (%s)" % (session._st,
@@ -360,6 +441,47 @@ class SessionGUI:
             of = self.outgoing_forms.pop()
             self.sthreads[session._id] = FormSendThread(session, of, self)
 
+    def new_socket(self, session, direction):
+        gui_display(self.chatgui,
+                    "Socket session started with %s (%s)" % (session._st,
+                                                             session.name),
+                    "italic")
+
+        to = self.mainapp.config.getint("settings", "sockflush")
+
+        try:
+            _, port = session.name.split(":", 2)
+            port = int(port)
+        except Exception, e:
+            print "Invalid socket session name %s: %s" % (session.name, e)
+            session.close()
+            return
+
+        if direction == "in":
+            try:
+                ports = eval(self.mainapp.config.get("settings", "inports"))
+                for p, h in ports:
+                    if p == port:
+                        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                        sock.connect((h, port))
+                        self.sthreads[session._id] = SocketThread(session,
+                                                                  (sock, to),
+                                                                  self)
+                        return
+
+                raise Exception("Port %i not configured" % port)
+            except Exception, e:
+                gui_display(self.chatgui,
+                            "Error starting socket session: %s" % e,
+                            "italic",
+                            "red")
+                session.close()
+
+        elif direction == "out":
+            sock = self.socket_listeners[port].dsock
+
+            self.sthreads[session._id] = SocketThread(session, (sock, to), self)
+
     def new_session(self, type, session, direction):
         print "New session (%s) of type: %s" % (direction, session.__class__)
 
@@ -379,6 +501,8 @@ class SessionGUI:
             self.new_file_xfer(session, direction)
         elif session.__class__ == sessions.FormTransferSession:
             self.new_form_xfer(session, direction)
+        elif session.__class__ == sessions.SocketSession:
+            self.new_socket(session, direction)
 
     def end_session(self, id):
         iter = self.iter_of(0, id)
@@ -431,3 +555,5 @@ class SessionGUI:
 
         self.outgoing_files = []
         self.outgoing_forms = []
+
+        self.socket_listeners = {}

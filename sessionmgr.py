@@ -19,6 +19,7 @@ import time
 import threading
 import os
 import struct
+import socket
 
 from ddt2 import DDT2EncodedFrame
 import transport
@@ -27,6 +28,7 @@ T_STATELESS = 0
 T_GENERAL   = 1
 T_FILEXFER  = 2
 T_FORMXFER  = 3
+T_SOCKET    = 4
 
 class SessionClosedError(Exception):
     pass
@@ -324,6 +326,7 @@ class ControlSession(Session):
         self.stypes = { self.T_NEW + T_GENERAL  : StatefulSession,
                         self.T_NEW + T_FILEXFER : sessions.FileTransferSession,
                         self.T_NEW + T_FORMXFER : sessions.FormTransferSession,
+                        self.T_NEW + T_SOCKET   : sessions.SocketSession,
                         }
 
 class StatelessSession(Session):
