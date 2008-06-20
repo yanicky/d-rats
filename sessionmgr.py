@@ -492,7 +492,7 @@ class StatefulSession(Session):
                 self.event.wait(1)
             else:
                 print "Deep sleep"
-                self.event.wait(30)
+                self.event.wait(90)
                 if not self.event.isSet():
                     print "Session timed out!"
                     self.set_state(self.ST_CLSD)
