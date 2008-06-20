@@ -208,6 +208,14 @@ class SocketThread(SessionThread):
                 print "Sending radio data (%i)" % len(rd)
                 sock.sendall(rd)
         
+        print "Closing session"
+
+        self.session.close()
+        try:
+            sock.close()
+        except:
+            pass
+
         print "*** Socket thread exiting"
                 
 
