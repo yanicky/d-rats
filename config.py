@@ -90,7 +90,7 @@ class AppConfig:
         mset("settings", "compatmode", "False")
         mset("settings", "inports", "[]")
         mset("settings", "outports", "[]")
-        mset("settings", "sockflush", "2")
+        mset("settings", "sockflush", "0.5")
 
         mset("quick", None, None)
 
@@ -424,7 +424,7 @@ class AppConfig:
         vbox.pack_start(self.make_sb("compatmode",
                                      self.make_bool()), 0,0,0)
         vbox.pack_start(self.make_sb("sockflush",
-                                     self.make_spin(1, 0, 30)), 0,0,0)
+                                     self.make_spin(0.2, 0, 30)), 0,0,0)
 
         vbox.show()
         return vbox

@@ -447,7 +447,7 @@ class SessionGUI:
                                                              session.name),
                     "italic")
 
-        to = self.mainapp.config.getint("settings", "sockflush")
+        to = float(self.mainapp.config.get("settings", "sockflush"))
 
         try:
             _, port = session.name.split(":", 2)
