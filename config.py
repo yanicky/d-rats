@@ -90,6 +90,7 @@ class AppConfig:
         mset("settings", "compatmode", "False")
         mset("settings", "inports", "[]")
         mset("settings", "outports", "[]")
+        mset("settings", "sockflush", "2")
 
         mset("quick", None, None)
 
@@ -141,7 +142,8 @@ class AppConfig:
                 "gpsenabled" : "Update position from external GPS",
                 "aprssymtab" : "D/APRS Symbol Table ID",
                 "aprssymbol" : "D/APRS Symbol ID",
-                "compatmode" : "Receive raw text as chat data"
+                "compatmode" : "Receive raw text as chat data",
+                "sockflush" : "Socket flush interval",
                 }
 
     id2tip = {"ddt_block_size" : "Size (in KB) of data blocks to send with DDT",
@@ -159,7 +161,7 @@ class AppConfig:
               "compatmode" : "Pass through raw text as chat data for use with D-RATS 0.1.x and D-CHAT users",
               "outports" : "TCP ports to forward to remote stations",
               "inports" : "TCP ports to forward for remote stations",
-              
+              "sockflush" : "Seconds before sending socket data over radio",
               }
 
     xfers = {"DDT" : ddt.DDTTransfer}
@@ -421,6 +423,8 @@ class AppConfig:
                                      gtk.Entry(1)), 0,0,0)
         vbox.pack_start(self.make_sb("compatmode",
                                      self.make_bool()), 0,0,0)
+        vbox.pack_start(self.make_sb("sockflush",
+                                     self.make_spin(1, 0, 30)), 0,0,0)
 
         vbox.show()
         return vbox
@@ -776,7 +780,8 @@ D-RATS has been started in safe mode, which means the configuration file has not
         font_v = [("prefs", "font")]
 
         spin_v = [("prefs", "scrollback"),
-                  ("user", "altitude")]
+                  ("user", "altitude"),
+                  ("settings", "sockflush")]
 
         list_v = [("prefs", "callsigns"),
                   ("settings", "inports"),
