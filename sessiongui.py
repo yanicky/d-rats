@@ -158,6 +158,23 @@ class FormSendThread(FileBaseThread):
             self.failed()
 
 class SocketThread(SessionThread):
+    def status(self):
+        vals = self.session.stats
+
+        if vals["retries"] > 0:
+            retries = " (%i retries)" % vals["retries"]
+        else:
+            retries = ""
+
+
+            msg = "%i bytes sent %i bytes received%s" % (vals["sent_size"],
+                                                         vals["recv_size"],
+                                                         retries)
+
+        gobject.idle_add(self.gui.update,
+                         self.session._id,
+                         msg)
+
     def socket_read(self, sock, length, to=5):
         data = ""
         t = time.time()
@@ -199,6 +216,8 @@ class SocketThread(SessionThread):
                 print "Session closed"
                 self.enabled = False
                 break
+
+            self.status()
 
             if sd:
                 print "Sending socket data (%i)" % len(sd)
