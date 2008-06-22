@@ -9,6 +9,9 @@ ZIP=${OUTPUT}d-rats-$VERSION-win32.zip
 IST=${OUTPUT}d-rats-$VERSION-installer.exe
 LOG=d-rats_build.log
 
+export GTK_BASEPATH='C:\GTK'
+export PATH=$PATH:/cygdrive/c/GTK/bin
+
 shift
 
 moduleize() {
@@ -22,6 +25,10 @@ moduleize() {
 build_win32() {
 	echo Building Win32 executable...
 	/cygdrive/c/Python25/python.exe setup.py py2exe >> $LOG
+	if [ $? -ne 0 ]; then
+		echo "Build failed"
+		exit
+	fi
 }
 
 copy_lib() {
