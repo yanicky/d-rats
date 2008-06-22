@@ -50,7 +50,7 @@ def prompt_for_station(parent=None):
     global default_station
 
     ma = mainapp.get_mainapp()
-    calls = ma.seen_callsigns.keys()
+    calls = ma.seen_callsigns.list()
 
     if default_station:
         if default_station in calls:
@@ -107,7 +107,7 @@ class ChatGUI:
                 (b, e) = start.forward_search(call, 0)
             except:
                 continue
-            if not self.mainapp.seen_callsigns.has_key(call.upper()):
+            if not self.mainapp.seen_callsigns.is_known(call.upper()):
                 self.main_buffer.remove_all_tags(b, e)
                 self.main_buffer.apply_tag_by_name("callsigncolor", b, e)
             self.main_buffer.apply_tag_by_name("bold", b, e)
@@ -449,7 +449,8 @@ class MainChatGUI(ChatGUI):
     
     def update_known_position(self, pos):
         station = pos.station.upper()
-        self.mainapp.seen_callsigns[station] = (time.time(), pos)
+        self.mainapp.seen_callsigns.set_call_pos(station, pos)
+        self.mainapp.seen_callsigns.set_call_time(station, time.time())
 
         self.map.set_marker(pos, group="Stations")
 
@@ -1758,7 +1759,7 @@ class CallCatcher:
 
         for call in calls:
             try:
-                del self.mainapp.seen_callsigns[call]
+                self.mainapp.seen_callsigns.remove(call)
                 self.gui.map.del_marker(call, "Stations")
             except Exception, e:
                 print "Failed to delete: %s" % e
@@ -1781,23 +1782,18 @@ class CallCatcher:
             iter = list.get_iter(path)
             (call,) = list.get(iter, self.col_call)
 
-            if self.mainapp.seen_callsigns.has_key(call):
-                (_, pos) = self.mainapp.seen_callsigns[call]
-            else:
-                pos = None
-
             try:
                 if now:
-                    self.mainapp.seen_callsigns[call] = (time.time(), pos)
+                    self.mainapp.seen_callsigns.set_call_time(time.time())
                 else:
-                    self.mainapp.seen_callsigns[call] = (0, pos)
+                    self.mainapp.seen_callsigns.set_call_time(0)
             except Exception, e:
                 pass
 
         self.refresh()
 
     def but_clear(self, widget):
-        self.mainapp.seen_callsigns = {}
+        self.mainapp.seen_callsigns.clear()
         self.refresh()
 
     def mnu_echo_position(self, widget, aprs=False):
@@ -1811,7 +1807,7 @@ class CallCatcher:
             iter = list.get_iter(path)
             (call,) = list.get(iter, self.col_call)
 
-            (_, pos) = self.mainapp.seen_callsigns.get(call, None)
+            pos = self.mainapp.get_call_pos(call)
             if not pos:
                 continue
 
@@ -1872,8 +1868,9 @@ class CallCatcher:
 
         self.store.clear()
 
-        for c,d in self.mainapp.seen_callsigns.items():
-            (t, p) = d
+        for c in self.mainapp.seen_callsigns.list():
+            t = self.mainapp.seen_callsigns.get_call_time(c)
+            p = self.mainapp.seen_callsigns.get_call_pos(c)
             iter = self.store.append()
             self.store.set(iter,
                            self.col_call, c,

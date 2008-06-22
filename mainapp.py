@@ -45,6 +45,48 @@ MAINAPP = None
 
 gobject.threads_init()
 
+class CallList():
+    def __init__(self):
+        self.clear()
+
+    def clear(self):
+        self.data = {}
+
+    def set_call_pos(self, call, pos):
+        (t, _) = self.data.get(call, (0, None))
+
+        self.data[call] = (t, pos)
+
+    def set_call_time(self, call, ts=None):
+        if ts is None:
+            ts = time.time()
+
+        (_, p) = self.data.get(call, (0, None))
+
+        self.data[call] = (ts, p)        
+
+    def get_call_pos(self, call):
+        (_, p) = self.data.get(call, (0, None))
+
+        return p
+
+    def get_call_time(self, call):
+        (t, _) = self.data.get(call, (0, None))
+
+        return t
+
+    def list(self):
+        return self.data.keys()
+
+    def is_known(self, call):
+        return self.data.has_key(call)
+
+    def remove(self, call):
+        try:
+            del self.data[call]
+        except:
+            pass
+
 class MainApp:
     def setup_autoid(self):
         idtext = "(ID)"
@@ -86,9 +128,8 @@ class MainApp:
 
     def incoming_chat(self, data, args):
         sender = args["From"]
-        _, pos = self.seen_callsigns.get(sender, (None, None))
         if sender != "CQCQCQ":
-            self.seen_callsigns[sender] = (int(time.time()), None)
+            self.seen_callsigns.set_call_time(sender, time.time())
             gobject.idle_add(self.chatgui.adv_controls["calls"].refresh)
 
         if args["To"] != "CQCQCQ":
@@ -244,7 +285,7 @@ class MainApp:
         self.sm = None
         self.chat_session = None
         self.qsts = []
-        self.seen_callsigns = {}
+        self.seen_callsigns = CallList()
         self.position = None
 
         # REMOVE ME in 0.1.13
