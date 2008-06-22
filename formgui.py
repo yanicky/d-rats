@@ -228,12 +228,17 @@ class MultilineWidget(FieldWidget):
     def make_container(self):
         vbox = gtk.VBox(False, 2)
 
+        sw = gtk.ScrolledWindow()
+        sw.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
+        sw.add(self.widget)
+
         label = gtk.Label(self.caption)
         vbox.pack_start(label, 0,0,0)
-        vbox.pack_start(self.widget, 0,0,0)
+        vbox.pack_start(sw, 0,0,0)
 
         label.show()
         vbox.show()
+        sw.show()
 
         return vbox
 
