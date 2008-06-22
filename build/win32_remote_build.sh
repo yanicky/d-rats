@@ -1,6 +1,7 @@
 #!/bin/bash
 
 HOST=$1
+shift
 
 if [ -z "$HOST" ]; then
     echo "Usage: $0 [host]"
@@ -22,7 +23,10 @@ do_build() {
     tmp=$1
     out=$2
 
-    ssh $HOST "cd $tmp && ./build/make_win32_build.sh $out"
+    shift
+    shift
+
+    ssh $HOST "cd $tmp && ./build/make_win32_build.sh $out $*"
 }
 
 grab_builds() {
@@ -34,5 +38,5 @@ grab_builds() {
 tmp1=$(temp_dir)
 tmp2=$(temp_dir)
 copy_source $tmp1
-do_build $tmp1 $tmp2
+do_build $tmp1 $tmp2 $*
 grab_builds $tmp2
