@@ -285,8 +285,6 @@ class SessionGUI:
 
     def make_menu(self):
         (list, iter) = self.view.get_selection().get_selected()
-        if not iter:
-            return
 
         xml = """
 <ui>
@@ -312,14 +310,20 @@ class SessionGUI:
         clearall.connect("activate", self.mh)
         ag.add_action(clearall)
 
-        id = list.get(iter, 0)[0]
+        if iter:
+            id = list.get(iter, 0)[0]
+        else:
+            id = None
 
+        if id is None:
+            cancel.set_sensitive(False)
+            clear.set_sensitive(False)
         if id == -1:
             cancel.set_sensitive(False)
         else:
             clear.set_sensitive(False)
 
-        if id < 2:
+        if id and id < 2:
             cancel.set_sensitive(False)
 
         uim = gtk.UIManager()
