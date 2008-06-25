@@ -1268,6 +1268,9 @@ class FormManager:
 
         self.reg_form(ident, filename, stamp, statm)
     
+    def row_clicked(self, view, path, col):
+        self.edit(None)
+
     def make_display(self):
         self.col_index = 0
         self.col_statm = 1
@@ -1318,6 +1321,8 @@ class FormManager:
         c = gtk.TreeViewColumn("Last Transferred", r, text=self.col_xfert)
         c.set_sort_column_id(self.col_xfert)
         self.view.append_column(c)
+
+        self.view.connect("row-activated", self.row_clicked)
 
         self.view.show()
 
