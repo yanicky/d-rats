@@ -123,7 +123,13 @@ class Transporter:
                 print "Failed to unpack what looked like a block: %s" % e
 
     def _match_gps(self, type):
-        return re.match("^(.*)(%s,.*\r\n.*\r)(.*)" % type, self.inbuf)
+        # NMEA-style
+        m = re.match("^(.*)(%s,.*\r\n[^\r]*\r)(.*)" % type, self.inbuf)
+        if m:
+            return m
+
+        # GPS-A style
+        return re.match("^(.*)(%s,[^\r]*\r\n)(.*)" % type, self.inbuf)
 
     def _send_text_block(self, string):
         f = ddt2.DDT2EncodedFrame()
@@ -145,7 +151,7 @@ class Transporter:
             return None
 
     def parse_gps(self):
-        types = ["\$GPGGA", "\$GPRMC", "\$CRC[A-z0-9]{4}"]
+        types = ["\$GPGGA", "\$GPRMC", "\$\$CRC[A-z0-9]{4}"]
 
         for t in types:
             while self._match_gps(t):
@@ -204,6 +210,8 @@ class TestPipe:
             
             if i == 5:
                 self.buf += "$GPGGA,075519,4531.254,N,12259.400,W,1,3,0,0.0,M,0,M,,*55\r\nK7HIO   ,GPS Info\r"
+            elif i == 7:
+                self.buf += "$$CRC6CD1,Hills-Water-Treat-Plt>APRATS,DSTAR*:@233208h4529.05N/12305.91W>Washington County ARES;Hills Water Treat Pl\r\n"
 
 
         print "Made some data: %s" % self.buf
