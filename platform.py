@@ -120,6 +120,9 @@ class Platform:
         else:
             return None
 
+    def os_version_string(self):
+        return "Unknown Operating System"
+
 class UnixPlatform(Platform):
     def __init__(self, basepath):
         if not basepath:
@@ -164,6 +167,17 @@ class UnixPlatform(Platform):
 
     def list_serial_ports(self):
         return sorted(glob.glob("/dev/ttyS*") + glob.glob("/dev/ttyUSB*"))
+
+    def os_version_string(self):
+        try:
+            f = file("/etc/issue.net", "r")
+            ver = f.read().strip()
+            f.close()
+            ver = "%s - %s" % (os.uname()[0], ver)
+        except:
+            ver = " ".join(os.uname())
+
+        return ver
 
 class Win32Platform(Platform):
     def __init__(self, basepath=None):
@@ -230,6 +244,17 @@ class Win32Platform(Platform):
 
         return f
 
+    def os_version_string(self):
+        import win32api
+
+        vers = { 4: "Win2k",
+                 5: "WinXP",
+                 }
+
+        (pform, _, build, _, _) = win32api.GetVersionEx()
+
+        return vers.get(pform, "Win32 (Unknown %i:%i)" % (pform, build))
+
 def _get_platform(basepath):
     if os.name == "nt":
         return Win32Platform(basepath)
@@ -252,6 +277,7 @@ if __name__ == "__main__":
     print "Default dir: %s" % p.default_dir()
     print "Log file (foo): %s" % p.log_file("foo")
     print "Serial ports: %s" % p.list_serial_ports()
+    print "OS Version: %s" % p.os_version_string()
     
 
     #p.open_text_file("d-rats.py")
