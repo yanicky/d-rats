@@ -24,6 +24,7 @@ from threading import Thread
 import sessionmgr
 from ddt2 import DDT2RawData, DDT2EncodedFrame
 import mainapp
+import platform
 
 class ChatSession(sessionmgr.StatelessSession):
     __cb = None
@@ -36,6 +37,11 @@ class ChatSession(sessionmgr.StatelessSession):
     T_PNG_RSP = 2
 
     compress = False
+
+    def ping_data(self):
+        p = platform.get_platform()
+        return "Running D-RATS %s (%s)" % (mainapp.DRATS_VERSION,
+                                           p.os_version_string())
 
     def incoming_data(self, frame):
         if not self.__cb:
@@ -53,7 +59,7 @@ class ChatSession(sessionmgr.StatelessSession):
         elif frame.type == self.T_PNG_REQ:
             frame.d_station = frame.s_station
             frame.type = self.T_PNG_RSP
-            frame.data = "D-RATS %s" % mainapp.DRATS_VERSION
+            frame.data = self.ping_data()
             self._sm.outgoing(self, frame)
         elif frame.type == self.T_PNG_RSP:
             args = { "From": frame.s_station,
