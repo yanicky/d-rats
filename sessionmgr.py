@@ -334,6 +334,8 @@ class StatelessSession(Session):
     type = T_STATELESS
     compress = True
 
+    T_DEF = 0
+
     def read(self):
         f = self.inq.dequeue()
 
@@ -343,7 +345,7 @@ class StatelessSession(Session):
         f = DDT2EncodedFrame()
 
         f.seq = 0
-        f.type = 0
+        f.type = self.T_DEF
         f.d_station = dest
         f.data = data
 

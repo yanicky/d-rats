@@ -22,7 +22,8 @@ import socket
 from threading import Thread
 
 import sessionmgr
-from ddt2 import DDT2RawData
+from ddt2 import DDT2RawData, DDT2EncodedFrame
+import mainapp
 
 class ChatSession(sessionmgr.StatelessSession):
     __cb = None
@@ -30,20 +31,36 @@ class ChatSession(sessionmgr.StatelessSession):
 
     type = sessionmgr.T_STATELESS
 
+    T_DEF = 0
+    T_PNG_REQ = 1
+    T_PNG_RSP = 2
+
     compress = False
 
     def incoming_data(self, frame):
         if not self.__cb:
             return
 
-        args = { "From" : frame.s_station,
-                 "To" : frame.d_station,
-                 "Msg" : frame.data,
-                 }
+        if frame.type == self.T_DEF:
+            args = { "From" : frame.s_station,
+                     "To" : frame.d_station,
+                     "Msg" : frame.data,
+                     }
 
-        print "Calling chat callback with %s" % args
+            print "Calling chat callback with %s" % args
 
-        self.__cb(self.__cb_data, args)
+            self.__cb(self.__cb_data, args)
+        elif frame.type == self.T_PNG_REQ:
+            frame.d_station = frame.s_station
+            frame.type = self.T_PNG_RSP
+            frame.data = "D-RATS %s" % mainapp.DRATS_VERSION
+            self._sm.outgoing(self, frame)
+        elif frame.type == self.T_PNG_RSP:
+            args = { "From": frame.s_station,
+                     "To": frame.d_station,
+                     "Msg": frame.data
+                     }
+            self.__cb(self.__cb_data, args)
 
     def register_cb(self, cb, data=None):
         self.__cb = cb
@@ -54,10 +71,19 @@ class ChatSession(sessionmgr.StatelessSession):
     def write_raw(self, data):
         f = DDT2RawData()
         f.data = data
+        f.type = self.T_DEF
 
         print "Sending raw: %s" % data
 
         self._sm.outgoing(self, f)
+
+    def ping_station(self, station):
+        f = DDT2EncodedFrame()
+        f.d_station = station
+        f.type = self.T_PNG_REQ
+        self._sm.outgoing(self, f)
+
+        print "Pinged station %s" % station
 
 class FileTransferSession(sessionmgr.StatefulSession):
     type = sessionmgr.T_FILEXFER
