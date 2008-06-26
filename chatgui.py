@@ -710,6 +710,9 @@ class MainChatGUI(ChatGUI):
             self.filter_current_log()
         elif action == "map":
             self.map.show()
+        elif action == "ping":
+            s = prompt_for_station(self.window)
+            self.mainapp.chat_session.ping_station(s)
 
     def make_menubar(self):
         menu_xml = """
@@ -720,6 +723,7 @@ class MainChatGUI(ChatGUI):
               <menuitem action='send'/>
               <!--menuitem action='msend'/-->
               <!--menuitem action='mrecv'/-->
+              <menuitem action='ping'/>
               <separator/>
               <menuitem action='config'/>
               <menuitem action='qsts'/>
@@ -756,6 +760,7 @@ class MainChatGUI(ChatGUI):
                    ('manageform', None, '_Manage Form Templates', None, None, self.menu_handler),
                    ('quit', None, "_Quit", None, None, self.menu_handler),
                    ('sendtext', None, 'Broadcast _Text File', "<Control>b", None, self.menu_handler),
+                   ('ping', None, 'Ping Station', None, None, self. menu_handler),
                    ('view', None, "_View", None, None, self.menu_handler),
                    ('clear', None, '_Clear', "<Control>l", None, self.menu_handler),
                    ('filter', None, '_Filter by string', "<Control>f", None, self.menu_handler),
@@ -1609,6 +1614,8 @@ class CallCatcher:
             self.but_reset(None, True)
         elif action == "forget":
             self.but_reset(None, False)
+        elif action == "ping":
+            self.mnu_ping()
         else:
             print "Unknown action `%s'" % action
 
@@ -1618,7 +1625,8 @@ class CallCatcher:
              ('remove', None, 'Remove', None, None, self.mh),
              ('reset', None, 'Reset', None, None, self.mh),
              ('forget', None, 'Forget', None, None, self.mh),
-             ('lookup', None, 'Lookup (QRZ)', None, None, self.mh)]
+             ('lookup', None, 'Lookup (QRZ)', None, None, self.mh),
+             ('ping', None, 'Ping Station', None, None, self.mh)]
 
         xml = """
 <ui>
@@ -1629,6 +1637,7 @@ class CallCatcher:
     <menuitem action='remove'/>
     <menuitem action='reset'/>
     <menuitem action='forget'/>
+    <menuitem action='ping'/>
   </popup>
 </ui>
 """
@@ -1751,6 +1760,12 @@ class CallCatcher:
 
         url = "http://qrz.com/%s" % call
         self.mainapp.config.platform.open_html_file(url)
+
+    def mnu_ping(self):
+        list, iter = self._get_first_selected()
+        (call,) = list.get(iter, self.col_call)
+
+        self.mainapp.chat_session.ping_station(call)
 
     def but_remove(self, widget):
         (list, paths) = self.view.get_selection().get_selected_rows()
