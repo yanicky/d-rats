@@ -873,6 +873,9 @@ class MapWindow(gtk.Window):
         self.connect("destroy", self.ev_destroy)
         self.connect("delete_event", self.ev_delete)
 
+    def get_markers(self):
+        return self.markers
+
     def set_marker(self, fix, color="yellow", group="Misc"):
         if not self.markers.has_key(group):
             self.markers[group] = {}

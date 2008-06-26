@@ -20,11 +20,13 @@ import pygtk
 import gobject
 import time
 import datetime
+import copy
 
 from commands import getstatusoutput as run
 from miscwidgets import make_choice
 import mainapp
 import platform
+import inputdialog
 
 class QSTText:
     def __init__(self, gui, config, text=None, freq=None):
@@ -165,13 +167,30 @@ class QSTGPSA(QSTGPS):
         else:
             fix = self.fix
 
-        fix.comment = self.text
+        if not "::" in self.text:
+            fix.comment = self.text
 
         if fix.valid:
             return fix.to_APRS(symtab=self.config.get("settings", "aprssymtab"),
                                symbol=self.config.get("settings", "aprssymbol"))
         else:
             return None
+
+class QSTStation(QSTGPSA):
+    def do_qst(self):
+        try:
+            (group, station) = self.text.split("::", 1)
+            markers = self.gui.map.get_markers()
+            # Ugh, this is sloppy
+            self.fix = copy.copy(markers[group][station][0])
+            self.fix.comment = "VIA %s" % self.config.get("user", "callsign")
+        except Exception, e:
+            print "QSTStation Error: %s" % e
+            return None
+
+        print "Sending position for %s/%s: %s" % (group, station, self.fix)
+
+        return QSTGPSA.do_qst(self)
 
 class SelectGUI:
     def sync_gui(self, load=True):
@@ -378,7 +397,7 @@ class QSTGUI(SelectGUI):
     column_type = 2
     column_text = 3
     
-    def __init__(self, config):
+    def __init__(self, config, gui):
         self.columns = [
             (gtk.CellRendererToggle, "Enabled", bool),
             (gtk.CellRendererText, "Period", str),
@@ -386,6 +405,7 @@ class QSTGUI(SelectGUI):
             (gtk.CellRendererText, "Message", str),
             ]
         self.config = config
+        self.gui = gui
         self.list_store = gtk.ListStore(gobject.TYPE_BOOLEAN,
                                         gobject.TYPE_STRING,
                                         gobject.TYPE_STRING,
@@ -419,7 +439,7 @@ class QSTGUI(SelectGUI):
 
     def make_b_controls(self):
         times = ["1", "5", "10", "20", "30", "60", ":15", ":30", ":45"]
-        types = ["Text", "Exec", "File", "GPS", "GPS-A"]
+        types = ["Text", "Exec", "File", "GPS", "GPS-A", "Station"]
 
         self.msg = gtk.TextBuffer()
         self.entry = gtk.TextView(self.msg)
@@ -474,6 +494,23 @@ class QSTGUI(SelectGUI):
 
         return hbox        
 
+    def get_station(self):
+        markers = self.gui.map.get_markers()
+        
+        stations = []
+
+        for gname, group in markers.items():
+            for station in group.keys():
+                stations.append("%s::%s" % (gname, station))
+
+        d = inputdialog.ChoiceDialog(sorted(stations))
+        d.label.set_text("Select a station whose position will be sent")
+        r = d.run()
+        station = d.choice.get_active_text()
+        d.destroy()
+        if r == gtk.RESPONSE_OK:
+            self.msg.set_text(station)
+        
     def type_changed(self, widget, data=None):
         if widget.get_active_text() in ["File", "Exec"]:
             p = platform.get_platform()
@@ -482,6 +519,8 @@ class QSTGUI(SelectGUI):
                 return
 
             self.msg.set_text(f)
+        elif widget.get_active_text() in ["Station"]:
+            self.get_station()
         elif widget.get_active_text() in ["GPS", "GPS-A"]:
             self.msg.set_text("ON D-RATS")
 
@@ -615,15 +654,13 @@ class QuickMsgGUI(SelectGUI):
             self.config.refresh_app()        
 
 def get_qst_class(typestr):
-    if typestr == "Text":
-        return QSTText
-    elif typestr == "Exec":
-        return QSTExec
-    elif typestr == "File":
-        return QSTFile
-    elif typestr == "GPS":
-        return QSTGPS
-    elif typestr == "GPS-A":
-        return QSTGPSA
-    else:
-        return None
+    classes = {
+        "Text"    : QSTText,
+        "Exec"    : QSTExec,
+        "File"    : QSTFile,
+        "GPS"     : QSTGPS,
+        "GPS-A"   : QSTGPSA,
+        "Station" : QSTStation,
+        }
+
+    return classes.get(typestr, None)

@@ -678,7 +678,7 @@ class MainChatGUI(ChatGUI):
         elif action == "config":
             self.config.show()
         elif action == "qsts":
-            qsts = QSTGUI(self.config)
+            qsts = QSTGUI(self.config, self)
             qsts.show()
         elif action == "clear":
             self.filter_clear_current()
