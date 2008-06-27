@@ -625,7 +625,8 @@ class AppConfig:
         nb.append_page(self.build_user(), gtk.Label("User"))
         nb.append_page(self.build_appearance(), gtk.Label("Appearance"))
         nb.append_page(self.build_data(), gtk.Label("Data"))
-        nb.append_page(self.build_ddt(), gtk.Label("DDT"))
+        #nb.append_page(self.build_ddt(), gtk.Label("DDT"))
+        self.build_ddt() # Disabled for now
         nb.append_page(self.build_callsigns(), gtk.Label("Callsigns"))
         nb.append_page(self.build_ports(), gtk.Label("Ports"))
 
