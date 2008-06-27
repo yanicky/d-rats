@@ -643,12 +643,15 @@ class MapWindow(gtk.Window):
             self.printable_map()
         elif action == "printablevis":
             self.printable_map(self.get_visible_bounds())
+        elif action == "addmarker":
+            self.prompt_to_set_marker()
 
     def make_menu(self):
         menu_xml = """
 <ui>
   <menubar name="MenuBar">
     <menu action="map">
+      <menuitem action="addmarker"/>
       <menuitem action="refresh"/>
       <menuitem action="clearcache"/>
       <menuitem action="loadstatic"/>
@@ -665,6 +668,7 @@ class MapWindow(gtk.Window):
 """
 
         actions = [('map', None, "_Map", None, None, self.mh),
+                   ('addmarker', None, "_Set Marker", None, None, self.mh),
                    ('refresh', None, "_Refresh", None, None, self.mh),
                    ('clearcache', None, "_Clear Cache", None, None, self.mh),
                    ('loadstatic', None, "_Load Static Overlay", None, None, self.mh),
@@ -730,16 +734,34 @@ class MapWindow(gtk.Window):
         self.map.load_tiles()
         self.center_on(lat, lon)
 
-    def prompt_to_set_marker(self, lat, lon):
+    def prompt_to_set_marker(self, _lat=None, _lon=None):
         d = inputdialog.FieldDialog(title="Add Marker")
         d.add_field("Group", miscwidgets.make_choice(self.markers.keys(), True))
         d.add_field("Name", gtk.Entry())
-        r = d.run()
-        if r == gtk.RESPONSE_OK:
-            grp = d.get_field("Group").get_active_text()
-            nme = d.get_field("Name").get_text()
+        d.add_field("Latitude", miscwidgets.LatLonEntry())
+        d.add_field("Longitude", miscwidgets.LatLonEntry())
+        if _lat:
+            d.get_field("Latitude").set_text("%.4f" % _lat)
+        if _lon:
+            d.get_field("Longitude").set_text("%.4f" % _lon)
+
+        while d.run() == gtk.RESPONSE_OK:
+            try:
+                grp = d.get_field("Group").get_active_text()
+                nme = d.get_field("Name").get_text()
+                lat = d.get_field("Latitude").value()
+                lon = d.get_field("Longitude").value()
+            except Exception, e:
+                ed = gtk.MessageDialog(buttons=gtk.BUTTONS_OK,
+                                       parent=d)
+                ed.set_property("text", "Invalid value %s" % e)
+                ed.run()
+                ed.destroy()
+                continue
+                
             fix = GPSPosition(lat=lat, lon=lon, station=nme)
-            self.set_marker(fix, "greeN", grp)
+            self.set_marker(fix, "green", grp)
+            break
         d.destroy()                    
 
     def recenter_cb(self, view, path, column, data=None):
