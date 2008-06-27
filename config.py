@@ -545,10 +545,12 @@ class AppConfig:
 
         removeb = gtk.Button("Remove", gtk.STOCK_REMOVE)
         removeb.connect("clicked", self.remove_current, list)
+        removeb.set_size_request(100, 30)
         removeb.show()
 
         addb = gtk.Button("Add new", gtk.STOCK_ADD)
         addb.connect("clicked", self.add_outgoing, list)
+        addb.set_size_request(100, 30)
         addb.show()
 
         hbox = gtk.HBox(True, 2)
@@ -578,10 +580,12 @@ class AppConfig:
 
         removeb = gtk.Button("Remove", gtk.STOCK_REMOVE)
         removeb.connect("clicked", self.remove_current, list)
+        removeb.set_size_request(100, 30)
         removeb.show()
 
         addb = gtk.Button("Add", gtk.STOCK_ADD)
         addb.connect("clicked", self.add_incoming, list)
+        addb.set_size_request(100, 30)
         addb.show()
 
         hbox = gtk.HBox(True, 2)
