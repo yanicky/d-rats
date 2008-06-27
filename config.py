@@ -76,6 +76,7 @@ class AppConfig:
         mset("prefs", "callsigns", "%s" % str([(True, "US")]))
         mset("prefs", "logresume", "True")
         mset("prefs", "scrollback", "1024")
+        mset("prefs", "restore_stations", "True")
 
         mset("settings", "port", self.default_port)
         mset("settings", "rate", "9600")
@@ -144,6 +145,7 @@ class AppConfig:
                 "aprssymbol" : "D/APRS Symbol ID",
                 "compatmode" : "Receive raw text as chat data",
                 "sockflush" : "Socket flush interval",
+                "restore_stations" : "Restore callsign list",
                 }
 
     id2tip = {"ddt_block_size" : "Size (in KB) of data blocks to send with DDT",
@@ -162,6 +164,7 @@ class AppConfig:
               "outports" : "TCP ports to forward to remote stations",
               "inports" : "TCP ports to forward for remote stations",
               "sockflush" : "Seconds before sending socket data over radio",
+              "restore_stations" : "Restore callsign list from map list of `Stations'",
               }
 
     xfers = {"DDT" : ddt.DDTTransfer}
@@ -342,6 +345,8 @@ class AppConfig:
         vbox.pack_start(self.make_sb("debuglog",
                                      self.make_bool()), 0,0,0)
         vbox.pack_start(self.make_sb("logresume",
+                                     self.make_bool()), 0,0,0)
+        vbox.pack_start(self.make_sb("restore_stations",
                                      self.make_bool()), 0,0,0)
 
         vbox.pack_start(self.make_sb("latitude",
@@ -762,7 +767,8 @@ D-RATS has been started in safe mode, which means the configuration file has not
                   ("settings", "compression"),
                   ("prefs", "logresume"),
                   ("settings", "gpsenabled"),
-                  ("settings", "compatmode")]
+                  ("settings", "compatmode"),
+                  ("prefs", "restore_stations")]
 
         choicetext_v = [("settings", "port"),
                         ("settings", "gpsport")]

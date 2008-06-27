@@ -1029,7 +1029,14 @@ class MainChatGUI(ChatGUI):
 
         files = glob.glob(os.path.join(dir, "*.csv"))
         for f in files:
-            self.map.load_static_points(f)        
+            self.map.load_static_points(f)     
+
+        if self.config.getboolean("prefs", "restore_stations"):
+            stations = self.map.get_markers().get("Stations", {})
+            for station, (fix, _, _) in stations.items():
+                if fix.station == "Me":
+                    continue
+                self.mainapp.seen_callsigns.set_call_pos(station, fix)
 
     def save_static_locations(self):
         for group in self.map.get_markers().keys():
