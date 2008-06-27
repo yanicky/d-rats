@@ -13,6 +13,7 @@ import gobject
 
 import platform
 import miscwidgets
+import inputdialog
 
 from gps import GPSPosition, distance, value_with_units
 
@@ -729,6 +730,18 @@ class MapWindow(gtk.Window):
         self.map.load_tiles()
         self.center_on(lat, lon)
 
+    def prompt_to_set_marker(self, lat, lon):
+        d = inputdialog.FieldDialog(title="Add Marker")
+        d.add_field("Group", miscwidgets.make_choice(self.markers.keys(), True))
+        d.add_field("Name", gtk.Entry())
+        r = d.run()
+        if r == gtk.RESPONSE_OK:
+            grp = d.get_field("Group").get_active_text()
+            nme = d.get_field("Name").get_text()
+            fix = GPSPosition(lat=lat, lon=lon, station=nme)
+            self.set_marker(fix, "greeN", grp)
+        d.destroy()                    
+
     def recenter_cb(self, view, path, column, data=None):
         model = view.get_model()
         if model.iter_parent(model.get_iter(path)) == None:
@@ -742,6 +755,36 @@ class MapWindow(gtk.Window):
         self.sb_center.pop(self.STATUS_CENTER)
         self.sb_center.push(self.STATUS_CENTER, "Center: %s" % self.center_mark)
 
+    def make_popup(self, pos):
+        xml = """
+<ui>
+  <popup name="menu">
+    <menuitem action="center"/>
+    <menuitem action="setmark"/>
+    <menuitem action="setcurrent"/>
+  </popup>
+</ui>
+"""
+        ag = gtk.ActionGroup("menu")
+
+        center = gtk.Action("center", "Center here", None, None)
+        center.connect("activate", lambda x: self.recenter(pos[0], pos[1]))
+        ag.add_action(center)
+
+        setmark = gtk.Action("setmark", "Set Marker", None, None)
+        setmark.connect("activate", lambda x: self.prompt_to_set_marker(pos[0],
+                                                                        pos[1]))
+        ag.add_action(setmark)
+
+        setcurrent = gtk.Action("setcurrent", "Set Current", None, None)
+        ag.add_action(setcurrent)
+
+        uim = gtk.UIManager()
+        uim.insert_action_group(ag, 0)
+        uim.add_ui_from_string(xml)
+
+        return uim.get_widget("/menu")
+
     def mouse_click_event(self, widget, event):
         x,y = event.get_coords()
 
@@ -753,7 +796,11 @@ class MapWindow(gtk.Window):
         lat, lon = self.map.xy2latlon(mx, my)
 
         print "Button %i at %i,%i" % (event.button, mx, my)
-        if event.type == gtk.gdk.BUTTON_PRESS:
+        if event.button == 3:
+            menu = self.make_popup((lat, lon))
+            if menu:
+                menu.popup(None, None, None, event.button, event.time)
+        elif event.type == gtk.gdk.BUTTON_PRESS:
             print "Clicked: %.4f,%.4f" % (lat, lon)
             self.set_marker(GPSPosition(station=CROSSHAIR,
                                         lat=lat, lon=lon))
