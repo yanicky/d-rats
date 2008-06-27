@@ -1091,6 +1091,18 @@ class MapWindow(gtk.Window):
         print "Removing group %s" % group
         self.remove_static_points(group)
 
+    def save_static_group(self, group, filename):
+        stations = self.markers[group]
+
+        f = file(filename, "w")
+
+        for (fix, _, _) in stations.values():
+            print >>f, "%s,%0.4f,%0.4f," % (fix.station,
+                                            fix.latitude,
+                                            fix.longitude)
+
+        f.close()
+
 if __name__ == "__main__":
 
     import sys

@@ -323,6 +323,7 @@ class MainApp:
 
         print "Saving config..."
         self.config.save()
+        self.chatgui.save_static_locations()
 
         if self.sm:
             print "Stopping session manager..."

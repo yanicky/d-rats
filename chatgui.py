@@ -1031,6 +1031,14 @@ class MainChatGUI(ChatGUI):
         for f in files:
             self.map.load_static_points(f)        
 
+    def save_static_locations(self):
+        for group in self.map.get_markers().keys():
+            fn = os.path.join(self.config.platform.config_dir(),
+                              "static_locations",
+                              "%s.csv" % group)
+            print "Saving %s to %s" % (group, fn)
+            self.map.save_static_group(group, fn)
+
     def __init__(self, config, _mainapp):
         self.needs_redraw = False
         self.config = config # Set early for make_menubar()
