@@ -1046,6 +1046,12 @@ class MainChatGUI(ChatGUI):
             print "Saving %s to %s" % (group, fn)
             self.map.save_static_group(group, fn)
 
+    def set_loc_from_map(self, _, vals):
+        self.config.set("user", "latitude", "%f" % vals["lat"])
+        self.config.set("user", "longitude", "%f" % vals["lon"])
+        self.mainapp.refresh_gps()
+        self._refresh_location()
+            
     def __init__(self, config, _mainapp):
         self.needs_redraw = False
         self.config = config # Set early for make_menubar()
@@ -1067,6 +1073,8 @@ class MainChatGUI(ChatGUI):
         pos = self.mainapp.get_position()
         self.map.set_center(pos.latitude, pos.longitude)
         self.map.set_zoom(14)
+        self.map.add_popup_handler("Set as current location",
+                                   self.set_loc_from_map)
         self._refresh_location()
 
         gobject.timeout_add(10000, self._refresh_location)
