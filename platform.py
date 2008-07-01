@@ -219,7 +219,7 @@ class Win32Platform(Platform):
             print "Failed to get filename: %s" % e
             return None
 
-        return f
+        return str(f)
 
     def gui_save_file(self, start_dir=None, default_name=None):
         import win32gui
@@ -230,7 +230,7 @@ class Win32Platform(Platform):
             print "Failed to get filename: %s" % e
             return None
 
-        return f
+        return str(f)
 
     def gui_select_dir(self, start_dir=None):
         from win32com.shell import shell
@@ -242,7 +242,7 @@ class Win32Platform(Platform):
             print "Failed to get directory: %s" % e
             return None
 
-        return f
+        return str(f)
 
     def os_version_string(self):
         import win32api
