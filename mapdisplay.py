@@ -788,11 +788,20 @@ class MapWindow(gtk.Window):
         xml = """
 <ui>
   <popup name="menu">
-%s
+    <menuitem action='title'/>
+    <separator/>
+    %s
   </popup>
 </ui>
 """ % xml
         ag = gtk.ActionGroup("menu")
+
+        t = gtk.Action("title",
+                       "%.4f,%.4f" % (vals["lat"], vals["lon"]),
+                       None,
+                       None)
+        t.set_sensitive(False)
+        ag.add_action(t)
 
         for name, handler in self._popup_items.items():
             action = gtk.Action(_an(name), name, None, None)
