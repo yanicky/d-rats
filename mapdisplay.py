@@ -777,29 +777,27 @@ class MapWindow(gtk.Window):
         self.sb_center.pop(self.STATUS_CENTER)
         self.sb_center.push(self.STATUS_CENTER, "Center: %s" % self.center_mark)
 
-    def make_popup(self, pos):
+    def make_popup(self, vals):
+        def _an(cap):
+            return cap.replace(" ", "_")
+
+        xml = ""
+        for action in [_an(x) for x in self._popup_items.keys()]:
+            xml += "<menuitem action='%s'/>\n" % action
+
         xml = """
 <ui>
   <popup name="menu">
-    <menuitem action="center"/>
-    <menuitem action="setmark"/>
-    <menuitem action="setcurrent"/>
+%s
   </popup>
 </ui>
-"""
+""" % xml
         ag = gtk.ActionGroup("menu")
 
-        center = gtk.Action("center", "Center here", None, None)
-        center.connect("activate", lambda x: self.recenter(pos[0], pos[1]))
-        ag.add_action(center)
-
-        setmark = gtk.Action("setmark", "Set Marker", None, None)
-        setmark.connect("activate", lambda x: self.prompt_to_set_marker(pos[0],
-                                                                        pos[1]))
-        ag.add_action(setmark)
-
-        setcurrent = gtk.Action("setcurrent", "Set Current", None, None)
-        ag.add_action(setcurrent)
+        for name, handler in self._popup_items.items():
+            action = gtk.Action(_an(name), name, None, None)
+            action.connect("activate", handler, vals)
+            ag.add_action(action)
 
         uim = gtk.UIManager()
         uim.insert_action_group(ag, 0)
@@ -819,7 +817,11 @@ class MapWindow(gtk.Window):
 
         print "Button %i at %i,%i" % (event.button, mx, my)
         if event.button == 3:
-            menu = self.make_popup((lat, lon))
+            vals = { "lat" : lat,
+                     "lon" : lon,
+                     "x" : mx,
+                     "y" : my }
+            menu = self.make_popup(vals)
             if menu:
                 menu.popup(None, None, None, event.button, event.time)
         elif event.type == gtk.gdk.BUTTON_PRESS:
@@ -941,6 +943,20 @@ class MapWindow(gtk.Window):
 
         self.connect("destroy", self.ev_destroy)
         self.connect("delete_event", self.ev_delete)
+
+        self._popup_items = {}
+
+        self.add_popup_handler("Center here",
+                               lambda a, vals:
+                                   self.recenter(vals["lat"],
+                                                 vals["lon"]))
+        self.add_popup_handler("New marker here",
+                               lambda a, vals:
+                                   self.prompt_to_set_marker(vals["lat"],
+                                                             vals["lon"]))
+
+    def add_popup_handler(self, name, handler):
+        self._popup_items[name] = handler
 
     def get_markers(self):
         return self.markers
