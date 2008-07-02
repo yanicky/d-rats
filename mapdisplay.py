@@ -751,10 +751,17 @@ class MapWindow(gtk.Window):
                 nme = d.get_field("Name").get_text()
                 lat = d.get_field("Latitude").value()
                 lon = d.get_field("Longitude").value()
+
+                if not grp:
+                    raise Exception("group name required")
+
+                if not nme:
+                    raise Exception("marker name required")
+
             except Exception, e:
                 ed = gtk.MessageDialog(buttons=gtk.BUTTONS_OK,
                                        parent=d)
-                ed.set_property("text", "Invalid value %s" % e)
+                ed.set_property("text", "Invalid value: %s" % e)
                 ed.run()
                 ed.destroy()
                 continue
