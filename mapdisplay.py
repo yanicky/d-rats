@@ -736,7 +736,8 @@ class MapWindow(gtk.Window):
 
     def prompt_to_set_marker(self, _lat=None, _lon=None):
         d = inputdialog.FieldDialog(title="Add Marker")
-        d.add_field("Group", miscwidgets.make_choice(self.markers.keys(), True))
+        d.add_field("Group",
+                    miscwidgets.make_choice(self.markers.keys(), True, "Misc"))
         d.add_field("Name", gtk.Entry())
         d.add_field("Latitude", miscwidgets.LatLonEntry())
         d.add_field("Longitude", miscwidgets.LatLonEntry())
