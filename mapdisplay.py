@@ -118,8 +118,7 @@ class MapTile:
         return path
 
     def remote_path(self):
-        i = chr(ord("a") + random.randint(0,25))
-        return "http://%s.tile.openstreetmap.org/%s" % (i, self.path())
+        return "http://tile.openstreetmap.org/%s" % (self.path())
 
     def __add__(self, count):
         (x, y) = count
