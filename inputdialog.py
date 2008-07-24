@@ -91,8 +91,11 @@ class FieldDialog(gtk.Dialog):
         print "Blocking response"
         return
 
-    def add_field(self, label, widget, validator=None):
-        box = gtk.HBox(True, 2)
+    def add_field(self, label, widget, validator=None, full=False):
+        if full:
+            box = gtk.VBox(False, 2)
+        else:
+            box = gtk.HBox(True, 2)
 
         l = gtk.Label(label)
         l.show()
@@ -101,10 +104,16 @@ class FieldDialog(gtk.Dialog):
         widget.show()
 
         box.pack_start(l, 0,0,0)
-        box.pack_start(widget, 0,0,0)
+        if full:
+            box.pack_start(widget, 1,1,1)
+        else:
+            box.pack_start(widget, 0,0,0)
         box.show()
 
-        self.vbox.pack_start(box, 0,0,0)
+        if full:
+            self.vbox.pack_start(box, 1,1,1)
+        else:
+            self.vbox.pack_start(box, 0,0,0)
     
         self.__fields[label] = widget
 
