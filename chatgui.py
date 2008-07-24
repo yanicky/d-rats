@@ -41,6 +41,7 @@ import formbuilder
 import gps
 import mapdisplay
 import sessiongui
+import image
 
 from mc_xfergui import MulticastGUI, MulticastRecvGUI
 
@@ -655,18 +656,19 @@ class MainChatGUI(ChatGUI):
         d.destroy()
         self.toggle_sendable(True)
         
-    def do_file_transfer(self, send):
+    def do_file_transfer(self, send, fname=None):
         station = prompt_for_station(self.window)
         if not station:
             return
 
-        ddir = self.config.get("prefs", "download_dir")
-        f = self.config.platform.gui_open_file(ddir)
-        if not f:
-            return
+        if not fname:
+            ddir = self.config.get("prefs", "download_dir")
+            fname = self.config.platform.gui_open_file(ddir)
+            if not fname:
+                return
 
-        print "Going to request file send of %s to %s" % (f, station)
-        self.adv_controls["sessions"].send_file(station, f)
+        print "Going to request file send of %s to %s" % (fname, station)
+        self.adv_controls["sessions"].send_file(station, fname)
         
     def menu_handler(self, _action):
         action = _action.get_name()
@@ -713,6 +715,10 @@ class MainChatGUI(ChatGUI):
         elif action == "ping":
             s = prompt_for_station(self.window)
             self.mainapp.chat_session.ping_station(s)
+        elif action == "isend":
+            f = image.send_image()
+            if f:
+                self.do_file_transfer(True, f)
 
     def make_menubar(self):
         menu_xml = """
@@ -721,6 +727,7 @@ class MainChatGUI(ChatGUI):
             <menu action='file'>
               <menuitem action='sendtext'/>
               <menuitem action='send'/>
+              <menuitem action='isend'/>
               <!--menuitem action='msend'/-->
               <!--menuitem action='mrecv'/-->
               <menuitem action='ping'/>
@@ -785,12 +792,17 @@ class MainChatGUI(ChatGUI):
         connected.set_active(True)
         connected.connect("toggled", self.connect, None)
 
+        isend = gtk.Action("isend", "Send _Image", None, None)
+        isend.set_sensitive(image.has_image_support())
+        isend.connect("activate", self.menu_handler)
+
         uim = gtk.UIManager()
         self.menu_ag = gtk.ActionGroup("MenuBar")
 
         self.menu_ag.add_actions(actions)
         self.menu_ag.add_action_with_accel(advanced, "<Control>a")
         self.menu_ag.add_action_with_accel(connected, "<Control>d")
+        self.menu_ag.add_action(isend)
 
         uim.insert_action_group(self.menu_ag, 0)
         menuid = uim.add_ui_from_string(menu_xml)
