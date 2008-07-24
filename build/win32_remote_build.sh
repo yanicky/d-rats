@@ -26,7 +26,7 @@ do_build() {
     shift
     shift
 
-    ssh $HOST "cd $tmp && ./build/make_win32_build.sh $out $*"
+    ssh $HOST "cd $tmp && ./build/make_win32_build.sh $out $* && chmod 644 $out/*"
 }
 
 grab_builds() {
