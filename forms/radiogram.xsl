@@ -72,7 +72,7 @@
 		  <xsl:apply-templates select="field[@id='station']"/>
 		</td>
 		<td class="group">
-		  <xsl:apply-templates select="field[@id='check']"/>
+		  <xsl:apply-templates select="field[@id='_auto_check']"/>
 		</td>
 		<td class="group">
 		  <xsl:apply-templates select="field[@id='place']"/>

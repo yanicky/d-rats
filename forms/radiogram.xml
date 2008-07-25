@@ -1,7 +1,7 @@
 <xml>
 <form id='radiogram'>
 <title>Radiogram</title>
-<field id='number'>
+<field id='_auto_number'>
 <caption>Number</caption>
 <entry type='text'/>
 </field>

@@ -1,7 +1,7 @@
 <xml>
 <form id='ICS213_OR_WashCoARES'>
 <title>ICS-213 Form</title>
-<field id='number'>
+<field id='_auto_number'>
 <caption>Number</caption>
 <entry type='numeric'>1</entry>
 </field>

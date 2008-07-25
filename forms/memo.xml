@@ -3,21 +3,21 @@
     <title>Informal Memo Form</title>
     <field id="time">
       <caption>Time</caption>
-      <entry type="time">22:13:08</entry>
+      <entry type="time"/>
     </field>
     <field id="date">
       <caption>Date</caption>
-      <entry type="date">01-Jan-2008</entry>
+      <entry type="date"/>
     </field>
-    <field id="recip">
+    <field id="_auto_recip">
       <caption>Recipient</caption>
       <entry type="text"/>
     </field>
-    <field id="sender">
+    <field id="_auto_sender">
       <caption>Sender</caption>
       <entry type="text"/>
     </field>
-    <field id="subject">
+    <field id="_auto_subject">
       <caption>Subject</caption>
       <entry type="text"/>
     </field>
