@@ -189,6 +189,9 @@ class TextWidget(FieldWidget):
     def get_value(self):
         return self.widget.get_text()
 
+    def set_value(self, value):
+        self.widget.set_text(value)
+
 class ToggleWidget(FieldWidget):
     def __init__(self, node):
         FieldWidget.__init__(self, node)
@@ -344,6 +347,9 @@ class NumericWidget(FieldWidget):
 
     def get_value(self):
         return "%.0f" % self.adj.get_value()
+
+    def set_value(self, value):
+        self.adj.set_value(float(value))
 
 class ChoiceWidget(FieldWidget):
     def parse_choice(self, node):
@@ -590,6 +596,20 @@ class Form(gtk.Dialog):
 
         self.build_gui(gtk.RESPONSE_CANCEL in buttons)
         
+    def get_field_value(self, id):
+        for field in self.fields:
+            print "Checking %s for %s" % (field.id, id)
+            if field.id == id:
+                return field.entry.get_value()
+
+        return None
+
+    def set_field_value(self, id, value):
+        for field in self.fields:
+            if field.id == id:
+                field.entry.set_value(value)
+                break
+
 class FormFile(Form):
     def __init__(self, title, filename, buttons=None, parent=None):
         self._filename = filename
