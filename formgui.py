@@ -477,6 +477,11 @@ class Form(gtk.Dialog):
         else:
             os.system("firefox %s" % name)
 
+    def calc_check(self, buffer, checkwidget):
+        message = buffer.get_text(buffer.get_start_iter(),
+                                  buffer.get_end_iter())
+        checkwidget.set_text("%i" % len(message.split()))
+
     def build_gui(self, allow_export=True):
         tlabel = gtk.Label()
         tlabel.set_markup("<big><b>%s</b></big>" % self.title_text)
@@ -494,8 +499,22 @@ class Form(gtk.Dialog):
         sw.show()
         self.vbox.pack_start(sw, 1,1,1)
 
+        msg_field = None
+        chk_field = None
+
         for f in self.fields:
+            if f.id == "_auto_check":
+                chk_field = f
+            elif f.id == "_auto_message":
+                msg_field = f
+            
             field_box.pack_start(f.get_widget(), 0,0,0)
+
+        if msg_field and chk_field:
+            mw = msg_field.entry.buffer
+            cw = chk_field.entry.widget
+
+            mw.connect("changed", self.calc_check, cw)
 
         if allow_export:
             save = gtk.Button("Export")

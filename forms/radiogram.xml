@@ -17,7 +17,7 @@
 <caption>Station of Origin</caption>
 <entry type='text'/>
 </field>
-<field id='check'>
+<field id='_auto_check'>
 <caption>Check</caption>
 <entry type='text'/>
 </field>
@@ -41,7 +41,7 @@
 <caption>Recipient Phone #</caption>
 <entry type='text'/>
 </field>
-<field id='message'>
+<field id='_auto_message'>
 <caption>Message</caption>
 <entry type='multiline'/>
 </field>
