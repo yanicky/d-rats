@@ -1521,6 +1521,62 @@ class FormManager:
         self.store.set(iter, self.col_stamp, stamp)
         self.reg_form(id, filename, stamp)
 
+    def reply(self, widget, data=None):
+        (list, iter) = self.view.get_selection().get_selected()
+
+        (filename,) = self.store.get(iter, self.col_filen)
+
+        save_fields = [
+            ("_auto_number", "_auto_number", lambda x: str(int(x)+1)),
+            ("_auto_subject", "_auto_subject", lambda x: "RE: %s" % x),
+            ("_auto_sender", "_auto_recip", None)
+            ]
+
+        fields = {}
+
+        try:
+            oform = formgui.FormFile("", filename)
+
+            for sf, df, xform in save_fields:
+                oldval = oform.get_field_value(sf)
+                if not oldval:
+                    continue
+
+                if xform:
+                    fields[df] = xform(oldval)
+                else:
+                    fields[df] = oldval
+
+                print "%s -> %s: %s" % (sf, df, fields[df])
+
+        except Exception, e:
+            print "Failed to get old number: %s" % e
+            number = 1
+
+        try:
+            template = os.path.join(self.form_source_dir, oform.id + ".xml")
+            newfn = time.strftime(os.path.join(self.form_store_dir,
+                                               "form_%m%d%Y_%H%M%S.xml"))
+
+            form = formgui.FormFile("Reply to `%s'" % oform.id, template)
+
+            for field, value in fields.items():
+                form.set_field_value(field, value)
+            r = form.run_auto(newfn)
+            form.destroy()
+            if r == gtk.RESPONSE_CANCEL:
+                return
+        except Exception, e:
+            d = ExceptionDialog(e, parent=self.gui.window)
+            d.run()
+            d.destroy()
+            return
+
+        stamp = self.get_stamp()
+
+        self.list_add_form(0, oform.id, newfn, stamp)
+        self.reg_form(oform.id, newfn, stamp)        
+
     def make_buttons(self):
         box = gtk.VBox(False, 2)
 
@@ -1535,6 +1591,12 @@ class FormManager:
         edit.connect("clicked", self.edit, None)
         edit.show()
         box.pack_start(edit, 0,0,0)
+
+        reply = gtk.Button("Reply")
+        reply.set_size_request(75, 30)
+        reply.connect("clicked", self.reply, None)
+        reply.show()
+        box.pack_start(reply, 0,0,0)
 
         delb = gtk.Button("Delete") 
         delb.set_size_request(75, 30)
