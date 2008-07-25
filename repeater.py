@@ -23,10 +23,16 @@ import ConfigParser
 import gtk
 import gobject
 
-from comm import SWFSerial
-from miscwidgets import make_choice
-import miscwidgets
-import platform
+try:
+    from comm import SWFSerial
+    from miscwidgets import make_choice
+    import miscwidgets
+    import platform
+except ImportError:
+    from d_rats.comm import SWFSerial
+    from d_rats.miscwidgets import make_choice
+    from d_rats import miscwidgets
+    from d_rats import platform
 
 def call_with_lock(lock, fn, *args):
     lock.acquire()
