@@ -33,4 +33,5 @@ setup(
               'icon_resources': [(0x0004, 'd-rats2.ico')]},
              {'script' : 'repeater'},
              {'script' : 'mapdownloader'}],
+    data_files=["C:\\GTK\\bin\\jpeg62.dll"],
     options=opts)
