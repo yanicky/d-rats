@@ -48,7 +48,7 @@ def update_image(filename, dlg):
         w = int(w * factor)
         h = int(h * factor)
     else:
-        w, h = dlg.image.size
+        h, w = dlg.image.size
 
     resized = dlg.image.resize((h, w))
 
