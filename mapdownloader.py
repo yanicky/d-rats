@@ -5,9 +5,12 @@ import gobject
 import threading
 import time
 
-
-import mapdisplay
-import miscwidgets
+try:
+    import mapdisplay
+    import miscwidgets
+except ImportError:
+    from d_rats import mapdisplay
+    from d_rats import miscwidgets
 
 class MapDownloader(gtk.Window):
     def make_val(self, key, label):
