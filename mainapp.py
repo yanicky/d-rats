@@ -45,7 +45,7 @@ MAINAPP = None
 
 gobject.threads_init()
 
-class CallList():
+class CallList:
     def __init__(self):
         self.clear()
 
