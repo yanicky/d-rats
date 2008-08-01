@@ -225,6 +225,8 @@ class GPSPosition:
         self._from_coords(lat, lon)
 
     def __iadd__(self, update):
+        self.station = update.station
+
         if not update.valid:
             return self
 
@@ -513,8 +515,9 @@ class NMEAGPSPosition(GPSPosition):
         csum = m.group(2)
         if "," in m.group(3):
             sta, com = m.group(3).split(",", 1)
-            self.station = sta.strip()[0:8]
-            self.comment = com.strip()[0:20]
+            if not sta.strip().startswith("$"):
+                self.station = sta.strip()[0:8]
+                self.comment = com.strip()[0:20]
 
         self.valid = self._test_checksum(string, csum)
 
@@ -842,17 +845,32 @@ class StaticGPSSource(GPSSource):
         return "Static position"
 
 def parse_GPS(string):
-    try:
-        if "$GPGGA" in string:
-            return NMEAGPSPosition(string[string.index("$GPGGA"):])
-        elif "$GPRMC" in string:
-            return NMEAGPSPosition(string[string.index("$GPRMC"):])
-        elif "$$CRC" in string:
-            return APRSGPSPosition(string[string.index("$$CRC"):])
-    except Exception, e:
-        print "Exception during GPS parse: %s" % e
+    fixes = []
 
-    return None
+    while "$" in string:
+        try:
+            if "$GPGGA" in string:
+                fixes.append(NMEAGPSPosition(string[string.index("$GPGGA"):]))
+                string = string[string.index("$GPGGA")+6:]
+            elif "$GPRMC" in string:
+                fixes.append(NMEAGPSPosition(string[string.index("$GPRMC"):]))
+                string = string[string.index("$GPRMC")+6:]
+            elif "$$CRC" in string:
+                return APRSGPSPosition(string[string.index("$$CRC"):])
+        except Exception, e:
+            print "Exception during GPS parse: %s" % e
+
+    if not fixes:
+        return None
+
+    fix = fixes[0]
+    fixes = fixes[1:]
+
+    for extra in fixes:
+        print "Appending fix: %s" % extra
+        fix += extra
+
+    return fix
 
 if __name__ == "__main__":
 
