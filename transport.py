@@ -124,7 +124,7 @@ class Transporter:
 
     def _match_gps(self, type):
         # NMEA-style
-        m = re.match("^(.*)(%s,.*\r\n[^\r]*\r)(.*)" % type, self.inbuf)
+        m = re.match("^(.*)(%s,.*\r\n[^\r]*\r){1,4}([^\$].*)" % type, self.inbuf)
         if m:
             return m
 
@@ -213,6 +213,12 @@ class TestPipe:
             elif i == 7:
                 self.buf += "$$CRC6CD1,Hills-Water-Treat-Plt>APRATS,DSTAR*:@233208h4529.05N/12305.91W>Washington County ARES;Hills Water Treat Pl\r\n"
 
+            elif i == 2:
+                self.buf += \
+"""$GPGGA,023531.36,4531.4940,N,12254.9766,W,1,07,1.3,63.7,M,-21.4,M,,*64       
+$GPRMC,023531.36,A,4531.4940,N,12254.9766,W,0.00,113.7,010808,17.4,E,A*27    
+K7TAY M ,/10-13/"""
+                
 
         print "Made some data: %s" % self.buf
 
