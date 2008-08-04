@@ -245,6 +245,9 @@ class GPSPosition:
         if update.direction:
             self.direction = update.direction
 
+        if update.comment:
+            self.comment = update.comment
+
         return self
 
     def __str__(self):
