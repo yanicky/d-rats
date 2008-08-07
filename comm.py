@@ -58,9 +58,11 @@ class SWFSerial(serial.Serial):
                     print "We're XOFF, waiting: %s" % self.state
                 time.sleep(0.01)
                 
-                if time.time() - start > self.xoff_limit:
-                    print "XOFF for too long, breaking loop!"
-                    raise DataPathIOError("Write error (flow)")
+                if (time.time() - start) > self.xoff_limit:
+                    #print "XOFF for too long, breaking loop!"
+                    #raise DataPathIOError("Write error (flow)")
+                    print "XOFF for too long, assuming XON"
+                    self.state = True
 
     def write(self, data):
         old_to = self.timeout
