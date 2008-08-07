@@ -860,8 +860,11 @@ def parse_GPS(string):
                 string = string[string.index("$GPRMC")+6:]
             elif "$$CRC" in string:
                 return APRSGPSPosition(string[string.index("$$CRC"):])
+            else:
+                string = string[string.index("$")+1:]
         except Exception, e:
             print "Exception during GPS parse: %s" % e
+            string = string[string.index("$")+1:]
 
     if not fixes:
         return None
