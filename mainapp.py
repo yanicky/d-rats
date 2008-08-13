@@ -300,7 +300,7 @@ class MainApp:
         self.chatgui = chatgui.MainChatGUI(self.config, self)
 
         self.chatgui.display("D-RATS v%s " % DRATS_VERSION, "red")
-        self.chatgui.display("(Copyright 2008 Dan Smith KI4IFW)\n",
+        self.chatgui.display("(Copyright 2008 Dan Smith KK7DS)\n",
                              "blue", "italic")
         
         self.refresh_config()

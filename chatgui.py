@@ -582,7 +582,7 @@ class MainChatGUI(ChatGUI):
 
         d.set_name("D-RATS")
         d.set_version(mainapp.DRATS_VERSION)
-        d.set_copyright("Copyright 2008 Dan Smith (KI4IFW)")
+        d.set_copyright("Copyright 2008 Dan Smith (KK7DS)")
         d.set_website("http://d-rats.danplanet.com")
         d.set_authors(("Dan Smith <dsmith@danplanet.com>",))
         d.set_comments(verinfo)
