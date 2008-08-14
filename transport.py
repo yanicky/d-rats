@@ -109,8 +109,7 @@ class Transporter:
                 continue
 
             block = self.inbuf[s:e]
-            _tmp = self.inbuf[:s] + self.inbuf[e:]
-            self.inbuf = _tmp
+            self.inbuf = self.inbuf[e:]
 
             f = ddt2.DDT2EncodedFrame()
             try:
@@ -118,7 +117,8 @@ class Transporter:
                     print "Got a block: %s" % f
                     self._handle_frame(f)
                 else:
-                    print "Found a broken block"
+                    print "Found a broken block (S:%i E:%i len(buf):%i" % (\
+                        s, e, len(self.inbuf))
             except Exception, e:
                 print "Failed to unpack what looked like a block: %s" % e
 
