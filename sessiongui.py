@@ -50,9 +50,9 @@ class FileBaseThread(SessionThread):
     progress_key = "recv_size"
 
     def status_cb(self, vals):
-        print "GUI Status:"
-        for k,v in vals.items():
-            print "   -> %s: %s" % (k, v)
+        #print "GUI Status:"
+        #for k,v in vals.items():
+        #    print "   -> %s: %s" % (k, v)
 
         if vals["total_size"]:
             pct = (float(vals[self.progress_key]) / vals["total_size"]) * 100.0
