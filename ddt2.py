@@ -22,6 +22,8 @@ import yencode
 
 import threading
 
+import utils
+
 ENCODED_HEADER = "[SOB]"
 ENCODED_TRAILER = "[EOB]"
 
@@ -166,13 +168,16 @@ class DDT2Frame:
             c = "+"
         else:
             c = "-"
+
+        data = utils.filter_to_ascii(self.data[:20])
+
         return "DDT2%s: %i:%i:%i %s->%s (%s...)" % (c,
                                                     self.seq,
                                                     self.session,
                                                     self.type,
                                                     self.s_station,
                                                     self.d_station,
-                                                    self.data[:20])
+                                                    data)
 
 class DDT2EncodedFrame(DDT2Frame):
     def get_packed(self):
