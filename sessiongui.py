@@ -64,8 +64,14 @@ class FileBaseThread(SessionThread):
         else:
             retries = ""
 
+        if vals.has_key("start_time"):
+            elapsed = time.time() - vals["start_time"]
+            kbytes = vals[self.progress_key]
+            speed = " %2.2f B/s" % (kbytes / elapsed)
+        else:
+            speed = ""
 
-        msg = "%s [%02.0f%%]%s" % (vals["msg"], pct, retries)
+        msg = "%s [%02.0f%%]%s%s" % (vals["msg"], pct, speed, retries)
 
         gobject.idle_add(self.gui.update,
                          self.session._id,
