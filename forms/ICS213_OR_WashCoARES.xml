@@ -7,7 +7,12 @@
 </field>
 <field id='precedence'>
 <caption>Precedence</caption>
-<entry type='choice'><choice>TR</choice><choice>Foo</choice></entry>
+<entry type='choice'>
+  <choice set="y">Routine</choice>
+  <choice>Welfare</choice>
+  <choice>Priority</choice>
+  <choice>Emergency</choice>
+</entry>
 </field>
 <field id='station'>
 <caption>Originating station</caption>
