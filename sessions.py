@@ -91,7 +91,7 @@ class ChatSession(sessionmgr.StatelessSession):
 
         print "Pinged station %s" % station
 
-class FileTransferSession(sessionmgr.StatefulSession):
+class FileTransferSession(sessionmgr.PipelinedStatefulSession):
     type = sessionmgr.T_FILEXFER
 
     def internal_status(self, vals):
@@ -106,7 +106,7 @@ class FileTransferSession(sessionmgr.StatefulSession):
         self.status_cb(vals)
 
     def __init__(self, name, status_cb=None):
-        sessionmgr.StatefulSession.__init__(self, name)
+        sessionmgr.PipelinedStatefulSession.__init__(self, name)
 
         if not status_cb:
             self.status_cb = self.internal_status
@@ -156,25 +156,30 @@ class FileTransferSession(sessionmgr.StatefulSession):
             time.sleep(2)
 
         if resp != "OK":
+            print "Got non-OK response: %s" % resp
             return False
 
         self.stats["total_size"] = stat.st_size
         self.stats["sent_size"] = 0
+        self.stats["start_time"] = time.time()
 
         while True:
-            d = f.read(1024)
+            d = f.read(4096)
             if not d:
                 break
 
             self.status("Sending")
             try:
-                self.write(d, timeout=20)
+                self.write(d, timeout=120)
             except sessionmgr.SessionClosedError:
                 break
 
             self.status("Sent")
 
-        self.write(f.read(), timeout=20)
+        # FIXME: Really should wait for xmit and then wait for ack
+        # to avoid breaking if we sent larger chunks
+
+        self.write(f.read(), timeout=120)
         f.close()
 
         self.close()
@@ -215,6 +220,7 @@ class FileTransferSession(sessionmgr.StatefulSession):
         self.status("Receiving file %s of size %i" % (name, size))
         self.stats["recv_size"] = 0
         self.stats["total_size"] = size
+        self.stats["start_time"] = time.time()
 
         f = file(filename, "wb", 0)
         if not f:
