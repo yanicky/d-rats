@@ -259,9 +259,6 @@ class FileTransferSession(BaseFileTransferSession, sessionmgr.StatefulSession):
         sessionmgr.StatefulSession.__init__(self, *args, **kwargs)
         BaseFileTransferSession.__init__(self, *args, **kwargs)
 
-class FormTransferSession(FileTransferSession):
-    type = sessionmgr.T_FORMXFER
-
 class PipelinedFileTransfer(BaseFileTransferSession, sessionmgr.PipelinedStatefulSession):
     type = sessionmgr.T_PFILEXFER
 
@@ -269,7 +266,13 @@ class PipelinedFileTransfer(BaseFileTransferSession, sessionmgr.PipelinedStatefu
         sessionmgr.PipelinedStatefulSession.__init__(self, *args, **kwargs)
         BaseFileTransferSession.__init__(self, *args, **kwargs)
 
-class PipelinedFormTransfer(PipelinedFileTransfer):
+class BaseFormTransferSession:
+    pass
+
+class FormTransferSession(BaseFormTransferSession, FileTransferSession):
+    type = sessionmgr.T_FORMXFER
+
+class PipelinedFormTransfer(BaseFormTransferSession, PipelinedFileTransfer):
     type = sessionmgr.T_PFORMXFER
 
 class SocketSession(sessionmgr.PipelinedStatefulSession):

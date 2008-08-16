@@ -92,6 +92,7 @@ class AppConfig:
         mset("settings", "inports", "[]")
         mset("settings", "outports", "[]")
         mset("settings", "sockflush", "0.5")
+        mset("settings", "pipelinexfers", "True")
 
         mset("quick", None, None)
 
@@ -146,6 +147,7 @@ class AppConfig:
                 "compatmode" : "Receive raw text as chat data",
                 "sockflush" : "Socket flush interval",
                 "restore_stations" : "Restore callsign list",
+                "pipelinexfers" : "Use pipelined transfers",
                 }
 
     id2tip = {"ddt_block_size" : "Size (in KB) of data blocks to send with DDT",
@@ -165,6 +167,7 @@ class AppConfig:
               "inports" : "TCP ports to forward for remote stations",
               "sockflush" : "Seconds before sending socket data over radio",
               "restore_stations" : "Restore callsign list from map list of `Stations'",
+              "pipelinexfers" : "Increases throughput and resiliency (v0.2.4 and later only)",
               }
 
     xfers = {"DDT" : ddt.DDTTransfer}
@@ -430,6 +433,8 @@ class AppConfig:
                                      self.make_bool()), 0,0,0)
         vbox.pack_start(self.make_sb("sockflush",
                                      self.make_spin(0.2, 0, 30)), 0,0,0)
+        vbox.pack_start(self.make_sb("pipelinexfers",
+                                     self.make_bool()), 0,0,0)
 
         vbox.show()
         return vbox
@@ -769,7 +774,8 @@ D-RATS has been started in safe mode, which means the configuration file has not
                   ("prefs", "logresume"),
                   ("settings", "gpsenabled"),
                   ("settings", "compatmode"),
-                  ("prefs", "restore_stations")]
+                  ("prefs", "restore_stations"),
+                  ("settings", "pipelinexfers")]
 
         choicetext_v = [("settings", "port"),
                         ("settings", "gpsport")]

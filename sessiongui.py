@@ -534,12 +534,14 @@ class SessionGUI:
                        3, session._st,
                        4, "Idle")
 
-        if session.__class__ == sessions.FileTransferSession:
-            self.new_file_xfer(session, direction)
-        elif session.__class__ == sessions.FormTransferSession:
+        if isinstance(session, sessions.BaseFormTransferSession):
             self.new_form_xfer(session, direction)
-        elif session.__class__ == sessions.SocketSession:
+        elif isinstance(session, sessions.BaseFileTransferSession):
+            self.new_file_xfer(session, direction)
+        elif isinstance(session, sessions.SocketSession):
             self.new_socket(session, direction)
+        else:
+            print "*** Unknown session type: %s" % session.__class__.__name__
 
     def end_session(self, id):
         iter = self.iter_of(0, id)
@@ -564,10 +566,15 @@ class SessionGUI:
         self.outgoing_files.insert(0, filename)
         print "Outgoing files: %s" % self.outgoing_files
 
+        if self.mainapp.config.getboolean("settings", "pipelinexfers"):
+            xfer = sessions.PipelinedFileTransfer
+        else:
+            xfer = sessions.FileTransferSession
+
         t = threading.Thread(target=self.mainapp.sm.start_session,
                              kwargs={"name" : os.path.basename(filename),
                                      "dest" : dest,
-                                     "cls"  : sessions.FileTransferSession})
+                                     "cls"  : xfer})
         t.start()
         print "Started Session"
         
@@ -575,10 +582,15 @@ class SessionGUI:
         self.outgoing_forms.insert(0, filename)
         print "Outgoing forms: %s" % self.outgoing_forms
 
+        if self.mainapp.config.getboolean("settings", "pipelinexfers"):
+            xfer = sessions.PipelinedFormTransfer
+        else:
+            xfer = sessions.FormTransferSession
+
         t = threading.Thread(target=self.mainapp.sm.start_session,
                              kwargs={"name" : name,
                                      "dest" : dest,
-                                     "cls"  : sessions.FormTransferSession})
+                                     "cls"  : xfer})
         t.start()
         print "Started form session"
 
