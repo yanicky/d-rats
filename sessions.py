@@ -19,6 +19,7 @@ import os
 import struct
 import time
 import socket
+import random
 from threading import Thread
 
 import sessionmgr
@@ -57,10 +58,22 @@ class ChatSession(sessionmgr.StatelessSession):
 
             self.__cb(self.__cb_data, args)
         elif frame.type == self.T_PNG_REQ:
+            if frame.d_station == "CQCQCQ":
+                delay = random.randint(0,50) / 10.0
+                print "Broadcast ping, waiting %.1f sec" % delay
+                time.sleep(delay)
+
             frame.d_station = frame.s_station
             frame.type = self.T_PNG_RSP
             frame.data = self.ping_data()
             self._sm.outgoing(self, frame)
+
+
+            args = { "From" : frame.s_station,
+                     "To" : frame.d_station,
+                     "Msg" : "[ Ping request, sent reply ]",
+                     }
+            self.__cb(self.__cb_data, args)
         elif frame.type == self.T_PNG_RSP:
             args = { "From": frame.s_station,
                      "To": frame.d_station,
@@ -89,7 +102,11 @@ class ChatSession(sessionmgr.StatelessSession):
         f.type = self.T_PNG_REQ
         self._sm.outgoing(self, f)
 
-        print "Pinged station %s" % station
+        args = { "From" : f.s_station,
+                 "To" : f.d_station,
+                 "Msg" : "[ Sent ping ]",
+                 }
+        self.__cb(self.__cb_data, args)
 
 class BaseFileTransferSession:
     def internal_status(self, vals):
