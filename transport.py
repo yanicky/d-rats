@@ -80,6 +80,8 @@ class Transporter:
         self.thread = threading.Thread(target=self.worker)
         self.thread.start()
 
+        self.last_xmit = 0
+
     def get_input(self):
         while True:
             chunk = self.pipe.read(64)
@@ -166,9 +168,14 @@ class Transporter:
             if not f:
                 break
 
+            if time.time() - self.last_xmit > 3:
+                print "Defeating power-save..."
+                self.pipe.write("[SOB]" + ("\x01" * 10) + "[EOB]")
+
             print "Sending block: %s" % f
             self.pipe.write(f.get_packed())
             f.sent_event.set()
+            self.last_xmit = time.time()
 
     def worker(self):
         while self.enabled:
