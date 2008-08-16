@@ -206,6 +206,8 @@ class BaseFileTransferSession:
             self.status("Failed to send file (incomplete)")
             return False
         else:
+            actual = os.stat(filename).st_size
+            self.stats["sent_size"] = self.stats["total_size"] = actual
             self.status("Complete")
             return True
 
@@ -268,6 +270,8 @@ class BaseFileTransferSession:
             self.status("Failed to receive file (incomplete)")
             return None
         else:
+            actual = os.stat(filename).st_size
+            self.stats["recv_size"] = self.stats["total_size"] = actual
             self.status("Complete")
             return filename
 

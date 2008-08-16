@@ -87,8 +87,15 @@ class FileBaseThread(SessionThread):
         else:
             msg = ""
 
+        if self.session.stats.has_key("start_time"):
+            start = self.session.stats["start_time"]
+            exmsg = " (%2.2f B/s)" % (self.session.stats["total_size"] /
+                                      (time.time() - start))
+        else:
+            exmsg = ""
+
         gui_display(self.gui.chatgui,
-                    "Transfer%s complete" % msg,
+                    "Transfer%s complete%s" % (msg, exmsg),
                     "italic")
 
     def failed(self, reason=None):
