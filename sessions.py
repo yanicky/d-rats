@@ -132,17 +132,25 @@ class BaseFileTransferSession:
 
         self.stats["total_size"] = 0
 
-    def send_file(self, filename):
-        stat = os.stat(filename)
-        if not stat:
-            return False
-
+    def get_file_data(self, filename):
         f = file(filename, "rb")
-        if not f:
+        data = f.read()
+        f.close()
+
+        return data
+
+    def put_file_data(self, filename, data):
+        f = file(filename, "wb")
+        f.write(data)
+        f.close()
+    
+    def send_file(self, filename):
+        data = self.get_file_data(filename)
+        if not data:
             return False
 
         try:
-            self.write(struct.pack("I", stat.st_size) + \
+            self.write(struct.pack("I", len(data)) + \
                            os.path.basename(filename))
         except sessionmgr.SessionClosedError, e:
             print "Session closed while sending file information"
@@ -172,14 +180,13 @@ class BaseFileTransferSession:
             print "Got non-OK response: %s" % resp
             return False
 
-        self.stats["total_size"] = stat.st_size
+        self.stats["total_size"] = len(data)
         self.stats["sent_size"] = 0
         self.stats["start_time"] = time.time()
 
-        while True:
-            d = f.read(4096)
-            if not d:
-                break
+        while data:
+            d = data[:4096]
+            data = data[4096:]
 
             self.status("Sending")
             try:
@@ -191,9 +198,6 @@ class BaseFileTransferSession:
 
         # FIXME: Really should wait for xmit and then wait for ack
         # to avoid breaking if we sent larger chunks
-
-        self.write(f.read(), timeout=120)
-        f.close()
 
         self.close()
 
@@ -235,11 +239,6 @@ class BaseFileTransferSession:
         self.stats["total_size"] = size
         self.stats["start_time"] = time.time()
 
-        f = file(filename, "wb", 0)
-        if not f:
-            print "Can't open file %s/%s" + (dir, name)
-            return None
-
         try:
             self.write("OK")
         except sessionmgr.SessionClosedError, e:
@@ -247,6 +246,8 @@ class BaseFileTransferSession:
             return None
 
         self.status("Negotiation Complete")
+
+        data = ""
 
         while True:
             try:
@@ -257,10 +258,10 @@ class BaseFileTransferSession:
                 break
 
             if d:
-                f.write(d)
+                data += d
                 self.status("Recevied block")
 
-        f.close()
+        self.put_file_data(filename, data)
 
         if self.stats["recv_size"] != self.stats["total_size"]:
             self.status("Failed to receive file (incomplete)")
