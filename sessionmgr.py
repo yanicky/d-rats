@@ -29,6 +29,8 @@ T_GENERAL   = 1
 T_FILEXFER  = 2
 T_FORMXFER  = 3
 T_SOCKET    = 4
+T_PFILEXFER = 5
+T_PFORMXFER = 6
 
 class SessionClosedError(Exception):
     pass
@@ -327,6 +329,8 @@ class ControlSession(Session):
                         self.T_NEW + T_FILEXFER : sessions.FileTransferSession,
                         self.T_NEW + T_FORMXFER : sessions.FormTransferSession,
                         self.T_NEW + T_SOCKET   : sessions.SocketSession,
+                        self.T_NEW + T_PFILEXFER: sessions.PipelinedFileTransfer,
+                        self.T_NEW + T_PFORMXFER: sessions.PipelinedFormTransfer,
                         }
 
 class StatelessSession(Session):

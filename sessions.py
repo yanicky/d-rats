@@ -91,9 +91,7 @@ class ChatSession(sessionmgr.StatelessSession):
 
         print "Pinged station %s" % station
 
-class FileTransferSession(sessionmgr.PipelinedStatefulSession):
-    type = sessionmgr.T_FILEXFER
-
+class BaseFileTransferSession:
     def internal_status(self, vals):
         print "XFER STATUS: %s" % vals["msg"]
 
@@ -106,8 +104,6 @@ class FileTransferSession(sessionmgr.PipelinedStatefulSession):
         self.status_cb(vals)
 
     def __init__(self, name, status_cb=None):
-        sessionmgr.PipelinedStatefulSession.__init__(self, name)
-
         if not status_cb:
             self.status_cb = self.internal_status
         else:
@@ -256,8 +252,25 @@ class FileTransferSession(sessionmgr.PipelinedStatefulSession):
             self.status("Complete")
             return filename
 
+class FileTransferSession(BaseFileTransferSession, sessionmgr.StatefulSession):
+    type = sessionmgr.T_FILEXFER
+
+    def __init__(self, *args, **kwargs):
+        sessionmgr.StatefulSession.__init__(self, *args, **kwargs)
+        BaseFileTransferSession.__init__(self, *args, **kwargs)
+
 class FormTransferSession(FileTransferSession):
     type = sessionmgr.T_FORMXFER
+
+class PipelinedFileTransfer(BaseFileTransferSession, sessionmgr.PipelinedStatefulSession):
+    type = sessionmgr.T_PFILEXFER
+
+    def __init__(self, *args, **kwargs):
+        sessionmgr.PipelinedStatefulSession.__init__(self, *args, **kwargs)
+        BaseFileTransferSession.__init__(self, *args, **kwargs)
+
+class PipelinedFormTransfer(PipelinedFileTransfer):
+    type = sessionmgr.T_PFORMXFER
 
 class SocketSession(sessionmgr.PipelinedStatefulSession):
     type = sessionmgr.T_SOCKET
