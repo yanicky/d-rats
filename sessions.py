@@ -20,6 +20,7 @@ import struct
 import time
 import socket
 import random
+import zlib
 from threading import Thread
 
 import sessionmgr
@@ -283,6 +284,18 @@ class PipelinedFileTransfer(BaseFileTransferSession, sessionmgr.PipelinedStatefu
     def __init__(self, *args, **kwargs):
         sessionmgr.PipelinedStatefulSession.__init__(self, *args, **kwargs)
         BaseFileTransferSession.__init__(self, *args, **kwargs)
+
+    def get_file_data(self, filename):
+        f = file(filename, "rb")
+        data = f.read()
+        f.close()
+
+        return zlib.compress(data, 9)
+
+    def put_file_data(self, filename, data):
+        f = file(filename, "wb")
+        f.write(zlib.decompress(data))
+        f.close()
 
 class BaseFormTransferSession:
     pass
