@@ -522,6 +522,9 @@ class StatefulSession(Session):
 
         if count == None:
             b = self.data.dequeue_all()
+            # BlockQueue.dequeue_all() returns the blocks in poppable order,
+            # which is newest first
+            b.reverse()
             buf = "".join(b)
         else:
             buf = ""
@@ -582,6 +585,157 @@ class StatefulSession(Session):
             print "Waiting for last block to be ack'd"
             f.ackd_event.wait(timeout)
             print "ACKED"
+
+class PipelinedStatefulSession(StatefulSession):
+    T_REQACK = 5
+
+    def __init__(self, *args, **kwargs):
+        self.oob_queue = {}
+        self.recv_list = []
+        StatefulSession.__init__(self, *args, **kwargs)
+        self.out_limit = 8
+        self.bsize = 512
+        self.outstanding = []
+        
+    def queue_next(self):
+        if self.outstanding is None:
+            # This is a silly race condition because the worker thread is
+            # started in the init, which might run before we set our values
+            # after the superclass init
+            return
+
+        count = self.out_limit - len(self.outstanding)
+        if len(self.outstanding) >= self.out_limit:
+            return
+
+        for i in range(count):
+            b = self.outq.dequeue()
+            if b:
+                print "Queuing %i for send (%i)" % (b.seq, count)
+                self.outstanding.append(b)
+                self.ts = 0
+                self.attempts = 0
+            else:
+                break
+
+    def send_reqack(self, blocks):
+        f = DDT2EncodedFrame()
+        f.seq = 0
+        f.type = self.T_REQACK
+        f.data = "".join([chr(x) for x in blocks])
+
+        print "Requesting ack of blocks %s" % blocks
+
+        self._sm.outgoing(self, f)
+
+    def send_blocks(self):
+        self.queue_next()
+
+        if not self.outstanding:
+            # nothing to send
+            return
+
+        if self.outstanding and not self.is_timeout():
+            # Not time to try again yet
+            return
+        
+        if self.attempts == 10:
+            print "Too many retries, closing..."
+            self.set_state(self.ST_CLSD)
+            self.enabled = False
+            return
+
+        self.attempts += 1
+        print "Attempt %i" % self.attempts
+        
+        toack = []
+
+        for b in self.outstanding:
+            print "Sending %i" % b.seq
+            self._sm.outgoing(self, b)
+            toack.append(b.seq)
+            t = time.time()
+            last_block = b
+
+        self.send_reqack(toack)
+
+        self.attempts = 0
+        self.ts = 0
+
+        print "Waiting for block to be sent"
+        last_block.sent_event.wait()
+        last_block.sent_event.clear()
+        self.ts = time.time()
+        print "Block sent after: %f" % (self.ts - t)
+
+    def send_ack(self, blocks):
+        f = DDT2EncodedFrame()
+        f.seq = 0
+        f.type = self.T_ACK
+        f.data = "".join([chr(x) for x in blocks])
+
+        print "Acking blocks %s (%s)" % (blocks,
+                                         {"" : f.data})
+
+        self._sm.outgoing(self, f)
+
+    def recv_blocks(self):
+        blocks = self.inq.dequeue_all()
+        blocks.reverse()
+
+        def next(i):
+            return (i + 1) % 256
+
+        def enqueue(_block):
+            self.data_waiting.acquire()
+            self.data.enqueue(_block.data)
+            self.iseq = _block.seq
+            self.data_waiting.notify()
+            self.data_waiting.release()
+
+        for b in blocks:
+            if b.type == self.T_ACK:
+                acked = [ord(x) for x in b.data]
+                print "Acked blocks: %s (/%i)" % (acked, len(self.outstanding))
+                for block in self.outstanding[:]:
+                    if block.seq in acked:
+                        print "Acked block %i" % block.seq
+                        block.ackd_event.set()
+                        self.stats["sent_size"] += len(block.data)
+                        self.outstanding.remove(block)
+                    else:
+                        self.stats["retries"] += 1
+                        print "Block %i outstanding, but not acked" % block.seq
+            elif b.type == self.T_DAT:
+                print "Got block %i" % b.seq
+                if b.seq not in self.recv_list:
+                    self.recv_list.append(b.seq)
+                    self.stats["recv_size"] += len(b.data)
+                    self.oob_queue[b.seq] = b
+            elif b.type == self.T_REQACK:
+                toack = []
+
+                for i in [ord(x) for x in b.data]:
+                    if i in self.recv_list:
+                        print "Acking block %i" % i
+                        toack.append(i)
+                    else:
+                        print "Naking block %i" % i
+
+                self.send_ack(toack)
+            else:
+                print "Got unknown type: %i" % b.type
+
+        if self.oob_queue:
+            print "Waiting OOO blocks: %s" % self.oob_queue.keys()
+
+        # Process any OOO blocks, if we should
+        while next(self.iseq) in self.oob_queue.keys():
+            block = self.oob_queue[next(self.iseq)]
+            print "Queuing now in-order block %i: %s" % (next(self.iseq),
+                                                         block)
+            del self.oob_queue[next(self.iseq)]
+            enqueue(block)            
 
 class SessionManager:
     def __init__(self, pipe, station, compat=False):

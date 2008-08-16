@@ -259,11 +259,11 @@ class FileTransferSession(sessionmgr.PipelinedStatefulSession):
 class FormTransferSession(FileTransferSession):
     type = sessionmgr.T_FORMXFER
 
-class SocketSession(sessionmgr.StatefulSession):
+class SocketSession(sessionmgr.PipelinedStatefulSession):
     type = sessionmgr.T_SOCKET
 
     def __init__(self, name, status_cb=None):
-        sessionmgr.StatefulSession.__init__(self, name)
+        sessionmgr.PipelinedStatefulSession.__init__(self, name)
 
         if status_cb:
             self.status_cb = status_cb
