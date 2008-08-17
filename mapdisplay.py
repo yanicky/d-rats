@@ -11,6 +11,7 @@ import tempfile
 import gtk
 import gobject
 
+import mainapp
 import platform
 import miscwidgets
 import inputdialog
@@ -771,6 +772,38 @@ class MapWindow(gtk.Window):
             break
         d.destroy()                    
 
+    def prompt_to_send_loc(self, _lat, _lon):
+        d = inputdialog.FieldDialog(title="Broadcast Location")
+
+        d.add_field("Callsign", gtk.Entry(8))
+        d.add_field("Description", gtk.Entry(20))
+        d.add_field("Latitude", miscwidgets.LatLonEntry())
+        d.add_field("Longitude", miscwidgets.LatLonEntry())
+
+        d.get_field("Latitude").set_text("%.4f" % _lat)
+        d.get_field("Longitude").set_text("%.4f" % _lon)
+
+        while d.run() == gtk.RESPONSE_OK:
+            try:
+                call = d.get_field("Callsign").get_text()
+                desc = d.get_field("Description").get_text()
+                lat = d.get_field("Latitude").get_text()
+                lon = d.get_field("Longitude").get_text()
+
+                fix = GPSPosition(lat=lat, lon=lon, station=call)
+                fix.comment = desc
+
+                ma = mainapp.get_mainapp()
+                ma.chatgui.tx_msg(fix.to_NMEA_GGA())
+                break
+            except Exception, e:
+                ed = gtk.MessageDialog(buttons=gtk.BUTTONS_OK, parent=d)
+                ed.set_property("text", "Invalid value: %s" % e)
+                ed.run()
+                ed.destroy()
+
+        d.destroy()
+
     def recenter_cb(self, view, path, column, data=None):
         model = view.get_model()
         if model.iter_parent(model.get_iter(path)) == None:
@@ -970,6 +1003,11 @@ class MapWindow(gtk.Window):
                                lambda a, vals:
                                    self.prompt_to_set_marker(vals["lat"],
                                                              vals["lon"]))
+
+        self.add_popup_handler("Broadcast this location",
+                               lambda a, vals:
+                                   self.prompt_to_send_loc(vals["lat"],
+                                                           vals["lon"]))
 
     def add_popup_handler(self, name, handler):
         self._popup_items[name] = handler
