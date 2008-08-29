@@ -20,6 +20,8 @@ from gps import GPSPosition, distance, value_with_units
 
 CROSSHAIR = "+"
 
+COLORS = ["red", "green", "blue", "pink", "orange", "grey"]
+
 class MapTile:
     def path_els(self):
         # http://svn.openstreetmap.org/applications/routing/pyroute/tilenames.py
@@ -491,6 +493,18 @@ class MapWindow(gtk.Window):
         self.marker_list.toggle_cb.append(self.toggle_show)
 
         self.marker_list._view.connect("row-activated", self.recenter_cb)
+
+        def render_station(col, rend, model, iter):
+            parent = model.iter_parent(iter)
+            if not parent:
+                parent = iter
+            group = model.get_value(parent, 1)
+            if self.colors.has_key(group):
+                rend.set_property("foreground", self.colors[group])
+
+        c = self.marker_list._view.get_column(1)
+        r = c.get_cell_renderers()[0]
+        c.set_cell_data_func(r, render_station)
 
         def render_coord(col, rend, model, iter, cnum):
             if model.iter_parent(iter):
@@ -987,6 +1001,8 @@ class MapWindow(gtk.Window):
                                 max_height=tiles*256)
 
         self.markers = {}
+        self.colors = {}
+        self.color_index = 0
 
         self.add(box)
 
@@ -1015,7 +1031,10 @@ class MapWindow(gtk.Window):
     def get_markers(self):
         return self.markers
 
-    def set_marker(self, fix, color="yellow", group="Misc"):
+    def set_marker(self, fix, color=None, group="Misc"):
+        if not color:
+            color = self.colors.get(group, "yellow")
+
         if not self.markers.has_key(group):
             self.markers[group] = {}
             print "Adding group %s" % group
@@ -1064,7 +1083,7 @@ class MapWindow(gtk.Window):
     def set_center(self, lat, lon):
         self.map.set_center(lat, lon)
 
-    def parse_static_line(self, line, group, add=True):
+    def parse_static_line(self, line, group, color="orange", add=True):
         if line.startswith("//"):
             return
         elif "#" in line:
@@ -1077,13 +1096,17 @@ class MapWindow(gtk.Window):
                               lat=float(lat),
                               lon=float(lon))
 
-            self.set_marker(pos, "orange", group)
+            self.set_marker(pos, color, group)
         else:
             self.del_marker(id.strip(), group)
 
     def load_static_points(self, filename, group=None):
         if not group:
             group = os.path.splitext(os.path.basename(filename))[0]
+
+        color = COLORS[self.color_index]
+        self.color_index = (self.color_index + 1) % len(COLORS)
+        self.colors[group] = color
 
         try:
             f = file(filename)
@@ -1094,7 +1117,7 @@ class MapWindow(gtk.Window):
         lines = f.read().split("\n")
         for line in lines:
             try:
-                self.parse_static_line(line, group)
+                self.parse_static_line(line, group, color=color)
             except Exception, e:
                 print "Failed to parse line `%s': %s" % (line, e)
 
