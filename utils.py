@@ -69,3 +69,12 @@ def filter_to_ascii(string):
 
         return str(string).translate("".join(xlate)).replace("\x00", "")
 
+def run_safe(f):
+    def runner(*args, **kwargs):
+        try:
+            return f(*args, **kwargs)
+        except Exception, e:
+            print "<<<%s>>> %s" % (f, e)
+            return None
+
+    return runner
