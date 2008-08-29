@@ -27,6 +27,8 @@ import miscwidgets
 import sessionmgr
 import sessions
 
+from utils import run_safe
+
 def gui_display(gui, *args):
     gobject.idle_add(gui.display_line, *args)
 
@@ -49,6 +51,7 @@ class SessionThread:
 class FileBaseThread(SessionThread):
     progress_key = "recv_size"
 
+    @run_safe
     def status_cb(self, vals):
         #print "GUI Status:"
         #for k,v in vals.items():
