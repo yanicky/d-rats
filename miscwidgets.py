@@ -398,6 +398,30 @@ def make_choice(options, editable=True, default=None):
 
     return sel
 
+def make_pixbuf_choice(options, default=None):
+    store = gtk.ListStore(gtk.gdk.Pixbuf, gobject.TYPE_STRING)
+    box = gtk.ComboBox(store)
+
+    cell = gtk.CellRendererPixbuf()
+    box.pack_start(cell, True)
+    box.add_attribute(cell, "pixbuf", 0)
+
+    cell = gtk.CellRendererText()
+    box.pack_start(cell, True)
+    box.add_attribute(cell, "text", 1)
+
+    _default = None
+    for pic, value in options:
+        iter = store.append()
+        store.set(iter, 0, pic, 1, value)
+        if default == value:
+            _default = options.index((pic, value))
+
+    if _default:
+        box.set_active(_default)
+
+    return box
+
 if __name__=="__main__":
     w = gtk.Window(gtk.WINDOW_TOPLEVEL)
     l = ListWidget([(gobject.TYPE_STRING, "Foo"),
