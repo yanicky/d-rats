@@ -498,13 +498,13 @@ class MapWindow(gtk.Window):
 
     def toggle_show(self, group, *vals):
         if self.markers.has_key(group):
-            (fix, _, color) = self.markers[group][vals[1]]
-            self.markers[group][vals[1]] = (fix, vals[0], color)
+            (fix, _, color, img) = self.markers[group][vals[1]]
+            self.markers[group][vals[1]] = (fix, vals[0], color, img)
             print "Setting %s to %s" % (vals[1], vals[0])
         elif group == None:
             id = vals[1]
             for k,v in self.markers[id].items():
-                nv = (v[0], vals[0], v[2])
+                nv = (v[0], vals[0], v[2], v[3])
                 self.markers[id][k] = nv
 
         self.refresh_marker_list()
@@ -793,12 +793,20 @@ class MapWindow(gtk.Window):
         if _lon:
             d.get_field("Longitude").set_text("%.4f" % _lon)
 
+        icons = []
+        for i in range(33, 126):
+            icon = open_icon(chr(i))
+            if icon:
+                icons.append((icon, chr(i)))
+        d.add_field("Icon", miscwidgets.make_pixbuf_choice(icons, '#'))
+
         while d.run() == gtk.RESPONSE_OK:
             try:
                 grp = d.get_field("Group").get_active_text()
                 nme = d.get_field("Name").get_text()
                 lat = d.get_field("Latitude").value()
                 lon = d.get_field("Longitude").value()
+                idx = d.get_field("Icon").get_active()
 
                 if not grp:
                     raise Exception("group name required")
@@ -815,6 +823,8 @@ class MapWindow(gtk.Window):
                 continue
                 
             fix = GPSPosition(lat=lat, lon=lon, station=nme)
+            if idx:
+                fix.APRSIcon = icons[idx][1]
             self.set_marker(fix, "green", grp)
             break
         d.destroy()                    
