@@ -22,6 +22,24 @@ CROSSHAIR = "+"
 
 COLORS = ["red", "green", "blue", "pink", "orange", "grey"]
 
+def open_icon(key, primary=True):
+    if not key:
+        return None
+
+    iconfn = os.path.join("images",
+                          "aprs",
+                          "primary",
+                          "%03i.gif" % ord(key))
+    if not os.path.exists(iconfn):
+        print "Icon file %s not found" % iconfn
+        return None
+
+    try:
+        return gtk.gdk.pixbuf_new_from_file(iconfn)
+    except Exception, e:
+        print "Error opening %s: %s" % (iconfn, e)
+        return None
+
 class MapTile:
     def path_els(self):
         # http://svn.openstreetmap.org/applications/routing/pyroute/tilenames.py
@@ -186,6 +204,16 @@ class MapWidget(gtk.DrawingArea):
         pl.set_markup(markup)
         self.pixmap.draw_layout(gc, int(x), int(y), pl)
 
+    def draw_image_at(self, x, y, pb):
+        gc = self.get_style().black_gc
+
+        self.pixmap.draw_pixbuf(gc,
+                                pb,
+                                0, 0,
+                                x, y)
+
+        return pb.get_height()
+
     def draw_cross_marker_at(self, x, y):
         width = 2
         cm = self.window.get_colormap()
@@ -218,13 +246,15 @@ class MapWidget(gtk.DrawingArea):
         return lat, lon
 
     def draw_marker(self, id):
-        (lat, lon, color) = self.markers[id]
+        (lat, lon, color, img) = self.markers[id]
 
         x, y = self.latlon2xy(lat, lon)
 
         if id == CROSSHAIR:
             self.draw_cross_marker_at(x, y)
         else:
+            if img:
+                y += (4 + self.draw_image_at(x, y, img))
             self.draw_text_marker_at(x, y, id, color)
 
     def draw_markers(self):
@@ -394,10 +424,10 @@ class MapWidget(gtk.DrawingArea):
     def get_zoom(self):
         return self.zoom
 
-    def set_marker(self, id, lat, lon, color="yellow"):
-        self.markers[id] = (lat, lon, color)
-        self.load_tiles()
-        self.queue_draw()
+    def set_marker(self, id, lat, lon, color="yellow", img=None):
+        self.markers[id] = (lat, lon, color, img)
+        #self.load_tiles()
+        #self.queue_draw()
 
     def del_marker(self, id):
         del self.markers[id]
@@ -543,7 +573,7 @@ class MapWindow(gtk.Window):
         center = GPSPosition(lat=lat, lon=lon)
 
         for grp, lst in self.markers.items():
-            for id, (fix, show, color) in lst.items():
+            for id, (fix, show, color, img) in lst.items():
                 self.marker_list.set_item(grp,
                                           show,
                                           id,
@@ -552,7 +582,10 @@ class MapWindow(gtk.Window):
                                           center.distance_from(fix),
                                           center.bearing_to(fix))
                 if show:
-                    self.map.markers[id] = (fix.latitude, fix.longitude, color)
+                    self.map.set_marker(fix.station,
+                                        fix.latitude, fix.longitude,
+                                        color, img)
+                    self.map.load_tiles()
 
     def make_track(self):
         def toggle(cb, mw):
@@ -1054,8 +1087,10 @@ class MapWindow(gtk.Window):
                                       0,
                                       0)
 
-        self.markers[group][fix.station] = (fix, True, color)
-        self.map.set_marker(fix.station, fix.latitude, fix.longitude)
+        icon = open_icon(fix.APRSIcon)
+
+        self.markers[group][fix.station] = (fix, True, color, icon)
+        self.map.set_marker(fix.station, fix.latitude, fix.longitude, icon)
 
         self.refresh_marker_list()
 
@@ -1089,12 +1124,18 @@ class MapWindow(gtk.Window):
         elif "#" in line:
             line = line[:line.index("//")]
             
-        (id, lat, lon, alt) = line.split(",", 4)
+        try:
+            (id, icon, lat, lon, alt) = line.split(",", 5)
+        except ValueError:
+            # Handle old-style format as well
+            (id, lat, lon, alt) = line.split(",", 4)
+            icon = ''
             
         if add:
             pos = GPSPosition(station=id.strip(),
                               lat=float(lat),
                               lon=float(lon))
+            pos.APRSIcon = icon
 
             self.set_marker(pos, color, group)
         else:
@@ -1189,10 +1230,12 @@ class MapWindow(gtk.Window):
 
         f = file(filename, "w")
 
-        for (fix, _, _) in stations.values():
-            print >>f, "%s,%0.4f,%0.4f," % (fix.station,
-                                            fix.latitude,
-                                            fix.longitude)
+        for (fix, _, _, _) in stations.values():
+            icon = fix.APRSIcon or ''
+            print >>f, "%s,%s,%0.4f,%0.4f," % (fix.station,
+                                               icon,
+                                               fix.latitude,
+                                               fix.longitude)
 
         f.close()
 

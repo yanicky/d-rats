@@ -221,6 +221,7 @@ class GPSPosition:
         self.date = datetime.datetime.now()
         self.speed = None
         self.direction = None
+        self.APRSIcon = None
 
         self._from_coords(lat, lon)
 

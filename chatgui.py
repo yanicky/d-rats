@@ -1045,7 +1045,7 @@ class MainChatGUI(ChatGUI):
 
         if self.config.getboolean("prefs", "restore_stations"):
             stations = self.map.get_markers().get("Stations", {})
-            for station, (fix, _, _) in stations.items():
+            for station, (fix, _, _, _) in stations.items():
                 if fix.station == "Me":
                     continue
                 self.mainapp.seen_callsigns.set_call_pos(station, fix)
