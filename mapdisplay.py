@@ -20,7 +20,7 @@ from gps import GPSPosition, distance, value_with_units
 
 CROSSHAIR = "+"
 
-COLORS = ["red", "green", "blue", "pink", "orange", "grey"]
+COLORS = ["red", "green", "cornflower blue", "pink", "orange", "grey"]
 
 def open_icon(key, primary=True):
     if not key:
@@ -824,7 +824,7 @@ class MapWindow(gtk.Window):
             fix = GPSPosition(lat=lat, lon=lon, station=nme)
             if idx:
                 fix.APRSIcon = icons[idx][1]
-            self.set_marker(fix, "green", grp)
+            self.set_marker(fix, None, grp)
             break
         d.destroy()                    
 
@@ -1130,8 +1130,6 @@ class MapWindow(gtk.Window):
     def parse_static_line(self, line, group, color="orange", add=True):
         if line.startswith("//"):
             return
-        elif "#" in line:
-            line = line[:line.index("//")]
             
         try:
             (id, icon, lat, lon, alt) = line.split(",", 5)
