@@ -9,7 +9,7 @@ if [ -z "$HOST" ]; then
 fi
 
 temp_dir() {
-    ssh $HOST "mktemp -d"
+    ssh $HOST "mktemp -d /tmp/$1"
 }
 
 copy_source() {
@@ -35,8 +35,8 @@ grab_builds() {
     scp -r "$HOST:$out/*" .
 }
 
-tmp1=$(temp_dir)
-tmp2=$(temp_dir)
+tmp1=$(temp_dir drats_build.XXXXX)
+tmp2=$(temp_dir drats_output.XXXXX)
 copy_source $tmp1
 do_build $tmp1 $tmp2 $*
 grab_builds $tmp2
