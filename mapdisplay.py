@@ -202,12 +202,12 @@ class MapWidget(gtk.DrawingArea):
         pl = self.create_pango_layout("")
         markup = '<span %s background="%s">%s</span>' % (size, color, text)
         pl.set_markup(markup)
-        self.pixmap.draw_layout(gc, int(x), int(y), pl)
+        self.window.draw_layout(gc, int(x), int(y), pl)
 
     def draw_image_at(self, x, y, pb):
         gc = self.get_style().black_gc
 
-        self.pixmap.draw_pixbuf(gc,
+        self.window.draw_pixbuf(gc,
                                 pb,
                                 0, 0,
                                 x, y)
@@ -224,8 +224,8 @@ class MapWidget(gtk.DrawingArea):
         x = int(x)
         y = int(y)
 
-        self.pixmap.draw_lines(gc, [(x, y-5), (x, y+5)])
-        self.pixmap.draw_lines(gc, [(x-5, y), (x+5, y)])
+        self.window.draw_lines(gc, [(x, y-5), (x, y+5)])
+        self.window.draw_lines(gc, [(x-5, y), (x+5, y)])
 
     def latlon2xy(self, lat, lon):
         y = 1- ((lat - self.lat_min) / (self.lat_max - self.lat_min))
@@ -272,7 +272,7 @@ class MapWidget(gtk.DrawingArea):
                                   0, 0,
                                   -1, -1)
 
-        #self.draw_markers()
+        self.draw_markers()
 
     def calculate_bounds(self):
         topleft = self.map_tiles[0]
@@ -308,6 +308,8 @@ class MapWidget(gtk.DrawingArea):
         return gtk.gdk.pixbuf_new_from_xpm_data(broken)
 
     def load_tiles(self):
+        self.map_tiles = []
+
         prog = miscwidgets.ProgressDialog("Loading map")
 
         prog.set_text("Getting map center")
@@ -362,8 +364,6 @@ class MapWidget(gtk.DrawingArea):
 
         prog.set_text("Complete")
         prog.hide()
-
-        self.draw_markers()
 
     def export_to(self, filename, bounds=None):
         if not bounds:
@@ -426,8 +426,7 @@ class MapWidget(gtk.DrawingArea):
 
     def set_marker(self, id, lat, lon, color="yellow", img=None):
         self.markers[id] = (lat, lon, color, img)
-        #self.load_tiles()
-        #self.queue_draw()
+        self.queue_draw()
 
     def del_marker(self, id):
         del self.markers[id]
@@ -508,7 +507,6 @@ class MapWindow(gtk.Window):
                 self.markers[id][k] = nv
 
         self.refresh_marker_list()
-        self.map.load_tiles()
         self.map.queue_draw()
 
     def make_marker_list(self):
@@ -585,7 +583,7 @@ class MapWindow(gtk.Window):
                     self.map.set_marker(fix.station,
                                         fix.latitude, fix.longitude,
                                         color, img)
-                    self.map.load_tiles()
+                    self.map.queue_draw()
 
     def make_track(self):
         def toggle(cb, mw):
@@ -778,7 +776,6 @@ class MapWindow(gtk.Window):
     def recenter(self, lat, lon):
         self.map.set_center(lat, lon)
         self.refresh_marker_list()
-        self.map.load_tiles()
         self.center_on(lat, lon)
 
     def prompt_to_set_marker(self, _lat=None, _lon=None):
