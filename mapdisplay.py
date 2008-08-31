@@ -775,8 +775,10 @@ class MapWindow(gtk.Window):
 
     def recenter(self, lat, lon):
         self.map.set_center(lat, lon)
+        self.map.load_tiles()
         self.refresh_marker_list()
         self.center_on(lat, lon)
+        self.map.queue_draw()
 
     def prompt_to_set_marker(self, _lat=None, _lon=None):
         d = inputdialog.FieldDialog(title="Add Marker")
