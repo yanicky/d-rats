@@ -7,6 +7,7 @@ import subst
 
 import threading
 import serial
+import socket
 
 from math import pi,cos,acos,sin,atan2
 
@@ -822,6 +823,93 @@ class GPSSource:
             return "GPS Locked (%i sats)" % self.position.satellites
         else:
             return "GPS Not Locked"
+
+class NetworkGPSSource(GPSSource):
+    def __init__(self, port):
+        self.port = port
+        self.enabled = False
+        self.thread = None
+        self.position = GPSPosition()
+        self.last_valid = False
+        self.sock = None
+        self.broken = None
+
+    def start(self):
+        self.enabled = True
+        self.thread = threading.Thread(target=self.gpsthread)
+        self.thread.start()
+
+    def stop(self):
+        if self.thread and self.enabled:
+            self.enabled = False
+            self.thread.join()
+
+    def connect(self):
+        try:
+            _, host, port = self.port.split(":", 3)
+            port = int(port)
+        except ValueError, e:
+            print "Unable to parse %s (%s)" % (self.port, e)
+            self.broken = "Unable to parse address"
+            return False
+
+        print "Connecting to %s:%i" % (host, port)
+
+        try:
+            self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.sock.connect((host, port))
+            self.sock.settimeout(10)
+        except Exception, e:
+            print "Unable to connect: %s" % e
+            self.broken = "Unable to connect: %s" % e
+            self.sock = None
+            return False
+
+        self.sock.send("r\n")
+
+        return True
+
+    def gpsthread(self):
+        while self.enabled:
+            if not self.sock:
+                if not self.connect():
+                    time.sleep(1)
+                    continue
+
+            try:
+                data = self.sock.recv(1024)
+            except Exception, e:
+                self.sock.close()
+                self.sock = None
+                print "GPSd Socket closed"
+                continue
+
+            line = data.strip()
+
+            if not (line.startswith("$GPGGA") or \
+                        line.startswith("$GPRMC")):
+                continue
+
+            pos = NMEAGPSPosition(line)
+
+            self.last_valid = pos.valid
+            if pos.valid and self.position.valid:
+                self.position += pos
+            elif pos.valid:
+                self.position = pos
+            else:
+                print "Could not parse: %s" % line
+
+    def get_position(self):
+        return self.position
+
+    def status_string(self):
+        if self.broken:
+            return self.broken
+        elif self.last_valid and self.position.satellites >= 3:
+            return "GPSd Locked (%i sats)" % self.position.satellites
+        else:
+            return "GPSd Not Locked"
 
 class StaticGPSSource(GPSSource):
     def __init__(self, lat, lon, alt=0):

@@ -215,7 +215,11 @@ class MainApp:
         if enab:
             if self.gps:
                 self.gps.stop()
-            self.gps = gps.GPSSource(port)
+
+            if port.startswith("net:"):
+                self.gps = gps.NetworkGPSSource(port)
+            else:
+                self.gps = gps.GPSSource(port)
             self.gps.start()
         else:
             if self.gps:
