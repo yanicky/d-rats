@@ -18,6 +18,36 @@ EARTH_UNITS = "mi"
 
 DEGREE = u"\u00b0"
 
+DPRS_TO_APRS_PRI = {}
+
+# The DPRS to APRS mapping is pretty horrific, but the following
+# attempts to create a mapping based on looking at the javascript
+# for DPRSCalc and a list of regular APRS symbols
+#
+# http://ham-shack.com/aprs_pri_symbols.html
+# http://www.aprs-is.net/DPRSCalc.aspx
+for i in range(0, 26):
+    asciival = ord("A") + i
+    char = chr(asciival)
+    DPRS_TO_APRS_PRI["P%s" % char] = char
+    DPRS_TO_APRS_PRI["L%s" % char] = char.lower()
+
+    if i <= 15:
+        DPRS_TO_APRS_PRI["B%s" % char] = chr(ord(" ") + i)
+    elif i >= 17:
+        DPRS_TO_APRS_PRI["M%s" % char] = chr(ord(" ") + i + 9)
+
+    if i <= 5:
+        char = chr(ord("S") + i)
+        DPRS_TO_APRS_PRI["H%s" % char] = chr(ord("[") + i)
+
+def dprs_to_aprs(symbol):
+    if len(symbol) < 2:
+        print "Invalid DPRS symbol: `%s'" % symbol
+        return None
+    else:
+        return DPRS_TO_APRS_PRI.get(symbol[0:2], None)
+
 def parse_dms(string):
     string = string.replace(u"\u00b0", " ")
     string = string.replace('"', ' ')
@@ -249,6 +279,9 @@ class GPSPosition:
 
         if update.comment:
             self.comment = update.comment
+
+        if update.APRSIcon:
+            self.APRSIcon = update.APRSIcon
 
         return self
 
@@ -495,6 +528,15 @@ class NMEAGPSPosition(GPSPosition):
 
         return csum == _csum
 
+    def _parse_dprs_comment(self):
+        symbol = self.comment[0:4].strip()
+        checksum = self.comment[-2:]
+
+        if True: # FIXME: Check checksum
+            self.APRSIcon = dprs_to_aprs(symbol)
+
+        self.comment = self.comment[4:-3].strip()
+
     def _parse_GPGGA(self, string):
         elements = string.split(",", 14)
         if len(elements) < 15:
@@ -523,6 +565,11 @@ class NMEAGPSPosition(GPSPosition):
             if not sta.strip().startswith("$"):
                 self.station = sta.strip()[0:8]
                 self.comment = com.strip()[0:20]
+
+        if len(self.comment) >=7 and \
+                self.comment[-3] == "*" and \
+                self.comment[-2:-1].isdigit():
+            self._parse_dprs_comment()
 
         self.valid = self._test_checksum(string, csum)
 
@@ -567,6 +614,11 @@ class NMEAGPSPosition(GPSPosition):
             sta, com = m.group(2).split(",", 1)
             self.station = sta.strip()
             self.comment = com.strip()
+
+        if len(self.comment) >=7 and \
+                self.comment[-3] == "*" and \
+                self.comment[-2:-1].isdigit():
+            self._parse_dprs_comment()
 
         self.valid = self._test_checksum(string, csum)
 
