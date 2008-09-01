@@ -16,19 +16,35 @@ import platform
 import miscwidgets
 import inputdialog
 
-from gps import GPSPosition, distance, value_with_units
+from gps import GPSPosition, distance, value_with_units, DPRS_TO_APRS
 
 CROSSHAIR = "+"
 
 COLORS = ["red", "green", "cornflower blue", "pink", "orange", "grey"]
 
-def open_icon(key, primary=True):
+def open_icon(key):
     if not key:
+        return None
+
+    if len(key) == 2:
+        if key[0] == "/":
+            set = "primary"
+        elif key[0] == "\\":
+            set = "secondary"
+        else:
+            print "Unknown APRS symbol table: %s" % key[0]
+            return None
+
+        key = key[1]
+    elif len(key) == 1:
+        set = "primary"
+    else:
+        print "Unknown APRS symbol: `%s'" % key
         return None
 
     iconfn = os.path.join("images",
                           "aprs",
-                          "primary",
+                          set,
                           "%03i.gif" % ord(key))
     if not os.path.exists(iconfn):
         print "Icon file %s not found" % iconfn
@@ -793,10 +809,10 @@ class MapWindow(gtk.Window):
             d.get_field("Longitude").set_text("%.4f" % _lon)
 
         icons = []
-        for i in range(33, 126):
-            icon = open_icon(chr(i))
+        for sym in sorted(DPRS_TO_APRS.values()):
+            icon = open_icon(sym)
             if icon:
-                icons.append((icon, chr(i)))
+                icons.append((icon, sym))
         d.add_field("Icon", miscwidgets.make_pixbuf_choice(icons, '#'))
 
         while d.run() == gtk.RESPONSE_OK:

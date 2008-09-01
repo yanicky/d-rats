@@ -18,7 +18,7 @@ EARTH_UNITS = "mi"
 
 DEGREE = u"\u00b0"
 
-DPRS_TO_APRS_PRI = {}
+DPRS_TO_APRS = {}
 
 # The DPRS to APRS mapping is pretty horrific, but the following
 # attempts to create a mapping based on looking at the javascript
@@ -29,24 +29,39 @@ DPRS_TO_APRS_PRI = {}
 for i in range(0, 26):
     asciival = ord("A") + i
     char = chr(asciival)
-    DPRS_TO_APRS_PRI["P%s" % char] = char
-    DPRS_TO_APRS_PRI["L%s" % char] = char.lower()
+
+    pri = "/"
+    sec = "\\"
+
+    DPRS_TO_APRS["P%s" % char] = pri + char
+    DPRS_TO_APRS["L%s" % char] = pri + char.lower()
+    DPRS_TO_APRS["A%s" % char] = sec + char
+    DPRS_TO_APRS["S%s" % char] = sec + char.lower()
 
     if i <= 15:
-        DPRS_TO_APRS_PRI["B%s" % char] = chr(ord(" ") + i)
+        pchar = chr(ord(" ") + i)
+        DPRS_TO_APRS["B%s" % char] = pri + pchar
+        DPRS_TO_APRS["O%s" % char] = sec + pchar
     elif i >= 17:
-        DPRS_TO_APRS_PRI["M%s" % char] = chr(ord(" ") + i + 9)
+        pchar = chr(ord(" ") + i + 9)
+        DPRS_TO_APRS["M%s" % char] = pri + pchar
+        DPRS_TO_APRS["N%s" % char] = sec + pchar
 
     if i <= 5:
         char = chr(ord("S") + i)
-        DPRS_TO_APRS_PRI["H%s" % char] = chr(ord("[") + i)
+        pchar = chr(ord("[") + i)
+        DPRS_TO_APRS["H%s" % char] = pri + pchar
+        DPRS_TO_APRS["D%s" % char] = sec + pchar
+
+#for k in sorted(DPRS_TO_APRS.keys()):
+#    print "%s => %s" % (k, DPRS_TO_APRS[k])
 
 def dprs_to_aprs(symbol):
     if len(symbol) < 2:
         print "Invalid DPRS symbol: `%s'" % symbol
         return None
     else:
-        return DPRS_TO_APRS_PRI.get(symbol[0:2], None)
+        return DPRS_TO_APRS.get(symbol[0:2], None)
 
 def parse_dms(string):
     string = string.replace(u"\u00b0", " ")
