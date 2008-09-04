@@ -15,6 +15,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import re
+import gtk
+import os
 
 def hexprint(data):
     col = 0
@@ -78,3 +80,62 @@ def run_safe(f):
             return None
 
     return runner
+
+def get_sub_image(iconmap, i, j, size=20):
+    
+    # Account for division lines (1px per icon)
+    x = (i * size) + i + 1
+    y = (j * size) + j + 1
+
+    icon = gtk.gdk.Pixbuf(gtk.gdk.COLORSPACE_RGB, 1, 8, size, size)
+    iconmap.copy_area(x, y, size, size, icon, 0, 0)
+    
+    return icon
+
+def get_icon_from_map(iconmap, symbol):
+    index = ord(symbol) - ord("!")
+
+    i = index % 16
+    j = index / 16
+
+    print "Symbol `%s' is %i,%i" % (symbol, i, j)
+
+    return get_sub_image(iconmap, i, j)
+
+def get_icon(sets, key):
+    if not key:
+        return None
+
+    if len(key) == 2:
+        if key[0] == "/":
+            set = "/"
+        elif key[0] == "\\":
+            set = "\\"
+        else:
+            print "Unknown APRS symbol table: %s" % key[0]
+            return None
+
+        key = key[1]
+    elif len(key) == 1:
+        set = "/"
+    else:
+        print "Unknown APRS symbol: `%s'" % key
+        return None
+
+    try:
+        return get_icon_from_map(sets[set], key)
+    except Exception, e:
+        print "Error cutting icon %s: %s" % (key, e)
+        return None
+
+def open_icon_map(iconfn):
+    if not os.path.exists(iconfn):
+        print "Icon file %s not found" % iconfn
+        return None
+    
+    try:
+        return gtk.gdk.pixbuf_new_from_file(iconfn)
+    except Exception, e:
+        print "Error opening icon map %s: %s" % (iconfn, e)
+        return None
+

@@ -15,6 +15,7 @@ import mainapp
 import platform
 import miscwidgets
 import inputdialog
+import utils
 
 from gps import GPSPosition, distance, value_with_units, DPRS_TO_APRS
 
@@ -22,39 +23,10 @@ CROSSHAIR = "+"
 
 COLORS = ["red", "green", "cornflower blue", "pink", "orange", "grey"]
 
-def open_icon(key):
-    if not key:
-        return None
-
-    if len(key) == 2:
-        if key[0] == "/":
-            set = "primary"
-        elif key[0] == "\\":
-            set = "secondary"
-        else:
-            print "Unknown APRS symbol table: %s" % key[0]
-            return None
-
-        key = key[1]
-    elif len(key) == 1:
-        set = "primary"
-    else:
-        print "Unknown APRS symbol: `%s'" % key
-        return None
-
-    iconfn = os.path.join("images",
-                          "aprs",
-                          set,
-                          "%03i.gif" % ord(key))
-    if not os.path.exists(iconfn):
-        print "Icon file %s not found" % iconfn
-        return None
-
-    try:
-        return gtk.gdk.pixbuf_new_from_file(iconfn)
-    except Exception, e:
-        print "Error opening %s: %s" % (iconfn, e)
-        return None
+ICON_MAPS = {
+    "/" : utils.open_icon_map(os.path.join("images", "aprs_pri.png")),
+    "\\": utils.open_icon_map(os.path.join("images", "aprs_sec.png")),
+}
 
 class MapTile:
     def path_els(self):
@@ -810,7 +782,7 @@ class MapWindow(gtk.Window):
 
         icons = []
         for sym in sorted(DPRS_TO_APRS.values()):
-            icon = open_icon(sym)
+            icon = utils.get_icon(ICON_MAPS, sym)
             if icon:
                 icons.append((icon, sym))
         d.add_field("Icon", miscwidgets.make_pixbuf_choice(icons, '#'))
@@ -1112,7 +1084,7 @@ class MapWindow(gtk.Window):
                                       0,
                                       0)
 
-        icon = open_icon(fix.APRSIcon)
+        icon = utils.get_icon(ICON_MAPS, fix.APRSIcon)
 
         self.markers[group][fix.station] = (fix, True, color, icon)
         self.map.set_marker(fix.station, fix.latitude, fix.longitude, icon)
