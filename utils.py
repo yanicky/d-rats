@@ -98,7 +98,7 @@ def get_icon_from_map(iconmap, symbol):
     i = index % 16
     j = index / 16
 
-    print "Symbol `%s' is %i,%i" % (symbol, i, j)
+    #print "Symbol `%s' is %i,%i" % (symbol, i, j)
 
     return get_sub_image(iconmap, i, j)
 
