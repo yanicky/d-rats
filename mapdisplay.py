@@ -49,7 +49,7 @@ class MapTile:
         
         def tileXY(lat, lon, zoom):
             x, y = latlon2xy(lat, lon, zoom)
-            return (int(x), int(y))
+            return (int(round(x)), int(round(y)))
 
         x, y = tileXY(self.lat, self.lon, self.zoom)
 
