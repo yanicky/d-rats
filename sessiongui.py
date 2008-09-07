@@ -349,7 +349,7 @@ class SessionGUI:
         else:
             clear.set_sensitive(False)
 
-        if id and id < 2:
+        if id is not None and id < 2:
             cancel.set_sensitive(False)
             fcancel.set_sensitive(False)
 
@@ -363,6 +363,14 @@ class SessionGUI:
         if event.button != 3:
             return
 
+        if event.window == view.get_bin_window():
+            x, y = event.get_coords()
+            pathinfo = view.get_path_at_pos(int(x), int(y))
+            if pathinfo is None:
+                return
+            else:
+                view.set_cursor_on_cell(pathinfo[0])
+                
         menu = self.make_menu()
         if menu:
             menu.popup(None, None, None, event.button, event.time)
