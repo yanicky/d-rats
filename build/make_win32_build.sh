@@ -39,9 +39,9 @@ copy_lib() {
 copy_data() {
 	mkdir -p dist/forms
 	cp -r forms/*.x[ms]l dist/forms >> $LOG
-	list="COPYING build/d-rats_safe_mode.bat build/install_default_forms.bat"
+	list="images COPYING build/d-rats_safe_mode.bat build/install_default_forms.bat"
 	for i in $list; do
-		cp -v $i dist >> $LOG
+		cp -rv $i dist >> $LOG
 	done
 }
 

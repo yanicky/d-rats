@@ -1,6 +1,6 @@
 #!/bin/bash
 
-LOCAL_VERSION=b1
+LOCAL_VERSION=
 eval $(cat mainapp.py | grep ^DRATS_VERSION | sed 's/ //g')
 VERSION=${DRATS_VERSION}${LOCAL_VERSION}
 INCLUDE="*.py forms/*.x[ms]l COPYING"
@@ -17,7 +17,7 @@ cp -rav d_rats $DST
 cp -av *.py ${DST}/d_rats
 mv ${DST}/d_rats/setup.py ${DST}
 
-cp -rav --parents forms/*.x[ms]l COPYING d-rats ${DST}
+cp -rav --parents forms/*.x[ms]l COPYING images d-rats ${DST}
 
 (cd $TMP && tar czf - $RELDIR) > ${RELDIR}.tar.gz
 
