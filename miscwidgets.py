@@ -20,7 +20,16 @@ import gobject
 import platform
 
 class ListWidget(gtk.HBox):
+    __gsignals__ = {
+        "click-on-list" : (gobject.SIGNAL_RUN_LAST,
+                           gobject.TYPE_NONE,
+                           (gtk.TreeView, gtk.gdk.Event)),
+        }
+
     store_type = gtk.ListStore
+
+    def mouse_cb(self, view, event):
+        self.emit("click-on-list", view, event)
 
     # pylint: disable-msg=W0613
     def _toggle(self, render, path, column):
@@ -49,6 +58,8 @@ class ListWidget(gtk.HBox):
 
             column.set_sort_column_id(index)
             self._view.append_column(column)
+
+        self._view.connect("button_press_event", self.mouse_cb)
 
     def __init__(self, columns, parent=True):
         gtk.HBox.__init__(self)
@@ -456,6 +467,8 @@ def make_pixbuf_choice(options, default=None):
 
     if _default:
         box.set_active(_default)
+
+    return box
 
 def test():
     win = gtk.Window(gtk.WINDOW_TOPLEVEL)
