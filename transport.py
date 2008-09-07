@@ -67,6 +67,14 @@ class BlockQueue:
 
         return q
 
+    # BE CAREFUL WITH THESE!
+
+    def lock(self):
+        self._lock.acquire()
+
+    def unlock(self):
+        self._lock.release()
+
 class Transporter:
     def __init__(self, pipe, inhandler=None, compat=False):
         self.inq = BlockQueue()
@@ -200,6 +208,19 @@ class Transporter:
 
     def recv_frame(self):
         return self.inq.dequeue()
+
+    def flush_blocks(self, id):
+        # This should really call a flush method in the blockqueue with a
+        # test function
+        self.outq.lock()
+        for b in self.outq._queue[:]:
+            if b.session == id:
+                print "Flushing block: %s" % b
+                try:
+                    self.outq._queue.remove(b)
+                except ValueError:
+                    print "Block disappeared while flushing?"
+        self.outq.unlock()
 
 class TestPipe:
     def make_fake_data(self, src, dst):
