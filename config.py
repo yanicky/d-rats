@@ -30,6 +30,7 @@ import miscwidgets
 import platform
 import callsigns
 import inputdialog
+import geocode_ui
 
 from miscwidgets import make_choice
 
@@ -333,6 +334,14 @@ class AppConfig:
         self.sync_gui(load=True)
         self.window.hide()
 
+    def address_button(self, widget):
+        aa = geocode_ui.AddressAssistant()
+        r = aa.run()
+        if r == gtk.RESPONSE_OK:
+            print "SETTING"
+            self.fields["latitude"].set_text("%.5f" % aa.lat)
+            self.fields["longitude"].set_text("%.5f" % aa.lon)
+
     def build_user(self):
         vbox = gtk.VBox(False, 2)
 
@@ -356,6 +365,12 @@ class AppConfig:
                                      miscwidgets.LatLonEntry()), 0,0,0)
         vbox.pack_start(self.make_sb("longitude",
                                      miscwidgets.LatLonEntry()), 0,0,0)
+
+        lookupbtn = gtk.Button("Lookup by address")
+        lookupbtn.connect("clicked", self.address_button)
+        lookupbtn.show()
+        vbox.pack_start(lookupbtn, 0, 0, 0)
+
         vbox.pack_start(self.make_sb("altitude",
                                      self.make_spin(1.0, 0.0, 29028.0, 0)),
                         0,0,0)                                     
