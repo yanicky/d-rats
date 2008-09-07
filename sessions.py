@@ -264,7 +264,11 @@ class BaseFileTransferSession:
                 data += d
                 self.status("Recevied block")
 
-        self.put_file_data(filename, data)
+        try:
+            self.put_file_data(filename, data)
+        except Exception, e:
+            print "Failed to write transfer data: %s" % e
+            return None
 
         if self.stats["recv_size"] != self.stats["total_size"]:
             self.status("Failed to receive file (incomplete)")
