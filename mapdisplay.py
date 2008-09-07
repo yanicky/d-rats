@@ -857,7 +857,8 @@ class MapWindow(gtk.Window):
             dlg = geocode_ui.AddressAssistant()
             r = dlg.run()
             if r == gtk.RESPONSE_OK:
-                namew.set_text(dlg.place)
+                if not namew.get_text():
+                    namew.set_text(dlg.place)
                 latw.set_text("%.5f" % dlg.lat)
                 lonw.set_text("%.5f" % dlg.lon)
 
