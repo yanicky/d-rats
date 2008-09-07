@@ -498,6 +498,83 @@ class MapWindow(gtk.Window):
         self.refresh_marker_list()
         self.map.queue_draw()
 
+    def marker_mh(self, _action, id, group):
+        action = _action.get_name()
+
+        if action == "delete":
+            print "Deleting %s/%s" % (group, id)
+            self.del_marker(id, group)
+        elif action == "edit":
+            try:
+                fix = self.markers[group][id][0]
+            except Exception, e:
+                print "Can't find marker %s/%s: %s" % (group, id, e)
+                return
+
+            self.prompt_to_set_marker(_lat=fix.latitude,
+                                      _lon=fix.longitude,
+                                      name=id,
+                                      grp=group,
+                                      _icon=fix.APRSIcon)
+
+    def _make_marker_menu(self, store, iter):
+        menu_xml = """
+<ui>
+  <popup name="menu">
+    <menuitem action="edit"/>
+    <menuitem action="delete"/>
+    <menuitem action="center"/>
+  </popup>
+</ui>
+"""
+        ag = gtk.ActionGroup("menu")
+
+        try:
+            id, = store.get(iter, 1)
+            group, = store.get(store.iter_parent(iter), 1)
+        except TypeError:
+            id = group = None
+
+        edit = gtk.Action("edit", "Edit", None, None)
+        edit.connect("activate", self.marker_mh, id, group)
+        if not id:
+            edit.set_sensitive(False)
+        ag.add_action(edit)
+
+        delete = gtk.Action("delete", "Delete", None, None)
+        delete.connect("activate", self.marker_mh, id, group)
+        ag.add_action(delete)
+
+        center = gtk.Action("center", "Center on this", None, None)
+        center.connect("activate", self.marker_mh, id, group)
+        # This isn't implemented right now, because I'm lazy
+        center.set_sensitive(False)
+        ag.add_action(center)
+
+        uim = gtk.UIManager()
+        uim.insert_action_group(ag, 0)
+        uim.add_ui_from_string(menu_xml)
+
+        return uim.get_widget("/menu")
+
+    def make_marker_popup(self, _, view, event):
+        if event.button != 3:
+            return
+
+        if event.window == view.get_bin_window():
+            x, y = event.get_coords()
+            pathinfo = view.get_path_at_pos(int(x), int(y))
+            if pathinfo is None:
+                return
+            else:
+                view.set_cursor_on_cell(pathinfo[0])
+
+        (store, iter) = view.get_selection().get_selected()
+
+        menu = self._make_marker_menu(store, iter)
+        if menu:
+            menu.popup(None, None, None, event.button, event.time)
+
     def make_marker_list(self):
         cols = [(gobject.TYPE_BOOLEAN, "Show"),
                 (gobject.TYPE_STRING, "Station"),
@@ -508,6 +585,7 @@ class MapWindow(gtk.Window):
                 ]
         self.marker_list = miscwidgets.TreeWidget(cols, 1, parent=False)
         self.marker_list.toggle_cb.append(self.toggle_show)
+        self.marker_list.connect("click-on-list", self.make_marker_popup)
 
         self.marker_list._view.connect("row-activated", self.recenter_cb)
 
@@ -769,7 +847,12 @@ class MapWindow(gtk.Window):
         self.center_on(lat, lon)
         self.map.queue_draw()
 
-    def prompt_to_set_marker(self, _lat=None, _lon=None):
+    def prompt_to_set_marker(self,
+                             _lat=None,
+                             _lon=None,
+                             name=None,
+                             grp=None,
+                             _icon="/#"):
         def do_address(button, latw, lonw, namew):
             dlg = geocode_ui.AddressAssistant()
             r = dlg.run()
@@ -779,18 +862,26 @@ class MapWindow(gtk.Window):
                 lonw.set_text("%.5f" % dlg.lon)
 
         d = inputdialog.FieldDialog(title="Add Marker")
-        d.add_field("Group",
-                    miscwidgets.make_choice(self.markers.keys(), True, "Misc"))
-        d.add_field("Name", gtk.Entry())
+
+        if grp is None:
+            grp = "Misc"
+        f_grp = miscwidgets.make_choice(self.markers.keys(), True, grp)
+
+        f_name = gtk.Entry()
+        if name is not None:
+            f_name.set_text(name)
+            f_name.set_sensitive(False)
+            f_grp.set_sensitive(False)
+
+        d.add_field("Group", f_grp)
+        d.add_field("Name", f_name)
         d.add_field("Latitude", miscwidgets.LatLonEntry())
         d.add_field("Longitude", miscwidgets.LatLonEntry())
-
         addrbtn = gtk.Button("By Address")
         addrbtn.connect("clicked", do_address,
                         d.get_field("Latitude"),
                         d.get_field("Longitude"),
                         d.get_field("Name"))
-
         d.add_field("Lookup", addrbtn)
         if _lat:
             d.get_field("Latitude").set_text("%.4f" % _lat)
@@ -802,7 +893,7 @@ class MapWindow(gtk.Window):
             icon = utils.get_icon(ICON_MAPS, sym)
             if icon:
                 icons.append((icon, sym))
-        d.add_field("Icon", miscwidgets.make_pixbuf_choice(icons, '#'))
+        d.add_field("Icon", miscwidgets.make_pixbuf_choice(icons, _icon))
 
         while d.run() == gtk.RESPONSE_OK:
             try:
