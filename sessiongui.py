@@ -255,7 +255,7 @@ class SocketThread(SessionThread):
                 
 
 class SessionGUI:
-    def cancel_selected_session(self):
+    def cancel_selected_session(self, force=False):
         (list, iter) = self.view.get_selection().get_selected()
 
         id = int(list.get(iter, 0)[0])
@@ -272,7 +272,7 @@ class SessionGUI:
             print "Session `%i' not found: %s" % (id, e)
             return        
 
-        session.close()
+        session.close(force)
 
     def clear_selected_session(self):
         (list, iter) = self.view.get_selection().get_selected()
@@ -294,6 +294,8 @@ class SessionGUI:
 
         if action == "cancel":
             self.cancel_selected_session()
+        elif action == "forcecancel":
+            self.cancel_selected_session(force=True)
         elif action == "clear":
             self.clear_selected_session()
         elif action == "clearall":
@@ -306,6 +308,7 @@ class SessionGUI:
 <ui>
   <popup name="menu">
     <menuitem action="cancel"/>
+    <menuitem action="forcecancel"/>
     <menuitem action="clear"/>
     <menuitem action="clearall"/>
   </popup>
@@ -317,6 +320,10 @@ class SessionGUI:
         cancel = gtk.Action("cancel", "Cancel", None, None)
         cancel.connect("activate", self.mh)
         ag.add_action(cancel)
+
+        fcancel = gtk.Action("forcecancel", "Cancel (without ACK)", None, None)
+        fcancel.connect("activate", self.mh)
+        ag.add_action(fcancel)
 
         clear = gtk.Action("clear", "Clear", None, None)
         clear.connect("activate", self.mh)
@@ -333,14 +340,18 @@ class SessionGUI:
 
         if id is None:
             cancel.set_sensitive(False)
+            fcancel.set_sensitive(False)
             clear.set_sensitive(False)
+
         if id == -1:
             cancel.set_sensitive(False)
+            fcancel.set_sensitive(False)
         else:
             clear.set_sensitive(False)
 
         if id and id < 2:
             cancel.set_sensitive(False)
+            fcancel.set_sensitive(False)
 
         uim = gtk.UIManager()
         uim.insert_action_group(ag, 0)
