@@ -91,11 +91,11 @@ class AddressAssistant(gtk.Assistant):
             self.set_current_page(self.get_current_page() + 1)
         
     def prepare_conf(self, assistant, page):
-        place, lat, lon = self.vals["AddressList"].get_selected(True)
+        self.place, self.lat, self.lon = self.vals["AddressList"].get_selected(True)
 
-        self.vals["Address"].set_text(place)
-        self.vals["Latitude"].set_text("%.5f" % lat)
-        self.vals["Longitude"].set_text("%.5f" % lon)
+        self.vals["Address"].set_text(self.place)
+        self.vals["Latitude"].set_text("%.5f" % self.lat)
+        self.vals["Longitude"].set_text("%.5f" % self.lon)
 
         self.set_page_complete(page, True)
 
@@ -112,10 +112,27 @@ class AddressAssistant(gtk.Assistant):
         else:
             print "I dunno"
 
+    def exit(self, _, response):
+        self.response = response
+        gtk.main_quit()
+
+    def run(self):
+        self.show()
+        self.set_modal(True)
+        self.set_type_hint(gtk.gdk.WINDOW_TYPE_HINT_DIALOG)
+        gtk.main()
+        self.hide()
+
+        return self.response
+
     def __init__(self):
         gtk.Assistant.__init__(self)
 
+        self.response = None
+
         self.vals = {}
+
+        self.place = self.lat = self.lon = None
 
         self.entry_page = self.make_address_entry_page()
         self.append_page(self.entry_page)
@@ -135,6 +152,10 @@ class AddressAssistant(gtk.Assistant):
         self.connect("prepare", self.prepare_page)
         self.set_size_request(500, 300)
 
-a = AddressAssistant()
-a.show()
-gtk.main()
+        self.connect("cancel", self.exit, gtk.RESPONSE_CANCEL)
+        self.connect("apply", self.exit, gtk.RESPONSE_OK)
+
+if __name__ == "__main__":
+    a = AddressAssistant()
+    a.show()
+    gtk.main()
