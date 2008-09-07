@@ -16,6 +16,7 @@ import platform
 import miscwidgets
 import inputdialog
 import utils
+import geocode_ui
 
 from gps import GPSPosition, distance, value_with_units, DPRS_TO_APRS
 
@@ -769,12 +770,28 @@ class MapWindow(gtk.Window):
         self.map.queue_draw()
 
     def prompt_to_set_marker(self, _lat=None, _lon=None):
+        def do_address(button, latw, lonw, namew):
+            dlg = geocode_ui.AddressAssistant()
+            r = dlg.run()
+            if r == gtk.RESPONSE_OK:
+                namew.set_text(dlg.place)
+                latw.set_text("%.5f" % dlg.lat)
+                lonw.set_text("%.5f" % dlg.lon)
+
         d = inputdialog.FieldDialog(title="Add Marker")
         d.add_field("Group",
                     miscwidgets.make_choice(self.markers.keys(), True, "Misc"))
         d.add_field("Name", gtk.Entry())
         d.add_field("Latitude", miscwidgets.LatLonEntry())
         d.add_field("Longitude", miscwidgets.LatLonEntry())
+
+        addrbtn = gtk.Button("By Address")
+        addrbtn.connect("clicked", do_address,
+                        d.get_field("Latitude"),
+                        d.get_field("Longitude"),
+                        d.get_field("Name"))
+
+        d.add_field("Lookup", addrbtn)
         if _lat:
             d.get_field("Latitude").set_text("%.4f" % _lat)
         if _lon:
