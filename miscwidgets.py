@@ -113,8 +113,11 @@ class ListWidget(gtk.HBox):
         except Exception, e:
             print "Unable to remove selected: %s" % e
 
-    def get_selected(self):
+    def get_selected(self, take_default=False):
         (lst, iter) = self._view.get_selection().get_selected()
+        if not iter and take_default:
+            iter = lst.get_iter_first()
+
         return lst.get(iter, *tuple(range(self._ncols)))
 
     def _get_value(self, model, path, iter, lst):
