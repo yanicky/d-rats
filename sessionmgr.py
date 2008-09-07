@@ -100,6 +100,7 @@ class Session:
         return self.inq.dequeue_all()
 
     def close(self, force=False):
+        print "Got cancel request"
         if force:
             self.state = self.ST_CLSD
 
@@ -390,9 +391,20 @@ class StatefulSession(Session):
         self.event.set()
 
     def close(self, force=False):
+
+        print "Got close request, joining thread..."
         self.enabled = False
         self.notify()
+
+        # Free up any block listeners
+        if isinstance(self.outstanding, list):
+            for b in self.outstanding:
+                b.sent_event.set()
+        elif self.outstanding:
+            b.sent_event.set()                
+
         self.thread.join()
+        print "Thread is done, continuing with close"
 
         Session.close(self, force)
 
@@ -876,6 +888,7 @@ class SessionManager:
     def stop_session(self, session):
         for id, s in self.sessions.items():
             if session.name == s.name:
+                self.tport.flush_blocks(id)
                 if session.get_state() != session.ST_CLSD:
                     self.control.end_session(session)
                 self._deregister_session(id)
