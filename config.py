@@ -83,7 +83,8 @@ class AppConfig:
         mset("settings", "port", self.default_port)
         mset("settings", "rate", "9600")
         mset("settings", "xfer", "DDT")
-        mset("settings", "ddt_block_size", "1024")
+        mset("settings", "ddt_block_size", "512")
+        mset("settings", "ddt_block_outlimit", "4")
         mset("settings", "encoding", "yenc")
         mset("settings", "compression", "True")
         mset("settings", "gpsport", "")
@@ -134,6 +135,7 @@ class AppConfig:
                 "eolstrip" : "End-of-line stripping",
                 "font" : "Chat font",
                 "ddt_block_size" : "Outgoing block size (KB)",
+                "ddt_block_outlimit" : "Pipeline blocks",
                 "callsigns" : "Mark callsigns by these countries",
                 "encoding" : "Type of ASCII-armoring to use",
                 "compression" : "Compress blocks",
@@ -154,6 +156,7 @@ class AppConfig:
                 }
 
     id2tip = {"ddt_block_size" : "Size (in KB) of data blocks to send with DDT",
+              "ddt_block_outlimit" : "Number of blocks to send per round",
               "debuglog" : "Requires D-RATS restart to take effect",
               "callsigns" : "Mark callsigns by these countries",
               "encoding" : "yenc is fastest, base64 is safest (currently)",
@@ -241,7 +244,7 @@ class AppConfig:
             return False
 
     def getint(self, sec, key):
-        return self.config.getint(sec, key)
+        return int(float(self.config.get(sec, key)))
 
     def options(self, *args):
         return self.config.options(*args)
@@ -439,8 +442,12 @@ class AppConfig:
         fcb = gtk.FileChooserButton(dlg)
         vbox.pack_start(self.make_sb("download_dir", fcb,
                                      ), 0,0,0)
-        vbox.pack_start(self.make_sb("xfer",
-                                     make_choice(self.xfers.keys(), False)), 0,0,0)
+        #vbox.pack_start(self.make_sb("xfer",
+        #                             make_choice(self.xfers.keys(), False)), 0,0,0)
+        vbox.pack_start(self.make_sb("ddt_block_size",
+                                     self.make_spin(128, 128, 4096, 0)), 0,0,0)
+        vbox.pack_start(self.make_sb("ddt_block_outlimit",
+                                     self.make_spin(1, 1, 32, 0)), 0,0,0)
         vbox.pack_start(self.make_sb("gpsport",
                                      make_choice(ports)), 0,0,0)
         vbox.pack_start(self.make_sb("gpsenabled",
@@ -465,8 +472,6 @@ class AppConfig:
         block_sizes = [str(pow(2,x)) for x in range(6, 13)]
         encodings = ddt.ENCODINGS.keys()
 
-        vbox.pack_start(self.make_sb("ddt_block_size",
-                                     make_choice(block_sizes, False)), 0,0,0)
         vbox.pack_start(self.make_sb("compression",
                                      self.make_bool()), 0,0,0)
         vbox.pack_start(self.make_sb("encoding",
@@ -658,7 +663,7 @@ class AppConfig:
         nb.show()
 
         # Disable unsupported functions
-        for i in ["xfer", "autoreceive", "encoding", "ddt_block_size"]:
+        for i in ["autoreceive", "encoding"]:
             self.fields[i].set_sensitive(False)
 
         mainvbox = gtk.VBox(False, 5)
@@ -809,8 +814,6 @@ D-RATS has been started in safe mode, which means the configuration file has not
                         ("settings", "gpsport")]
 
         choice_v = [("settings", "rate"),
-                    ("settings", "xfer"),
-                    ("settings", "ddt_block_size"),
                     ("settings", "encoding"),
                     ("user", "units")]
 
@@ -827,7 +830,9 @@ D-RATS has been started in safe mode, which means the configuration file has not
 
         spin_v = [("prefs", "scrollback"),
                   ("user", "altitude"),
-                  ("settings", "sockflush")]
+                  ("settings", "sockflush"),
+                  ("settings", "ddt_block_size"),
+                  ("settings", "ddt_block_outlimit")]
 
         list_v = [("prefs", "callsigns"),
                   ("settings", "inports"),

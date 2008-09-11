@@ -600,10 +600,15 @@ class SessionGUI:
         else:
             xfer = sessions.FileTransferSession
 
+        bs = self.mainapp.config.getint("settings", "ddt_block_size")
+        ol = self.mainapp.config.getint("settings", "ddt_block_outlimit")
+
         t = threading.Thread(target=self.mainapp.sm.start_session,
-                             kwargs={"name" : os.path.basename(filename),
-                                     "dest" : dest,
-                                     "cls"  : xfer})
+                             kwargs={"name"      : os.path.basename(filename),
+                                     "dest"      : dest,
+                                     "cls"       : xfer,
+                                     "blocksize" : bs,
+                                     "outlimit"  : ol})
         t.start()
         print "Started Session"
         
