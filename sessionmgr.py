@@ -367,11 +367,12 @@ class StatefulSession(Session):
     T_NAK = 2
     T_DAT = 4
 
-    def __init__(self, name, bsize=1024):
+    def __init__(self, name, **kwargs):
         Session.__init__(self, name)
         self.outq = transport.BlockQueue()
         self.enabled = True
-        self.bsize = bsize
+
+        self.bsize = kwargs.get("blocksize", 1024)
         self.iseq = -1
         self.oseq = 0
 
@@ -391,6 +392,10 @@ class StatefulSession(Session):
         self.event.set()
 
     def close(self, force=False):
+
+        import traceback
+        import sys
+        traceback.print_stack(file=sys.stdout)
 
         print "Got close request, joining thread..."
         self.enabled = False
@@ -599,8 +604,13 @@ class StatefulSession(Session):
 
         if timeout and f:
             print "Waiting for last block to be ack'd"
-            f.ackd_event.wait(timeout)
-            print "ACKED"
+            f.sent_event.wait()
+            if f.sent_event.isSet():
+                f.ackd_event.wait(timeout)
+                if f.ackd_event.isSet():
+                    print "ACKED"
+                else:
+                    print "Not ACKED"
 
 class PipelinedStatefulSession(StatefulSession):
     T_REQACK = 5
@@ -608,9 +618,14 @@ class PipelinedStatefulSession(StatefulSession):
     def __init__(self, *args, **kwargs):
         self.oob_queue = {}
         self.recv_list = []
+
+        if kwargs.has_key("outlimit"):
+            self.out_limit = kwargs["outlimit"]
+            del kwargs["outlimit"]
+        else:
+            self.out_limit = 8
+
         StatefulSession.__init__(self, *args, **kwargs)
-        self.out_limit = 8
-        self.bsize = 512
         self.outstanding = []
         
     def queue_next(self):
@@ -875,7 +890,7 @@ class SessionManager:
         except Exception, e:
             print "No session %s to deregister" % id
 
-    def start_session(self, name, dest=None, cls=None):
+    def start_session(self, name, dest=None, cls=None, **kwargs):
         if not cls:
             if dest:
                 s = StatefulSession(name)
@@ -883,7 +898,7 @@ class SessionManager:
                 s = StatelessSession(name)
                 dest = "CQCQCQ"
         else:
-            s = cls(name)
+            s = cls(name, **kwargs)
 
         s.set_state(s.ST_SYNC)
         id = self._register_session(s, dest, "new,out")
