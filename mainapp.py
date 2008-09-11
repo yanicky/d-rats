@@ -138,7 +138,7 @@ class MainApp:
             to = ":"
 
         if args["From"] == "CQCQCQ":
-            color = "broken"
+            color = "brokencolor"
         else:
             color = "incomingcolor"
 

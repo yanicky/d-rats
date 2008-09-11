@@ -70,6 +70,7 @@ class AppConfig:
         mset("prefs", "noticecolor", "#0000660011DD")
         mset("prefs", "ignorecolor", "#BB88BB88BB88")
         mset("prefs", "callsigncolor", "#FFDD99CC77CC")
+        mset("prefs", "brokencolor", "#FFFFFFFF3333")
         mset("prefs", "logenabled", "True")
         mset("prefs", "debuglog", "False")
         mset("prefs", "eolstrip", "True")
@@ -127,6 +128,7 @@ class AppConfig:
                 "noticecolor" : "Color for notices",
                 "ignorecolor" : "Color for ignores",
                 "callsigncolor" : "Color to highlight callsigns",
+                "brokencolor" : "Color for raw data",
                 "logenabled" : "Enable chat logging",
                 "debuglog" : "Enable debug logging",
                 "eolstrip" : "End-of-line stripping",
@@ -169,6 +171,7 @@ class AppConfig:
               "sockflush" : "Seconds before sending socket data over radio",
               "restore_stations" : "Restore callsign list from map list of `Stations'",
               "pipelinexfers" : "Increases throughput and resiliency (v0.2.4 and later only)",
+              "brokencolor" : "Color text that does not pass checksum",
               }
 
     xfers = {"DDT" : ddt.DDTTransfer}
@@ -314,25 +317,25 @@ class AppConfig:
         return b
 
     def destroy(self, widget, data=None):
-        self.window.hide()
+        gtk.main_quit()
         return True
 
     def delete(self, widget, event, data=None):
-        self.window.hide()
+        gtk.main_quit()
         return True
 
     def save_button(self, widget, data=None):
         self.sync_gui(load=False)
         self.save()
-        self.window.hide()
         self.mainapp.refresh_config()
+        gtk.main_quit()
 
     def refresh_app(self):
         self.mainapp.refresh_config()
 
     def cancel_button(self, widget, data=None):
         self.sync_gui(load=True)
-        self.window.hide()
+        gtk.main_quit()
 
     def address_button(self, widget):
         aa = geocode_ui.AddressAssistant()
@@ -398,6 +401,8 @@ class AppConfig:
         vbox.pack_start(self.make_sb("ignorecolor",
                                      gtk.ColorButton()), 0,0,0)
         vbox.pack_start(self.make_sb("callsigncolor",
+                                     gtk.ColorButton()), 0,0,0)
+        vbox.pack_start(self.make_sb("brokencolor",
                                      gtk.ColorButton()), 0,0,0)
 
         vbox.pack_start(self.make_sb("eolstrip",
@@ -663,8 +668,7 @@ class AppConfig:
         
         self.window.add(mainvbox)
 
-    def show(self):
-        self.window.show()
+    def show(self, parent=None):
         if self.safe:
             d = gtk.MessageDialog(buttons=gtk.BUTTONS_OK, parent=self.window)
             d.set_property("text", "Safe Mode")
@@ -675,6 +679,15 @@ D-RATS has been started in safe mode, which means the configuration file has not
             d.destroy()
             self.load_config(self.default_filename())
         self.sync_gui(load=True)
+
+        if parent:
+            self.window.set_transient_for(parent)
+            self.window.set_modal(True)
+            self.window.set_type_hint(gtk.gdk.WINDOW_TYPE_HINT_DIALOG)
+
+        self.window.show()
+        gtk.main()
+        self.window.hide()
 
     def sync_texts(self, list, load):
         for s, k in list:
@@ -805,7 +818,8 @@ D-RATS has been started in safe mode, which means the configuration file has not
                    ("prefs", "outgoingcolor"),
                    ("prefs", "noticecolor"),
                    ("prefs", "ignorecolor"),
-                   ("prefs", "callsigncolor")]
+                   ("prefs", "callsigncolor"),
+                   ("prefs", "brokencolor")]
 
         path_v = [("prefs", "download_dir")]
 

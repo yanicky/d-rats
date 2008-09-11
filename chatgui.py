@@ -290,13 +290,9 @@ class ChatGUI:
             tag.set_property("style", pango.STYLE_ITALIC)
             tags.add(tag)
 
-            tag = gtk.TextTag("broken")
-            tag.set_property("background", "#FFDD33")
-            tags.add(tag)
-
         regular = ["incomingcolor", "outgoingcolor",
                   "noticecolor", "ignorecolor"]
-        reverse = ["callsigncolor"]
+        reverse = ["callsigncolor", "brokencolor"]
 
         for i in regular + reverse:
             tag = tags.lookup(i)
@@ -678,7 +674,7 @@ class MainChatGUI(ChatGUI):
         elif action == "send":
             self.do_file_transfer(True)
         elif action == "config":
-            self.config.show()
+            self.config.show(self.window)
         elif action == "qsts":
             qsts = QSTGUI(self.config, self)
             qsts.show()
