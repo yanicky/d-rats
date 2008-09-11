@@ -15,12 +15,30 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#
+# Copyright 2008 Dan Smith <dsmith@danplanet.com>
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 import os
 import sys
 import glob
 from subprocess import Popen
 
 class Platform:
+    # pylint: disable-msg=R0201
+
     def __init__(self, basepath):
         self._base = basepath
 
@@ -28,11 +46,11 @@ class Platform:
         return self._base
 
     def log_dir(self):
-        dir = os.path.join(self.config_dir(), "logs")
-        if not os.path.isdir(dir):
-            os.mkdir(dir)
+        logdir = os.path.join(self.config_dir(), "logs")
+        if not os.path.isdir(logdir):
+            os.mkdir(logdir)
 
-        return dir
+        return logdir
 
     def filter_filename(self, filename):
         return filename
@@ -60,68 +78,76 @@ class Platform:
     def gui_open_file(self, start_dir=None):
         import gtk
 
-        d = gtk.FileChooserDialog("Select a file to open",
-                                  None,
-                                  gtk.FILE_CHOOSER_ACTION_OPEN,
-                                  (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
-                                   gtk.STOCK_OPEN, gtk.RESPONSE_OK))
+        dlg = gtk.FileChooserDialog("Select a file to open",
+                                    None,
+                                    gtk.FILE_CHOOSER_ACTION_OPEN,
+                                    (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
+                                     gtk.STOCK_OPEN, gtk.RESPONSE_OK))
         if start_dir and os.path.isdir(start_dir):
-            d.set_current_folder(start_dir)
+            dlg.set_current_folder(start_dir)
 
-        r = d.run()
-        f = d.get_filename()
-        d.destroy()
+        res = dlg.run()
+        fname = dlg.get_filename()
+        dlg.destroy()
 
-        if r == gtk.RESPONSE_OK:
-            return f
+        if res == gtk.RESPONSE_OK:
+            return fname
         else:
             return None
 
     def gui_save_file(self, start_dir=None, default_name=None):
         import gtk
 
-        d = gtk.FileChooserDialog("Save file as",
-                                  None,
-                                  gtk.FILE_CHOOSER_ACTION_SAVE,
-                                  (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
-                                   gtk.STOCK_SAVE, gtk.RESPONSE_OK))
+        dlg = gtk.FileChooserDialog("Save file as",
+                                    None,
+                                    gtk.FILE_CHOOSER_ACTION_SAVE,
+                                    (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
+                                     gtk.STOCK_SAVE, gtk.RESPONSE_OK))
         if start_dir and os.path.isdir(start_dir):
-            d.set_current_folder(start_dir)
+            dlg.set_current_folder(start_dir)
 
         if default_name:
-            d.set_current_name(default_name)
+            dlg.set_current_name(default_name)
 
-        r = d.run()
-        f = d.get_filename()
-        d.destroy()
+        res = dlg.run()
+        fname = dlg.get_filename()
+        dlg.destroy()
 
-        if r == gtk.RESPONSE_OK:
-            return f
+        if res == gtk.RESPONSE_OK:
+            return fname
         else:
             return None
 
     def gui_select_dir(self, start_dir=None):
         import gtk
 
-        d = gtk.FileChooserDialog("Choose folder",
-                                  None,
-                                  gtk.FILE_CHOOSER_ACTION_SELECT_FOLDER,
-                                  (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
-                                   gtk.STOCK_SAVE, gtk.RESPONSE_OK))
+        dlg = gtk.FileChooserDialog("Choose folder",
+                                    None,
+                                    gtk.FILE_CHOOSER_ACTION_SELECT_FOLDER,
+                                    (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
+                                     gtk.STOCK_SAVE, gtk.RESPONSE_OK))
         if start_dir and os.path.isdir(start_dir):
-            d.set_current_folder(start_dir)
+            dlg.set_current_folder(start_dir)
 
-        r = d.run()
-        f = d.get_filename()
-        d.destroy()
+        res = dlg.run()
+        fname = dlg.get_filename()
+        dlg.destroy()
 
-        if r == gtk.RESPONSE_OK and os.path.isdir(f):
-            return f
+        if res == gtk.RESPONSE_OK and os.path.isdir(fname):
+            return fname
         else:
             return None
 
     def os_version_string(self):
         return "Unknown Operating System"
+
+def _unix_editor():
+    macos_textedit = "/Applications/TextEdit.app/Contents/MacOS/TextEdit"
+
+    if os.path.exists(macos_textedit):
+        return macos_textedit
+    else:
+        return "gedit"
 
 class UnixPlatform(Platform):
     def __init__(self, basepath):
@@ -140,20 +166,12 @@ class UnixPlatform(Platform):
     def filter_filename(self, filename):
         return filename.replace("/", "")
 
-    def _editor(self):
-        macos_textedit = "/Applications/TextEdit.app/Contents/MacOS/TextEdit"
-
-        if os.path.exists(macos_textedit):
-            return macos_textedit
-        else:
-            return "gedit"
-
     def open_text_file(self, path):
         pid1 = os.fork()
         if pid1 == 0:
             pid2 = os.fork()
             if pid2 == 0:
-                editor = self._editor()
+                editor = _unix_editor()
                 print "calling `%s %s'" % (editor, path)
                 os.execlp(editor, editor, path)
             else:
@@ -169,12 +187,13 @@ class UnixPlatform(Platform):
         return sorted(glob.glob("/dev/ttyS*") + glob.glob("/dev/ttyUSB*"))
 
     def os_version_string(self):
+        # pylint: disable-msg=W0703
         try:
-            f = file("/etc/issue.net", "r")
-            ver = f.read().strip()
-            f.close()
+            issue = file("/etc/issue.net", "r")
+            ver = issue.read().strip()
+            issue.close()
             ver = "%s - %s" % (os.uname()[0], ver)
-        except:
+        except Exception:
             ver = " ".join(os.uname())
 
         return ver
@@ -208,41 +227,44 @@ class Win32Platform(Platform):
         os.system("explorer %s" % path)
     
     def list_serial_ports(self):
-        return ["COM%i" % x for x in range(1,8)]
+        return ["COM%i" % x for x in range(1, 8)]
 
     def gui_open_file(self, start_dir=None):
+        # pylint: disable-msg=W0703,W0613
         import win32gui
 
         try:
-            f, _, _ = win32gui.GetOpenFileNameW()
+            fname, _, _ = win32gui.GetOpenFileNameW()
         except Exception, e:
             print "Failed to get filename: %s" % e
             return None
 
-        return str(f)
+        return str(fname)
 
     def gui_save_file(self, start_dir=None, default_name=None):
+        # pylint: disable-msg=W0703,W0613
         import win32gui
 
         try:
-            f, _, _ = win32gui.GetSaveFileNameW(File=default_name)
+            fname, _, _ = win32gui.GetSaveFileNameW(File=default_name)
         except Exception, e:
             print "Failed to get filename: %s" % e
             return None
 
-        return str(f)
+        return str(fname)
 
     def gui_select_dir(self, start_dir=None):
+        # pylint: disable-msg=W0703,W0613
         from win32com.shell import shell
 
         try:
             pidl, _, _ = shell.SHBrowseForFolder()
-            f = shell.SHGetPathFromIDList(pidl)
+            fname = shell.SHGetPathFromIDList(pidl)
         except Exception, e:
             print "Failed to get directory: %s" % e
             return None
 
-        return str(f)
+        return str(fname)
 
     def os_version_string(self):
         import win32api
@@ -263,6 +285,8 @@ def _get_platform(basepath):
 
 PLATFORM = None
 def get_platform(basepath=None):
+    #pylint: disable-msg=W0602
+
     global PLATFORM
 
     if not PLATFORM:
@@ -271,17 +295,18 @@ def get_platform(basepath=None):
     return PLATFORM
 
 if __name__ == "__main__":
-    p = get_platform()
+    def do_test():
+        __pform = get_platform()
 
-    print "Config dir: %s" % p.config_dir()
-    print "Default dir: %s" % p.default_dir()
-    print "Log file (foo): %s" % p.log_file("foo")
-    print "Serial ports: %s" % p.list_serial_ports()
-    print "OS Version: %s" % p.os_version_string()
-    
+        print "Config dir: %s" % __pform.config_dir()
+        print "Default dir: %s" % __pform.default_dir()
+        print "Log file (foo): %s" % __pform.log_file("foo")
+        print "Serial ports: %s" % __pform.list_serial_ports()
+        print "OS Version: %s" % __pform.os_version_string()
+        #__pform.open_text_file("d-rats.py")
 
-    #p.open_text_file("d-rats.py")
+        #print "Open file: %s" % __pform.gui_open_file()
+        #print "Save file: %s" % __pform.gui_save_file(default_name="Foo.txt")
+        print "Open folder: %s" % __pform.gui_select_dir("/tmp")
 
-    #print "Open file: %s" % p.gui_open_file()
-    #print "Save file: %s" % p.gui_save_file(default_name="Foo.txt")
-    print "Open folder: %s" % p.gui_select_dir("/tmp")
+    do_test()
