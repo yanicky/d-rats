@@ -425,10 +425,8 @@ class AppConfig:
         baud_rates = ["300", "1200", "4800", "9600",
                       "19200", "38400", "115200"]
 
-        ports = self.platform.list_serial_ports()
-
         vbox.pack_start(self.make_sb("port",
-                                     make_choice(ports)), 0,0,0)
+                                     make_choice([])), 0,0,0)
         vbox.pack_start(self.make_sb("rate",
                                      make_choice(baud_rates, False)), 0,0,0)
 
@@ -449,7 +447,7 @@ class AppConfig:
         vbox.pack_start(self.make_sb("ddt_block_outlimit",
                                      self.make_spin(1, 1, 32, 0)), 0,0,0)
         vbox.pack_start(self.make_sb("gpsport",
-                                     make_choice(ports)), 0,0,0)
+                                     make_choice([])), 0,0,0)
         vbox.pack_start(self.make_sb("gpsenabled",
                                      self.make_bool()), 0,0,0)
         vbox.pack_start(self.make_sb("aprssymtab",
@@ -674,6 +672,22 @@ class AppConfig:
         self.window.add(mainvbox)
 
     def show(self, parent=None):
+        # Refresh the ports, in case they have changed since we opened
+        # D-RATS
+        ports = self.platform.list_serial_ports()
+        curport = self.config.get("settings", "port")
+        if curport and curport not in ports:
+            ports.append(curport)
+        curport = self.config.get("settings", "gpsport")
+        if curport and curport not in ports:
+            ports.append(curport)
+
+        for field in ["port", "gpsport"]:
+            store = self.fields[field].get_model()
+            store.clear()
+            for i in sorted(ports):
+                store.append((i,))
+
         if self.safe:
             d = gtk.MessageDialog(buttons=gtk.BUTTONS_OK, parent=self.window)
             d.set_property("text", "Safe Mode")
