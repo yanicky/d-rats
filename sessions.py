@@ -121,7 +121,7 @@ class BaseFileTransferSession:
 
         self.status_cb(vals)
 
-    def __init__(self, name, status_cb=None):
+    def __init__(self, name, status_cb=None, **kwargs):
         if not status_cb:
             self.status_cb = self.internal_status
         else:
@@ -184,21 +184,12 @@ class BaseFileTransferSession:
         self.stats["total_size"] = len(data)
         self.stats["sent_size"] = 0
         self.stats["start_time"] = time.time()
-
-        while data:
-            d = data[:4096]
-            data = data[4096:]
-
-            self.status("Sending")
-            try:
-                self.write(d, timeout=120)
-            except sessionmgr.SessionClosedError:
-                break
-
-            self.status("Sent")
-
-        # FIXME: Really should wait for xmit and then wait for ack
-        # to avoid breaking if we sent larger chunks
+        
+        try:
+            self.write(data, timeout=120)
+        except sessionmgr.SessionClosedError:
+            print "Session closed while doing write"
+            pass
 
         self.close()
 
