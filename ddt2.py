@@ -171,13 +171,14 @@ class DDT2Frame:
 
         data = utils.filter_to_ascii(self.data[:20])
 
-        return "DDT2%s: %i:%i:%i %s->%s (%s...)" % (c,
-                                                    self.seq,
-                                                    self.session,
-                                                    self.type,
-                                                    self.s_station,
-                                                    self.d_station,
-                                                    data)
+        return "DDT2%s: %i:%i:%i %s->%s (%s...[%i])" % (c,
+                                                        self.seq,
+                                                        self.session,
+                                                        self.type,
+                                                        self.s_station,
+                                                        self.d_station,
+                                                        data,
+                                                        len(self.data))
 
 class DDT2EncodedFrame(DDT2Frame):
     def get_packed(self):
