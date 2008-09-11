@@ -15,22 +15,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#
-# Copyright 2008 Dan Smith <dsmith@danplanet.com>
-#
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 import os
 import sys
 import glob
@@ -227,7 +211,29 @@ class Win32Platform(Platform):
         os.system("explorer %s" % path)
     
     def list_serial_ports(self):
-        return ["COM%i" % x for x in range(1, 8)]
+        import win32file
+        import win32con
+
+        ports = []
+        for i in range(1, 257):
+            try:
+                portname = "COM%i" % i
+                mode = win32con.GENERIC_READ | win32con.GENERIC_WRITE
+                port = \
+                    win32file.CreateFile(portname,
+                                         mode,
+                                         win32con.FILE_SHARE_READ,
+                                         None,
+                                         win32con.OPEN_EXISTING,
+                                         0,
+                                         None)
+                ports.append(portname)
+                win32file.CloseHandle(port)
+                port = None
+            except Exception:
+                pass
+
+        return ports
 
     def gui_open_file(self, start_dir=None):
         # pylint: disable-msg=W0703,W0613
@@ -307,6 +313,6 @@ if __name__ == "__main__":
 
         #print "Open file: %s" % __pform.gui_open_file()
         #print "Save file: %s" % __pform.gui_save_file(default_name="Foo.txt")
-        print "Open folder: %s" % __pform.gui_select_dir("/tmp")
+        #print "Open folder: %s" % __pform.gui_select_dir("/tmp")
 
     do_test()
