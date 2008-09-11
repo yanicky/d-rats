@@ -754,18 +754,27 @@ class PipelinedStatefulSession(StatefulSession):
             enqueue(block)            
 
 class SessionManager:
-    def __init__(self, pipe, station, compat=False):
+    def set_comm(self, pipe, compat=False):
         self.pipe = pipe
-        self.station = station
-
-        
-        self.last_frame = 0
-        self.sessions = {}
-        self.session_cb = {}
+        if self.tport:
+            self.tport.disable()
 
         self.tport = transport.Transporter(self.pipe,
                                            inhandler=self.incoming,
                                            compat=compat)
+    
+    def set_call(self, callsign):
+        self.station = callsign
+
+    def __init__(self, pipe, station, compat=False):
+        self.pipe = self.tport = None
+        self.station = station
+
+        self.last_frame = 0
+        self.sessions = {}
+        self.session_cb = {}
+
+        self.set_comm(pipe, compat)
 
         self.control = ControlSession()
         self._register_session(self.control, "CQCQCQ", "new,out")

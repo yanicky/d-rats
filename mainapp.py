@@ -171,20 +171,19 @@ class MainApp:
             print "COMM did not connect: %s" % e
             return False
 
-        self.sm = sessionmgr.SessionManager(self.comm,
-                                            self.config.get("user", "callsign"),
-                                            compat=cpat)
+        callsign = self.config.get("user", "callsign")
+        if not self.sm:
+            self.sm = sessionmgr.SessionManager(self.comm,
+                                                callsign,
+                                                compat=cpat)
+            self.chat_session = self.sm.start_session("chat",
+                                                      dest="CQCQCQ",
+                                                      cls=sessions.ChatSession)
+            self.chat_session.register_cb(self.incoming_chat)
+        else:
+            self.sm.set_pipe(self.comm, cpat)
+            self.sm.set_call(callsign)
 
-        try:
-            self.chatgui.refresh_advanced()
-        except Exception, e:
-            print "Failed to refresh advanced section"
-
-        self.chat_session = self.sm.start_session("chat",
-                                                  dest="CQCQCQ",
-                                                  cls=sessions.ChatSession)
-        self.chat_session.register_cb(self.incoming_chat)
-        
         return True
 
     def refresh_comms(self):
@@ -247,7 +246,6 @@ class MainApp:
         self.refresh_qsts()
         self.refresh_gps()
         self.chatgui.refresh_config()
-        self.chatgui.refresh_advanced()
 
     def maybe_redirect_stdout(self):
         try:
