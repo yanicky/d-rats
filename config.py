@@ -98,6 +98,9 @@ class AppConfig:
         mset("settings", "pipelinexfers", "True")
         mset("settings", "mapdir",
              os.path.join(self.platform.config_dir(), "maps"))
+        mset("settings", "warmup_length", "8")
+        mset("settings", "warmup_timeout", "3")
+        mset("settings", "force_delay", "0")
 
         mset("quick", None, None)
 
@@ -156,6 +159,9 @@ class AppConfig:
                 "restore_stations" : "Restore callsign list",
                 "pipelinexfers" : "Use pipelined transfers",
                 "mapdir" : "Map storage location",
+                "warmup_length" : "Warm-up length",
+                "warmup_timeout" : "Warm-up timeout",
+                "force_delay" : "Force delay between transmissions",
                 }
 
     id2tip = {"ddt_block_size" : "Size (in KB) of data blocks to send with DDT",
@@ -179,6 +185,9 @@ class AppConfig:
               "pipelinexfers" : "Increases throughput and resiliency (v0.2.4 and later only)",
               "brokencolor" : "Color text that does not pass checksum",
               "mapdir" : "Alternate location for cached map tiles",
+              "warmup_length" : "Number of bytes to send before blocks",
+              "warmup_timeout" : "Time between transmissions requiring warmup",
+              "force_delay" : "Seconds to wait before starting a new transmission",
               }
 
     xfers = {"DDT" : ddt.DDTTransfer}
@@ -460,6 +469,12 @@ class AppConfig:
                                      self.make_spin(0.2, 0, 30)), 0,0,0)
         vbox.pack_start(self.make_sb("pipelinexfers",
                                      self.make_bool()), 0,0,0)
+        vbox.pack_start(self.make_sb("warmup_length",
+                                     self.make_spin(8, 0, 128, 0)), 0,0,0)
+        vbox.pack_start(self.make_sb("warmup_timeout",
+                                     self.make_spin(1, 0, 128, 0)), 0,0,0)
+        vbox.pack_start(self.make_sb("force_delay",
+                                     self.make_spin(1, 0, 128, 0)), 0,0,0)
 
         vbox.show()
         return vbox
@@ -847,7 +862,10 @@ D-RATS has been started in safe mode, which means the configuration file has not
                   ("user", "altitude"),
                   ("settings", "sockflush"),
                   ("settings", "ddt_block_size"),
-                  ("settings", "ddt_block_outlimit")]
+                  ("settings", "ddt_block_outlimit"),
+                  ("settings", "warmup_length"),
+                  ("settings", "warmup_timeout"),
+                  ("settings", "force_delay")]
 
         list_v = [("prefs", "callsigns"),
                   ("settings", "inports"),
