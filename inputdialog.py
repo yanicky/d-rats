@@ -20,7 +20,7 @@ import gtk
 from miscwidgets import make_choice
 
 class TextInputDialog(gtk.Dialog):
-    def respond_ok(self, entry, data=None):
+    def respond_ok(self, _):
         self.response(gtk.RESPONSE_OK)
 
     def __init__(self, **args):
@@ -29,11 +29,13 @@ class TextInputDialog(gtk.Dialog):
         gtk.Dialog.__init__(self, buttons=buttons, **args)
 
         self.label = gtk.Label()
-        self.label.set_size_request(300,100)
+        self.label.set_size_request(300, 100)
+        # pylint: disable-msg=E1101
         self.vbox.pack_start(self.label, 1, 1, 0)
        
         self.text = gtk.Entry()
         self.text.connect("activate", self.respond_ok, None)
+        # pylint: disable-msg=E1101
         self.vbox.pack_start(self.text, 1, 1, 0)
 
         self.label.show()
@@ -48,7 +50,8 @@ class ChoiceDialog(gtk.Dialog):
         gtk.Dialog.__init__(self, buttons=buttons, **args)
 
         self.label = gtk.Label()
-        self.label.set_size_request(300,100)
+        self.label.set_size_request(300, 100)
+        # pylint: disable-msg=E1101
         self.vbox.pack_start(self.label, 1, 1, 0)
         self.label.show()
 
@@ -58,6 +61,7 @@ class ChoiceDialog(gtk.Dialog):
             default = None
 
         self.choice = make_choice(sorted(choices), self.editable, default)
+        # pylint: disable-msg=E1101
         self.vbox.pack_start(self.choice, 1, 1, 0)
         self.choice.show()
 
@@ -87,33 +91,25 @@ class FieldDialog(gtk.Dialog):
 
         gtk.Dialog.__init__(self, **kwargs)
 
-    def response(self, id):
+    def response(self, _):
         print "Blocking response"
         return
 
-    def add_field(self, label, widget, validator=None, full=False):
-        if full:
-            box = gtk.VBox(False, 2)
-        else:
-            box = gtk.HBox(True, 2)
+    def add_field(self, label, widget, validator=None):
+        box = gtk.HBox(True, 2)
 
-        l = gtk.Label(label)
-        l.show()
+        lab = gtk.Label(label)
+        lab.show()
 
         widget.set_size_request(150, -1)
         widget.show()
 
-        box.pack_start(l, 0,0,0)
-        if full:
-            box.pack_start(widget, 1,1,1)
-        else:
-            box.pack_start(widget, 0,0,0)
+        box.pack_start(lab, 0, 0, 0)
+        box.pack_start(widget, 0, 0, 0)
         box.show()
 
-        if full:
-            self.vbox.pack_start(box, 1,1,1)
-        else:
-            self.vbox.pack_start(box, 0,0,0)
+        # pylint: disable-msg=E1101
+        self.vbox.pack_start(box, 0, 0, 0)
     
         self.__fields[label] = widget
 
@@ -121,6 +117,7 @@ class FieldDialog(gtk.Dialog):
         return self.__fields.get(label, None)
 
 if __name__ == "__main__":
+    # pylint: disable-msg=C0103
     d = FieldDialog(buttons=(gtk.STOCK_OK, gtk.RESPONSE_OK))
     d.add_field("Foo", gtk.Entry())
     d.add_field("Bar", make_choice(["A", "B"]))
