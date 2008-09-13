@@ -351,7 +351,7 @@ class AppConfig:
     def build_user(self):
         vbox = gtk.VBox(False, 2)
 
-        vbox.pack_start(self.make_sb("callsign", gtk.Entry()), 0,0,0)
+        vbox.pack_start(self.make_sb("callsign", gtk.Entry(8)), 0,0,0)
         vbox.pack_start(self.make_sb("name", gtk.Entry()), 0,0,0)
         vbox.pack_start(self.make_sb("dosignon", self.make_bool()), 0,0,0)
         vbox.pack_start(self.make_sb("signon", gtk.Entry()), 0,0,0)
