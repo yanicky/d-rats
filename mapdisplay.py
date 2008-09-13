@@ -29,6 +29,13 @@ ICON_MAPS = {
     "\\": utils.open_icon_map(os.path.join("images", "aprs_sec.png")),
 }
 
+BASE_DIR = None
+
+def set_base_dir(basedir):
+    global BASE_DIR
+
+    BASE_DIR = basedir
+
 class MapTile:
     def path_els(self):
         # http://svn.openstreetmap.org/applications/routing/pyroute/tilenames.py
@@ -172,8 +179,12 @@ class MapTile:
 
         self.x, self.y = self.path_els()
 
-        self.platform = platform.get_platform()
-        self.dir = os.path.join(self.platform.config_dir(), "maps")
+        if BASE_DIR:
+            self.dir = BASE_DIR
+        else:
+            platform = platform.get_platform()
+            self.dir = os.path.join(platform.config_dir(), "maps")
+
         if not os.path.isdir(self.dir):
             os.mkdir(self.dir)
 

@@ -96,6 +96,8 @@ class AppConfig:
         mset("settings", "outports", "[]")
         mset("settings", "sockflush", "0.5")
         mset("settings", "pipelinexfers", "True")
+        mset("settings", "mapdir",
+             os.path.join(self.platform.config_dir(), "maps"))
 
         mset("quick", None, None)
 
@@ -153,6 +155,7 @@ class AppConfig:
                 "sockflush" : "Socket flush interval",
                 "restore_stations" : "Restore callsign list",
                 "pipelinexfers" : "Use pipelined transfers",
+                "mapdir" : "Map storage location",
                 }
 
     id2tip = {"ddt_block_size" : "Size (in KB) of data blocks to send with DDT",
@@ -175,6 +178,7 @@ class AppConfig:
               "restore_stations" : "Restore callsign list from map list of `Stations'",
               "pipelinexfers" : "Increases throughput and resiliency (v0.2.4 and later only)",
               "brokencolor" : "Color text that does not pass checksum",
+              "mapdir" : "Alternate location for cached map tiles",
               }
 
     xfers = {"DDT" : ddt.DDTTransfer}
@@ -440,8 +444,15 @@ class AppConfig:
         fcb = gtk.FileChooserButton(dlg)
         vbox.pack_start(self.make_sb("download_dir", fcb,
                                      ), 0,0,0)
-        #vbox.pack_start(self.make_sb("xfer",
-        #                             make_choice(self.xfers.keys(), False)), 0,0,0)
+
+        dlg = gtk.FileChooserDialog("Choose a location",
+                                    None,
+                                    gtk.FILE_CHOOSER_ACTION_SELECT_FOLDER,
+                                    (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
+                                     gtk.STOCK_OPEN, gtk.RESPONSE_OK))
+        fcb = gtk.FileChooserButton(dlg)
+        vbox.pack_start(self.make_sb("mapdir", fcb), 0,0,0)        
+
         vbox.pack_start(self.make_sb("ddt_block_size",
                                      self.make_spin(128, 128, 4096, 0)), 0,0,0)
         vbox.pack_start(self.make_sb("ddt_block_outlimit",
@@ -838,7 +849,8 @@ D-RATS has been started in safe mode, which means the configuration file has not
                    ("prefs", "callsigncolor"),
                    ("prefs", "brokencolor")]
 
-        path_v = [("prefs", "download_dir")]
+        path_v = [("prefs", "download_dir"),
+                  ("settings", "mapdir")]
 
         font_v = [("prefs", "font")]
 

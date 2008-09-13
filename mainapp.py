@@ -31,6 +31,7 @@ import chatgui
 import config
 import ddt
 import gps
+import mapdisplay
 import comm
 import sessionmgr
 import sessions
@@ -238,6 +239,7 @@ class MainApp:
         ddt.set_encoding(enc)
 
         gps.set_units(units)
+        mapdisplay.set_base_dir(self.config.get("settings", "mapdir"))
 
         self.refresh_comms()
 
