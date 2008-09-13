@@ -17,6 +17,8 @@
 import gtk
 import gobject
 
+import os
+
 import platform
 
 class ListWidget(gtk.HBox):
@@ -421,15 +423,23 @@ class FilenameBox(gtk.HBox):
         "filename-changed" : (gobject.SIGNAL_RUN_LAST, gobject.TYPE_NONE, ()),
         }
 
-    def do_browse(self, _):
-        fn = platform.get_platform().gui_save_file()
+    def do_browse(self, _, dir):
+        if self.filename.get_text():
+            start = os.path.dirname(self.filename.get_text())
+        else:
+            start = None
+
+        if dir:
+            fn = platform.get_platform().gui_select_dir(start)
+        else:
+            fn = platform.get_platform().gui_save_file(start)
         if fn:
             self.filename.set_text(fn)
 
     def do_changed(self, _):
         self.emit("filename_changed")
 
-    def __init__(self):
+    def __init__(self, find_dir=False):
         gtk.HBox.__init__(self, False, 0)
 
         self.filename = gtk.Entry()
@@ -441,7 +451,7 @@ class FilenameBox(gtk.HBox):
         self.pack_start(browse, 0, 0, 0)
 
         self.filename.connect("changed", self.do_changed)
-        browse.connect("clicked", self.do_browse)
+        browse.connect("clicked", self.do_browse, find_dir)
 
     def set_filename(self, fn):
         self.filename.set_text(fn)
