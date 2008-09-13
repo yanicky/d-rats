@@ -100,7 +100,7 @@ class Session:
         return self.inq.dequeue_all()
 
     def close(self, force=False):
-        print "Got cancel request"
+        print "Got close request"
         if force:
             self.state = self.ST_CLSD
 
@@ -606,11 +606,14 @@ class StatefulSession(Session):
             print "Waiting for last block to be ack'd"
             f.sent_event.wait()
             if f.sent_event.isSet():
+                print "Last block is sent, waiting for ack"
                 f.ackd_event.wait(timeout)
                 if f.ackd_event.isSet():
                     print "ACKED"
                 else:
                     print "Not ACKED"
+            else:
+                print "Block not sent?"
 
 class PipelinedStatefulSession(StatefulSession):
     T_REQACK = 5
