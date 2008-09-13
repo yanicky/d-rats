@@ -76,14 +76,17 @@ class BlockQueue:
         self._lock.release()
 
 class Transporter:
-    def __init__(self, pipe, inhandler=None, compat=False):
+    def __init__(self, pipe, inhandler=None, **kwargs):
         self.inq = BlockQueue()
         self.outq = BlockQueue()
         self.pipe = pipe
         self.inbuf = ""
         self.enabled = True
         self.inhandler = inhandler
-        self.compat = compat
+        self.compat = kwargs.get("compat", False)
+        self.warmup_length = kwargs.get("warmup_length", 8)
+        self.warmup_timeout = kwargs.get("warmup_timeout", 3)
+        self.force_delay = kwargs.get("force_delay", 0)
 
         self.thread = threading.Thread(target=self.worker)
         self.thread.start()
@@ -171,14 +174,29 @@ class Transporter:
             self._parse_gps()
             
     def send_frames(self):
+        delayed = False
+
         while True:
             f = self.outq.dequeue()
             if not f:
                 break
 
-            if time.time() - self.last_xmit > 3:
-                print "Defeating power-save..."
-                self.pipe.write("[SOB]" + ("\x01" * 10) + "[EOB]")
+            if self.force_delay and not delayed:
+                print "Waiting %i sec before transmitting" % self.force_delay
+                time.sleep(self.force_delay)
+                delayed = True
+
+            if time.time() - self.last_xmit > self.warmup_timeout:
+                warmup_f = ddt2.DDT2EncodedFrame()
+                warmup_f.seq = 0
+                warmup_f.session = 0
+                warmup_f.type = 254
+                warmup_f.s_station = "!"
+                warmup_f.d_station = "!"
+                warmup_f.data = ("\x01" * self.warmup_length)
+                warmup_f.set_compress(False)
+                print "Sending warm-up: %s" % warmup_f
+                self.pipe.write(warmup_f.get_packed())
 
             print "Sending block: %s" % f
             self.pipe.write(f.get_packed())
