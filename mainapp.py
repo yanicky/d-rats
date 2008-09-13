@@ -158,7 +158,6 @@ class MainApp:
     def start_comms(self):
         rate = self.config.get("settings", "rate")
         port = self.config.get("settings", "port")
-        cpat = self.config.getboolean("settings", "compatmode")
 
         if ":" in port:
             (_, host, port) = port.split(":")
@@ -172,17 +171,24 @@ class MainApp:
             print "COMM did not connect: %s" % e
             return False
 
+        transport_args = {
+            "compat" : self.config.getboolean("settings", "compatmode"),
+            "warmup_length" : self.config.getint("settings", "warmup_length"),
+            "warmup_timeout" : self.config.getint("settings", "warmup_timeout"),
+            "force_delay" : self.config.getint("settings", "force_delay"),
+            }
+
         callsign = self.config.get("user", "callsign")
         if not self.sm:
             self.sm = sessionmgr.SessionManager(self.comm,
                                                 callsign,
-                                                compat=cpat)
+                                                **transport_args)
             self.chat_session = self.sm.start_session("chat",
                                                       dest="CQCQCQ",
                                                       cls=sessions.ChatSession)
             self.chat_session.register_cb(self.incoming_chat)
         else:
-            self.sm.set_pipe(self.comm, cpat)
+            self.sm.set_comm(self.comm, **transport_args)
             self.sm.set_call(callsign)
 
         return True
