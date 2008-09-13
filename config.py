@@ -436,22 +436,11 @@ class AppConfig:
 
         vbox.pack_start(self.make_sb("autoreceive", self.make_bool()), 0,0,0)
 
-        dlg = gtk.FileChooserDialog("Choose a location",
-                                    None,
-                                    gtk.FILE_CHOOSER_ACTION_SELECT_FOLDER,
-                                    (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
-                                     gtk.STOCK_OPEN, gtk.RESPONSE_OK))
-        fcb = gtk.FileChooserButton(dlg)
-        vbox.pack_start(self.make_sb("download_dir", fcb,
-                                     ), 0,0,0)
+        fb = miscwidgets.FilenameBox(find_dir=True)
+        vbox.pack_start(self.make_sb("download_dir", fb), 0,0,0)
 
-        dlg = gtk.FileChooserDialog("Choose a location",
-                                    None,
-                                    gtk.FILE_CHOOSER_ACTION_SELECT_FOLDER,
-                                    (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
-                                     gtk.STOCK_OPEN, gtk.RESPONSE_OK))
-        fcb = gtk.FileChooserButton(dlg)
-        vbox.pack_start(self.make_sb("mapdir", fcb), 0,0,0)        
+        fb = miscwidgets.FilenameBox(find_dir=True)
+        vbox.pack_start(self.make_sb("mapdir", fb), 0,0,0)        
 
         vbox.pack_start(self.make_sb("ddt_block_size",
                                      self.make_spin(128, 128, 4096, 0)), 0,0,0)
@@ -770,9 +759,9 @@ D-RATS has been started in safe mode, which means the configuration file has not
             
             if load:
                 d = self.config.get(s, k)
-                button.set_current_folder(d)
+                button.set_filename(d)
             else:
-                d = button.get_current_folder()
+                d = button.get_filename()
                 self.config.set(s, k, d)
 
     def sync_fonts(self, list, load):
