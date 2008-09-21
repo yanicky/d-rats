@@ -101,6 +101,7 @@ class AppConfig:
         mset("settings", "warmup_length", "8")
         mset("settings", "warmup_timeout", "3")
         mset("settings", "force_delay", "0")
+        mset("settings", "ping_info", "")
 
         mset("quick", None, None)
 
@@ -162,6 +163,7 @@ class AppConfig:
                 "warmup_length" : "Warm-up length",
                 "warmup_timeout" : "Warm-up timeout",
                 "force_delay" : "Force delay between transmissions",
+                "ping_info" : "Ping Reply",
                 }
 
     id2tip = {"ddt_block_size" : "Size (in KB) of data blocks to send with DDT",
@@ -188,6 +190,7 @@ class AppConfig:
               "warmup_length" : "Number of bytes to send before blocks",
               "warmup_timeout" : "Time between transmissions requiring warmup",
               "force_delay" : "Seconds to wait before starting a new transmission",
+              "ping_info" : "Blank for OS info, A static string, !path for executable, or >path for contents of a file",
               }
 
     xfers = {"DDT" : ddt.DDTTransfer}
@@ -398,6 +401,9 @@ class AppConfig:
 
         vbox.pack_start(self.make_sb("units",
                                      make_choice(units, False)), 0,0,0)
+
+        vbox.pack_start(self.make_sb("ping_info",
+                                     gtk.Entry()), 0,0,0)
 
         vbox.show()
         return vbox
@@ -824,7 +830,8 @@ D-RATS has been started in safe mode, which means the configuration file has not
                   ("user", "latitude"),
                   ("user", "longitude"),
                   ("settings", "aprssymtab"),
-                  ("settings", "aprssymbol")]
+                  ("settings", "aprssymbol"),
+                  ("settings", "ping_info")]
 
         bool_v = [("prefs", "autoreceive"),
                   ("prefs", "dosignon"),

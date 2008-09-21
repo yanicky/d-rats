@@ -40,6 +40,17 @@ class ChatSession(sessionmgr.StatelessSession):
 
     compress = False
 
+    def __init__(self, *args, **kwargs):
+        sessionmgr.StatelessSession.__init__(self, *args, **kwargs)
+
+        self.set_ping_function()
+
+    def set_ping_function(self, func=None):
+        if func is not None:
+            self.pingfn = func
+        else:
+            self.pingfn = self.ping_data
+
     def ping_data(self):
         p = platform.get_platform()
         return "Running D-RATS %s (%s)" % (mainapp.DRATS_VERSION,
@@ -66,7 +77,17 @@ class ChatSession(sessionmgr.StatelessSession):
 
             frame.d_station = frame.s_station
             frame.type = self.T_PNG_RSP
-            frame.data = self.ping_data()
+
+            try:
+                frame.data = self.pingfn()
+            except Exception, e:
+                args = { "From" : "ERROR",
+                         "To"   : "CQCQCQ",
+                         "Msg"  : "Ping function failed (%s)" % e
+                         }
+                self.__cb(self.__cb_data, args)
+                return
+
             self._sm.outgoing(self, frame)
 
 

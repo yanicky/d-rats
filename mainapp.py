@@ -22,6 +22,7 @@ import re
 from threading import Thread, Lock
 from select import select
 import socket
+from commands import getstatusoutput
 
 import serial
 import gtk
@@ -45,6 +46,26 @@ LOGTF = "%m-%d-%Y_%H:%M:%S"
 MAINAPP = None
 
 gobject.threads_init()
+
+def ping_file(filename):
+    try:
+        f = file(filename, "r")
+    except IOError, e:
+        raise Exception("Unable to open file %s: %s" % (filename, e))
+        return None
+
+    data = f.read()
+    f.close()
+
+    return data
+
+def ping_exec(command):
+    s, o = getstatusoutput(command)
+    if s:
+        raise Exception("Failed to run command: %s" % command)
+        return None
+
+    return o    
 
 class CallList:
     def __init__(self):
@@ -190,6 +211,21 @@ class MainApp:
         else:
             self.sm.set_comm(self.comm, **transport_args)
             self.sm.set_call(callsign)
+
+        pingdata = self.config.get("settings", "ping_info")
+        if pingdata.startswith("!"):
+            def pingfn():
+                return ping_exec(pingdata[1:])
+        elif pingdata.startswith(">"):
+            def pingfn():
+                return ping_file(pingdata[1:])
+        elif pingdata:
+            def pingfn():
+                return pingdata
+        else:
+            pingfn = None
+
+        self.chat_session.set_ping_function(pingfn)
 
         return True
 
