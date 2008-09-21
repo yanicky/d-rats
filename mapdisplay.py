@@ -459,10 +459,11 @@ class MapWidget(gtk.DrawingArea):
         self.window.draw_layout(gc, x-pixels, y-shift, pl)        
 
 class MapWindow(gtk.Window):
-    def zoom(self, widget, data=None):
+    def zoom(self, widget, frame):
         adj = widget.get_adjustment()
 
         self.map.set_zoom(int(adj.value))
+        frame.set_label("Zoom (%i)" % int(adj.value))
 
     def make_zoom_controls(self):
         box = gtk.HBox(False, 3)
@@ -479,7 +480,6 @@ class MapWindow(gtk.Window):
                              step_incr=1,
                              page_incr=1)
         sb = gtk.HScrollbar(adj)
-        sb.connect("value-changed", self.zoom)
         sb.show()
         box.pack_start(sb, 1,1,1)
 
@@ -492,6 +492,8 @@ class MapWindow(gtk.Window):
         frame.set_size_request(150, 50)
         frame.show()
         frame.add(box)
+
+        sb.connect("value-changed", self.zoom, frame)
 
         return frame
 
