@@ -5,6 +5,8 @@ import gobject
 import threading
 import time
 
+from geopy import distance
+
 try:
     import mapdisplay
     import miscwidgets
@@ -12,7 +14,27 @@ except ImportError:
     from d_rats import mapdisplay
     from d_rats import miscwidgets
 
+ZOOM_MIN = 10
+ZOOM_MAX = 15
+
+ZOOMS = {}
+for x in range(ZOOM_MIN, ZOOM_MAX+1):
+    t = mapdisplay.MapTile(1, 1, x)
+    x1, y1, x2, _ = t.tile_edges()
+    dist = distance.distance((x1, y1), (x2, y1)).miles * 5
+    ZOOMS["%.1f (max zoom %i)" % (dist, x)] = x
+
 class MapDownloader(gtk.Window):
+    def make_info(self):
+        text = """
+This is the D-RATS map download utility.  It will attempt to fetch all of the required tiles for a given center location and desired diameter. The diameter is determined by the zoom level limit.  All zoom levels below the one selected are fetched.  D-RATS defaults to zoom level 14, so it is recommended that you choose at least that level to fetch.  This operation fetches a lot of small files and can take quite a long time."""
+
+        l = gtk.Label(text)
+        l.set_line_wrap(True)
+        l.show()
+
+        return l
+
     def make_val(self, key, label):
         box = gtk.HBox(True, 2)
 
@@ -31,22 +53,32 @@ class MapDownloader(gtk.Window):
 
         return box
 
-    def make_zoom(self, key, label, min, max, default):
+    def make_zoom(self, key, label):
+        min = 10
+        max = ZOOM_MAX
+        default = 14
+
         box = gtk.HBox(True, 2)
 
         l = gtk.Label(label)
         l.show()
 
-        a = gtk.Adjustment(default, min, max, 1, 1)
-        e = gtk.SpinButton(a, digits=0)
-        e.show()
+        def byval(x, y):
+            try:
+                return int(float(x.split(" ")[0]) - float(y.split(" ")[0]))
+            except Exception, e:
+                return 0
+
+        choices = sorted(ZOOMS.keys(), cmp=byval)
+        c = miscwidgets.make_choice(choices, False, choices[2])
+        c.show()
 
         box.pack_start(l)
-        box.pack_start(e)
+        box.pack_start(c)
 
         box.show()
 
-        self.vals[key] = e
+        self.vals[key] = c
 
         return box
 
@@ -55,19 +87,14 @@ class MapDownloader(gtk.Window):
 
         box = gtk.VBox(True, 2)
 
-        self.val_keys = { "lat_max" : "Upper Latitude",
-                          "lat_min" : "Lower Latitude",
-                          "lon_max" : "Max Longitude",
-                          "lon_min" : "Min Longitude",
-                          "zoom_max" : ("Zoom Upper Limit", 10, 15, 15),
-                          "zoom_min" : ("Zoom Lower Limit", 10, 15, 13),
+        self.val_keys = { "lat" : "Latitude",
+                          "lon" : "Longitude",
+                          "zoom" : "Diameter",
                           }
 
-        for key in sorted(self.val_keys.keys()):
-            if "zoom" in key:
-                box.pack_start(self.make_zoom(key, *self.val_keys[key]), 0,0,0)
-            else:
-                box.pack_start(self.make_val(key, self.val_keys[key]), 0,0,0)
+        for i in ["lat", "lon"]:
+            box.pack_start(self.make_val(i, self.val_keys[i]), 0,0,0)
+        box.pack_start(self.make_zoom("zoom", "Diameter (miles)"), 0,0,0)
 
         box.show()
 
@@ -89,53 +116,63 @@ class MapDownloader(gtk.Window):
     def update(self, prog, status):
         gobject.idle_add(self._update, prog, status)
 
-    def download_zoom(self, zoom, **vals):
-        lat = vals["lat_min"]
-        lon = vals["lon_min"]
+    def download_zoom(self, tick, zoom, x, y):
+        if zoom == ZOOM_MAX + 1:
+            return
 
-        tile = mapdisplay.MapTile(lat, lon, zoom)
-        
-        _tile = tile
+        nw = (2 * x, 2 * y)
+        sw = (2 * x, (2 * y) + 1)
+        ne = ((2 * x) + 1, 2 * y)
+        se = ((2 * x) + 1, (2 * y) + 1)
 
-        y = 0
-        while _tile.lat < vals["lat_max"] and self.enabled:
-            x = 0
-            _tile = tile
-            while _tile.lon < vals["lon_max"] and self.enabled:
-                print "Delta: %i,%i" % (x,y)
-                
-                _tile = tile + (x,y)
+        for i in (nw, sw, ne, se):
+            if self.enabled:
+                self.download_zoom(tick, zoom + 1, *i)
 
-                pct = ((_tile.lat - tile.lat) / (vals["lat_max"] - tile.lat))
-                print "Percent: %f" % pct
-                print "%.2f %.2f  -  %.2f %.2f" % (tile.lat,
-                                                   tile.lon,
-                                                   _tile.lat,
-                                                   _tile.lon)
-
-                if not _tile.is_local():
-                    self.update(pct,
-                                "Fetching %.2f,%.2f at %i zoom" % \
-                                    (_tile.lat, _tile.lon, zoom))
-                    _tile.fetch()
-                x += 1
-
-            y -= 1
+        print "Downloading %i:%i,%i" % (zoom, x, y)
+        t = mapdisplay.MapTile(0, 0, zoom)
+        t.x = x
+        t.y = y
+        t.fetch()
+        tick()
 
     def download_thread(self, **vals):
-        print "Download thread: %s" % str(vals)
         self.complete = False
         self.enabled = True
 
-        zooms = range(int(vals["zoom_min"]), int(vals["zoom_max"]) + 1)
+        zoom = vals["zoom"]
+        lat = vals["lat"]
+        lon = vals["lon"]
 
-        print "Zooms: %s" % zooms
+        center = mapdisplay.MapTile(lat, lon, zoom)
 
-        for zoom in zooms:
-            print "Zoom: %i" % zoom
-            self.download_zoom(zoom, **vals)
+        self.count = 0
+        
+        # The number of tiles $levels below zoom is 4^($levels)
+        # Each zoom level has a tile as well, so there are
+        # 4^$level under each zoom level, not counting the last
+
+        depth = pow(4, ZOOM_MAX - zoom)
+        extra = 0
+        for i in range(0, ZOOM_MAX - zoom):
+            extra += pow(4, i)
+        self.max = (depth + extra) * 25
+
+        def status_tick():
+            self.count += 1
+            percent = (float(self.count) / self.max)
+            self.update(percent, "Downloading (%.0f %%)" % (percent * 100.0))
+
+        for i in range(-2, 3):
             if not self.enabled:
                 break
+
+            for j in range(-2, 3):
+                if not self.enabled:
+                    break
+
+                tile = center + (i, j)
+                self.download_zoom(status_tick, zoom, tile.x, tile.y)
 
         if self.enabled:
             self.update(1.0, "Complete")
@@ -164,24 +201,15 @@ class MapDownloader(gtk.Window):
         for k,e in self.vals.items():
             try:
                 if "zoom" in k:
-                    vals[k] = int(e.get_adjustment().get_value())
+                    dia = e.get_active_text()
+                    vals[k] = ZOOMS[dia]
                 else:
                     vals[k] = e.value()
             except ValueError, e:
                 self.show_field_error(self.val_keys[k])
                 return
 
-        if vals["lat_min"] >= vals["lat_max"]:
-            self.show_range_error("latitude")
-            return
-
-        if vals["lon_min"] >= vals["lon_max"]:
-            self.show_range_error("longitude")
-            return
-
-        if vals["zoom_min"] > vals["zoom_max"]:
-            self.show_range_error("zoom")
-            return
+        print "Zoom is %i" % vals["zoom"]
 
         self.start_button.set_sensitive(False)
         self.stop_button.set_sensitive(True)
@@ -244,6 +272,7 @@ class MapDownloader(gtk.Window):
     def build_gui(self):
         box = gtk.VBox(False, 2)
 
+        box.pack_start(self.make_info())
         box.pack_start(self.build_bounds())
         box.pack_start(self.build_controls())
 
