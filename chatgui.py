@@ -710,7 +710,8 @@ class MainChatGUI(ChatGUI):
             self.map.show()
         elif action == "ping":
             s = prompt_for_station(self.window)
-            self.mainapp.chat_session.ping_station(s)
+            if s:
+                self.mainapp.chat_session.ping_station(s)
         elif action == "isend":
             f = image.send_image()
             if f:
