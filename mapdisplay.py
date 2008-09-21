@@ -414,7 +414,7 @@ class MapWidget(gtk.DrawingArea):
         return (self.lat, self.lon)
 
     def set_zoom(self, zoom):
-        if zoom > 15 or zoom == 1:
+        if zoom > 17 or zoom == 1:
             return
 
         self.zoom = zoom
@@ -475,7 +475,7 @@ class MapWindow(gtk.Window):
 
         adj = gtk.Adjustment(value=14,
                              lower=2,
-                             upper=15,
+                             upper=17,
                              step_incr=1,
                              page_incr=1)
         sb = gtk.HScrollbar(adj)
