@@ -182,8 +182,8 @@ class MapTile:
         if BASE_DIR:
             self.dir = BASE_DIR
         else:
-            platform = platform.get_platform()
-            self.dir = os.path.join(platform.config_dir(), "maps")
+            p = platform.get_platform()
+            self.dir = os.path.join(p.config_dir(), "maps")
 
         if not os.path.isdir(self.dir):
             os.mkdir(self.dir)
