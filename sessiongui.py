@@ -21,11 +21,13 @@ import threading
 import os
 import time
 import socket
+import smtplib
 
 import mainapp
 import miscwidgets
 import sessionmgr
 import sessions
+import formgui
 
 from utils import run_safe
 
@@ -137,6 +139,41 @@ class FileSendThread(FileBaseThread):
 class FormRecvThread(FileBaseThread):
     progress_key = "recv_size"
 
+    def _send_email(self, send, recp, subj, mesg, srvr):
+        mail = "From: %s\r\nTo: %s\r\nSubject: %s\r\n\r\n%s\r\n" % (send,
+                                                                    recp,
+                                                                    subj,
+                                                                    mesg)
+
+        mailer = smtplib.SMTP(srvr)
+        mailer.set_debuglevel(1)
+        mailer.sendmail(send, recp, mail)
+        mailer.quit()
+
+    def send_email(self, form):
+        send = form.get_field_value("_auto_sender")
+        recp = form.get_field_value("recipient")
+        subj = form.get_field_value("subject")
+        mesg = form.get_field_value("message")
+
+        send = '"%s" <%s>' % (send, "donotreply@danplanet.com")
+
+        server = self.gui.mainapp.config.get("settings", "smtp_server")
+        if server:
+            gui_display(self.gui.chatgui,
+                        "Sending '%s' from '%s' to '%s'..." % (subj,
+                                                               send,
+                                                               recp))
+            try:
+                self._send_email(send, recp, subj, mesg, server)
+                gui_display(self.gui.chatgui, "Mail sent");
+            except Exception, e:
+                gui_display(self.gui.chatgui,
+                            "Error sending mail: %s" % e)
+        else:
+            gui_display(self.gui.chatgui,
+                        "Not sending email: No SMTP server configured")
+
     def worker(self, path):
         fm = self.gui.chatgui.adv_controls["forms"]
         newfn = time.strftime(os.path.join(fm.form_store_dir,
@@ -159,6 +196,11 @@ class FormRecvThread(FileBaseThread):
 
             print "Registering form %s" % fn
             self.completed("form")
+
+            form = formgui.FormFile(None, fn)
+            if form.id == "email":
+                print "Received email form"
+                self.send_email(form)
 
         else:
             self.failed()
