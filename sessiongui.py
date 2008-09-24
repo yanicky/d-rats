@@ -139,15 +139,25 @@ class FileSendThread(FileBaseThread):
 class FormRecvThread(FileBaseThread):
     progress_key = "recv_size"
 
-    def _send_email(self, send, recp, subj, mesg, srvr):
-        mail = "From: %s\r\nTo: %s\r\nSubject: %s\r\n\r\n%s\r\n" % (send,
-                                                                    recp,
-                                                                    subj,
-                                                                    mesg)
+    def _send_email(self, send, recp, subj, mesg, config):
+        server = config.get("settings", "smtp_server")
+        replyto = config.get("settings", "smtp_replyto")
+        if not replyto:
+            replyto = "DO_NOT_REPLY@danplanet.com"
 
-        mailer = smtplib.SMTP(srvr)
+        if '"' in send:
+            send = send.remove('"')
+
+        mail = \
+            "From: %s\r\n" % send + \
+            "To: %s\r\n" % recp + \
+            "Reply-To: \"%s\" <%s>\r\n" % (send, replyto) + \
+            "Subject: %s\r\n" % subj +\
+            "\r\n%s\r\n" % mesg
+
+        mailer = smtplib.SMTP(server)
         mailer.set_debuglevel(1)
-        mailer.sendmail(send, recp, mail)
+        mailer.sendmail(replyto, recp, mail)
         mailer.quit()
 
     def send_email(self, form):
@@ -156,16 +166,17 @@ class FormRecvThread(FileBaseThread):
         subj = form.get_field_value("subject")
         mesg = form.get_field_value("message")
 
-        send = '"%s" <%s>' % (send, "donotreply@danplanet.com")
-
-        server = self.gui.mainapp.config.get("settings", "smtp_server")
-        if server:
+        if self.gui.mainapp.config.get("settings", "smtp_server"):
             gui_display(self.gui.chatgui,
                         "Sending '%s' from '%s' to '%s'..." % (subj,
                                                                send,
                                                                recp))
             try:
-                self._send_email(send, recp, subj, mesg, server)
+                self._send_email(send,
+                                 recp,
+                                 subj,
+                                 mesg,
+                                 self.gui.mainapp.config)
                 gui_display(self.gui.chatgui, "Mail sent");
             except Exception, e:
                 gui_display(self.gui.chatgui,
