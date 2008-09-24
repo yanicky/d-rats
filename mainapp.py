@@ -40,7 +40,7 @@ import sessions
 from utils import hexprint,filter_to_ascii
 import qst
 
-DRATS_VERSION = "0.2.6"
+DRATS_VERSION = "0.2.7"
 LOGTF = "%m-%d-%Y_%H:%M:%S"
 
 MAINAPP = None
