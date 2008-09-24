@@ -212,7 +212,7 @@ class MapWidget(gtk.DrawingArea):
         self.window.draw_pixbuf(gc,
                                 pb,
                                 0, 0,
-                                x, y)
+                                int(x), int(y))
 
         return pb.get_height()
 
@@ -322,6 +322,10 @@ class MapWidget(gtk.DrawingArea):
 
         count = 0
         total = self.width * self.height
+
+        if not self.window:
+            # Window is not loaded, thus can't load tiles
+            return
 
         try:
             self.pixmap = gtk.gdk.Pixmap(self.window,
