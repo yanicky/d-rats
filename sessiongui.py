@@ -195,6 +195,11 @@ class FormRecvThread(FileBaseThread):
                                self.session.get_station())
 
         if fn == newfn:
+            form = formgui.FormFile(None, fn)
+            if form.id == "email":
+                print "Received email form"
+                self.send_email(form)
+
             fm.reg_form(name,
                         fn,
                         "Never",
@@ -207,11 +212,6 @@ class FormRecvThread(FileBaseThread):
 
             print "Registering form %s" % fn
             self.completed("form")
-
-            form = formgui.FormFile(None, fn)
-            if form.id == "email":
-                print "Received email form"
-                self.send_email(form)
 
         else:
             self.failed()
