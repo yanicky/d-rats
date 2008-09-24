@@ -305,6 +305,7 @@ class MainApp:
                         pass
 
                 sys.stdout = Blackhole()
+                sys.stderr = Blackhole()
                 del Blackhole
 
         except Exception, e:
