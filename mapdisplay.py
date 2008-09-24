@@ -199,6 +199,8 @@ class MapWidget(gtk.DrawingArea):
         else:
             size = ''
 
+            text = utils.filter_to_ascii(text)
+
         pl = self.create_pango_layout("")
         markup = '<span %s background="%s">%s</span>' % (size, color, text)
         pl.set_markup(markup)
