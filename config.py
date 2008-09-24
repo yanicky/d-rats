@@ -103,6 +103,7 @@ class AppConfig:
         mset("settings", "force_delay", "0")
         mset("settings", "ping_info", "")
         mset("settings", "smtp_server", "")
+        mset("settings", "smtp_replyto", "")
 
         mset("quick", None, None)
 
@@ -166,6 +167,7 @@ class AppConfig:
                 "force_delay" : "Force delay between transmissions",
                 "ping_info" : "Ping Reply",
                 "smtp_server" : "SMTP Server",
+                "smtp_replyto" : "Force SMTP Reply-To",
                 }
 
     id2tip = {"ddt_block_size" : "Size (in KB) of data blocks to send with DDT",
@@ -193,7 +195,8 @@ class AppConfig:
               "warmup_timeout" : "Time between transmissions requiring warmup",
               "force_delay" : "Seconds to wait before starting a new transmission",
               "ping_info" : "Blank for OS info, A static string, !path for executable, or >path for contents of a file",
-              "smtp_server" : "SMTP server for form-to-mail relay",
+              "smtp_server" : "SMTP server for form-to-mail relay (leave blank to disable)",
+              "smtp_replyto" : "Set the email Reply-To header for emailed forms",
               }
 
     xfers = {"DDT" : ddt.DDTTransfer}
@@ -585,6 +588,8 @@ class AppConfig:
 
         topvbox.pack_start(self.make_sb("smtp_server",
                                         gtk.Entry()), 0,0,0)
+        topvbox.pack_start(self.make_sb("smtp_replyto",
+                                        gtk.Entry()), 0,0,0)
 
         topvbox.pack_start(self.make_sb("sockflush",
                                         self.make_spin(0.2, 0, 30)), 0,0,0)
@@ -838,7 +843,8 @@ D-RATS has been started in safe mode, which means the configuration file has not
                   ("settings", "aprssymtab"),
                   ("settings", "aprssymbol"),
                   ("settings", "ping_info"),
-                  ("settings", "smtp_server")]
+                  ("settings", "smtp_server"),
+                  ("settings", "smtp_replyto")]
 
         bool_v = [("prefs", "autoreceive"),
                   ("prefs", "dosignon"),
