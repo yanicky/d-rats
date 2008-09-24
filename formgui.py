@@ -249,6 +249,9 @@ class MultilineWidget(FieldWidget):
         return self.buffer.get_text(self.buffer.get_start_iter(),
                                     self.buffer.get_end_iter())
 
+    def set_value(self, value):
+        self.buffer.set_text(value)
+
 class DateWidget(FieldWidget):
     def __init__(self, node):
         FieldWidget.__init__(self, node)
