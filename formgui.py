@@ -619,15 +619,18 @@ class FormFile(Form):
 
         Form.__init__(self, title, data, buttons=buttons, parent=parent)
 
+    def save_to(self, filename):
+        f = file(filename, "w")
+        print >>f, self.get_xml()
+        f.close()
+        
     def run_auto(self, save_file=None):
         if not save_file:
             save_file = self._filename
 
         r = Form.run(self)
         if r == gtk.RESPONSE_OK:
-            f = file(save_file, "w")
-            print >>f, self.get_xml()
-            f.close()
+            self.save_to(save_file)
 
         return r
 
