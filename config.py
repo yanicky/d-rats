@@ -407,9 +407,6 @@ class AppConfig:
 
         vbox.pack_start(self.make_sb("ping_info",
                                      gtk.Entry()), 0,0,0)
-        vbox.pack_start(self.make_sb("smtp_server",
-                                     gtk.Entry()), 0,0,0)
-
         vbox.show()
         return vbox
 
@@ -476,8 +473,6 @@ class AppConfig:
                                      gtk.Entry(1)), 0,0,0)
         vbox.pack_start(self.make_sb("compatmode",
                                      self.make_bool()), 0,0,0)
-        vbox.pack_start(self.make_sb("sockflush",
-                                     self.make_spin(0.2, 0, 30)), 0,0,0)
         vbox.pack_start(self.make_sb("pipelinexfers",
                                      self.make_bool()), 0,0,0)
         vbox.pack_start(self.make_sb("warmup_length",
@@ -585,8 +580,14 @@ class AppConfig:
     def remove_current(self, button, listw):
         listw.remove_selected()
 
-    def build_ports(self):
+    def build_network(self):
         topvbox = gtk.VBox(False, 2)
+
+        topvbox.pack_start(self.make_sb("smtp_server",
+                                        gtk.Entry()), 0,0,0)
+
+        topvbox.pack_start(self.make_sb("sockflush",
+                                        self.make_spin(0.2, 0, 30)), 0,0,0)
 
         oframe = gtk.Frame("Outgoing")
 
@@ -682,7 +683,7 @@ class AppConfig:
         #nb.append_page(self.build_ddt(), gtk.Label("DDT"))
         self.build_ddt() # Disabled for now
         nb.append_page(self.build_callsigns(), gtk.Label("Callsigns"))
-        nb.append_page(self.build_ports(), gtk.Label("Ports"))
+        nb.append_page(self.build_network(), gtk.Label("Network"))
 
         nb.show()
 
