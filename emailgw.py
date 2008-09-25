@@ -108,10 +108,11 @@ class MailThread(threading.Thread):
         self.message("Thread starting")
 
         while self.enabled:
+            mails = []
             try:
                 mails = self.fetch_mails()
             except Exception, e:
-                self.message("Failed to retrieve messages")
+                self.message("Failed to retrieve messages: %s" % e)
             for mail in mails:
                 self.create_form_from_mail(mail)
 
