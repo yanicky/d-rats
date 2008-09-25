@@ -397,6 +397,10 @@ class MainApp:
             print "Stopping GPS..."
             self.gps.stop()
 
+        for i in self.mail_threads:
+            i.stop()
+            i.join()
+
         print "Done.  Exit."
 
 def get_mainapp():
