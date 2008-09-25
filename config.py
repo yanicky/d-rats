@@ -104,6 +104,9 @@ class AppConfig:
         mset("settings", "ping_info", "")
         mset("settings", "smtp_server", "")
         mset("settings", "smtp_replyto", "")
+        mset("settings", "pop3_server", "")
+        mset("settings", "pop3_username", "")
+        mset("settings", "pop3_password", "")
 
         mset("quick", None, None)
 
@@ -168,6 +171,9 @@ class AppConfig:
                 "ping_info" : "Ping Reply",
                 "smtp_server" : "SMTP Server",
                 "smtp_replyto" : "Force SMTP Reply-To",
+                "pop3_server" : "POP3 Server",
+                "pop3_username" : "POP3 Username",
+                "pop3_password" : "POP3 Password",
                 }
 
     id2tip = {"ddt_block_size" : "Size (in KB) of data blocks to send with DDT",
@@ -197,6 +203,9 @@ class AppConfig:
               "ping_info" : "Blank for OS info, A static string, !path for executable, or >path for contents of a file",
               "smtp_server" : "SMTP server for form-to-mail relay (leave blank to disable)",
               "smtp_replyto" : "Set the email Reply-To header for emailed forms",
+              "pop3_server" : "Server to pull mails from for email-to-form",
+              "pop3_username" : "Username for POP3 server",
+              "pop3_password" : "Password for POP3 server",
               }
 
     xfers = {"DDT" : ddt.DDTTransfer}
@@ -590,6 +599,12 @@ class AppConfig:
                                         gtk.Entry()), 0,0,0)
         topvbox.pack_start(self.make_sb("smtp_replyto",
                                         gtk.Entry()), 0,0,0)
+        topvbox.pack_start(self.make_sb("pop3_server",
+                                        gtk.Entry()), 0,0,0)
+        topvbox.pack_start(self.make_sb("pop3_username",
+                                        gtk.Entry()), 0,0,0)
+        topvbox.pack_start(self.make_sb("pop3_password",
+                                        gtk.Entry()), 0,0,0)
 
         topvbox.pack_start(self.make_sb("sockflush",
                                         self.make_spin(0.2, 0, 30)), 0,0,0)
@@ -844,7 +859,10 @@ D-RATS has been started in safe mode, which means the configuration file has not
                   ("settings", "aprssymbol"),
                   ("settings", "ping_info"),
                   ("settings", "smtp_server"),
-                  ("settings", "smtp_replyto")]
+                  ("settings", "smtp_replyto"),
+                  ("settings", "pop3_server"),
+                  ("settings", "pop3_username"),
+                  ("settings", "pop3_password")]
 
         bool_v = [("prefs", "autoreceive"),
                   ("prefs", "dosignon"),
