@@ -36,6 +36,7 @@ import mapdisplay
 import comm
 import sessionmgr
 import sessions
+import emailgw
 
 from utils import hexprint,filter_to_ascii
 import qst
@@ -269,6 +270,17 @@ class MainApp:
 
             self.gps = self._static_gps()
 
+    def refresh_mail_threads(self):
+        for i in self.mail_threads:
+            i.stop()
+            i.join()
+
+        if self.config.get("settings", "pop3_server"):
+            t = emailgw.MailThread(self.config,
+                                   self.chatgui.adv_controls["forms"])
+            t.start()
+            self.mail_threads.append(t)
+
     def refresh_config(self):
         rate = self.config.getint("settings", "rate")
         port = self.config.get("settings", "port")
@@ -290,6 +302,7 @@ class MainApp:
         self.refresh_qsts()
         self.refresh_gps()
         self.chatgui.refresh_config()
+        self.refresh_mail_threads()
 
     def maybe_redirect_stdout(self):
         try:
@@ -334,6 +347,7 @@ class MainApp:
         self.qsts = []
         self.seen_callsigns = CallList()
         self.position = None
+        self.mail_threads = []
 
         # REMOVE ME in 0.1.13
         self.TEMP_migrate_config()
