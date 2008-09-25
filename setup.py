@@ -20,7 +20,7 @@ except ImportError:
 
 opts = {
     "py2exe" : {
-        "includes" : "pango,atk,gobject,cairo,pangocairo,win32gui,win32com,win32com.shell",
+        "includes" : "pango,atk,gobject,cairo,pangocairo,win32gui,win32com,win32com.shell,email.iterators",
         "compressed" : 1,
         "optimize" : 2,
         "bundle_files" : 3,
