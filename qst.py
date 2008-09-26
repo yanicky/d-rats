@@ -102,7 +102,11 @@ class QSTText:
             return False
 
         if self.remaining() == 0:
-            self.fire()
+            if self.gui.menu_ag.get_action("enableqst").get_active():
+                self.fire()
+            else:
+                print "Not firing because QSTs are disabled"
+
             self.reschedule()
 
         return True

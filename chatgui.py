@@ -734,6 +734,7 @@ class MainChatGUI(ChatGUI):
               <menuitem action='quickmsg'/>
               <menuitem action='manageform'/>
               <separator/>
+              <menuitem action='enableqst'/>
               <menuitem action='connect'/>
               <menuitem action='quit'/>
             </menu>
@@ -789,6 +790,9 @@ class MainChatGUI(ChatGUI):
         connected.set_active(True)
         connected.connect("toggled", self.connect, None)
 
+        enableqst = gtk.ToggleAction("enableqst", "QSTs Enabled", None, None)
+        enableqst.set_active(True)
+
         isend = gtk.Action("isend", "Send _Image", None, None)
         isend.set_sensitive(image.has_image_support())
         isend.connect("activate", self.menu_handler)
@@ -799,6 +803,7 @@ class MainChatGUI(ChatGUI):
         self.menu_ag.add_actions(actions)
         self.menu_ag.add_action_with_accel(advanced, "<Control>a")
         self.menu_ag.add_action_with_accel(connected, "<Control>d")
+        self.menu_ag.add_action(enableqst)
         self.menu_ag.add_action(isend)
 
         uim.insert_action_group(self.menu_ag, 0)
