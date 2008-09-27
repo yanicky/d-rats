@@ -303,7 +303,6 @@ class FormBuilderGUI(gtk.Dialog):
                                                      self.col_inst)
 
         val = xml_escape(val)
-
         print "\n\nField type: %s" % type
         cap_xml = "<caption>%s</caption>" % cap
         if type != "choice" and val:
@@ -341,8 +340,11 @@ class FormBuilderGUI(gtk.Dialog):
     def get_form_xml(self):
         id = self.props["ID"].get_text()
         title = self.props["Title"].get_text()
+        logo = self.props["Logo"].get_text()
 
         self.xml = "<xml>\n<form id='%s'>\n<title>%s</title>\n" % (id,title)
+        if logo:
+            self.xml += "<logo>%s</logo>" % logo
         self.store.foreach(self.make_field_xml, None)
         self.xml += "</form>\n</xml>\n"
         
@@ -392,7 +394,7 @@ class FormBuilderGUI(gtk.Dialog):
         frame = gtk.Frame("Form Properties")
 
         box = gtk.VBox(False, 2)
-        for i in ["Title", "ID"]:
+        for i in ["Title", "ID", "Logo"]:
             f = self.make_field(i)
             box.pack_start(f, 0,0,0)
             f.show()
@@ -443,6 +445,7 @@ class FormBuilderGUI(gtk.Dialog):
         form = FormFile("", filename)
         self.props["ID"].set_text(form.id)
         self.props["Title"].set_text(form.title_text)
+        self.props["Logo"].set_text(form.logo_path or "")
 
         for f in form.fields:
             w = f.entry

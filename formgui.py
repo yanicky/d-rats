@@ -496,6 +496,15 @@ class Form(gtk.Dialog):
         tlabel.set_markup("<big><b>%s</b></big>" % self.title_text)
         tlabel.show()
 
+        if self.logo_path:
+            image = gtk.Image()
+            try:
+                image.set_from_file(self.logo_path)
+                self.vbox.pack_start(image, 0,0,0)
+                image.show()
+            except Exception, e:
+                print "Unable to load or display logo %s: %s" % (self.logo_path,
+                                                                 e)
         self.vbox.pack_start(tlabel, 0,0,0)
 
         field_box = gtk.VBox(False, 2)
@@ -507,6 +516,7 @@ class Form(gtk.Dialog):
         field_box.show()
         sw.show()
         self.vbox.pack_start(sw, 1,1,1)
+
 
         msg_field = None
         chk_field = None
@@ -563,6 +573,15 @@ class Form(gtk.Dialog):
         title = titles[0]
 
         self.title_text = title.children.getContent().strip()
+
+        logos = ctx.xpathEval("//form/logo")
+        if len(logos) > 1:
+            raise Exception("%i logos in document" % len(logos))
+        elif len(logos) == 1:
+            logo = logos[0]
+            self.logo_path = logo.children.getContent().strip()
+        else:
+            self.logo_path = None
 
     def get_xml(self):
         for f in self.fields:
