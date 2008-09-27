@@ -17,7 +17,7 @@ cp -rav d_rats $DST
 cp -av *.py ${DST}/d_rats
 mv ${DST}/d_rats/setup.py ${DST}
 
-cp -rav --parents forms/*.x[ms]l COPYING images d-rats ${DST}
+cp -rav --parents forms/*.x[ms]l geopy locale COPYING images d-rats ${DST}
 
 (cd $TMP && tar czf - $RELDIR) > ${RELDIR}.tar.gz
 
