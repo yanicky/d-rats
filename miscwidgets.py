@@ -16,6 +16,7 @@
 
 import gtk
 import gobject
+import pango
 
 import os
 
@@ -26,6 +27,9 @@ class ListWidget(gtk.HBox):
         "click-on-list" : (gobject.SIGNAL_RUN_LAST,
                            gobject.TYPE_NONE,
                            (gtk.TreeView, gtk.gdk.Event)),
+        "item-toggled" : (gobject.SIGNAL_RUN_LAST,
+                          gobject.TYPE_NONE,
+                          (gobject.TYPE_PYOBJECT,)),
         }
 
     store_type = gtk.ListStore
@@ -40,17 +44,22 @@ class ListWidget(gtk.HBox):
         vals = tuple(self._store.get(iter, *tuple(range(self._ncols))))
         for cb in self.toggle_cb:
             cb(*vals)
+        self.emit("item-toggled", vals)
 
     def make_view(self, columns):
         self._view = gtk.TreeView(self._store)
 
         for _type, _col in columns:
+            if _col.startswith("__"):
+                continue
+
             index = columns.index((_type, _col))
             if _type == gobject.TYPE_STRING or \
                     _type == gobject.TYPE_INT or \
                     _type == gobject.TYPE_FLOAT:
                 rend = gtk.CellRendererText()
                 column = gtk.TreeViewColumn(_col, rend, text=index)
+                rend.set_property("ellipsize", pango.ELLIPSIZE_END)
             elif _type == gobject.TYPE_BOOLEAN:
                 rend = gtk.CellRendererToggle()
                 rend.connect("toggled", self._toggle, index)
