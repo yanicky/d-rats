@@ -30,7 +30,7 @@ import ConfigParser
 import ddt
 
 from xfergui import FileTransferGUI, FormTransferGUI
-from qst import QSTGUI, QuickMsgGUI, QSTGPS, QSTGPSA
+from qst import QSTGUI, QuickMsgGUI, QSTGPS, QSTGPSA, QSTGUI2
 from inputdialog import TextInputDialog, ChoiceDialog, ExceptionDialog, EditableChoiceDialog
 from miscwidgets import YesNoDialog
 from utils import filter_to_ascii
@@ -676,8 +676,10 @@ class MainChatGUI(ChatGUI):
         elif action == "config":
             self.config.show(self.window)
         elif action == "qsts":
-            qsts = QSTGUI(self.config, self)
-            qsts.show()
+            qsts = QSTGUI2(self.config.config)
+            qsts.run()
+            qsts.destroy()
+            self.config.refresh_app()
         elif action == "clear":
             self.filter_clear_current()
         elif action == "quickmsg":

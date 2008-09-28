@@ -23,7 +23,8 @@ import datetime
 import copy
 
 from commands import getstatusoutput as run
-from miscwidgets import make_choice
+from miscwidgets import make_choice, ListWidget
+import miscwidgets
 import mainapp
 import platform
 import inputdialog
@@ -656,6 +657,338 @@ class QuickMsgGUI(SelectGUI):
             self.list_store.foreach(self.save_msg, None)
             self.config.save()
             self.config.refresh_app()        
+
+class QSTEditWidget(gtk.VBox):
+    def to_qst(self):
+        pass
+
+    def from_qst(self):
+        pass
+
+    def __str__(self):
+        return "Unknown"
+
+    def reset(self):
+        pass
+
+class QSTTextEditWidget(QSTEditWidget):
+    def __init__(self):
+        QSTEditWidget.__init__(self, False, 2)
+
+        self.__tb = gtk.TextBuffer()
+        
+        ta = gtk.TextView(self.__tb)
+        ta.show()
+
+        self.pack_start(ta, 1, 1, 1)
+
+    def __str__(self):
+        return self.__tb.get_text(self.__tb.get_start_iter(),
+                                  self.__tb.get_end_iter())
+
+    def reset(self):
+        self.__tb.set_text("")
+    
+    def to_qst(self):
+        return "Text", str(self)
+
+    def from_qst(self, content):
+        self.__tb.set_text(content)
+
+class QSTFileEditWidget(QSTEditWidget):
+    label_text = "Choose a text file.  The contents will be used " + \
+        "when the QST is sent."
+
+    def __init__(self):
+        QSTEditWidget.__init__(self, False, 2)
+        
+        lab = gtk.Label(self.label_text)
+        lab.set_line_wrap(True)
+        lab.show()
+        self.pack_start(lab, 1, 1, 1)
+        
+        self.__fn = miscwidgets.FilenameBox()
+        self.__fn.show()
+        self.pack_start(self.__fn, 0, 0, 0)
+
+    def __str__(self):
+        return "Read: %s" % self.__fn.get_filename()
+
+    def reset(self):
+        self.__fn.set_filename("")
+
+    def to_qst(self):
+        return "File", self.__fn.get_filename()
+
+    def from_qst(self, content):
+        self.__fn.set_filename(content)
+
+class QSTExecEditWidget(QSTFileEditWidget):
+    label_text = "Choose a script to execute.  The output will be used " + \
+        "when the QST is sent"
+
+    def __str__(self):
+        return "Run: %s" % self.__fn.get_filename()
+
+class QSTGPSEditWidget(QSTEditWidget):
+    msg_limit = 20
+    type = "GPS"
+
+    def __init__(self):
+        QSTEditWidget.__init__(self, False, 2)
+
+        lab = gtk.Label("Enter your GPS message:")
+        lab.set_line_wrap(True)
+        lab.show()
+        self.pack_start(lab, 1, 1, 1)
+
+        hbox = gtk.HBox(False, 2)
+        hbox.show()
+        self.pack_start(hbox, 0, 0, 0)
+
+        self.__msg = gtk.Entry(self.msg_limit)
+        self.__msg.set_text("ON D-RATS")
+        self.__msg.show()
+        hbox.pack_start(self.__msg, 1, 1, 1)
+
+        dprs = gtk.Button("DPRS")
+        dprs.show()
+        dprs.set_sensitive(False)
+        hbox.pack_start(dprs, 0, 0, 0)
+        
+    def __str__(self):
+        return "Message: %s" % self.__msg.get_text()
+
+    def reset(self):
+        self.__msg.set_text("")
+
+    def to_qst(self):
+        return self.type, self.__msg.get_text()
+
+    def from_qst(self, content):
+        self.__msg.set_text(content)
+
+class QSTGPSAEditWidget(QSTGPSEditWidget):
+    msg_limit = 20
+    type = "GPS-A"
+
+class QSTRSSEditWidget(QSTEditWidget):
+    def __init__(self):
+        QSTEditWidget.__init__(self, False, 2)
+
+        lab = gtk.Label("Enter the URL of an RSS feed:")
+        lab.show()
+        self.pack_start(lab, 1, 1, 1)
+
+        self.__url = gtk.Entry()
+        self.__url.set_text("http://")
+        self.__url.show()
+        self.pack_start(self.__url, 0, 0, 0)
+
+    def __str__(self):
+        return "Source: %s" % self.__url.get_text()
+
+    def to_qst(self):
+        return "RSS", self.__url.get_text()
+
+    def from_qst(self, content):
+        self.__url.set_text(content)
+
+class QSTStationEditWidget(QSTEditWidget):
+    def ev_group_sel(self, group, station):
+        marks = self.__markers[group.get_active_text()]
+    
+        store = station.get_model()
+        store.clear()
+        for i in sorted(marks.keys()):
+            station.append_text(i)
+        if len(marks.keys()):
+            station.set_active(0)
+
+    def __init__(self):
+        QSTEditWidget.__init__(self, False, 2)
+
+        lab = gtk.Label("Choose a station whose position will be sent")
+        lab.show()
+        self.pack_start(lab, 1, 1, 1)
+
+        hbox = gtk.HBox(True, 2)
+
+        # This is really ugly, but to fix it requires more work
+        self.__markers = mainapp.get_mainapp().chatgui.map.get_markers()
+
+        self.__group = miscwidgets.make_choice(self.__markers.keys(),
+                                               False,
+                                               "Stations")
+        self.__group.show()
+        hbox.pack_start(self.__group, 0, 0, 0)
+
+        self.__station = miscwidgets.make_choice([], False)
+        self.__station.show()
+        hbox.pack_start(self.__station, 0, 0, 0)
+
+        self.__group.connect("changed", self.ev_group_sel, self.__station)
+        self.ev_group_sel(self.__group, self.__station)
+
+        hbox.show()
+        self.pack_start(hbox, 0, 0, 0)
+
+    def to_qst(self):
+        if not self.__group.get_active_text():
+            return None, None
+        elif not self.__station.get_active_text():
+            return None, None
+        else:
+            return "Station", "%s::%s" % (self.__group.get_active_text(),
+                                          self.__station.get_active_text())
+
+class QSTGUI2(gtk.Dialog):
+    def ev_add(self, button, typew, intvw):
+        self.__index += 1
+
+        id = str(self.__index)
+        freq = intvw.get_active_text()
+        tstr = typew.get_active_text()
+        __, cont = self.__current.to_qst()
+        if not cont:
+            return
+
+        self.__listbox.add_item(id,
+                                True,
+                                intvw.get_active_text(),
+                                typew.get_active_text(),
+                                cont)
+
+        self.__current.reset()
+
+        sec = "qst_%s" % id
+        self.__config.add_section(sec)
+        self.__config.set(sec, "freq", freq)
+        self.__config.set(sec, "enabled", "True")
+        self.__config.set(sec, "content", cont)
+        self.__config.set(sec, "type", tstr)
+        
+    def ev_rem(self, button):
+        vals = self.__listbox.get_selected()
+        if vals is None:
+            return
+
+        id = vals[0]
+
+        self.__config.remove_section("qst_%s" % id)
+        self.__listbox.remove_selected()
+
+    def ev_type_changed(self, box, types):
+        wtype = box.get_active_text()
+
+        if self.__current:
+            self.__current.hide()
+
+        self.__current = types[wtype]
+        self.__current.show()
+
+    def ev_enable_toggled(self, listw, vals):
+        id = vals[0]
+        en = vals[1]
+
+        self.__config.set("qst_%s" % id, "enabled", str(en))
+
+    def ev_mod(self, button):
+        pass
+
+    def __init__(self, config, parent=None):
+        gtk.Dialog.__init__(self,
+                            parent=parent,
+                            buttons=(gtk.STOCK_CLOSE, gtk.RESPONSE_OK))
+        
+        self.__index = 0
+        self.__config = config
+
+        hbox = gtk.HBox(False, 2)
+        self.vbox.pack_start(hbox, 1, 1, 1)
+        hbox.show()
+
+        cols = [(gobject.TYPE_STRING, "__id"),
+                (gobject.TYPE_BOOLEAN, "Enabled"),
+                (gobject.TYPE_STRING, "Interval"),
+                (gobject.TYPE_STRING, "Type"),
+                (gobject.TYPE_STRING, "Content")]
+
+        self.__listbox = ListWidget(cols)
+        hbox.pack_start(self.__listbox, 1, 1, 1)
+        self.__listbox.show()
+        self.__listbox.connect("item-toggled", self.ev_enable_toggled)
+
+        cbox = gtk.VBox(False, 2)
+
+        types = {
+            "Text" : QSTTextEditWidget(),
+            "File" : QSTFileEditWidget(),
+            "Exec" : QSTExecEditWidget(),
+            "GPS"  : QSTGPSEditWidget(),
+            "GPS-A": QSTGPSAEditWidget(),
+            "RSS"  : QSTRSSEditWidget(),
+            "Station" : QSTStationEditWidget(),
+            }
+
+        typew = make_choice(types.keys(), False, default="Text")
+        typew.set_size_request(50, -1)
+        typew.show()
+        cbox.pack_start(typew, 0, 0, 0)
+
+        intervals = ["1", "5", "10", "20", "30", "60", ":30", ":15"]
+
+        intvw = make_choice(intervals, True, default="60")
+        intvw.set_size_request(75, -1)
+        intvw.show()
+        cbox.pack_start(intvw, 0, 0, 0)
+
+        add = gtk.Button(stock=gtk.STOCK_ADD)
+        add.show()
+        cbox.pack_start(add, 0, 0, 0)
+
+        rem = gtk.Button(stock=gtk.STOCK_DELETE)
+        rem.connect("clicked", self.ev_rem)
+        rem.show()
+        cbox.pack_start(rem, 0, 0, 0)
+
+        mod = gtk.Button(stock=gtk.STOCK_EDIT)
+        mod.connect("clicked", self.ev_mod)
+        mod.show()
+        # FIXME: I don't like this
+        # cbox.pack_start(mod, 0, 0, 0)
+        
+        clr = gtk.Button(stock=gtk.STOCK_CLEAR)
+        clr.connect("clicked", lambda x: self.__current.reset())
+        clr.show()
+        # FIXME: I don't like this
+        # cbox.pack_start(clr, 0, 0, 0)
+        
+        cbox.show()
+        hbox.pack_start(cbox, 0, 0, 0)
+                            
+        for i in types.values():
+            i.set_size_request(-1, 80)
+            self.vbox.pack_start(i, 0, 0, 0)
+
+        typew.connect("changed", self.ev_type_changed, types)
+        add.connect("clicked", self.ev_add, typew, intvw)
+        self.__current = None
+        self.ev_type_changed(typew, types)
+        
+        for i in self.__config.sections():
+            if not i.startswith("qst_"):
+                continue
+
+            qst, id = i.split("_", 2)
+            self.__index = max(self.__index, int(id) + 1)
+            self.__listbox.add_item(id,
+                                    self.__config.getboolean(i, "enabled"),
+                                    self.__config.get(i, "freq"),
+                                    self.__config.get(i, "type"),
+                                    self.__config.get(i, "content"))
+
+        self.set_size_request(600,300)
 
 def get_qst_class(typestr):
     classes = {
