@@ -22,6 +22,7 @@ import time
 import datetime
 import copy
 import re
+import threading
 
 from commands import getstatusoutput as run
 from miscwidgets import make_choice, ListWidget
@@ -190,9 +191,35 @@ class QSTGPSA(QSTGPS):
         else:
             return None
 
-class QSTRSS(QSTText):
+class QSTThreadedText(QSTText):
+    def __init__(self, *a, **k):
+        QSTText.__init__(self, *a, **k)
+
+        self.thread = None
+
+    def threaded_fire(self):
+        msg = self.do_qst()
+        if not msg:
+            print "Skipping QST because no data was returned"
+            return
+
+        gobject.idle_add(self.gui.tx_msg,
+                         "%s%s" % (self.prefix, msg),
+                         self.raw)
+
+    def fire(self):
+        if self.thread:
+            print "QST thread still running, not starting another"
+            return
+
+        # This is a race, but probably pretty safe :)
+        self.thread = threading.Thread(target=self.threaded_fire)
+        self.thread.start()
+        print "Started a thread for QST data..."
+
+class QSTRSS(QSTThreadedText):
     def __init__(self, gui, config, text=None, freq=None):
-        QSTText.__init__(self, gui, config, text, freq)
+        QSTThreadedText.__init__(self, gui, config, text, freq)
 
         self.last_id = ""
 
@@ -211,10 +238,13 @@ class QSTRSS(QSTText):
         else:
             return None
 
-class QSTCAP(QSTText):
+class QSTCAP(QSTThreadedText):
     def __init__(self, *args, **kwargs):
-        QSTText.__init__(self, *args, **kwargs)
+        QSTThreadedText.__init__(self, *args, **kwargs)
 
+        self.last_date = None
+
+    def determine_starting_item(self):
         cp = cap.CAPParserURL(self.text)
         if cp.events:
             lastev = cp.events[-1]
@@ -224,6 +254,9 @@ class QSTCAP(QSTText):
             self.last_date = datetime.datetime.now()
 
     def do_qst(self):
+        if self.last_date is None:
+            self.determine_starting_item()
+
         print "Last date is %s" % self.last_date
 
         cp = cap.CAPParserURL(self.text)
