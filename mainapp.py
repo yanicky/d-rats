@@ -38,7 +38,7 @@ import sessionmgr
 import sessions
 import emailgw
 
-from utils import hexprint,filter_to_ascii
+from utils import hexprint,filter_to_ascii,NetFile
 import qst
 
 DRATS_VERSION = "0.2.7"
@@ -50,7 +50,7 @@ gobject.threads_init()
 
 def ping_file(filename):
     try:
-        f = file(filename, "r")
+        f = NetFile(filename, "r")
     except IOError, e:
         raise Exception("Unable to open file %s: %s" % (filename, e))
         return None
