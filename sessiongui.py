@@ -150,7 +150,7 @@ class FormRecvThread(FileBaseThread):
             send = send.remove('"')
 
         mail = \
-            "From: %s\r\n" % send + \
+            "From: \"%s\" <%s>\r\n" % (send, replyto) + \
             "To: %s\r\n" % recp + \
             "Reply-To: \"%s\" <%s>\r\n" % (send, replyto) + \
             "Subject: %s\r\n" % subj +\
