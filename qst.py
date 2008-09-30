@@ -1039,6 +1039,9 @@ class QSTGUI2(gtk.Dialog):
             "Station" : QSTStationEditWidget(),
             }
 
+        if not HAVE_FEEDPARSER:
+            del types["RSS"]
+
         typew = make_choice(types.keys(), False, default="Text")
         typew.set_size_request(50, -1)
         typew.show()
