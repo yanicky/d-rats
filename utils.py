@@ -17,6 +17,8 @@
 import re
 import gtk
 import os
+import tempfile
+import urllib
 
 def hexprint(data):
     col = 0
@@ -139,3 +141,27 @@ def open_icon_map(iconfn):
         print "Error opening icon map %s: %s" % (iconfn, e)
         return None
 
+class NetFile(file):
+    def __init__(self, uri, mode="r", buffering=1):
+        self.__fn = uri
+        self.is_temp = False
+
+        methods = ["http", "https", "ftp"]
+        for method in methods:
+            if uri.startswith("%s://" % method):
+                self.is_temp = True
+                tmpf = tempfile.NamedTemporaryFile()
+                self.__fn = tmpf.name
+                tmpf.close()
+
+                print "Retrieving %s -> %s" % (uri, self.__fn)
+                urllib.urlretrieve(uri, self.__fn)
+                break
+        
+        file.__init__(self, self.__fn, mode, buffering)
+
+    def close(self):
+        file.close(self)
+
+        if self.is_temp:
+            os.remove(self.__fn)
