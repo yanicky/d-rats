@@ -6,7 +6,44 @@ from geopy import geocoders
 
 YID = "eHRO5K_V34FXWnljF5BJYvTc.lXh.kQ0MaJpnq3BhgaX.IJrvtd6cvGgtWEPNAb7"
 
-class AddressAssistant(gtk.Assistant):
+try:
+    from gtk import Assistant as baseclass
+except ImportError:
+    print "No gtk.Assistant support"
+    class baseclass(gtk.MessageDialog):
+        __gsignals__ = {
+            "prepare" : (gobject.SIGNAL_RUN_LAST,
+                         gobject.TYPE_NONE, ()),
+            "cancel" : (gobject.SIGNAL_RUN_LAST,
+                        gobject.TYPE_NONE, ()),
+            "apply" : (gobject.SIGNAL_RUN_LAST,
+                       gobject.TYPE_NONE, ()),
+            }
+
+        def __init__(self):
+            gtk.MessageDialog.__init__(self, buttons=gtk.BUTTONS_OK)
+            self.set_property("text", "Unsupported")
+            self.format_secondary_text("The version of GTK you're using "
+                                       "is too old and does not support "
+                                       "the 'Assistant' class.  This is "
+                                       "required for geocoding support.")
+
+            def close(d, r):
+                self.destroy()  # make the dialog go away
+                gtk.main_quit() # The run method calls gtk.main()
+
+            self.connect("response", close)
+
+        def append_page(self, *a, **k):
+            pass
+
+        def set_page_type(self, *a, **k):
+            pass
+
+        def set_page_title(self, *a, **k):
+            pass
+
+class AddressAssistant(baseclass):
     def make_address_entry_page(self):
         def complete_cb(label, page):
             self.set_page_complete(page, len(label.get_text()) > 1)
@@ -126,7 +163,7 @@ class AddressAssistant(gtk.Assistant):
         return self.response
 
     def __init__(self):
-        gtk.Assistant.__init__(self)
+        baseclass.__init__(self)
 
         self.response = None
 
