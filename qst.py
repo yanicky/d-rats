@@ -21,6 +21,7 @@ import gobject
 import time
 import datetime
 import copy
+import re
 
 from commands import getstatusoutput as run
 from miscwidgets import make_choice, ListWidget
@@ -28,6 +29,14 @@ import miscwidgets
 import mainapp
 import platform
 import inputdialog
+import cap
+
+try:
+    import feedparser
+    HAVE_FEEDPARSER = True
+except ImportError, e:
+    print "FeedParser not available"
+    HAVE_FEEDPARSER = False
 
 class QSTText:
     def __init__(self, gui, config, text=None, freq=None):
@@ -180,6 +189,57 @@ class QSTGPSA(QSTGPS):
                                symbol=self.config.get("settings", "aprssymbol"))
         else:
             return None
+
+class QSTRSS(QSTText):
+    def __init__(self, gui, config, text=None, freq=None):
+        QSTText.__init__(self, gui, config, text, freq)
+
+        self.last_id = ""
+
+    def do_qst(self):
+        rss = feedparser.parse(self.text)
+
+        entry = rss.entries[-1]
+        if entry.id != self.last_id:
+            self.last_id = entry.id
+            text = str(entry.description)
+
+            text = re.sub("<[^>]*?>", "", text)
+            text = text[:8192]
+
+            return text
+        else:
+            return None
+
+class QSTCAP(QSTText):
+    def __init__(self, *args, **kwargs):
+        QSTText.__init__(self, *args, **kwargs)
+
+        cp = cap.CAPParserURL(self.text)
+        if cp.events:
+            lastev = cp.events[-1]
+            delta = datetime.timedelta(seconds=1)
+            self.last_date = (lastev.effective - delta)
+        else:
+            self.last_date = datetime.datetime.now()
+
+    def do_qst(self):
+        print "Last date is %s" % self.last_date
+
+        cp = cap.CAPParserURL(self.text)
+        newev = cp.events_effective_after(self.last_date)
+        if not newev:
+            return None
+
+        self.last_date = newev[-1].effective
+
+        str = ""
+
+        for i in newev:
+            print "Sending CAP that is effective %s" % i.effective
+            str += "\r\n-----\r\n%s\r\n-----\r\n" % i.report()
+
+        return str        
 
 class QSTStation(QSTGPSA):
     def do_qst(self):
@@ -773,10 +833,11 @@ class QSTGPSAEditWidget(QSTGPSEditWidget):
     type = "GPS-A"
 
 class QSTRSSEditWidget(QSTEditWidget):
+    label_string = "Enter the URL of an RSS feed:"
     def __init__(self):
         QSTEditWidget.__init__(self, False, 2)
 
-        lab = gtk.Label("Enter the URL of an RSS feed:")
+        lab = gtk.Label(self.label_string)
         lab.show()
         self.pack_start(lab, 1, 1, 1)
 
@@ -793,6 +854,17 @@ class QSTRSSEditWidget(QSTEditWidget):
 
     def from_qst(self, content):
         self.__url.set_text(content)
+
+    def reset(self):
+        self.__url.set_text("")
+
+class QSTCAPEditWidget(QSTRSSEditWidget):
+    label_string = "Enter the URL of a CAP feed:"
+
+    def to_qst(self):
+        __, val = QSTRSSEditWidget.to_qst(self)
+
+        return "CAP", val
 
 class QSTStationEditWidget(QSTEditWidget):
     def ev_group_sel(self, group, station):
@@ -928,6 +1000,7 @@ class QSTGUI2(gtk.Dialog):
             "GPS"  : QSTGPSEditWidget(),
             "GPS-A": QSTGPSAEditWidget(),
             "RSS"  : QSTRSSEditWidget(),
+            "CAP"  : QSTCAPEditWidget(),
             "Station" : QSTStationEditWidget(),
             }
 
@@ -998,6 +1071,11 @@ def get_qst_class(typestr):
         "GPS"     : QSTGPS,
         "GPS-A"   : QSTGPSA,
         "Station" : QSTStation,
+        "RSS"     : QSTRSS,
+        "CAP"     : QSTCAP,
         }
+
+    if not HAVE_FEEDPARSER:
+        del classes["RSS"]
 
     return classes.get(typestr, None)
