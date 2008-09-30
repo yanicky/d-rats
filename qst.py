@@ -199,6 +199,8 @@ class QSTThreadedText(QSTText):
 
     def threaded_fire(self):
         msg = self.do_qst()
+        self.thread = None
+
         if not msg:
             print "Skipping QST because no data was returned"
             return
