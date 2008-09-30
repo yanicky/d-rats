@@ -132,11 +132,12 @@ class CAPParser:
 class CAPParserURL(CAPParser):
     def __init__(self, url):
         tmpf = tempfile.NamedTemporaryFile()
-        urllib.urlretrieve(url, tmpf.name)
-
-        CAPParser.__init__(self, tmpf.name)
-
+        name = tmpf.name
         tmpf.close()
+
+        urllib.urlretrieve(url, name)
+
+        CAPParser.__init__(self, name)
 
 if __name__ == "__main__":
     import sys
