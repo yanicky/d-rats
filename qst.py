@@ -31,6 +31,7 @@ import mainapp
 import platform
 import inputdialog
 import cap
+from utils import NetFile
 
 try:
     import feedparser
@@ -140,7 +141,7 @@ class QSTExec(QSTText):
 class QSTFile(QSTText):
     def do_qst(self):
         try:
-            f = file(self.text)
+            f = NetFile(self.text)
         except:
             print "Unable to open file `%s'" % self.text
             return
