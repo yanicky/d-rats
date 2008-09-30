@@ -1042,26 +1042,33 @@ class QSTGUI2(gtk.Dialog):
         if not HAVE_FEEDPARSER:
             del types["RSS"]
 
+        rem = gtk.Button(stock=gtk.STOCK_DELETE)
+        rem.connect("clicked", self.ev_rem)
+        rem.show()
+        cbox.pack_start(rem, 0, 0, 0)
+
+        fbox = gtk.VBox(False, 2)
+        fbox.show()
+        frame = gtk.Frame("New QST")
+        frame.add(fbox)
+        frame.show()
+        cbox.pack_start(frame, 0, 0, 0)
+
         typew = make_choice(types.keys(), False, default="Text")
         typew.set_size_request(50, -1)
         typew.show()
-        cbox.pack_start(typew, 0, 0, 0)
+        fbox.pack_start(typew, 0, 0, 0)
 
         intervals = ["1", "5", "10", "20", "30", "60", ":30", ":15"]
 
         intvw = make_choice(intervals, True, default="60")
         intvw.set_size_request(75, -1)
         intvw.show()
-        cbox.pack_start(intvw, 0, 0, 0)
+        fbox.pack_start(intvw, 0, 0, 0)
 
         add = gtk.Button(stock=gtk.STOCK_ADD)
         add.show()
-        cbox.pack_start(add, 0, 0, 0)
-
-        rem = gtk.Button(stock=gtk.STOCK_DELETE)
-        rem.connect("clicked", self.ev_rem)
-        rem.show()
-        cbox.pack_start(rem, 0, 0, 0)
+        fbox.pack_start(add, 0, 0, 0)
 
         mod = gtk.Button(stock=gtk.STOCK_EDIT)
         mod.connect("clicked", self.ev_mod)
