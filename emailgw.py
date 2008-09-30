@@ -29,6 +29,7 @@ import formgui
 class MailThread(threading.Thread):
     def __init__(self, config, manager):
         threading.Thread.__init__(self)
+        self.setDaemon(True)
 
         self.event = threading.Event()
 

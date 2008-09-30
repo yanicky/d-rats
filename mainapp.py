@@ -273,7 +273,6 @@ class MainApp:
     def refresh_mail_threads(self):
         for i in self.mail_threads:
             i.stop()
-            i.join()
 
         if self.config.get("settings", "pop3_server"):
             t = emailgw.MailThread(self.config,
