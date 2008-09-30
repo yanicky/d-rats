@@ -854,6 +854,7 @@ class GPSSource:
 
         self.enabled = True
         self.thread = threading.Thread(target=self.gpsthread)
+        self.thread.setDaemon(True)
         self.thread.start()
 
     def stop(self):
@@ -904,6 +905,7 @@ class NetworkGPSSource(GPSSource):
     def start(self):
         self.enabled = True
         self.thread = threading.Thread(target=self.gpsthread)
+        self.thread.setDaemon(True)
         self.thread.start()
 
     def stop(self):

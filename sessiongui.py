@@ -41,6 +41,7 @@ class SessionThread:
         self.gui = gui
 
         self.thread = threading.Thread(target=self.worker, args=(data,))
+        self.thread.setDaemon(True)
         self.thread.start()
 
     def stop(self):

@@ -351,6 +351,7 @@ class SocketListener:
         self.lsock = None
         self.dsock = None
         self.thread = Thread(target=self.listener)
+        self.thread.setDaemon(True)
         self.thread.start()
 
     def stop(self):

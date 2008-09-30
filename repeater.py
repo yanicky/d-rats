@@ -179,6 +179,7 @@ class SerialDataPath(DataPath):
                               timeout=0.1,
                               writeTimeout=5)
         self.thread = threading.Thread(target=self.serial_thread)
+        self.thread.setDaemon(True)
         self.thread.start()
 
 class TcpDataPath(DataPath):

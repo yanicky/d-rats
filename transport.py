@@ -89,6 +89,7 @@ class Transporter:
         self.force_delay = kwargs.get("force_delay", 0)
 
         self.thread = threading.Thread(target=self.worker)
+        self.thread.setDaemon(True)
         self.thread.start()
 
         self.last_xmit = 0

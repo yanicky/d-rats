@@ -386,6 +386,7 @@ class StatefulSession(Session):
 
         self.event = threading.Event()
         self.thread = threading.Thread(target=self.worker)
+        self.thread.setDaemon(True)
         self.thread.start()
 
     def notify(self):

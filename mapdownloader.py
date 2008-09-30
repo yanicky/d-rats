@@ -216,6 +216,7 @@ This is the D-RATS map download utility.  It will attempt to fetch all of the re
 
         print "Starting"
         self.thread = threading.Thread(target=self.download_thread, kwargs=vals)
+        self.thread.setDaemon(True)
         self.thread.start()        
         print "Started"
 

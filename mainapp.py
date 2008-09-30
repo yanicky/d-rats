@@ -385,22 +385,22 @@ class MainApp:
         self.config.save()
         self.chatgui.save_static_locations()
 
-        if self.sm:
-            print "Stopping session manager..."
-            self.sm.shutdown(True)
-
-        print "Closing serial..."
-        self.comm.disconnect()
-
-        if self.gps:
-            print "Stopping GPS..."
-            self.gps.stop()
-
-        for i in self.mail_threads:
-            i.stop()
-            i.join()
-
-        print "Done.  Exit."
+        #if self.sm:
+        #    print "Stopping session manager..."
+        #    self.sm.shutdown(True)
+        #
+        #print "Closing serial..."
+        #self.comm.disconnect()
+        #
+        #if self.gps:
+        #    print "Stopping GPS..."
+        #    self.gps.stop()
+        #
+        #for i in self.mail_threads:
+        #    i.stop()
+        #    i.join()
+        #
+        #print "Done.  Exit."
 
 def get_mainapp():
     return MAINAPP
