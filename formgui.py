@@ -612,7 +612,7 @@ class Form(gtk.Dialog):
         self.process_form(self.doc)
         self.process_fields(self.doc)
 
-        self.set_default_size(300,600)
+        self.set_default_size(300,500)
 
         print "Form ID: %s" % self.id
 
