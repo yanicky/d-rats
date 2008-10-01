@@ -53,9 +53,22 @@ class MailThread(threading.Thread):
         print "[MAIL] %s" % message
 
     def fetch_mails(self):
-        self.message("Querying %s" % self.server)
-        
-        server = poplib.POP3(self.server)
+        try:
+            port = int(float(self.config.get("settings", "pop3_port")))
+        except Exception, e:
+            port = None
+
+        if self.config.getboolean("settings", "pop3_usessl"):
+            if not port:
+                port = 995
+            server = poplib.POP3_SSL(self.server, port)
+        else:
+            if not port:
+                port = 110
+            server = poplib.POP3(self.server, port)
+
+        self.message("Querying %s:%i" % (self.server, port))
+
         server.user(self.username)
         server.pass_(self.password)
         

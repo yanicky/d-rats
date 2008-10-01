@@ -108,6 +108,8 @@ class AppConfig:
         mset("settings", "pop3_username", "")
         mset("settings", "pop3_password", "")
         mset("settings", "pop3_interval", "10")
+        mset("settings", "pop3_usessl", "False")
+        mset("settings", "pop3_port", "")
 
         mset("quick", None, None)
 
@@ -176,6 +178,8 @@ class AppConfig:
                 "pop3_username" : "POP3 Username",
                 "pop3_password" : "POP3 Password",
                 "pop3_interval" : "POP3 Poll interval (mins)",
+                "pop3_usessl" : "Use SSL for POP3",
+                "pop3_port" : "POP3 Port",
                 }
 
     id2tip = {"ddt_block_size" : "Size (in KB) of data blocks to send with DDT",
@@ -209,6 +213,7 @@ class AppConfig:
               "pop3_username" : "Username for POP3 server",
               "pop3_password" : "Password for POP3 server",
               "pop3_interval" : "Number of minutes between polling POP3 server",
+              "pop3_port" : "POP3 server port (leave blank for default)",
               }
 
     xfers = {"DDT" : ddt.DDTTransfer}
@@ -610,6 +615,10 @@ class AppConfig:
                                         gtk.Entry()), 0,0,0)
         topvbox.pack_start(self.make_sb("pop3_interval",
                                         self.make_spin(1, 1, 1024, 0)), 0,0,0)
+        topvbox.pack_start(self.make_sb("pop3_usessl",
+                                        self.make_bool()), 0,0,0)
+        topvbox.pack_start(self.make_sb("pop3_port",
+                                        gtk.Entry()), 0,0,0)
 
         topvbox.pack_start(self.make_sb("sockflush",
                                         self.make_spin(0.2, 0, 30)), 0,0,0)
@@ -867,7 +876,8 @@ D-RATS has been started in safe mode, which means the configuration file has not
                   ("settings", "smtp_replyto"),
                   ("settings", "pop3_server"),
                   ("settings", "pop3_username"),
-                  ("settings", "pop3_password")]
+                  ("settings", "pop3_password"),
+                  ("settings", "pop3_port")]
 
         bool_v = [("prefs", "autoreceive"),
                   ("prefs", "dosignon"),
@@ -880,7 +890,8 @@ D-RATS has been started in safe mode, which means the configuration file has not
                   ("settings", "gpsenabled"),
                   ("settings", "compatmode"),
                   ("prefs", "restore_stations"),
-                  ("settings", "pipelinexfers")]
+                  ("settings", "pipelinexfers"),
+                  ("settings", "pop3_usessl")]
 
         choicetext_v = [("settings", "port"),
                         ("settings", "gpsport")]
