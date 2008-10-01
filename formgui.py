@@ -597,11 +597,12 @@ class Form(gtk.Dialog):
         w.writeDoc(self.doc, outfile)
 
     def __init__(self, title, xmlstr, buttons=None, parent=None):
-        if not buttons:
-            buttons = (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
-                       gtk.STOCK_SAVE, gtk.RESPONSE_OK)
+        _buttons = (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
+                   gtk.STOCK_SAVE, gtk.RESPONSE_OK)
+        if buttons:
+            _buttons += buttons
 
-        gtk.Dialog.__init__(self, title=title, buttons=buttons, parent=parent)
+        gtk.Dialog.__init__(self, title=title, buttons=_buttons, parent=parent)
 
         self.vbox.set_spacing(5)
 
@@ -651,7 +652,7 @@ class FormFile(Form):
             save_file = self._filename
 
         r = Form.run(self)
-        if r == gtk.RESPONSE_OK:
+        if r != gtk.RESPONSE_CANCEL:
             self.save_to(save_file)
 
         return r
