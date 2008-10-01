@@ -21,13 +21,13 @@ import threading
 import os
 import time
 import socket
-import smtplib
 
 import mainapp
 import miscwidgets
 import sessionmgr
 import sessions
 import formgui
+import emailgw
 
 from utils import run_safe
 
@@ -140,52 +140,6 @@ class FileSendThread(FileBaseThread):
 class FormRecvThread(FileBaseThread):
     progress_key = "recv_size"
 
-    def _send_email(self, send, recp, subj, mesg, config):
-        server = config.get("settings", "smtp_server")
-        replyto = config.get("settings", "smtp_replyto")
-        if not replyto:
-            replyto = "DO_NOT_REPLY@danplanet.com"
-
-        if '"' in send:
-            send = send.remove('"')
-
-        mail = \
-            "From: \"%s\" <%s>\r\n" % (send, replyto) + \
-            "To: %s\r\n" % recp + \
-            "Reply-To: \"%s\" <%s>\r\n" % (send, replyto) + \
-            "Subject: %s\r\n" % subj +\
-            "\r\n%s\r\n" % mesg
-
-        mailer = smtplib.SMTP(server)
-        mailer.set_debuglevel(1)
-        mailer.sendmail(replyto, recp, mail)
-        mailer.quit()
-
-    def send_email(self, form):
-        send = form.get_field_value("_auto_sender")
-        recp = form.get_field_value("recipient")
-        subj = form.get_field_value("subject")
-        mesg = form.get_field_value("message")
-
-        if self.gui.mainapp.config.get("settings", "smtp_server"):
-            gui_display(self.gui.chatgui,
-                        "Sending '%s' from '%s' to '%s'..." % (subj,
-                                                               send,
-                                                               recp))
-            try:
-                self._send_email(send,
-                                 recp,
-                                 subj,
-                                 mesg,
-                                 self.gui.mainapp.config)
-                gui_display(self.gui.chatgui, "Mail sent");
-            except Exception, e:
-                gui_display(self.gui.chatgui,
-                            "Error sending mail: %s" % e)
-        else:
-            gui_display(self.gui.chatgui,
-                        "Not sending email: No SMTP server configured")
-
     def worker(self, path):
         fm = self.gui.chatgui.adv_controls["forms"]
         newfn = time.strftime(os.path.join(fm.form_store_dir,
@@ -199,7 +153,9 @@ class FormRecvThread(FileBaseThread):
             form = formgui.FormFile(None, fn)
             if form.id == "email":
                 print "Received email form"
-                self.send_email(form)
+                srv = emailgw.FormEmailService(self.gui.chatgui.config)
+                st, msg = srv.send_email(form)
+                gui_display(self.gui.chatgui, msg)
 
             fm.reg_form(name,
                         fn,

@@ -18,6 +18,7 @@
 import os
 import threading
 import poplib
+import smtplib
 import email
 import rfc822
 import time
@@ -121,6 +122,46 @@ class MailThread(threading.Thread):
             self.event.clear()
 
         self.message("Thread ending")
+
+class FormEmailService:
+    def __init__(self, config):
+        self.config = config
+
+    def _send_email(self, send, recp, subj, mesg):
+        server = self.config.get("settings", "smtp_server")
+        replyto = self.config.get("settings", "smtp_replyto")
+        if not replyto:
+            replyto = "DO_NOT_REPLY@danplanet.com"
+
+        if '"' in send:
+            send = send.remove('"')
+
+        mail = \
+            "From: \"%s\" <%s>\r\n" % (send, replyto) + \
+            "To: %s\r\n" % recp + \
+            "Reply-To: \"%s\" <%s>\r\n" % (send, replyto) + \
+            "Subject: %s\r\n" % subj +\
+            "\r\n%s\r\n" % mesg
+
+        mailer = smtplib.SMTP(server)
+        mailer.set_debuglevel(1)
+        mailer.sendmail(replyto, recp, mail)
+        mailer.quit()
+
+    def send_email(self, form):
+        send = form.get_field_value("_auto_sender")
+        recp = form.get_field_value("recipient")
+        subj = form.get_field_value("subject")
+        mesg = form.get_field_value("message")
+
+        if not self.config.get("settings", "smtp_server"):
+            return False, "Email form received but not configured for SMTP"
+
+        try:
+            self._send_email(send, recp, subj, mesg)
+            return True, "Mail sent ('%s' to '%s')" % (subj, recp)
+        except Exception, e:
+            return False, "Error sending mail: %s" % e
 
 if __name__ == "__main__":
     class fakeout:
