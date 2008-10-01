@@ -107,6 +107,7 @@ class AppConfig:
         mset("settings", "pop3_server", "")
         mset("settings", "pop3_username", "")
         mset("settings", "pop3_password", "")
+        mset("settings", "pop3_interval", "10")
 
         mset("quick", None, None)
 
@@ -174,6 +175,7 @@ class AppConfig:
                 "pop3_server" : "POP3 Server",
                 "pop3_username" : "POP3 Username",
                 "pop3_password" : "POP3 Password",
+                "pop3_interval" : "POP3 Poll interval (mins)",
                 }
 
     id2tip = {"ddt_block_size" : "Size (in KB) of data blocks to send with DDT",
@@ -206,6 +208,7 @@ class AppConfig:
               "pop3_server" : "Server to pull mails from for email-to-form",
               "pop3_username" : "Username for POP3 server",
               "pop3_password" : "Password for POP3 server",
+              "pop3_interval" : "Number of minutes between polling POP3 server",
               }
 
     xfers = {"DDT" : ddt.DDTTransfer}
@@ -605,6 +608,8 @@ class AppConfig:
                                         gtk.Entry()), 0,0,0)
         topvbox.pack_start(self.make_sb("pop3_password",
                                         gtk.Entry()), 0,0,0)
+        topvbox.pack_start(self.make_sb("pop3_interval",
+                                        self.make_spin(1, 1, 1024, 0)), 0,0,0)
 
         topvbox.pack_start(self.make_sb("sockflush",
                                         self.make_spin(0.2, 0, 30)), 0,0,0)
@@ -903,7 +908,8 @@ D-RATS has been started in safe mode, which means the configuration file has not
                   ("settings", "ddt_block_outlimit"),
                   ("settings", "warmup_length"),
                   ("settings", "warmup_timeout"),
-                  ("settings", "force_delay")]
+                  ("settings", "force_delay"),
+                  ("settings", "pop3_interval")]
 
         list_v = [("prefs", "callsigns"),
                   ("settings", "inports"),

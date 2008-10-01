@@ -118,7 +118,7 @@ class MailThread(threading.Thread):
             for mail in mails:
                 self.create_form_from_mail(mail)
 
-            self.event.wait(30)
+            self.event.wait(self.config.getint("settings", "pop3_interval")*60)
             self.event.clear()
 
         self.message("Thread ending")
