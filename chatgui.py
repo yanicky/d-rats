@@ -1453,7 +1453,8 @@ class FormManager:
 
         try:
             form = formgui.FormFile("New %s form" % formid,
-                                    forms[formid])
+                                    forms[formid],
+                                    buttons=("Send", 999))
             r = form.run_auto(newfn)
             form.destroy()
             if r == gtk.RESPONSE_CANCEL:
@@ -1466,8 +1467,13 @@ class FormManager:
 
         stamp = self.get_stamp()
 
-        self.list_add_form(0, formid, newfn, stamp)
+        iter = self.list_add_form(0, formid, newfn, stamp)
         self.reg_form(formid, newfn, stamp)
+
+        if r == 999:
+            path = self.store.get_path(iter)
+            self.view.set_cursor(path)
+            self.send(widget)
 
     def delete(self, widget, data=None):
         d = YesNoDialog(parent=self.gui.window,
@@ -1510,7 +1516,9 @@ class FormManager:
         print "Editing %s" % filename
 
         try:
-            form = formgui.FormFile("Edit Form", filename)
+            form = formgui.FormFile("Edit Form",
+                                    filename,
+                                    buttons=("Send", 999))
             r = form.run_auto()
             form.destroy()
             if r == gtk.RESPONSE_CANCEL:
@@ -1524,6 +1532,9 @@ class FormManager:
         stamp = self.get_stamp()
         self.store.set(iter, self.col_stamp, stamp)
         self.reg_form(id, filename, stamp)
+
+        if r == 999:
+            self.send(widget)
 
     def reply(self, widget, data=None):
         (list, iter) = self.view.get_selection().get_selected()
