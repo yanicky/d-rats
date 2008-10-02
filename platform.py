@@ -133,6 +133,12 @@ def _unix_editor():
     else:
         return "gedit"
 
+def _unix_browser():
+    if sys.platform == "darwin":
+        return "open"
+    else:
+        return "firefox"
+
 class UnixPlatform(Platform):
     def __init__(self, basepath):
         if not basepath:
@@ -165,7 +171,7 @@ class UnixPlatform(Platform):
             print "Exec child exited"
 
     def open_html_file(self, path):
-        os.system("firefox '%s'" % path)
+        os.system("%s '%s'" % (_unix_browser(), path))
 
     def list_serial_ports(self):
         return sorted(glob.glob("/dev/ttyS*") + glob.glob("/dev/ttyUSB*"))
