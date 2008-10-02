@@ -617,7 +617,7 @@ class Form(gtk.Dialog):
 
         print "Form ID: %s" % self.id
 
-        self.build_gui(gtk.RESPONSE_CANCEL in buttons)
+        self.build_gui(gtk.RESPONSE_CANCEL in _buttons)
         
     def get_field_value(self, id):
         for field in self.fields:
