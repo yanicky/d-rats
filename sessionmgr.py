@@ -85,11 +85,11 @@ class Session:
         self.state_event = threading.Event()
         self.state = self.ST_CLSD
 
-        self.stats = { "sent_size" : 0,
-                       "recv_size" : 0,
-                       "sent_wire" : 0,
-                       "recv_wire" : 0,
-                       "retries"   : 0,
+        self.stats = { "sent_size"   : 0,
+                       "recv_size"   : 0,
+                       "sent_wire"   : 0,
+                       "recv_wire"   : 0,
+                       "retries"     : 0,
                        }
 
     def send_blocks(self, blocks):
@@ -595,6 +595,7 @@ class StatefulSession(Session):
             f.seq = self.oseq
             f.type = self.T_DAT
             f.data = chunk
+            f.sent_event.clear()
 
             self.outq.enqueue(f)
 
@@ -674,22 +675,30 @@ class PipelinedStatefulSession(StatefulSession):
             # Not time to try again yet
             return
         
-        if self.attempts == 10:
+        if self.stats["retries"] >= 10:
             print "Too many retries, closing..."
             self.set_state(self.ST_CLSD)
             self.enabled = False
             return
 
-        self.attempts += 1
-        print "Attempt %i" % self.attempts
-        
         toack = []
 
+        last_block = None
         for b in self.outstanding:
+            if b.sent_event.isSet():
+                self.attempts += 1
+                self.stats["retries"] += 1
+                b.sent_event.clear()
+
             print "Sending %i" % b.seq
             self._sm.outgoing(self, b)
             toack.append(b.seq)
             t = time.time()
+
+            if last_block:
+                last_block.sent_event.wait()
+                self.stats["sent_wire"] += len(last_block.data)
+
             last_block = b
 
         self.send_reqack(toack)
@@ -699,7 +708,7 @@ class PipelinedStatefulSession(StatefulSession):
 
         print "Waiting for block to be sent"
         last_block.sent_event.wait()
-        last_block.sent_event.clear()
+        self.stats["sent_wire"] += len(last_block.data)
         self.ts = time.time()
         print "Block sent after: %f" % (self.ts - t)
 
@@ -739,7 +748,6 @@ class PipelinedStatefulSession(StatefulSession):
                         self.stats["sent_size"] += len(block.data)
                         self.outstanding.remove(block)
                     else:
-                        self.stats["retries"] += 1
                         print "Block %i outstanding, but not acked" % block.seq
             elif b.type == self.T_DAT:
                 print "Got block %i" % b.seq

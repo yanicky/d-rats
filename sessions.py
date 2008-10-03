@@ -22,6 +22,7 @@ import socket
 import random
 import zlib
 from threading import Thread
+import UserDict
 
 import sessionmgr
 from ddt2 import DDT2RawData, DDT2EncodedFrame
@@ -130,6 +131,16 @@ class ChatSession(sessionmgr.StatelessSession):
                  }
         self.__cb(self.__cb_data, args)
 
+class NotifyDict(UserDict.UserDict):
+    def __init__(self, cb, data={}):
+        UserDict.UserDict.__init__(self)
+        self.cb = cb
+        self.data = data
+
+    def __setitem__(self, name, value):
+        self.data[name] = value
+        self.cb()
+
 class BaseFileTransferSession:
     def internal_status(self, vals):
         print "XFER STATUS: %s" % vals["msg"]
@@ -142,6 +153,11 @@ class BaseFileTransferSession:
 
         self.status_cb(vals)
 
+        self.last_status = msg
+
+    def status_tick(self):
+        self.status(self.last_status)
+
     def __init__(self, name, status_cb=None, **kwargs):
         if not status_cb:
             self.status_cb = self.internal_status
@@ -153,6 +169,10 @@ class BaseFileTransferSession:
         self.filename = ""
 
         self.stats["total_size"] = 0
+        self.last_status = ""
+
+        # Replace the regular dict with NotifyDict
+        self.stats = NotifyDict(self.status_tick, self.stats)
 
     def get_file_data(self, filename):
         f = file(filename, "rb")
@@ -207,6 +227,7 @@ class BaseFileTransferSession:
         self.stats["start_time"] = time.time()
         
         try:
+            self.status("Sending")
             self.write(data, timeout=120)
         except sessionmgr.SessionClosedError:
             print "Session closed while doing write"
@@ -260,21 +281,20 @@ class BaseFileTransferSession:
             print "Session closed while sending start ack"
             return None
 
-        self.status("Negotiation Complete")
+        self.status("Waiting for first block")
 
         data = ""
 
         while True:
             try:
                 d = self.read()
-                self.status("Receiving")
             except sessionmgr.SessionClosedError:
                 print "SESSION IS CLOSED"
                 break
 
             if d:
                 data += d
-                self.status("Recevied block")
+                self.status("Receiving")
 
         try:
             self.put_file_data(filename, data)

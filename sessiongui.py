@@ -77,7 +77,16 @@ class FileBaseThread(SessionThread):
         else:
             speed = ""
 
-        msg = "%s [%02.0f%%]%s%s" % (vals["msg"], pct, speed, retries)
+        if vals["sent_wire"]:
+            amt = vals["sent_wire"]
+            if amt > 1024:
+                sent = " (Total %.1f KB)" % (amt >> 10)
+            else:
+                sent = " (Total %i B)" % amt
+        else:
+            sent = ""
+
+        msg = "%s [%02.0f%%]%s%s%s" % (vals["msg"], pct, speed, sent, retries)
 
         gobject.idle_add(self.gui.update,
                          self.session._id,
@@ -93,10 +102,19 @@ class FileBaseThread(SessionThread):
         else:
             msg = ""
 
+        size = self.session.stats["total_size"]
+        if size > 1024:
+            size >>= 10
+            units = "KB"
+        else:
+            units = "B"
+
         if self.session.stats.has_key("start_time"):
             start = self.session.stats["start_time"]
-            exmsg = " (%2.2f B/s)" % (self.session.stats["total_size"] /
-                                      (time.time() - start))
+            exmsg = " (%i%s @ %2.2f B/s)" % (\
+                size, units,
+                self.session.stats["total_size"] /
+                (time.time() - start))
         else:
             exmsg = ""
 
@@ -583,11 +601,12 @@ class SessionGUI:
             print "*** Unknown session type: %s" % session.__class__.__name__
 
     def end_session(self, id):
+        print "session ended"
         iter = self.iter_of(0, id)
         if iter:
-            self.store.set(iter,
-                           0, -1,
-                           4, "Closed")
+            self.store.remove(iter)
+        else:
+            print "No iter"
 
     def session_cb(self, data, reason, session):
         t = str(session.__class__).replace("Session", "")
