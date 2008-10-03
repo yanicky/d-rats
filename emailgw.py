@@ -146,8 +146,9 @@ class FormEmailService:
         if not replyto:
             replyto = "DO_NOT_REPLY@danplanet.com"
 
-        if '"' in send:
-            send = send.remove('"')
+        for i in "<>\"'":
+            if i in send:
+                send = send.replace(i, "")
 
         mail = \
             "From: \"%s\" <%s>\r\n" % (send, replyto) + \
