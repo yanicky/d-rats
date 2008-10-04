@@ -17,6 +17,10 @@
 
 import os
 import sys
+
+if sys.platform == "darwin":
+    os.environ["PANGO_RC_FILE"] = "../Resources/etc/pango/pangorc"
+
 import time
 import re
 from threading import Thread, Lock
