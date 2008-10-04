@@ -797,6 +797,8 @@ class SessionManager:
         self.pipe = self.tport = None
         self.station = station
 
+        self.sniff_session = None
+
         self.last_frame = 0
         self.sessions = {}
         self.session_cb = {}
@@ -830,6 +832,9 @@ class SessionManager:
 
     def incoming(self, frame):
         self.last_frame = time.time()
+
+        if self.sniff_session is not None:
+            self.sessions[self.sniff_session].handler(frame)
 
         if frame.d_station != "CQCQCQ" and \
                 frame.d_station != self.station:
@@ -920,6 +925,9 @@ class SessionManager:
                 self._deregister_session(id)
         
         return s
+
+    def set_sniffer_session(self, id):
+        self.sniff_session = id
 
     def stop_session(self, session):
         for id, s in self.sessions.items():

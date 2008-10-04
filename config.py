@@ -110,6 +110,7 @@ class AppConfig:
         mset("settings", "pop3_interval", "10")
         mset("settings", "pop3_usessl", "False")
         mset("settings", "pop3_port", "")
+        mset("settings", "sniff_packets", "False")
 
         mset("quick", None, None)
 
@@ -180,6 +181,7 @@ class AppConfig:
                 "pop3_interval" : "POP3 Poll interval (mins)",
                 "pop3_usessl" : "Use SSL for POP3",
                 "pop3_port" : "POP3 Port",
+                "sniff_packets" : "Sniff packets",
                 }
 
     id2tip = {"ddt_block_size" : "Size (in KB) of data blocks to send with DDT",
@@ -214,6 +216,7 @@ class AppConfig:
               "pop3_password" : "Password for POP3 server",
               "pop3_interval" : "Number of minutes between polling POP3 server",
               "pop3_port" : "POP3 server port (leave blank for default)",
+              "sniff_packets" : "Decode and display any packet received",
               }
 
     xfers = {"DDT" : ddt.DDTTransfer}
@@ -501,6 +504,8 @@ class AppConfig:
                                      self.make_spin(1, 0, 128, 0)), 0,0,0)
         vbox.pack_start(self.make_sb("force_delay",
                                      self.make_spin(1, 0, 128, 0)), 0,0,0)
+        vbox.pack_start(self.make_sb("sniff_packets",
+                                     self.make_bool()), 0,0,0)
 
         vbox.show()
         return vbox
@@ -891,7 +896,8 @@ D-RATS has been started in safe mode, which means the configuration file has not
                   ("settings", "compatmode"),
                   ("prefs", "restore_stations"),
                   ("settings", "pipelinexfers"),
-                  ("settings", "pop3_usessl")]
+                  ("settings", "pop3_usessl"),
+                  ("settings", "sniff_packets")]
 
         choicetext_v = [("settings", "port"),
                         ("settings", "gpsport")]

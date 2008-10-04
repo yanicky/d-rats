@@ -209,6 +209,21 @@ class MainApp:
                                                       dest="CQCQCQ",
                                                       cls=sessions.ChatSession)
             self.chat_session.register_cb(self.incoming_chat)
+
+            if self.config.getboolean("settings", "sniff_packets"):
+                def display_sniff(ss, frame):
+                    print "Sniffed %s" % frame
+                    self.chatgui.display("%s->%s (S:%i L:%i)\r\n" % ( \
+                            frame.s_station,
+                            frame.d_station,
+                            frame.session,
+                            len(frame.data)), "italic")
+
+                ss = self.sm.start_session("Sniffer",
+                                           dest="CQCQCQ",
+                                           cls=sessions.SniffSession)
+                self.sm.set_sniffer_session(ss._id)
+                ss.connect("incoming_frame", display_sniff)
         else:
             self.sm.set_comm(self.comm, **transport_args)
             self.sm.set_call(callsign)

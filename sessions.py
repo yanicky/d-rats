@@ -23,11 +23,28 @@ import random
 import zlib
 from threading import Thread
 import UserDict
+import gobject
 
 import sessionmgr
 from ddt2 import DDT2RawData, DDT2EncodedFrame
 import mainapp
 import platform
+
+class SniffSession(sessionmgr.StatelessSession, gobject.GObject):
+    __gsignals__ = {
+        "incoming_frame" : (gobject.SIGNAL_RUN_LAST,
+                            gobject.TYPE_NONE,
+                            (gobject.TYPE_PYOBJECT,))
+        }
+
+    def __init__(self, *a, **k):
+        sessionmgr.StatelessSession.__init__(self, *a, **k)
+        gobject.GObject.__init__(self)
+
+        self.handler = self._handler
+
+    def _handler(self, frame):
+        self.emit("incoming_frame", frame)
 
 class ChatSession(sessionmgr.StatelessSession):
     __cb = None
