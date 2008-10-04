@@ -90,7 +90,24 @@ class MailThread(threading.Thread):
     def create_form_from_mail(self, mail):
         subject = mail.get("Subject", "[no subject]")
         sender = mail.get("From", "Unknown <devnull@nowhere.com>")
-        body = mail.get_payload()
+        
+        if mail.is_multipart():
+            body = None
+            for part in mail.walk():
+                html = None
+                if part.get_content_type() == "text/plain":
+                    body = str(part)
+                    break
+                elif part.get_content_type() == "text/html":
+                    html = str(part)
+            if not body:
+                body = html
+        else:
+            body = mail.get_payload()
+
+        if not body:
+            self.message("Unable to find a text/plain part")
+
         messageid = mail.get("Message-ID", time.strftime("%m%d%Y%H%M%S"))
         recip, addr = rfc822.parseaddr(mail.get("To", "UNKNOWN"))
 
