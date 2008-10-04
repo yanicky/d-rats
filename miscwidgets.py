@@ -59,6 +59,7 @@ class ListWidget(gtk.HBox):
                     _type == gobject.TYPE_FLOAT:
                 rend = gtk.CellRendererText()
                 column = gtk.TreeViewColumn(_col, rend, text=index)
+                column.set_resizable(True)
                 rend.set_property("ellipsize", pango.ELLIPSIZE_END)
             elif _type == gobject.TYPE_BOOLEAN:
                 rend = gtk.CellRendererToggle()
