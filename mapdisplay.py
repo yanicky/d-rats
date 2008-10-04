@@ -617,6 +617,8 @@ class MapWindow(gtk.Window):
                 rend.set_property("foreground", self.colors[group])
 
         c = self.marker_list._view.get_column(1)
+        c.set_expand(True)
+        c.set_min_width(150)
         r = c.get_cell_renderers()[0]
         c.set_cell_data_func(r, render_station)
 
