@@ -19,6 +19,7 @@ import gtk
 import os
 import tempfile
 import urllib
+import popen2
 
 def hexprint(data):
     col = 0
@@ -165,3 +166,18 @@ class NetFile(file):
 
         if self.is_temp:
             os.remove(self.__fn)
+
+class ExternalHash:
+    def __init__(self):
+        self.hval = ""
+
+    def update(self, val):
+        stdout, stdin = popen2.popen2("md5sum")
+        stdin.write(val)
+        stdin.close()
+
+        self.hval = stdout.read()
+        stdout.close()
+
+    def digest(self):
+        return self.hval.split()[0]

@@ -19,7 +19,12 @@ import libxml2
 import urllib
 import tempfile
 import datetime
-import hashlib
+
+try:
+    from hashlib import md5
+except ImportError:
+    print "Installing hashlib replacement hack"
+    from utils import ExternalHash as md5
 
 def ev_cmp_exp(ev1, ev2):
     if ev1.expires < ev2.expires:
@@ -99,7 +104,7 @@ class CAPParser:
                     ev = CAPEvent()
                     ev.from_libxml_node(child)
 
-                    hash = hashlib.md5()
+                    hash = md5()
                     hash.update(ev.description)
 
                     if hash.digest() not in hashes:
