@@ -20,7 +20,15 @@ class SWFSerial(serial.Serial):
 
     def __init__(self, **kwargs):
         print "Software XON/XOFF control initialized"
-        serial.Serial.__init__(self, **kwargs)
+        try:
+            serial.Serial.__init__(self, **kwargs)
+        except TypeError:
+            if "writeTimeout" in kwargs:
+                del kwargs["writeTimeout"]
+                serial.Serial.__init__(self, **kwargs)
+            else:
+                print "Unknown TypeError from Serial.__init__: %s" % e
+                raise e
 
         self.state = True
         self.xoff_limit = 15
