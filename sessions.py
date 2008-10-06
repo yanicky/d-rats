@@ -30,6 +30,15 @@ from ddt2 import DDT2RawData, DDT2EncodedFrame
 import mainapp
 import platform
 
+session_types = {
+    4 : "General",
+    5 : "File",
+    6 : "Form",
+    7 : "Socket",
+    8 : "PFile",
+    9 : "PForm",
+}
+
 class SniffSession(sessionmgr.StatelessSession, gobject.GObject):
     __gsignals__ = {
         "incoming_frame" : (gobject.SIGNAL_RUN_LAST,
@@ -43,8 +52,36 @@ class SniffSession(sessionmgr.StatelessSession, gobject.GObject):
 
         self.handler = self._handler
 
+    def decode_control(self, frame):
+        if frame.type == sessionmgr.ControlSession.T_ACK:
+            l, r = struct.unpack("BB", frame.data)
+            return "Control: ACK Local:%i Remote:%i" % (l, r)
+        elif frame.type == sessionmgr.ControlSession.T_END:
+            return "Control: END session %s" % frame.data
+        elif frame.type >= sessionmgr.ControlSession.T_NEW:
+            id, = struct.unpack("B", frame.data[0])
+            name = frame.data[1:]
+            stype = session_types.get(frame.type,
+                                      "Unknown type %i" % frame.type)
+            return "Control: NEW session %i: '%s' (%s)" % (id, name, stype)
+        else:
+            return "Control: UNKNOWN"
+
     def _handler(self, frame):
-        self.emit("incoming_frame", frame)
+        hdr = "%s->%s" % (frame.s_station, frame.d_station)
+
+        if frame.s_station == "!":
+            # Warm-up frame
+            return
+
+        if frame.session == 1:
+            msg = "(chat: %s)" % frame.data
+        elif frame.session == 0:
+            msg = self.decode_control(frame)
+        else:
+            msg = "(S:%i L:%i)" % (frame.session, len(frame.data))
+
+        self.emit("incoming_frame", "%s %s\r\n" % (hdr, msg))
 
 class ChatSession(sessionmgr.StatelessSession):
     __cb = None
