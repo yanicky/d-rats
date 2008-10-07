@@ -305,9 +305,10 @@ class GPSPosition:
             if self.current:
                 dist = self.distance_from(self.current)
                 bear = self.current.bearing_to(self)
-                distance = " - %.1f %s away @ %.1f degrees" % (dist,
-                                                               EARTH_UNITS,
-                                                               bear)
+                distance = " - %.1f %s " % (dist, EARTH_UNITS) + \
+                    _("away") + \
+                    " @ %.1f " % bear + \
+                    _("degrees")
             else:
                 distance = ""
 
@@ -324,7 +325,8 @@ class GPSPosition:
                 else:
                     speed = "%.2f knots" % float(self.speed)
 
-                dir = " (Heading %.0f at %s)" % (self.direction, speed)
+                dir = " (" + _("Heading") +" %.0f at %s)" % (self.direction,
+                                                             speed)
             else:
                 dir = ""
 
@@ -333,7 +335,7 @@ class GPSPosition:
             else:
                 alt = "%i m" % self.altitude
 
-            return "GPS: %s reporting %.4f,%.4f@%s at %s%s%s%s" % ( \
+            return "GPS: %s "+_("reporting")+" %.4f,%.4f@%s at %s%s%s%s" % ( \
                 self.station,
                 self.latitude,
                 self.longitude,
@@ -343,7 +345,7 @@ class GPSPosition:
                 distance,
                 dir)
         else:
-            return "GPS: (Invalid GPS data)"
+            return "GPS: (" + _("Invalid GPS data") + ")"
 
     def _NMEA_format(self, val, latitude):
         if latitude:
@@ -653,7 +655,7 @@ class NMEAGPSPosition(GPSPosition):
             print "Invalid GPS data: %s" % e
             self.valid = False
 
-    def __init__(self, sentence, station="UNKNOWN"):
+    def __init__(self, sentence, station=_("UNKNOWN")):
         GPSPosition.__init__(self)
 
         if sentence.startswith("$GPGGA"):
@@ -840,7 +842,7 @@ class GPSSource:
             self.serial = serial.Serial(port=port, baudrate=4800, timeout=1)
         except Exception, e:
             print "Unable to open port `%s': %s" % (port, e)
-            self.broken = "Unable to open GPS port"
+            self.broken = _("Unable to open GPS port")
 
         self.thread = None
 
@@ -875,7 +877,7 @@ class GPSSource:
                     self.last_valid = position.valid
                     if position.valid and self.position.valid:
                         self.position += position
-                        print "ME: %s" % self.position                        
+                        print _("ME") + ": %s" % self.position                        
                     elif position.valid:
                         self.position = position
                     else:
@@ -888,9 +890,9 @@ class GPSSource:
         if self.broken:
             return self.broken
         elif self.last_valid and self.position.satellites >= 3:
-            return "GPS Locked (%i sats)" % self.position.satellites
+            return _("GPS Locked") + " (%i sats)" % self.position.satellites
         else:
-            return "GPS Not Locked"
+            return _("GPS Not Locked")
 
 class NetworkGPSSource(GPSSource):
     def __init__(self, port):
@@ -919,7 +921,7 @@ class NetworkGPSSource(GPSSource):
             port = int(port)
         except ValueError, e:
             print "Unable to parse %s (%s)" % (self.port, e)
-            self.broken = "Unable to parse address"
+            self.broken = _("Unable to parse address")
             return False
 
         print "Connecting to %s:%i" % (host, port)
@@ -930,7 +932,7 @@ class NetworkGPSSource(GPSSource):
             self.sock.settimeout(10)
         except Exception, e:
             print "Unable to connect: %s" % e
-            self.broken = "Unable to connect: %s" % e
+            self.broken = _("Unable to connect") + ": %s" % e
             self.sock = None
             return False
 
@@ -950,7 +952,7 @@ class NetworkGPSSource(GPSSource):
             except Exception, e:
                 self.sock.close()
                 self.sock = None
-                print "GPSd Socket closed"
+                print _("GPSd Socket closed")
                 continue
 
             line = data.strip()
@@ -976,9 +978,9 @@ class NetworkGPSSource(GPSSource):
         if self.broken:
             return self.broken
         elif self.last_valid and self.position.satellites >= 3:
-            return "GPSd Locked (%i sats)" % self.position.satellites
+            return _("GPSd Locked") + " (%i sats)" % self.position.satellites
         else:
-            return "GPSd Not Locked"
+            return _("GPSd Not Locked")
 
 class StaticGPSSource(GPSSource):
     def __init__(self, lat, lon, alt=0):
@@ -1003,7 +1005,7 @@ class StaticGPSSource(GPSSource):
         return self.position
 
     def status_string(self):
-        return "Static position"
+        return _("Static position")
 
 def parse_GPS(string):
     fixes = []

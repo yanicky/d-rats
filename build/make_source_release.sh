@@ -1,6 +1,6 @@
 #!/bin/bash
 
-LOCAL_VERSION=
+LOCAL_VERSION=i1
 eval $(cat mainapp.py | grep ^DRATS_VERSION | sed 's/ //g')
 VERSION=${DRATS_VERSION}${LOCAL_VERSION}
 INCLUDE="*.py forms/*.x[ms]l COPYING"
@@ -14,6 +14,7 @@ DST="${TMP}/${RELDIR}"
 mkdir -p $DST
 
 cp -rav d_rats $DST
+cp -rav locale $DST
 cp -av *.py ${DST}/d_rats
 mv ${DST}/d_rats/setup.py ${DST}
 cp mapdownloader.py ${DST}/mapdownloader

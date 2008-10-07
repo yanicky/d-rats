@@ -312,9 +312,9 @@ class MapWidget(gtk.DrawingArea):
     def load_tiles(self):
         self.map_tiles = []
 
-        prog = miscwidgets.ProgressDialog("Loading map")
+        prog = miscwidgets.ProgressDialog(_("Loading map"))
 
-        prog.set_text("Getting map center")
+        prog.set_text(_("Getting map center"))
         center = MapTile(self.lat, self.lon, self.zoom)
 
         delta_h = self.height / 2
@@ -341,10 +341,10 @@ class MapWidget(gtk.DrawingArea):
             for j in range(0, self.height):
                 tile = center + (i - delta_w, j - delta_h)
                 if not tile.is_local():
-                    prog.set_text("Retrieving %i, %i" % (i,j))
+                    prog.set_text(_("Retrieving") + " %i, %i" % (i,j))
                     prog.show()
                 else:
-                    prog.set_text("Loading %i, %i" % (i, j))
+                    prog.set_text(_("Loading") + " %i, %i" % (i, j))
                 
                 try:
                     if not tile.fetch():
@@ -368,7 +368,7 @@ class MapWidget(gtk.DrawingArea):
 
         self.calculate_bounds()
 
-        prog.set_text("Complete")
+        prog.set_text(_("Complete"))
         prog.hide()
 
     def export_to(self, filename, bounds=None):
@@ -469,14 +469,14 @@ class MapWindow(gtk.Window):
         adj = widget.get_adjustment()
 
         self.map.set_zoom(int(adj.value))
-        frame.set_label("Zoom (%i)" % int(adj.value))
+        frame.set_label(_("Zoom") + " (%i)" % int(adj.value))
 
     def make_zoom_controls(self):
         box = gtk.HBox(False, 3)
         box.set_border_width(3)
         box.show()
 
-        l = gtk.Label("Min")
+        l = gtk.Label(_("Min"))
         l.show()
         box.pack_start(l, 0,0,0)
 
@@ -489,11 +489,11 @@ class MapWindow(gtk.Window):
         sb.show()
         box.pack_start(sb, 1,1,1)
 
-        l = gtk.Label("Max")
+        l = gtk.Label(_("Max"))
         l.show()
         box.pack_start(l, 0,0,0)
 
-        frame = gtk.Frame("Zoom")
+        frame = gtk.Frame(_("Zoom"))
         frame.set_label_align(0.5, 0.5)
         frame.set_size_request(150, 50)
         frame.show()
@@ -554,17 +554,17 @@ class MapWindow(gtk.Window):
         except TypeError:
             id = group = None
 
-        edit = gtk.Action("edit", "Edit", None, None)
+        edit = gtk.Action("edit", _("Edit"), None, None)
         edit.connect("activate", self.marker_mh, id, group)
         if not id:
             edit.set_sensitive(False)
         ag.add_action(edit)
 
-        delete = gtk.Action("delete", "Delete", None, None)
+        delete = gtk.Action("delete", _("Delete"), None, None)
         delete.connect("activate", self.marker_mh, id, group)
         ag.add_action(delete)
 
-        center = gtk.Action("center", "Center on this", None, None)
+        center = gtk.Action("center", _("Center on this"), None, None)
         center.connect("activate", self.marker_mh, id, group)
         # This isn't implemented right now, because I'm lazy
         center.set_sensitive(False)
@@ -595,12 +595,12 @@ class MapWindow(gtk.Window):
             menu.popup(None, None, None, event.button, event.time)
 
     def make_marker_list(self):
-        cols = [(gobject.TYPE_BOOLEAN, "Show"),
-                (gobject.TYPE_STRING, "Station"),
-                (gobject.TYPE_FLOAT, "Latitude"),
-                (gobject.TYPE_FLOAT, "Longitude"),
-                (gobject.TYPE_FLOAT, "Distance"),
-                (gobject.TYPE_FLOAT, "Direction"),
+        cols = [(gobject.TYPE_BOOLEAN, _("Show")),
+                (gobject.TYPE_STRING,  _("Station")),
+                (gobject.TYPE_FLOAT,   _("Latitude")),
+                (gobject.TYPE_FLOAT,   _("Longitude")),
+                (gobject.TYPE_FLOAT,   _("Distance")),
+                (gobject.TYPE_FLOAT,   _("Direction")),
                 ]
         self.marker_list = miscwidgets.TreeWidget(cols, 1, parent=False)
         self.marker_list.toggle_cb.append(self.toggle_show)
@@ -677,7 +677,7 @@ class MapWindow(gtk.Window):
         def toggle(cb, mw):
             mw.tracking_enabled = cb.get_active()
 
-        cb = gtk.CheckButton("Track center")
+        cb = gtk.CheckButton(_("Track center"))
         cb.connect("toggled", toggle, self)
 
         cb.show()
@@ -686,7 +686,7 @@ class MapWindow(gtk.Window):
 
     def clear_map_cache(self):
         d = gtk.MessageDialog(buttons=gtk.BUTTONS_YES_NO)
-        d.set_property("text", "Are you sure you want to clear your map cache?")
+        d.set_property("text", _("Are you sure you want to clear your map cache?"))
         r = d.run()
         d.destroy()
 
@@ -707,15 +707,18 @@ class MapWindow(gtk.Window):
 
         ts = time.strftime("%H:%M:%S %d-%b-%Y")
 
+        station_map = _("Station map")
+        generated_at = _("Generated at")
+
         html = """
 <html>
 <body>
-<h2>D-RATS Station map</h2>
-<h5>Generated at %s</h5>
+<h2>D-RATS %s</h2>
+<h5>%s %s</h5>
 <img src="file://%s"/>
 </body>
 </html>
-""" % (ts, mf)
+""" % (station_map, generated_at, ts, mf)
 
         self.map.export_to(mf, bounds)
 
@@ -765,7 +768,7 @@ class MapWindow(gtk.Window):
                 return
 
             d = gtk.MessageDialog(buttons=gtk.BUTTONS_OK)
-            d.set_property("text", "Failed to load overlay file")
+            d.set_property("text", _("Failed to load overlay file"))
         elif action == "remstatic":
             self.remove_current_static()
         elif action == "save":
@@ -800,17 +803,17 @@ class MapWindow(gtk.Window):
 </ui>
 """
 
-        actions = [('map', None, "_Map", None, None, self.mh),
-                   ('addmarker', None, "_Set Marker", None, None, self.mh),
-                   ('refresh', None, "_Refresh", None, None, self.mh),
-                   ('clearcache', None, "_Clear Cache", None, None, self.mh),
-                   ('loadstatic', None, "_Load Static Overlay", None, None, self.mh),
-                   ('remstatic', None, "_Remove Static Overlay", None, None, self.mh),
-                   ('export', None, "_Export", None, None, self.mh),
-                   ('printable', None, "_Printable", "<Control>p", None, self.mh),
-                   ('printablevis', None, "Printable (visible area)", "<Control><Alt>P", None, self.mh),
-                   ('save', None, "_Save Image", "<Control>s", None, self.mh),
-                   ('savevis', None, 'Save Image (visible area)', "<Control><Alt>S", None, self.mh),
+        actions = [('map', None, "_" + _("Map"), None, None, self.mh),
+                   ('addmarker', None, "_" + _("Set Marker"), None, None, self.mh),
+                   ('refresh', None, "_" + _("Refresh"), None, None, self.mh),
+                   ('clearcache', None, "_" + _("Clear Cache"), None, None, self.mh),
+                   ('loadstatic', None, "_" + _("Load Static Overlay"), None, None, self.mh),
+                   ('remstatic', None, "_" + _("Remove Static Overlay"), None, None, self.mh),
+                   ('export', None, "_" + _("Export"), None, None, self.mh),
+                   ('printable', None, "_" + _("Printable"), "<Control>p", None, self.mh),
+                   ('printablevis', None, _("Printable (visible area)"), "<Control><Alt>P", None, self.mh),
+                   ('save', None, "_" + _("Save Image"), "<Control>s", None, self.mh),
+                   ('savevis', None, _('Save Image (visible area)'), "<Control><Alt>S", None, self.mh),
                    ]
 
         uim = gtk.UIManager()
@@ -883,10 +886,10 @@ class MapWindow(gtk.Window):
                 latw.set_text("%.5f" % dlg.lat)
                 lonw.set_text("%.5f" % dlg.lon)
 
-        d = inputdialog.FieldDialog(title="Add Marker")
+        d = inputdialog.FieldDialog(title=_("Add Marker"))
 
         if grp is None:
-            grp = "Misc"
+            grp = _("Misc")
         f_grp = miscwidgets.make_choice(self.markers.keys(), True, grp)
 
         f_name = gtk.Entry()
@@ -895,46 +898,46 @@ class MapWindow(gtk.Window):
             f_name.set_sensitive(False)
             f_grp.set_sensitive(False)
 
-        d.add_field("Group", f_grp)
-        d.add_field("Name", f_name)
-        d.add_field("Latitude", miscwidgets.LatLonEntry())
-        d.add_field("Longitude", miscwidgets.LatLonEntry())
+        d.add_field(_("Group"), f_grp)
+        d.add_field(_("Name"), f_name)
+        d.add_field(_("Latitude"), miscwidgets.LatLonEntry())
+        d.add_field(_("Longitude"), miscwidgets.LatLonEntry())
         addrbtn = gtk.Button("By Address")
         addrbtn.connect("clicked", do_address,
-                        d.get_field("Latitude"),
-                        d.get_field("Longitude"),
-                        d.get_field("Name"))
-        d.add_field("Lookup", addrbtn)
+                        d.get_field(_("Latitude")),
+                        d.get_field(_("Longitude")),
+                        d.get_field(_("Name")))
+        d.add_field(_("Lookup"), addrbtn)
         if _lat:
-            d.get_field("Latitude").set_text("%.4f" % _lat)
+            d.get_field(_("Latitude")).set_text("%.4f" % _lat)
         if _lon:
-            d.get_field("Longitude").set_text("%.4f" % _lon)
+            d.get_field(_("Longitude")).set_text("%.4f" % _lon)
 
         icons = []
         for sym in sorted(DPRS_TO_APRS.values()):
             icon = utils.get_icon(ICON_MAPS, sym)
             if icon:
                 icons.append((icon, sym))
-        d.add_field("Icon", miscwidgets.make_pixbuf_choice(icons, _icon))
+        d.add_field(_("Icon"), miscwidgets.make_pixbuf_choice(icons, _icon))
 
         while d.run() == gtk.RESPONSE_OK:
             try:
-                grp = d.get_field("Group").get_active_text()
-                nme = d.get_field("Name").get_text()
-                lat = d.get_field("Latitude").value()
-                lon = d.get_field("Longitude").value()
-                idx = d.get_field("Icon").get_active()
+                grp = d.get_field(_("Group")).get_active_text()
+                nme = d.get_field(_("Name")).get_text()
+                lat = d.get_field(_("Latitude")).value()
+                lon = d.get_field(_("Longitude")).value()
+                idx = d.get_field(_("Icon")).get_active()
 
                 if not grp:
-                    raise Exception("group name required")
+                    raise Exception(_("Group name required"))
 
                 if not nme:
-                    raise Exception("marker name required")
+                    raise Exception(_("Marker name required"))
 
             except Exception, e:
                 ed = gtk.MessageDialog(buttons=gtk.BUTTONS_OK,
                                        parent=d)
-                ed.set_property("text", "Invalid value: %s" % e)
+                ed.set_property("text", _("Invalid value") + ": %s" % e)
                 ed.run()
                 ed.destroy()
                 continue
@@ -947,22 +950,21 @@ class MapWindow(gtk.Window):
         d.destroy()                    
 
     def prompt_to_send_loc(self, _lat, _lon):
-        d = inputdialog.FieldDialog(title="Broadcast Location")
+        d = inputdialog.FieldDialog(title=_("Broadcast Location"))
 
-        d.add_field("Callsign", gtk.Entry(8))
-        d.add_field("Description", gtk.Entry(20))
-        d.add_field("Latitude", miscwidgets.LatLonEntry())
-        d.add_field("Longitude", miscwidgets.LatLonEntry())
-
-        d.get_field("Latitude").set_text("%.4f" % _lat)
-        d.get_field("Longitude").set_text("%.4f" % _lon)
+        d.add_field(_("Callsign"), gtk.Entry(8))
+        d.add_field(_("Description"), gtk.Entry(20))
+        d.add_field(_("Latitude"), miscwidgets.LatLonEntry())
+        d.add_field(_("Longitude"), miscwidgets.LatLonEntry())
+        d.get_field(_("Latitude")).set_text("%.4f" % _lat)
+        d.get_field(_("Longitude")).set_text("%.4f" % _lon)
 
         while d.run() == gtk.RESPONSE_OK:
             try:
-                call = d.get_field("Callsign").get_text()
-                desc = d.get_field("Description").get_text()
-                lat = d.get_field("Latitude").get_text()
-                lon = d.get_field("Longitude").get_text()
+                call = d.get_field(_("Callsign")).get_text()
+                desc = d.get_field(_("Description")).get_text()
+                lat = d.get_field(_("Latitude")).get_text()
+                lon = d.get_field(_("Longitude")).get_text()
 
                 fix = GPSPosition(lat=lat, lon=lon, station=call)
                 fix.comment = desc
@@ -972,7 +974,7 @@ class MapWindow(gtk.Window):
                 break
             except Exception, e:
                 ed = gtk.MessageDialog(buttons=gtk.BUTTONS_OK, parent=d)
-                ed.set_property("text", "Invalid value: %s" % e)
+                ed.set_property("text", _("Invalid value") + ": %s" % e)
                 ed.run()
                 ed.destroy()
 
@@ -989,7 +991,7 @@ class MapWindow(gtk.Window):
 
         self.center_mark = items[1]
         self.sb_center.pop(self.STATUS_CENTER)
-        self.sb_center.push(self.STATUS_CENTER, "Center: %s" % self.center_mark)
+        self.sb_center.push(self.STATUS_CENTER, _("Center") + ": %s" % self.center_mark)
 
     def make_popup(self, vals):
         def _an(cap):
@@ -1171,16 +1173,16 @@ class MapWindow(gtk.Window):
 
         self._popup_items = {}
 
-        self.add_popup_handler("Center here",
+        self.add_popup_handler(_("Center here"),
                                lambda a, vals:
                                    self.recenter(vals["lat"],
                                                  vals["lon"]))
-        self.add_popup_handler("New marker here",
+        self.add_popup_handler(_("New marker here"),
                                lambda a, vals:
                                    self.prompt_to_set_marker(vals["lat"],
                                                              vals["lon"]))
 
-        self.add_popup_handler("Broadcast this location",
+        self.add_popup_handler(_("Broadcast this location"),
                                lambda a, vals:
                                    self.prompt_to_send_loc(vals["lat"],
                                                            vals["lon"]))
@@ -1191,7 +1193,7 @@ class MapWindow(gtk.Window):
     def get_markers(self):
         return self.markers
 
-    def set_marker(self, fix, color=None, group="Misc"):
+    def set_marker(self, fix, color=None, group=_("Misc")):
         if not color:
             color = self.colors.get(group, "yellow")
 
@@ -1225,7 +1227,7 @@ class MapWindow(gtk.Window):
                 self.tracking_enabled:
             self.recenter(fix.latitude, fix.longitude)
 
-    def del_marker(self, id, group="Misc"):
+    def del_marker(self, id, group=_("Misc")):
         try:
             print "Deleting marker %s" % id
             print self.markers.keys()
@@ -1332,16 +1334,16 @@ class MapWindow(gtk.Window):
 
         if not self.markers.has_key(group):
             d = gtk.MessageDialog(buttons=gtk.BUTTONS_OK, parent=self)
-            d.set_property("text", "Please select a top-level overlay group")
+            d.set_property("text", _("Please select a top-level overlay group"))
             d.run()
             d.destroy()
             return
 
-        d = miscwidgets.YesNoDialog(title="Confirm Delete",
+        d = miscwidgets.YesNoDialog(title=_("Confirm Delete"),
                                     parent=self,
                                     buttons=(gtk.STOCK_YES, gtk.RESPONSE_YES,
                                              gtk.STOCK_NO, gtk.RESPONSE_NO))
-        d.set_text("Really delete overlay %s?" % group)
+        d.set_text(_("Really delete overlay %s?") % group)
         r = d.run()
         d.destroy()
         if r == gtk.RESPONSE_NO:

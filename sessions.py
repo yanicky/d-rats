@@ -55,17 +55,19 @@ class SniffSession(sessionmgr.StatelessSession, gobject.GObject):
     def decode_control(self, frame):
         if frame.type == sessionmgr.ControlSession.T_ACK:
             l, r = struct.unpack("BB", frame.data)
-            return "Control: ACK Local:%i Remote:%i" % (l, r)
+            return _("Control: ACK") + " "\
+                _("Local") + ":%i " % l + \
+                _("Remote") + ":%i" % r
         elif frame.type == sessionmgr.ControlSession.T_END:
-            return "Control: END session %s" % frame.data
+            return _("Control: END session %s") % frame.data
         elif frame.type >= sessionmgr.ControlSession.T_NEW:
             id, = struct.unpack("B", frame.data[0])
             name = frame.data[1:]
             stype = session_types.get(frame.type,
                                       "Unknown type %i" % frame.type)
-            return "Control: NEW session %i: '%s' (%s)" % (id, name, stype)
+            return _("Control: NEW session") +" %i: '%s' (%s)" % (id, name, stype)
         else:
-            return "Control: UNKNOWN"
+            return _("Control: UNKNOWN")
 
     def _handler(self, frame):
         hdr = "%s->%s" % (frame.s_station, frame.d_station)
@@ -75,7 +77,7 @@ class SniffSession(sessionmgr.StatelessSession, gobject.GObject):
             return
 
         if frame.session == 1:
-            msg = "(chat: %s)" % frame.data
+            msg = "(%s: %s)" % (_("chat"), frame.data)
         elif frame.session == 0:
             msg = self.decode_control(frame)
         else:
@@ -108,8 +110,8 @@ class ChatSession(sessionmgr.StatelessSession):
 
     def ping_data(self):
         p = platform.get_platform()
-        return "Running D-RATS %s (%s)" % (mainapp.DRATS_VERSION,
-                                           p.os_version_string())
+        return _("Running") + " D-RATS %s (%s)" % (mainapp.DRATS_VERSION,
+                                                   p.os_version_string())
 
     def incoming_data(self, frame):
         if not self.__cb:
@@ -138,7 +140,7 @@ class ChatSession(sessionmgr.StatelessSession):
             except Exception, e:
                 args = { "From" : "ERROR",
                          "To"   : "CQCQCQ",
-                         "Msg"  : "Ping function failed (%s)" % e
+                         "Msg"  : _("Ping function failed") + " (%s)" % e
                          }
                 self.__cb(self.__cb_data, args)
                 return
@@ -148,7 +150,7 @@ class ChatSession(sessionmgr.StatelessSession):
 
             args = { "From" : frame.s_station,
                      "To" : frame.d_station,
-                     "Msg" : "[ Ping request, sent reply ]",
+                     "Msg" : "[ " + _("Ping request, sent reply") + " ]",
                      }
             self.__cb(self.__cb_data, args)
         elif frame.type == self.T_PNG_RSP:
@@ -181,7 +183,7 @@ class ChatSession(sessionmgr.StatelessSession):
 
         args = { "From" : f.s_station,
                  "To" : f.d_station,
-                 "Msg" : "[ Sent ping ]",
+                 "Msg" : "[ " + _("Sent ping") + " ]",
                  }
         self.__cb(self.__cb_data, args)
 
@@ -263,9 +265,9 @@ class BaseFileTransferSession:
                 return False
 
             if not resp:
-                self.status("Waiting for response")
+                self.status(_("Waiting for response"))
             elif resp == "OK":
-                self.status("Negotiation Complete")
+                self.status(_("Negotiation Complete"))
                 break
             else:
                 print "Got unknown start: `%s'" % resp
@@ -290,16 +292,16 @@ class BaseFileTransferSession:
         self.close()
 
         if self.stats["sent_size"] != self.stats["total_size"]:
-            self.status("Failed to send file (incomplete)")
+            self.status(_("Failed to send file (incomplete)"))
             return False
         else:
             actual = os.stat(filename).st_size
             self.stats["sent_size"] = self.stats["total_size"] = actual
-            self.status("Complete")
+            self.status(_("Complete"))
             return True
 
     def recv_file(self, dir):
-        self.status("Waiting for transfer to start")
+        self.status(_("Waiting for transfer to start"))
         for i in range(10):
             try:
                 data = self.read()
@@ -313,7 +315,7 @@ class BaseFileTransferSession:
                 time.sleep(2)
 
         if not data:
-            self.status("No start block received!")
+            self.status(_("No start block received!"))
             return None
 
         size, = struct.unpack("I", data[:4])
@@ -324,7 +326,10 @@ class BaseFileTransferSession:
         else:
             filename = dir
 
-        self.status("Receiving file %s of size %i" % (name, size))
+        self.status(_("Receiving file") + \
+                        " %s " % name + \
+                        _("of size") + \
+                        " %i" % size)
         self.stats["recv_size"] = 0
         self.stats["total_size"] = size
         self.stats["start_time"] = time.time()
@@ -335,7 +340,7 @@ class BaseFileTransferSession:
             print "Session closed while sending start ack"
             return None
 
-        self.status("Waiting for first block")
+        self.status(_("Waiting for first block"))
 
         data = ""
 
@@ -348,7 +353,7 @@ class BaseFileTransferSession:
 
             if d:
                 data += d
-                self.status("Receiving")
+                self.status(_("Receiving"))
 
         try:
             self.put_file_data(filename, data)
@@ -357,12 +362,12 @@ class BaseFileTransferSession:
             return None
 
         if self.stats["recv_size"] != self.stats["total_size"]:
-            self.status("Failed to receive file (incomplete)")
+            self.status(_("Failed to receive file (incomplete)"))
             return None
         else:
             actual = os.stat(filename).st_size
             self.stats["recv_size"] = self.stats["total_size"] = actual
-            self.status("Complete")
+            self.status(_("Complete"))
             return filename
 
 class FileTransferSession(BaseFileTransferSession, sessionmgr.StatefulSession):

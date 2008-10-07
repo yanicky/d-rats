@@ -59,9 +59,9 @@ def prompt_for_station(parent=None):
         calls.insert(0, default_station)
 
     d = EditableChoiceDialog(calls,
-                             title="Destination Station",
+                             title=_("Destination Station"),
                              parent=parent)
-    d.label.set_text("Select (or enter) a destination station")
+    d.label.set_text(_("Select (or enter) a destination station"))
     r = d.run()
     dest = d.choice.get_active_text()
     d.destroy()
@@ -185,7 +185,7 @@ class ChatGUI:
                 self.mainapp.chat_session.write(string)
                 self.logfn(message)
         else:
-            self.display_line("Not connected", "italic", "red")
+            self.display_line(_("Not connected"), "italic", "red")
             return
 
         if self.config.getboolean("prefs", "blinkmsg"):
@@ -194,7 +194,7 @@ class ChatGUI:
     def make_entry_box(self):
         hbox = gtk.HBox(False, 0)
         
-        button = gtk.Button("Send")
+        button = gtk.Button(_("Send"))
         entry = gtk.Entry()
 
         self.history = gtk.ListStore(gobject.TYPE_STRING)
@@ -449,7 +449,7 @@ class MainChatGUI(ChatGUI):
         self.mainapp.seen_callsigns.set_call_pos(station, pos)
         self.mainapp.seen_callsigns.set_call_time(station, time.time())
 
-        self.map.set_marker(pos, group="Stations")
+        self.map.set_marker(pos, group=_("Stations"))
 
         try:
             self.adv_controls["calls"].refresh()
@@ -503,7 +503,7 @@ class MainChatGUI(ChatGUI):
         try:
             f = file(filename)
         except:
-            self.display_line("Unable to open file `%s'" % filename,
+            self.display_line(_("Unable to open file") + " `%s'" % filename,
                               "red", "italic")
             return
 
@@ -511,11 +511,11 @@ class MainChatGUI(ChatGUI):
         f.close()
 
         if len(filedata) > (2 << 12):
-            self.display_line("File to large (must be less than 8K)",
+            self.display_line(_("File to large (must be less than %iK)") % 8,
                               "red", "italic")
             return
 
-        notice = "Sending file %s" % filename
+        notice = _("Sending file") + " %s" % filename
         self.display_line(notice + os.linesep,
                           "blue", "italic")
         self.tx_msg("%s\n%s" % (notice, filedata))
@@ -545,7 +545,7 @@ class MainChatGUI(ChatGUI):
 
         self.tabs = gtk.Notebook()
         self.tabs.set_property("show-tabs", False)
-        tab_label = gtk.Label("Main")
+        tab_label = gtk.Label(_("Main"))
         self.tabs.append_page(vbox2, tab_label)
         self.tabs.connect("switch-page",
                           self.select_page,
@@ -582,13 +582,15 @@ class MainChatGUI(ChatGUI):
         d.set_website("http://d-rats.danplanet.com")
         d.set_authors(("Dan Smith <dsmith@danplanet.com>",))
         d.set_comments(verinfo)
+
+        d.set_translator_credits("Italian: Leo, IZ5FSA")
         
         d.run()
         d.destroy()
 
     def filter_view(self):
-        d = TextInputDialog(title="Create filter", parent=self.window)
-        d.label.set_text("Enter a regular expression to define the filter:")
+        d = TextInputDialog(title=_("Create filter"), parent=self.window)
+        d.label.set_text(_("Enter a regular expression to define the filter:"))
         
         res = d.run()
         if res == gtk.RESPONSE_OK:
@@ -605,7 +607,7 @@ class MainChatGUI(ChatGUI):
                 del self.filters[i]
                 self.save_filters()
                 self.tabs.remove_page(i)
-                if f.label.get_text() == "All":
+                if f.label.get_text() == _("All"):
                     self.config.set("state", "show_all_filter", False)
                     self.menu_ag.get_action("allfilter").set_sensitive(True)
                 break
@@ -701,7 +703,7 @@ class MainChatGUI(ChatGUI):
             self.toggle_sendable(False)
             t = MulticastRecvGUI(self,
                                  self.config.xfer(),
-                                 title="Multicast Receive",
+                                 title=_("Multicast Receive"),
                                  parent=self.window)
             t.do_recv()            
             t.destroy()
@@ -757,29 +759,29 @@ class MainChatGUI(ChatGUI):
         </ui>
         """
 
-        actions = [('file', None, "_File", None, None, self.menu_handler),
-                   ('send', None, "_Send File", "F1", None, self.menu_handler),
-                   ('msend', None, "_Multi Send File", "F3", None, self.menu_handler),
-                   ('mrecv', None, "_Multi Recv File", "F4", None, self.menu_handler),
-                   ('config', None, "Main _Settings", None, None, self.menu_handler),
-                   ('qsts', None, "_Auto QST Settings", "<Control>q", None, self.menu_handler),
-                   ('quickmsg', None, 'Quick _Messages', None, None, self.menu_handler),
-                   ('manageform', None, '_Manage Form Templates', None, None, self.menu_handler),
-                   ('quit', None, "_Quit", None, None, self.menu_handler),
-                   ('sendtext', None, 'Broadcast _Text File', "<Control>b", None, self.menu_handler),
-                   ('ping', None, 'Ping Station', None, None, self. menu_handler),
-                   ('view', None, "_View", None, None, self.menu_handler),
-                   ('clear', None, '_Clear', "<Control>l", None, self.menu_handler),
-                   ('filter', None, '_Filter by string', "<Control>f", None, self.menu_handler),
-                   ('unfilter', None, '_Remove current filter', "<Control>k", None, self.menu_handler),
-                   ('allfilter', None, 'Show "_all" filter', None, None, self.show_allfilter),
-                   ('thislog', None, 'Log for this tab', None, None, self.menu_handler),
-                   ('map', None, 'Map', "<Control>m", None, self.menu_handler),
+        actions = [('file', None, _("_File"), None, None, self.menu_handler),
+                   ('send', None, _("_Send File"), "F1", None, self.menu_handler),
+                   ('msend', None, _("_Multi Send File"), "F3", None, self.menu_handler),
+                   ('mrecv', None, _("_Multi Recv File"), "F4", None, self.menu_handler),
+                   ('config', None, _("Main _Settings"), None, None, self.menu_handler),
+                   ('qsts', None, _("_Auto QST Settings"), "<Control>q", None, self.menu_handler),
+                   ('quickmsg', None, _('Quick _Messages'), None, None, self.menu_handler),
+                   ('manageform', None, _('_Manage Form Templates'), None, None, self.menu_handler),
+                   ('quit', None, _("_Quit"), None, None, self.menu_handler),
+                   ('sendtext', None, _('Broadcast _Text File'), "<Control>b", None, self.menu_handler),
+                   ('ping', None, _('Ping Station'), None, None, self. menu_handler),
+                   ('view', None, _("_View"), None, None, self.menu_handler),
+                   ('clear', None, _('_Clear'), "<Control>l", None, self.menu_handler),
+                   ('filter', None, _('_Filter by string'), "<Control>f", None, self.menu_handler),
+                   ('unfilter', None, _('_Remove current filter'), "<Control>k", None, self.menu_handler),
+                   ('allfilter', None, _('Show "_all" filter'), None, None, self.show_allfilter),
+                   ('thislog', None, _('Log for this tab'), None, None, self.menu_handler),
+                   ('map', None, _('Map'), "<Control>m", None, self.menu_handler),
 
-                   ('help', None, '_Help', None, None, self.menu_handler),
-                   ('about', None, '_About', None, None, self.menu_handler)]
+                   ('help', None, _('_Help'), None, None, self.menu_handler),
+                   ('about', None, _('_About'), None, None, self.menu_handler)]
 
-        advanced = gtk.ToggleAction("advanced", "_Advanced", None, None)
+        advanced = gtk.ToggleAction("advanced", _("_Advanced"), None, None)
         try:
             advanced.set_active(self.config.getint("state",
                                                    "main_advanced") != 0)
@@ -788,14 +790,14 @@ class MainChatGUI(ChatGUI):
 
         advanced.connect("toggled", self.show_advanced, None)
 
-        connected = gtk.ToggleAction("connect", "_Connected", None, None)
+        connected = gtk.ToggleAction("connect", _("_Connected"), None, None)
         connected.set_active(True)
         connected.connect("toggled", self.connect, None)
 
-        enableqst = gtk.ToggleAction("enableqst", "QSTs Enabled", None, None)
+        enableqst = gtk.ToggleAction("enableqst", _("QSTs Enabled"), None, None)
         enableqst.set_active(True)
 
-        isend = gtk.Action("isend", "Send _Image", None, None)
+        isend = gtk.Action("isend", _("Send _Image"), None, None)
         isend.set_sensitive(image.has_image_support())
         isend.connect("activate", self.menu_handler)
 
@@ -853,12 +855,12 @@ class MainChatGUI(ChatGUI):
         connected = action.get_active()
         if connected:
             if self.mainapp.refresh_comms():
-                self.display_line("Connected", "italic", "red")
+                self.display_line(_("Connected"), "italic", "red")
             else:
-                self.display_line("Disconnected", "italic", "red")
+                self.display_line(_("Disconnected"), "italic", "red")
         else:
             self.mainapp.stop_comms()
-            self.display_line("Disconnected", "italic", "red")
+            self.display_line(_("Disconnected"), "italic", "red")
 
     def set_connected(self, bool):
         action = self.menu_ag.get_action("connect")
@@ -889,27 +891,27 @@ class MainChatGUI(ChatGUI):
 
         qm = QuickMessageControl(self, self.config)
         qm.show()
-        nb.append_page(qm.root, gtk.Label("Quick Messages"))
+        nb.append_page(qm.root, gtk.Label(_("Quick Messages")))
         self.adv_controls["quick"] = qm
 
         qm = QSTMonitor(self, self.mainapp)
         qm.show()
-        nb.append_page(qm.root, gtk.Label("QST Monitor"))
+        nb.append_page(qm.root, gtk.Label(_("QST Monitor")))
         self.adv_controls["qsts"] = qm
 
         fm = FormManager(self)
         fm.show()
-        nb.append_page(fm.root, gtk.Label("Form Manager"))
+        nb.append_page(fm.root, gtk.Label(_("Form Manager")))
         self.adv_controls["forms"] = fm
 
         cc = CallCatcher(self)
         cc.show()
-        nb.append_page(cc.root, gtk.Label("Callsigns"))
+        nb.append_page(cc.root, gtk.Label(_("Callsigns")))
         self.adv_controls["calls"] = cc
 
         sg = sessiongui.SessionGUI(self)
         sg.show()
-        nb.append_page(sg.root, gtk.Label("Sessions"))
+        nb.append_page(sg.root, gtk.Label(_("Sessions")))
         self.adv_controls["sessions"] = sg
 
         return nb
@@ -987,7 +989,7 @@ class MainChatGUI(ChatGUI):
         self.save_filters()
 
     def popup(self, view, menu, data=None):
-        filter_item = gtk.MenuItem(label="Filter on this string")
+        filter_item = gtk.MenuItem(label=_("Filter on this string"))
         
         bounds = self.main_buffer.get_selection_bounds()
         if not bounds:
@@ -1083,13 +1085,13 @@ class MainChatGUI(ChatGUI):
                               None)
 
         self.map = mapdisplay.MapWindow()
-        self.map.set_title("D-RATS Station Map")
+        self.map.set_title(_("D-RATS Station Map"))
         self.load_static_locations()
 
         pos = self.mainapp.get_position()
         self.map.set_center(pos.latitude, pos.longitude)
         self.map.set_zoom(14)
-        self.map.add_popup_handler("Set as current location",
+        self.map.add_popup_handler(_("Set as current location"),
                                    self.set_loc_from_map)
         self._refresh_location()
 
@@ -1100,8 +1102,8 @@ class MainChatGUI(ChatGUI):
 
     def _refresh_location(self):
         fix = self.mainapp.get_position()
-        fix.station = "Me"
-        self.map.set_marker(fix, group="Stations")
+        fix.station = _("Me")
+        self.map.set_marker(fix, group=_("Stations"))
         self.map.update_gps_status(self.mainapp.gps.status_string())
         return True
 
@@ -1124,14 +1126,14 @@ class QuickMessageControl:
         self.list.set_rules_hint(True)
 
         r = gtk.CellRendererText()
-        col = gtk.TreeViewColumn("Quick messages", r, text=0)
+        col = gtk.TreeViewColumn(_("Quick messages"), r, text=0)
         self.list.append_column(col)
 
         self.list.connect("row-activated", self.implicit_send, None)
 
         self.root.pack_start(self.list, 1,1,1)
 
-        send = gtk.Button("Send")
+        send = gtk.Button(_("Send"))
         send.set_size_request(100, -1)
         send.connect("clicked", self.send, None)
 
@@ -1140,7 +1142,7 @@ class QuickMessageControl:
         self.list.show()
         send.show()
 
-        self.gui.tips.set_tip(self.list, "Double-click to send")
+        self.gui.tips.set_tip(self.list, _("Double-click to send"))
 
         self.visible = False
 
@@ -1190,24 +1192,23 @@ class QSTMonitor:
         self.view = gtk.TreeView(self.store)
 
         self.tips.set_tip(self.view,
-                          "Double-click on a row to reset the timer " +
-                          "and send now")
+                          _("Double-click on a row to reset the timer and send now"))
 
         self.view.connect("row-activated", self.reset_qst, None)
 
         r = gtk.CellRendererText()
-        c = gtk.TreeViewColumn("Period", r, text=self.col_period)
+        c = gtk.TreeViewColumn(_("Period"), r, text=self.col_period)
         c.set_sort_column_id(self.col_period)
         self.view.append_column(c)
 
         r = gtk.CellRendererProgress()
-        c = gtk.TreeViewColumn("Remaining", r,
+        c = gtk.TreeViewColumn(_("Remaining"), r,
                                value=self.col_remain, text=self.col_status)
         c.set_sort_column_id(self.col_status)
         self.view.append_column(c)
 
         r = gtk.CellRendererText()
-        c = gtk.TreeViewColumn("Message", r, text=self.col_msg)
+        c = gtk.TreeViewColumn(_("Message"), r, text=self.col_msg)
         c.set_sort_column_id(self.col_msg)
         c.set_resizable(True)
         self.view.append_column(c)
@@ -1236,11 +1237,11 @@ class QSTMonitor:
         rem = qst.remaining()
 
         if max == 0:
-            status = "Manual"
+            status = _("Manual")
         elif rem < 90:
-            status = "%i sec" % rem
+            status = "%i " % rem + _("sec")
         else:
-            status = "%i min" % (rem / 60)
+            status = "%i " % (rem / 60) + _("min")
 
         try:
             val = (float(rem) / float(max)) * 100.0
@@ -1268,11 +1269,11 @@ class QSTMonitor:
         msg = qst.text
 
         if max == 0:
-            status = "Manual"
+            status = _("Manual")
         elif rem < 90:
-            status = "%i sec" % rem
+            status = "%i " % rem + _("sec")
         else:
-            status = "%i min" % (rem / 60)
+            status = "%i " % (rem / 60) + _("min")
 
         try:
             val = (float(rem) / float(max)) * 100
@@ -1358,7 +1359,7 @@ class FormManager:
         self.view.set_rules_hint(True)
 
         choices = gtk.ListStore(gobject.TYPE_STRING)
-        for i in ["New", "Low", "Med", "Hi", "Done"]:
+        for i in [_("New"), _("Low"), _("Med"), _("Hi"), _("Done")]:
             choices.append([i])
 
         r = gtk.CellRendererCombo()
@@ -1366,13 +1367,13 @@ class FormManager:
         r.set_property("text-column", 0)
         r.set_property("editable", True)
         r.connect("edited", self.val_edited, self.col_statm)
-        c = gtk.TreeViewColumn("Status", r, text=self.col_statm)
+        c = gtk.TreeViewColumn(_("Status"), r, text=self.col_statm)
         c.set_resizable(True)
         c.set_sort_column_id(self.col_statm)
         self.view.append_column(c)
 
         r = gtk.CellRendererText()
-        c = gtk.TreeViewColumn("ID", r, text=self.col_ident)
+        c = gtk.TreeViewColumn(_("ID"), r, text=self.col_ident)
         c.set_resizable(True)
         c.set_sort_column_id(self.col_ident)
         self.view.append_column(c)
@@ -1381,12 +1382,12 @@ class FormManager:
         r.connect("edited", self.val_edited, self.col_ident)
 
         r = gtk.CellRendererText()
-        c = gtk.TreeViewColumn("Last Edited", r, text=self.col_stamp)
+        c = gtk.TreeViewColumn(_("Last Edited"), r, text=self.col_stamp)
         c.set_sort_column_id(self.col_stamp)
         self.view.append_column(c)
 
         r = gtk.CellRendererText()
-        c = gtk.TreeViewColumn("Last Transferred", r, text=self.col_xfert)
+        c = gtk.TreeViewColumn(_("Last Transferred"), r, text=self.col_xfert)
         c.set_sort_column_id(self.col_xfert)
         self.view.append_column(c)
 
@@ -1406,8 +1407,8 @@ class FormManager:
                       ident,
                       filen,
                       stamp=None,
-                      xfert="Never",
-                      statm="New"):
+                      xfert=_("Never"),
+                      statm=_("New")):
         if not stamp:
             stamp = self.get_stamp()
 
@@ -1427,8 +1428,8 @@ class FormManager:
 
         if not form_files:
             d = gtk.MessageDialog(buttons=gtk.BUTTONS_OK, parent=self.gui.window)
-            d.set_property("text", "No template forms available")
-            d.format_secondary_text("Please copy in the template forms to %s or create a new template by going to File->Manage Form Templates" % os.path.abspath(self.form_source_dir))
+            d.set_property("text", _("No template forms available"))
+            d.format_secondary_text(_("Please copy in the template forms to %s or create a new template by going to File->Manage Form Templates") % os.path.abspath(self.form_source_dir))
             d.run()
             d.destroy()
             return            
@@ -1439,9 +1440,9 @@ class FormManager:
             forms[id] = i
 
         d = ChoiceDialog(forms.keys(),
-                         title="Choose a form",
+                         title=_("Choose a form"),
                          parent=self.gui.window)
-        d.label.set_text("Select a form type to create")
+        d.label.set_text(_("Select a form type to create"))
         r = d.run()
         formid = d.choice.get_active_text()
         d.destroy()
@@ -1452,9 +1453,9 @@ class FormManager:
                                            "form_%m%d%Y_%H%M%S.xml"))
 
         try:
-            form = formgui.FormFile("New %s form" % formid,
+            form = formgui.FormFile(_("New %s form") % formid,
                                     forms[formid],
-                                    buttons=("Send", 999))
+                                    buttons=(_("Send"), 999))
             r = form.run_auto(newfn)
             form.destroy()
             if r == gtk.RESPONSE_CANCEL:
@@ -1477,10 +1478,10 @@ class FormManager:
 
     def delete(self, widget, data=None):
         d = YesNoDialog(parent=self.gui.window,
-                        title="Confirm Delete",
+                        title=_("Confirm Delete"),
                         buttons=(gtk.STOCK_YES, gtk.RESPONSE_YES,
                                  gtk.STOCK_NO, gtk.RESPONSE_NO))
-        d.set_text("Really delete this form?")
+        d.set_text(_("Really delete this form?"))
         r = d.run()
         d.destroy()
         if r != gtk.RESPONSE_YES:
@@ -1516,9 +1517,9 @@ class FormManager:
         print "Editing %s" % filename
 
         try:
-            form = formgui.FormFile("Edit Form",
+            form = formgui.FormFile(_("Edit Form"),
                                     filename,
-                                    buttons=("Send", 999))
+                                    buttons=(_("Send"), 999))
             r = form.run_auto()
             form.destroy()
             if r == gtk.RESPONSE_CANCEL:
@@ -1573,7 +1574,7 @@ class FormManager:
             newfn = time.strftime(os.path.join(self.form_store_dir,
                                                "form_%m%d%Y_%H%M%S.xml"))
 
-            form = formgui.FormFile("Reply to `%s'" % oform.id, template)
+            form = formgui.FormFile(_("Reply to")+" `%s'" % oform.id, template)
 
             for field, value in fields.items():
                 form.set_field_value(field, value)
@@ -1595,31 +1596,31 @@ class FormManager:
     def make_buttons(self):
         box = gtk.VBox(False, 2)
 
-        newb = gtk.Button("New")
+        newb = gtk.Button(_("New"))
         newb.set_size_request(75, 30)
         newb.connect("clicked", self.new, None)
         newb.show()
         box.pack_start(newb, 0,0,0)
 
-        edit = gtk.Button("Edit")
+        edit = gtk.Button(_("Edit"))
         edit.set_size_request(75, 30)
         edit.connect("clicked", self.edit, None)
         edit.show()
         box.pack_start(edit, 0,0,0)
 
-        reply = gtk.Button("Reply")
+        reply = gtk.Button(_("Reply"))
         reply.set_size_request(75, 30)
         reply.connect("clicked", self.reply, None)
         reply.show()
         box.pack_start(reply, 0,0,0)
 
-        delb = gtk.Button("Delete") 
+        delb = gtk.Button(_("Delete"))
         delb.set_size_request(75, 30)
         delb.connect("clicked", self.delete, None)
         delb.show()
         box.pack_start(delb, 0,0,0)
 
-        sendb = gtk.Button("Send")
+        sendb = gtk.Button(_("Send"))
         sendb.set_size_request(75, 30)
         sendb.connect("clicked", self.send, None)
         sendb.show()
@@ -1634,7 +1635,7 @@ class FormManager:
         self.reg.write(f)
         f.close()
 
-    def reg_form(self, id, file, editstamp, xferstamp="Never", status="New"):
+    def reg_form(self, id, file, editstamp, xferstamp=_("Never"), status=_("New")):
         sec = os.path.basename(file)
 
         if not self.reg.has_section(sec):
@@ -1670,7 +1671,7 @@ class FormManager:
                     statm = self.reg.get(i, "status")
                     xfert = self.reg.get(i, "xferstamp")
                 except:
-                    statm = "New"
+                    statm = _("New")
                 self.list_add_form(0, id, filename, stamp, xfert, statm)
             except Exception, e:
                 print "Failed to load form: %s" % e
@@ -1732,13 +1733,13 @@ class CallCatcher:
             print "Unknown action `%s'" % action
 
     def make_menu(self):
-        a = [('echoposgps', None, 'Echo position (GPS)', None, None, self.mh),
-             ('echoposgpsa', None, 'Echo position (GPS-A)', None, None, self.mh),
-             ('remove', None, 'Remove', None, None, self.mh),
-             ('reset', None, 'Reset', None, None, self.mh),
-             ('forget', None, 'Forget', None, None, self.mh),
-             ('lookup', None, 'Lookup (QRZ)', None, None, self.mh),
-             ('ping', None, 'Ping Station', None, None, self.mh)]
+        a = [('echoposgps', None, _('Echo position (GPS)'), None, None, self.mh),
+             ('echoposgpsa', None, _('Echo position (GPS-A)'), None, None, self.mh),
+             ('remove', None, _('Remove'), None, None, self.mh),
+             ('reset', None, _('Reset'), None, None, self.mh),
+             ('forget', None, _('Forget'), None, None, self.mh),
+             ('lookup', None, _('Lookup (QRZ)'), None, None, self.mh),
+             ('ping', None, _('Ping Station'), None, None, self.mh)]
 
         xml = """
 <ui>
@@ -1788,19 +1789,19 @@ class CallCatcher:
         self.view.get_selection().set_mode(gtk.SELECTION_MULTIPLE)
 
         r = gtk.CellRendererText()
-        c = gtk.TreeViewColumn("Callsign", r, text=self.col_call)
+        c = gtk.TreeViewColumn(_("Callsign"), r, text=self.col_call)
         c.set_sort_column_id(self.col_call)
         c.set_resizable(True)
         self.view.append_column(c)
 
         r = gtk.CellRendererText()
-        c = gtk.TreeViewColumn("Last Seen", r, text=self.col_disp)
+        c = gtk.TreeViewColumn(_("Last Seen"), r, text=self.col_disp)
         c.set_sort_column_id(self.col_time)
         c.set_resizable(True)
         self.view.append_column(c)
 
         r = gtk.CellRendererText()
-        c = gtk.TreeViewColumn("Last Position", r, text=self.col_pos)
+        c = gtk.TreeViewColumn(_("Last Position"), r, text=self.col_pos)
         c.set_sort_column_id(self.col_pos)
         c.set_resizable(True)
         self.view.append_column(c)
@@ -1823,38 +1824,38 @@ class CallCatcher:
     def make_controls(self):
         vbox = gtk.VBox(False, 2)
 
-        remove = gtk.Button("Remove")
+        remove = gtk.Button(_("Remove"))
         remove.set_size_request(75, 30)
         remove.connect("clicked", self.but_remove)
-        self.gui.tips.set_tip(remove, "Remove callsign from list")
+        self.gui.tips.set_tip(remove, _("Remove callsign from list"))
         remove.show()
         vbox.pack_start(remove, 0,0,0)
 
-        address = gtk.Button("Address")
+        address = gtk.Button(_("Address"))
         address.set_size_request(75, 30)
         address.connect("clicked", self.but_address)
-        self.gui.tips.set_tip(address, "Address a message to selected call")
+        self.gui.tips.set_tip(address, _("Address a message to selected call"))
         address.show()
         vbox.pack_start(address, 0,0,0)
 
-        reset = gtk.Button("Reset")
+        reset = gtk.Button(_("Reset"))
         reset.set_size_request(75, 30)
         reset.connect("clicked", self.but_reset, True)
-        self.gui.tips.set_tip(reset, "Reset last seen time for selected call")
+        self.gui.tips.set_tip(reset, _("Reset last seen time for selected call"))
         reset.show()
         vbox.pack_start(reset, 0,0,0)
 
-        forget = gtk.Button("Forget")
+        forget = gtk.Button(_("Forget"))
         forget.set_size_request(75, 30)
         forget.connect("clicked", self.but_reset, False)
-        self.gui.tips.set_tip(forget, "Forget when this call was last seen")
+        self.gui.tips.set_tip(forget, _("Forget when this call was last seen"))
         forget.show()
         vbox.pack_start(forget, 0,0,0)
 
-        clear = gtk.Button("Clear All")
+        clear = gtk.Button(_("Clear All"))
         clear.set_size_request(75, 30)
         clear.connect("clicked", self.but_clear)
-        self.gui.tips.set_tip(clear, "Clear all recorded callsigns")
+        self.gui.tips.set_tip(clear, _("Clear all recorded callsigns"))
         clear.show()
         vbox.pack_start(clear, 0,0,0)
 
@@ -1892,7 +1893,7 @@ class CallCatcher:
         for call in calls:
             try:
                 self.mainapp.seen_callsigns.remove(call)
-                self.gui.map.del_marker(call, "Stations")
+                self.gui.map.del_marker(call, _("Stations"))
             except Exception, e:
                 print "Failed to delete: %s" % e
 
@@ -1970,15 +1971,15 @@ class CallCatcher:
             datetime.datetime.fromtimestamp(stamp)
 
         if stamp == 0:
-            string = "Never"
+            string = _("Never")
         else:
             string = time.strftime("%H:%M:%S %m/%d/%Y ", time.localtime(stamp))
 
         since = ""
         if stamp and delta.days > 1:
-            since = "%i days " % delta.days
+            since = "%i %s " % (delta.days, _("days"))
         elif stamp and delta.days == 1:
-            since = "%i day " % delta.days
+            since = "%i %s " % (delta.days, _("day"))
 
         if stamp and delta.seconds > 60:
             since += "%i:%02i" % ((delta.seconds / 3600),
@@ -1993,7 +1994,7 @@ class CallCatcher:
     def refresh(self):
         def format_pos(pos):
             if pos == None:
-                return "Unknown"
+                return _("Unknown")
             else:
                 cur = self.mainapp.get_position()
                 return cur.fuzzy_to(pos)

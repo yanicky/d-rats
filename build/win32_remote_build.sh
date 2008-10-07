@@ -14,7 +14,7 @@ temp_dir() {
 
 copy_source() {
     tmp=$1
-    list=$(hg status -nmca)
+    list=$(hg status -nmca; find . -name '*.mo')
 
     rsync -arRv $list $HOST:$tmp
 }

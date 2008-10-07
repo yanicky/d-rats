@@ -77,27 +77,27 @@ def build_image_dialog(filename, image, dlgParent=None):
     def update():
         update_image(filename, d)
 
-    d.add_field("Filename", gtk.Label(os.path.basename(filename)))
+    d.add_field(_("Filename"), gtk.Label(os.path.basename(filename)))
 
     d.sizelabel = gtk.Label("--")
-    d.add_field("Size", d.sizelabel)
+    d.add_field(_("Size"), d.sizelabel)
 
     d.size = miscwidgets.make_choice(sizes, False, sizes[1])
     d.size.connect("changed", lambda x: update())
-    d.add_field("Resize to", d.size)
+    d.add_field(_("Resize to"), d.size)
 
     quality = gtk.HScale(gtk.Adjustment(50, 1, 100, 10, 10))
     quality.connect("format-value",
                     lambda s,v: "%i" % v)
     quality.connect("change-value", set_quality, d)
-    d.add_field("Quality", quality)
+    d.add_field(_("Quality"), quality)
 
     d.preview = gtk.Image()
     d.preview.show()
     sw = gtk.ScrolledWindow()
     sw.add_with_viewport(d.preview)
     sw.set_size_request(320,320)
-    d.add_field("Preview", sw, full=True)
+    d.add_field(_("Preview"), sw, full=True)
 
     d.set_size_request(400, 450)
 
@@ -121,7 +121,7 @@ def send_image(dlgParent=None):
         img = IMAGE.open(f)
     except IOError:
         d = gtk.MessageDialog(buttons=gtk.BUTTONS_OK, parent=dlgParent)
-        d.set_property("text", "Unknown image type")
+        d.set_property("text", _("Unknown image type"))
         d.run()
         d.destroy()
         return

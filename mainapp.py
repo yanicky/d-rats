@@ -16,6 +16,21 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
+import gettext
+
+if os.environ.has_key("LANG"):
+    try:
+        lang = gettext.translation("D-RATS",
+                                   localedir="locale",
+                                   languages=[os.environ["LANG"]])
+        lang.install()
+    except LookupError:
+        print "Unable to load language `%s'" % locale
+    except IOError, e:
+        print "Unable to load translation for %s: %s" % (locale, e)
+else:
+    gettext.install("D-RATS")
+
 import sys
 
 if sys.platform == "darwin":

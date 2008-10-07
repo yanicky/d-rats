@@ -20,9 +20,9 @@ ZOOM_MAX = 15
 ZOOMS = {}
 for x in range(ZOOM_MIN, ZOOM_MAX+1):
     t = mapdisplay.MapTile(1, 1, x)
-    x1, y1, x2, _ = t.tile_edges()
+    x1, y1, x2, __ = t.tile_edges()
     dist = distance.distance((x1, y1), (x2, y1)).miles * 5
-    ZOOMS["%.1f (max zoom %i)" % (dist, x)] = x
+    ZOOMS["%.1f (" %dist + _("max zoom") + " %i)" % x] = x
 
 class MapDownloader(gtk.Window):
     def make_info(self):
@@ -87,14 +87,14 @@ This is the D-RATS map download utility.  It will attempt to fetch all of the re
 
         box = gtk.VBox(True, 2)
 
-        self.val_keys = { "lat" : "Latitude",
-                          "lon" : "Longitude",
-                          "zoom" : "Diameter",
+        self.val_keys = { "lat" : _("Latitude"),
+                          "lon" : _("Longitude"),
+                          "zoom" : _("Diameter"),
                           }
 
         for i in ["lat", "lon"]:
             box.pack_start(self.make_val(i, self.val_keys[i]), 0,0,0)
-        box.pack_start(self.make_zoom("zoom", "Diameter (miles)"), 0,0,0)
+        box.pack_start(self.make_zoom("zoom", _("Diameter") + " (miles)"), 0,0,0)
 
         box.show()
 
@@ -161,7 +161,7 @@ This is the D-RATS map download utility.  It will attempt to fetch all of the re
         def status_tick():
             self.count += 1
             percent = (float(self.count) / self.max)
-            self.update(percent, "Downloading (%.0f %%)" % (percent * 100.0))
+            self.update(percent, _("Downloading") + " (%.0f %%)" % (percent * 100.0))
 
         for i in range(-2, 3):
             if not self.enabled:
@@ -175,23 +175,23 @@ This is the D-RATS map download utility.  It will attempt to fetch all of the re
                 self.download_zoom(status_tick, zoom, tile.x, tile.y)
 
         if self.enabled:
-            self.update(1.0, "Complete")
+            self.update(1.0, _("Complete"))
         else:
-            self.update(None, "Stopped")
+            self.update(None, _("Stopped"))
 
         self.complete = True
         self.enabled = False
 
     def show_field_error(self, field):
         d = gtk.MessageDialog(buttons=gtk.BUTTONS_OK, parent=self)
-        d.set_property("text", "Invalid value for `%s'" % field)
+        d.set_property("text", _("Invalid value for") + " `%s'" % field)
 
         d.run()
         d.destroy()
 
     def show_range_error(self, field):
         d = gtk.MessageDialog(buttons=gtk.BUTTONS_OK, parent=self)
-        d.set_property("text", "Invalid range for %s" % field)
+        d.set_property("text", _("Invalid range for") + " %s" % field)
         d.run()
         d.destroy()
 
@@ -230,12 +230,12 @@ This is the D-RATS map download utility.  It will attempt to fetch all of the re
     def make_control_buttons(self):
         box = gtk.HBox(True, 2)
 
-        self.start_button = gtk.Button("Start")
+        self.start_button = gtk.Button(_("Start"))
         self.start_button.set_size_request(75, 30)
         self.start_button.connect("clicked", self.do_start)
         self.start_button.show()
 
-        self.stop_button = gtk.Button("Stop")
+        self.stop_button = gtk.Button(_("Stop"))
         self.stop_button.set_size_request(75, 30)
         self.stop_button.set_sensitive(False)
         self.stop_button.connect("clicked", self.do_stop)
@@ -249,7 +249,7 @@ This is the D-RATS map download utility.  It will attempt to fetch all of the re
         return box
     
     def build_controls(self):
-        frame = gtk.Frame("Controls")
+        frame = gtk.Frame(_("Controls"))
 
         box = gtk.VBox(False, 2)
 
@@ -281,7 +281,7 @@ This is the D-RATS map download utility.  It will attempt to fetch all of the re
 
         return box
 
-    def __init__(self, title="Map Download Utility"):
+    def __init__(self, title=_("Map Download Utility")):
         gtk.Window.__init__(self, gtk.WINDOW_TOPLEVEL)
 
         self.set_title(title)

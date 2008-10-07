@@ -50,7 +50,8 @@ class AddressAssistant(baseclass):
 
         vbox = gtk.VBox(False, 0)
 
-        lab = gtk.Label("Enter an address, postal code, or intersection:")
+        lab = gtk.Label(_("Enter an address, postal code, or intersection") +\
+                            ":")
         lab.show()
         vbox.pack_start(lab, 1, 1, 1)
 
@@ -65,9 +66,9 @@ class AddressAssistant(baseclass):
         return vbox
 
     def make_address_selection(self):
-        cols = [ (gobject.TYPE_STRING, "Address"),
-                 (gobject.TYPE_FLOAT, "Latitude"),
-                 (gobject.TYPE_FLOAT, "Longitude") ]
+        cols = [ (gobject.TYPE_STRING, _("Address")),
+                 (gobject.TYPE_FLOAT, _("Latitude")),
+                 (gobject.TYPE_FLOAT, _("Longitude")) ]
         listbox = miscwidgets.ListWidget(cols)
 
         self.vals["AddressList"] = listbox
@@ -95,9 +96,9 @@ class AddressAssistant(baseclass):
             hbox.show()
             return hbox
 
-        vbox.pack_start(make_kv("Address", ""), 0, 0, 0)
-        vbox.pack_start(make_kv("Latitude", ""), 0, 0, 0)
-        vbox.pack_start(make_kv("Longitude", ""), 0, 0, 0)
+        vbox.pack_start(make_kv(_("Address"), ""), 0, 0, 0)
+        vbox.pack_start(make_kv(_("Latitude"), ""), 0, 0, 0)
+        vbox.pack_start(make_kv(_("Longitude"), ""), 0, 0, 0)
 
         vbox.show()
         return vbox
@@ -130,9 +131,9 @@ class AddressAssistant(baseclass):
     def prepare_conf(self, assistant, page):
         self.place, self.lat, self.lon = self.vals["AddressList"].get_selected(True)
 
-        self.vals["Address"].set_text(self.place)
-        self.vals["Latitude"].set_text("%.5f" % self.lat)
-        self.vals["Longitude"].set_text("%.5f" % self.lon)
+        self.vals[_("Address")].set_text(self.place)
+        self.vals[_("Latitude")].set_text("%.5f" % self.lat)
+        self.vals[_("Longitude")].set_text("%.5f" % self.lon)
 
         self.set_page_complete(page, True)
 
@@ -173,17 +174,17 @@ class AddressAssistant(baseclass):
 
         self.entry_page = self.make_address_entry_page()
         self.append_page(self.entry_page)
-        self.set_page_title(self.entry_page, "Locate an address")
+        self.set_page_title(self.entry_page, _("Locate an address"))
         self.set_page_type(self.entry_page, gtk.ASSISTANT_PAGE_CONTENT)
 
         self.sel_page = self.make_address_selection()
         self.append_page(self.sel_page)
-        self.set_page_title(self.sel_page, "Locations found")
+        self.set_page_title(self.sel_page, _("Locations found"))
         self.set_page_type(self.sel_page, gtk.ASSISTANT_PAGE_CONTENT)
 
         self.conf_page = self.make_address_confirm_page()
         self.append_page(self.conf_page)
-        self.set_page_title(self.conf_page, "Confirm address")
+        self.set_page_title(self.conf_page, _("Confirm address"))
         self.set_page_type(self.conf_page, gtk.ASSISTANT_PAGE_CONFIRM)
 
         self.connect("prepare", self.prepare_page)
