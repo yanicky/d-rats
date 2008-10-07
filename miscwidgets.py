@@ -22,6 +22,129 @@ import os
 
 import platform
 
+class KeyedListWidget(gtk.HBox):
+    __gsignals__ = {
+        "item-selected" : (gobject.SIGNAL_RUN_LAST,
+                           gobject.TYPE_NONE,
+                           (gobject.TYPE_STRING,)),
+        "item-toggled" : (gobject.SIGNAL_RUN_LAST,
+                          gobject.TYPE_BOOLEAN,
+                          (gobject.TYPE_STRING, gobject.TYPE_BOOLEAN))
+        }
+
+    def _toggle(self, rend, path, colnum):
+        self.__store[path][colnum] = not self.__store[path][colnum]
+        iter = self.__store.get_iter(path)
+        id, = self.__store.get(iter, 0)
+        self.emit("item-toggled", id, self.__store[path][colnum])
+
+    def _mouse(self, view, event):
+        x, y = event.get_coords()
+        path = self.__view.get_path_at_pos(int(x), int(y))
+        if path:
+            self.__view.set_cursor_on_cell(path[0])
+
+        sel = self.get_selected()
+        if sel:
+            self.emit("item-selected", sel)
+
+    def _make_view(self):
+        colnum = -1
+    
+        for typ, cap in self.columns:
+            colnum += 1
+            if colnum == 0:
+                continue # Key column
+    
+            if typ in [gobject.TYPE_STRING, gobject.TYPE_INT, gobject.TYPE_FLOAT]:
+                rend = gtk.CellRendererText()
+                rend.set_property("ellipsize", pango.ELLIPSIZE_END)
+                column = gtk.TreeViewColumn(cap, rend, text=colnum)
+            elif typ in [gobject.TYPE_BOOLEAN]:
+                rend = gtk.CellRendererToggle()
+                rend.connect("toggled", self._toggle, colnum)
+                column = gtk.TreeViewColumn(cap, rend, active=colnum)
+            else:
+                raise Exception("Unsupported type %s" % typ)
+            
+            column.set_sort_column_id(colnum)
+            self.__view.append_column(column)
+    
+        self.__view.connect("button_press_event", self._mouse)
+
+    def set_item(self, key, *values):
+        iter = self.__store.get_iter_first()
+        while iter:
+            id, = self.__store.get(iter, 0)
+            if id == key:
+                self.__store.insert_after(iter, row=(id,)+values)
+                self.__store.remove(iter)
+                return
+            iter = self.__store.iter_next(iter)
+    
+        self.__store.append(row=(key,) + values)
+    
+    def get_item(self, key):
+        iter = self.__store.get_iter_first()
+        while iter:
+            vals = self.__store.get(iter)
+            if vals[0] == key:
+                return vals
+            iter = self.store.iter_next(iter)
+    
+        return None
+    
+    def del_item(self, key):
+        iter = self.__store.get_iter_first()
+        while iter:
+            id, = self.__store.get(iter, 0)
+            if id == key:
+                self.__store.remove(iter)
+                return True
+
+            iter = self.__store.iter_next(iter)
+    
+        return False
+    
+    def has_item(self, key):
+        return self.get_item(key) is not None
+    
+    def get_selected(self):
+        try:
+            (store, iter) = self.__view.get_selection().get_selected()
+            return store.get(iter, 0)[0]
+        except Exception, e:
+            print "Unable to find selected: %s" % e
+            return None
+
+    def select_item(self, key):
+        iter = self.__store.get_iter_first()
+        while iter:
+            if self.__store.get(iter, 0)[0] == key:
+                selection = self.__view.get_selection()
+                path = self.__store.get_path(iter)
+                selection.select_path(path)
+                return True
+            iter = self.__store.iter_next(iter)
+
+        return False
+        
+    def __init__(self, columns):
+        gtk.HBox.__init__(self, True, 0)
+    
+        self.columns = columns
+    
+        types = tuple([x for x,y in columns])
+    
+        self.__store = gtk.ListStore(*types)
+        self.__view = gtk.TreeView(self.__store)
+    
+        self.pack_start(self.__view, 1, 1, 1)
+    
+        self._make_view()
+        self.__view.show()
+
+
 class ListWidget(gtk.HBox):
     __gsignals__ = {
         "click-on-list" : (gobject.SIGNAL_RUN_LAST,
