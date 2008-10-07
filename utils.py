@@ -181,3 +181,14 @@ class ExternalHash:
 
     def digest(self):
         return self.hval.split()[0]
+
+def combo_select(box, value):
+    store = box.get_model()
+    iter = store.get_iter_first()
+    while iter:
+        if store.get(iter, 0)[0] == value:
+            box.set_active_iter(iter)
+            return True
+        iter = store.iter_next(iter)
+
+    return False
