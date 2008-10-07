@@ -1,0 +1,850 @@
+# D-RATS Italian Translation
+# Copyright (C) Dan Smith <dsmith@danplanet.com>
+# This file is distributed under the same license as the D-RATS package.
+# Leonardo Lastrucci <iz5fsa@gmail.com>, 2008.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: D-RATS\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2008-10-07 16:06-0700\n"
+"PO-Revision-Date: 2008-09-25 06:50+0100\n"
+"Last-Translator: leo <leonardinux@gmail.com>\n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: sessions.py:58
+#, fuzzy
+msgid "Control: ACK"
+msgstr "Controlli"
+
+#: sessions.py:59
+msgid "Local"
+msgstr ""
+
+#: sessions.py:60
+#, fuzzy
+msgid "Remote"
+msgstr "Elimina"
+
+#: sessions.py:62
+#, python-format
+msgid "Control: END session %s"
+msgstr ""
+
+#: sessions.py:68
+msgid "Control: NEW session"
+msgstr ""
+
+#: sessions.py:70
+#, fuzzy
+msgid "Control: UNKNOWN"
+msgstr "SCONOSCIUTO"
+
+#: sessions.py:80
+msgid "chat"
+msgstr ""
+
+#: sessions.py:113
+msgid "Running"
+msgstr "Lanciato"
+
+#: sessions.py:143
+msgid "Ping function failed"
+msgstr "Funzinone Ping mancata"
+
+#: sessions.py:153
+msgid "Ping request, sent reply"
+msgstr "Richiesta ping, inviata risposta"
+
+#: sessions.py:186
+msgid "Sent ping"
+msgstr "Invia ping"
+
+#: sessions.py:268
+msgid "Waiting for response"
+msgstr "In attesa di risposta"
+
+#: sessions.py:270
+msgid "Negotiation Complete"
+msgstr "Negoziazione effettuata"
+
+#: sessions.py:295
+msgid "Failed to send file (incomplete)"
+msgstr "Mancato invio file (incompleto)"
+
+#: sessions.py:300 sessions.py:370 mapdisplay.py:371 mapdownloader.py:178
+msgid "Complete"
+msgstr "Completa"
+
+#: sessions.py:304
+msgid "Waiting for transfer to start"
+msgstr "In attesa avvio trasferimento"
+
+#: sessions.py:318
+msgid "No start block received!"
+msgstr "Blocco di avvio non ricevuto"
+
+#: sessions.py:329
+msgid "Receiving file"
+msgstr "File in ricezione"
+
+#: sessions.py:331
+msgid "of size"
+msgstr "della dimensione"
+
+#: sessions.py:343
+#, fuzzy
+msgid "Waiting for first block"
+msgstr "In attesa di risposta"
+
+#: sessions.py:356
+msgid "Receiving"
+msgstr "Ricezione"
+
+#: sessions.py:365
+msgid "Failed to receive file (incomplete)"
+msgstr "Mancata ricezione file (incompleta)"
+
+#: chatgui.py:62
+msgid "Destination Station"
+msgstr "Stazione destinataria"
+
+#: chatgui.py:64
+msgid "Select (or enter) a destination station"
+msgstr "Seleziona (o inserisci) la stazione destinataria"
+
+#: chatgui.py:188
+msgid "Not connected"
+msgstr "Non connesso"
+
+#: chatgui.py:197 chatgui.py:1136 chatgui.py:1458 chatgui.py:1522
+#: chatgui.py:1623
+msgid "Send"
+msgstr "Invia"
+
+#: chatgui.py:452 chatgui.py:1106 chatgui.py:1896
+msgid "Stations"
+msgstr "Stazioni"
+
+#: chatgui.py:506
+msgid "Unable to open file"
+msgstr "Errore in apertura file"
+
+#: chatgui.py:514
+#, python-format
+msgid "File to large (must be less than %iK)"
+msgstr "File troppo grande (deve essere minore di %iK)"
+
+#: chatgui.py:518
+msgid "Sending file"
+msgstr "Sto inviando il file"
+
+#: chatgui.py:548
+msgid "Main"
+msgstr "Principale"
+
+#: chatgui.py:592
+msgid "Create filter"
+msgstr "Crea filtro"
+
+#: chatgui.py:593
+msgid "Enter a regular expression to define the filter:"
+msgstr "Inserire un'espressione regolare per definire il filtro:"
+
+#: chatgui.py:610
+msgid "All"
+msgstr "Tutti"
+
+#: chatgui.py:706
+msgid "Multicast Receive"
+msgstr "Ricezione Multicast"
+
+#: chatgui.py:762
+msgid "_File"
+msgstr "_File"
+
+#: chatgui.py:763
+msgid "_Send File"
+msgstr "_Invia File"
+
+#: chatgui.py:764
+msgid "_Multi Send File"
+msgstr "Invia File _Multiplo"
+
+#: chatgui.py:765
+msgid "_Multi Recv File"
+msgstr "_Ricezione File Multiplo"
+
+#: chatgui.py:766
+msgid "Main _Settings"
+msgstr "Opzioni _Principali"
+
+#: chatgui.py:767
+msgid "_Auto QST Settings"
+msgstr "Opzioni _Auto-QST"
+
+#: chatgui.py:768
+msgid "Quick _Messages"
+msgstr "Messaggi _Rapidi"
+
+#: chatgui.py:769
+msgid "_Manage Form Templates"
+msgstr "_Gestione Modelli"
+
+#: chatgui.py:770
+msgid "_Quit"
+msgstr "_Esci"
+
+#: chatgui.py:771
+msgid "Broadcast _Text File"
+msgstr "Invia File di _Testo"
+
+#: chatgui.py:772 chatgui.py:1742
+msgid "Ping Station"
+msgstr "Invia Ping"
+
+#: chatgui.py:773
+msgid "_View"
+msgstr "_Visualizza"
+
+#: chatgui.py:774
+msgid "_Clear"
+msgstr "_Pulisci"
+
+#: chatgui.py:775
+msgid "_Filter by string"
+msgstr "_Filtro per stringa"
+
+#: chatgui.py:776
+msgid "_Remove current filter"
+msgstr "_Rimuovi filtro"
+
+#: chatgui.py:777
+msgid "Show \"_all\" filter"
+msgstr "Mostra \"tutti\" i filtri"
+
+#: chatgui.py:778
+msgid "Log for this tab"
+msgstr "Registra questa sessione"
+
+#: chatgui.py:779 mapdisplay.py:806
+msgid "Map"
+msgstr "Mappa"
+
+#: chatgui.py:781
+msgid "_Help"
+msgstr "_Aiuto"
+
+#: chatgui.py:782
+msgid "_About"
+msgstr "_Info"
+
+#: chatgui.py:784
+msgid "_Advanced"
+msgstr "_Avanzate"
+
+#: chatgui.py:793
+msgid "_Connected"
+msgstr "_Connesso"
+
+#: chatgui.py:797
+msgid "QSTs Enabled"
+msgstr ""
+
+#: chatgui.py:800
+msgid "Send _Image"
+msgstr "Invia _Immagine"
+
+#: chatgui.py:858
+msgid "Connected"
+msgstr "Connesso"
+
+#: chatgui.py:860 chatgui.py:863
+msgid "Disconnected"
+msgstr "Disconnesso"
+
+#: chatgui.py:894
+msgid "Quick Messages"
+msgstr "Messaggi Rapidi"
+
+#: chatgui.py:899
+msgid "QST Monitor"
+msgstr "Lista QST"
+
+#: chatgui.py:904
+msgid "Form Manager"
+msgstr "Gestore Messaggi"
+
+#: chatgui.py:909
+msgid "Callsigns"
+msgstr "Nominativi"
+
+#: chatgui.py:914
+msgid "Sessions"
+msgstr "Sessioni"
+
+#: chatgui.py:992
+msgid "Filter on this string"
+msgstr "Filtro per questa stringa"
+
+#: chatgui.py:1088
+msgid "D-RATS Station Map"
+msgstr "D-RATS Mappa della Stazione"
+
+#: chatgui.py:1094
+msgid "Set as current location"
+msgstr "Impostare come posizione corrente"
+
+#: chatgui.py:1105
+msgid "Me"
+msgstr "Io"
+
+#: chatgui.py:1129
+msgid "Quick messages"
+msgstr "Messaggi Rapidi"
+
+#: chatgui.py:1145
+msgid "Double-click to send"
+msgstr "Doppio-click per inviare"
+
+#: chatgui.py:1195
+msgid "Double-click on a row to reset the timer and send now"
+msgstr "Doppio-click sulla riga per azzerare il timer e inviare ora"
+
+#: chatgui.py:1200
+msgid "Period"
+msgstr "Periodo"
+
+#: chatgui.py:1205
+msgid "Remaining"
+msgstr "Rimanente"
+
+#: chatgui.py:1211
+msgid "Message"
+msgstr "Messaggio"
+
+#: chatgui.py:1240 chatgui.py:1272
+msgid "Manual"
+msgstr "Manuale"
+
+#: chatgui.py:1242 chatgui.py:1274
+msgid "sec"
+msgstr "sec"
+
+#: chatgui.py:1244 chatgui.py:1276
+msgid "min"
+msgstr "min"
+
+#: chatgui.py:1362 chatgui.py:1411 chatgui.py:1599 chatgui.py:1638
+#: chatgui.py:1674
+msgid "New"
+msgstr "Crea"
+
+#: chatgui.py:1362
+msgid "Low"
+msgstr "Basso"
+
+#: chatgui.py:1362
+msgid "Med"
+msgstr "Medio"
+
+#: chatgui.py:1362
+msgid "Hi"
+msgstr "Alto"
+
+#: chatgui.py:1362
+msgid "Done"
+msgstr "Fatto"
+
+#: chatgui.py:1370
+msgid "Status"
+msgstr "Stato"
+
+#: chatgui.py:1376
+msgid "ID"
+msgstr "ID"
+
+#: chatgui.py:1385
+msgid "Last Edited"
+msgstr "Ultima Modifica"
+
+#: chatgui.py:1390
+msgid "Last Transferred"
+msgstr "Ultimo Trasferimento"
+
+#: chatgui.py:1410 chatgui.py:1638 chatgui.py:1974
+msgid "Never"
+msgstr "Mai"
+
+#: chatgui.py:1431
+msgid "No template forms available"
+msgstr "Nessun modello disponibile"
+
+#: chatgui.py:1432
+#, python-format
+msgid ""
+"Please copy in the template forms to %s or create a new template by going to "
+"File->Manage Form Templates"
+msgstr ""
+"Vi preghiamo di copiare il modello in %s o creare un nuovo modello andando "
+"aFile-> Gestione dei modelli"
+
+#: chatgui.py:1443
+msgid "Choose a form"
+msgstr "Scegli un modello"
+
+#: chatgui.py:1445
+msgid "Select a form type to create"
+msgstr "Seleziona un tipo di modello da creare"
+
+#: chatgui.py:1456
+#, python-format
+msgid "New %s form"
+msgstr ""
+
+#: chatgui.py:1481 mapdisplay.py:1342
+msgid "Confirm Delete"
+msgstr "Conferma l'eliminazione"
+
+#: chatgui.py:1484
+msgid "Really delete this form?"
+msgstr "Sei sicuro di voler eliminare questo modello?"
+
+#: chatgui.py:1520
+msgid "Edit Form"
+msgstr "Modifica il modello"
+
+#: chatgui.py:1577
+msgid "Reply to"
+msgstr "Rispondi a"
+
+#: chatgui.py:1605 mapdisplay.py:557
+msgid "Edit"
+msgstr "Modifica"
+
+#: chatgui.py:1611
+msgid "Reply"
+msgstr "Rispondi"
+
+#: chatgui.py:1617 mapdisplay.py:563
+msgid "Delete"
+msgstr "Elimina"
+
+#: chatgui.py:1736
+msgid "Echo position (GPS)"
+msgstr "Eco della posizione (GPS)"
+
+#: chatgui.py:1737
+msgid "Echo position (GPS-A)"
+msgstr "Eco della posizione (GPS-A)"
+
+#: chatgui.py:1738 chatgui.py:1827
+msgid "Remove"
+msgstr "Elimina"
+
+#: chatgui.py:1739 chatgui.py:1841
+msgid "Reset"
+msgstr "Reimposta"
+
+#: chatgui.py:1740 chatgui.py:1848
+msgid "Forget"
+msgstr "Dimentica"
+
+#: chatgui.py:1741
+msgid "Lookup (QRZ)"
+msgstr "Ricerca (QRZ)"
+
+#: chatgui.py:1792 mapdisplay.py:955 mapdisplay.py:964
+msgid "Callsign"
+msgstr "Nominativo"
+
+#: chatgui.py:1798
+msgid "Last Seen"
+msgstr "Cronologia"
+
+#: chatgui.py:1804
+msgid "Last Position"
+msgstr "Ultima Posizione"
+
+#: chatgui.py:1830
+msgid "Remove callsign from list"
+msgstr "Elimina il nominativo dalla lista"
+
+#: chatgui.py:1834 geocode_ui.py:69 geocode_ui.py:99 geocode_ui.py:134
+msgid "Address"
+msgstr "Indirizzo"
+
+#: chatgui.py:1837
+msgid "Address a message to selected call"
+msgstr "Indirizza un messaggio al nominativo selezionato"
+
+#: chatgui.py:1844
+msgid "Reset last seen time for selected call"
+msgstr "Reimposta la cronologia del nominativo selezionato"
+
+#: chatgui.py:1851
+msgid "Forget when this call was last seen"
+msgstr "Cancella la cronologia del nominativo"
+
+#: chatgui.py:1855
+msgid "Clear All"
+msgstr "Pulisci i campi"
+
+#: chatgui.py:1858
+msgid "Clear all recorded callsigns"
+msgstr "Cancella tutti i nominativi registrati"
+
+#: chatgui.py:1980
+msgid "days"
+msgstr "giorni"
+
+#: chatgui.py:1982
+msgid "day"
+msgstr "giorno"
+
+#: chatgui.py:1997
+msgid "Unknown"
+msgstr "Sconosciuto"
+
+#: geocode_ui.py:53
+msgid "Enter an address, postal code, or intersection"
+msgstr "Inserisci indirizzo, CAP o località"
+
+#: geocode_ui.py:70 geocode_ui.py:100 geocode_ui.py:135 mapdisplay.py:600
+#: mapdisplay.py:903 mapdisplay.py:907 mapdisplay.py:912 mapdisplay.py:927
+#: mapdisplay.py:957 mapdisplay.py:959 mapdisplay.py:966 mapdownloader.py:90
+msgid "Latitude"
+msgstr "Latitudine"
+
+#: geocode_ui.py:71 geocode_ui.py:101 geocode_ui.py:136 mapdisplay.py:601
+#: mapdisplay.py:904 mapdisplay.py:908 mapdisplay.py:914 mapdisplay.py:928
+#: mapdisplay.py:958 mapdisplay.py:960 mapdisplay.py:967 mapdownloader.py:91
+msgid "Longitude"
+msgstr "Longitudine"
+
+#: geocode_ui.py:177
+msgid "Locate an address"
+msgstr "Trova un indirizzo"
+
+#: geocode_ui.py:182
+msgid "Locations found"
+msgstr "Trovata Posizione"
+
+#: geocode_ui.py:187
+msgid "Confirm address"
+msgstr "Conferma l'indirizzo"
+
+#: gps.py:309
+msgid "away"
+msgstr "via"
+
+#: gps.py:311
+msgid "degrees"
+msgstr "gradi"
+
+#: gps.py:328
+msgid "Heading"
+msgstr "Direzione"
+
+#: gps.py:338
+msgid "reporting"
+msgstr "relazione"
+
+#: gps.py:348
+msgid "Invalid GPS data"
+msgstr "Dati GPS non corretti"
+
+#: gps.py:658
+msgid "UNKNOWN"
+msgstr "SCONOSCIUTO"
+
+#: gps.py:845
+msgid "Unable to open GPS port"
+msgstr "Impossibile aprire la porta GPS"
+
+#: gps.py:880
+msgid "ME"
+msgstr "IO"
+
+#: gps.py:893
+msgid "GPS Locked"
+msgstr "GPS Bloccato"
+
+#: gps.py:895
+msgid "GPS Not Locked"
+msgstr "GPS Non Bloccato"
+
+#: gps.py:924
+msgid "Unable to parse address"
+msgstr "Impossibile analizzare l'indirizzo"
+
+#: gps.py:935
+msgid "Unable to connect"
+msgstr "Impossibile connettersi"
+
+#: gps.py:955
+msgid "GPSd Socket closed"
+msgstr "Socket GPSd chiuso"
+
+#: gps.py:981
+msgid "GPSd Locked"
+msgstr "Socket GPSd Bloccato"
+
+#: gps.py:983
+msgid "GPSd Not Locked"
+msgstr "Socket GPSd Non Bloccato"
+
+#: gps.py:1008
+msgid "Static position"
+msgstr "Posizione Statica"
+
+#: image.py:80
+msgid "Filename"
+msgstr "Nome File"
+
+#: image.py:83
+msgid "Size"
+msgstr "Dimensione"
+
+#: image.py:87
+msgid "Resize to"
+msgstr "Ridimensiona"
+
+#: image.py:93
+msgid "Quality"
+msgstr "Qualità"
+
+#: image.py:100
+msgid "Preview"
+msgstr "Anteprima"
+
+#: image.py:124
+msgid "Unknown image type"
+msgstr "Tipo immagine sconosciuta"
+
+#: inputdialog.py:81
+msgid "An error has occurred"
+msgstr "Si è verificato un errore"
+
+#: mapdisplay.py:315
+msgid "Loading map"
+msgstr "Caricamento mapp"
+
+#: mapdisplay.py:317
+msgid "Getting map center"
+msgstr "Trova centro mappa"
+
+#: mapdisplay.py:344
+msgid "Retrieving"
+msgstr "Recupero in corso"
+
+#: mapdisplay.py:347
+msgid "Loading"
+msgstr "Caricamento"
+
+#: mapdisplay.py:472 mapdisplay.py:496
+msgid "Zoom"
+msgstr "Zoom"
+
+#: mapdisplay.py:479
+msgid "Min"
+msgstr "Min"
+
+#: mapdisplay.py:492
+msgid "Max"
+msgstr "Max"
+
+#: mapdisplay.py:567
+msgid "Center on this"
+msgstr "Centra questo punto"
+
+#: mapdisplay.py:598
+msgid "Show"
+msgstr "Mostra"
+
+#: mapdisplay.py:599
+msgid "Station"
+msgstr "Stazione"
+
+#: mapdisplay.py:602
+msgid "Distance"
+msgstr "Distanza"
+
+#: mapdisplay.py:603
+msgid "Direction"
+msgstr "Direzione"
+
+#: mapdisplay.py:680
+msgid "Track center"
+msgstr "Modalità Inseguimento"
+
+#: mapdisplay.py:689
+msgid "Are you sure you want to clear your map cache?"
+msgstr "Sei sicuro di coler cancellare la mappa dalla memoria (cache) ?"
+
+#: mapdisplay.py:710
+msgid "Station map"
+msgstr "Mappa della Stazione"
+
+#: mapdisplay.py:711
+msgid "Generated at"
+msgstr "Generato il"
+
+#: mapdisplay.py:771
+msgid "Failed to load overlay file"
+msgstr "Mancata apertura file copertura (overlay)"
+
+#: mapdisplay.py:807
+msgid "Set Marker"
+msgstr "Evidenzia"
+
+#: mapdisplay.py:808
+msgid "Refresh"
+msgstr "Aggiornare"
+
+#: mapdisplay.py:809
+msgid "Clear Cache"
+msgstr "Pulisci Memoria (cache)"
+
+#: mapdisplay.py:810
+msgid "Load Static Overlay"
+msgstr "Carica Overlay Statici"
+
+#: mapdisplay.py:811
+msgid "Remove Static Overlay"
+msgstr "Rimuovi Overlay Statici"
+
+#: mapdisplay.py:812
+msgid "Export"
+msgstr "Esporta"
+
+#: mapdisplay.py:813
+msgid "Printable"
+msgstr "Stampabile"
+
+#: mapdisplay.py:814
+msgid "Printable (visible area)"
+msgstr "Stampabile (area visibile)"
+
+#: mapdisplay.py:815
+msgid "Save Image"
+msgstr "Salva Immagine"
+
+#: mapdisplay.py:816
+msgid "Save Image (visible area)"
+msgstr "Salva Immagine (area visibile)"
+
+#: mapdisplay.py:889
+msgid "Add Marker"
+msgstr "Aggiungi Segnaposto"
+
+#: mapdisplay.py:892 mapdisplay.py:1196 mapdisplay.py:1230
+msgid "Misc"
+msgstr "Misc"
+
+#: mapdisplay.py:901 mapdisplay.py:925
+msgid "Group"
+msgstr "Gruppo"
+
+#: mapdisplay.py:902 mapdisplay.py:909 mapdisplay.py:926
+msgid "Name"
+msgstr "Nome"
+
+#: mapdisplay.py:910
+msgid "Lookup"
+msgstr "Ricerca"
+
+#: mapdisplay.py:921 mapdisplay.py:929
+msgid "Icon"
+msgstr "Icona"
+
+#: mapdisplay.py:932
+msgid "Group name required"
+msgstr "Nome Gruppo Richiesto"
+
+#: mapdisplay.py:935
+msgid "Marker name required"
+msgstr "Nome Segnalibro Richiesto"
+
+#: mapdisplay.py:940 mapdisplay.py:977
+msgid "Invalid value"
+msgstr "Valore non valido"
+
+#: mapdisplay.py:953
+msgid "Broadcast Location"
+msgstr "Posizone di Trasmissione"
+
+#: mapdisplay.py:956 mapdisplay.py:965
+msgid "Description"
+msgstr "Descrizione"
+
+#: mapdisplay.py:994
+msgid "Center"
+msgstr "Centro"
+
+#: mapdisplay.py:1176
+msgid "Center here"
+msgstr "Centra qui"
+
+#: mapdisplay.py:1180
+msgid "New marker here"
+msgstr "Nuovo Segnaposto qui"
+
+#: mapdisplay.py:1185
+msgid "Broadcast this location"
+msgstr "Trasmetti questa posizione"
+
+#: mapdisplay.py:1337
+msgid "Please select a top-level overlay group"
+msgstr "Prego seleziona un gruppo Overlay principale"
+
+#: mapdisplay.py:1346
+#, python-format
+msgid "Really delete overlay %s?"
+msgstr "Sei sicuro di voler eliminare %s?"
+
+#: mapdownloader.py:25
+msgid "max zoom"
+msgstr "max zoom"
+
+#: mapdownloader.py:92 mapdownloader.py:97
+msgid "Diameter"
+msgstr "Diametro"
+
+#: mapdownloader.py:164
+msgid "Downloading"
+msgstr "Downloading"
+
+#: mapdownloader.py:180
+msgid "Stopped"
+msgstr "Fermato"
+
+#: mapdownloader.py:187
+msgid "Invalid value for"
+msgstr "Valore non valido per"
+
+#: mapdownloader.py:194
+msgid "Invalid range for"
+msgstr "Intervallo non valido per"
+
+#: mapdownloader.py:233
+msgid "Start"
+msgstr "Avvia"
+
+#: mapdownloader.py:238
+msgid "Stop"
+msgstr "Stop"
+
+#: mapdownloader.py:252
+msgid "Controls"
+msgstr "Controlli"
+
+#: mapdownloader.py:284
+msgid "Map Download Utility"
+msgstr "Utilità Scarico Mappe"
+
+#~ msgid "Recevied block"
+#~ msgstr "Blocco ricevuto"
