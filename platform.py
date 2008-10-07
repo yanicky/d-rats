@@ -171,7 +171,9 @@ class UnixPlatform(Platform):
             print "Exec child exited"
 
     def open_html_file(self, path):
-        os.system("%s '%s'" % (_unix_browser(), path))
+        cmd = "%s '%s'" % (_unix_browser(), path)
+        print "Calling `%s' to open html" % cmd
+        os.system(cmd)
 
     def list_serial_ports(self):
         return sorted(glob.glob("/dev/ttyS*") + glob.glob("/dev/ttyUSB*"))

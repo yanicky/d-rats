@@ -480,11 +480,7 @@ class Form(gtk.Dialog):
         self.export(name)
 
         print "Exported to temporary file: %s" % name
-
-        if os.name == "nt":
-            os.system("explorer %s" % name)
-        else:
-            os.system("firefox %s" % name)
+        platform.get_platform().open_html_file(name)
 
     def calc_check(self, buffer, checkwidget):
         message = buffer.get_text(buffer.get_start_iter(),
