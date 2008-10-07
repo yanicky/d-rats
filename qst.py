@@ -25,13 +25,13 @@ import re
 import threading
 
 from commands import getstatusoutput as run
-from miscwidgets import make_choice, ListWidget
+from miscwidgets import make_choice, KeyedListWidget
 import miscwidgets
 import mainapp
 import platform
 import inputdialog
 import cap
-from utils import NetFile
+from utils import NetFile, combo_select
 
 try:
     import feedparser
@@ -755,6 +755,11 @@ class QuickMsgGUI(SelectGUI):
             self.config.refresh_app()        
 
 class QSTEditWidget(gtk.VBox):
+    def __init__(self, *a, **k):
+        gtk.VBox.__init__(self, *a, **k)
+
+        self._id = None
+
     def to_qst(self):
         pass
 
@@ -765,6 +770,9 @@ class QSTEditWidget(gtk.VBox):
         return "Unknown"
 
     def reset(self):
+        pass
+
+    def to_human(self):
         pass
 
 class QSTTextEditWidget(QSTEditWidget):
@@ -786,10 +794,13 @@ class QSTTextEditWidget(QSTEditWidget):
         self.__tb.set_text("")
     
     def to_qst(self):
-        return "Text", str(self)
+        return str(self)
 
     def from_qst(self, content):
         self.__tb.set_text(content)
+
+    def to_human(self):
+        return str(self)
 
 class QSTFileEditWidget(QSTEditWidget):
     label_text = "Choose a text file.  The contents will be used " + \
@@ -818,6 +829,9 @@ class QSTFileEditWidget(QSTEditWidget):
 
     def from_qst(self, content):
         self.__fn.set_filename(content)
+
+    def to_human(self):
+        return self.__fn.get_filename()
 
 class QSTExecEditWidget(QSTFileEditWidget):
     label_text = "Choose a script to execute.  The output will be used " + \
@@ -859,10 +873,13 @@ class QSTGPSEditWidget(QSTEditWidget):
         self.__msg.set_text("")
 
     def to_qst(self):
-        return self.type, self.__msg.get_text()
+        return self.__msg.get_text()
 
     def from_qst(self, content):
         self.__msg.set_text(content)
+
+    def to_human(self):
+        return self.__msg.get_text()
 
 class QSTGPSAEditWidget(QSTGPSEditWidget):
     msg_limit = 20
@@ -886,7 +903,7 @@ class QSTRSSEditWidget(QSTEditWidget):
         return "Source: %s" % self.__url.get_text()
 
     def to_qst(self):
-        return "RSS", self.__url.get_text()
+        return self.__url.get_text()
 
     def from_qst(self, content):
         self.__url.set_text(content)
@@ -894,13 +911,11 @@ class QSTRSSEditWidget(QSTEditWidget):
     def reset(self):
         self.__url.set_text("")
 
+    def to_human(self):
+        return self.__url.get_text()
+
 class QSTCAPEditWidget(QSTRSSEditWidget):
     label_string = "Enter the URL of a CAP feed:"
-
-    def to_qst(self):
-        __, val = QSTRSSEditWidget.to_qst(self)
-
-        return "CAP", val
 
 class QSTStationEditWidget(QSTEditWidget):
     def ev_group_sel(self, group, station):
@@ -943,66 +958,79 @@ class QSTStationEditWidget(QSTEditWidget):
 
     def to_qst(self):
         if not self.__group.get_active_text():
-            return None, None
+            return None
         elif not self.__station.get_active_text():
-            return None, None
+            return None
         else:
-            return "Station", "%s::%s" % (self.__group.get_active_text(),
-                                          self.__station.get_active_text())
+            return "%s::%s" % (self.__group.get_active_text(),
+                               self.__station.get_active_text())
+
+    def to_human(self):
+        return "%s::%s" % (self.__group.get_active_text(),
+                           self.__station.get_active_text())
 
 class QSTGUI2(gtk.Dialog):
     def ev_add(self, button, typew, intvw):
         self.__index += 1
 
         id = str(self.__index)
-        freq = intvw.get_active_text()
-        tstr = typew.get_active_text()
-        __, cont = self.__current.to_qst()
-        if not cont:
-            return
 
-        self.__listbox.add_item(id,
+        combo_select(typew, "Text")
+        self.__current.from_qst("My message")
+        self.__current.id = id
+        self.ev_update(None, typew, intvw)
+
+    def ev_update(self, button, typew, intvw):
+        sec = "qst_%s" % self.__current.id
+        if not self.__config.has_section(sec):
+            self.__config.add_section(sec)
+            self.__config.set(sec, "enabled", "True")
+
+        self.__config.set(sec, "freq", intvw.get_active_text())
+        self.__config.set(sec, "content", self.__current.to_qst())
+        self.__config.set(sec, "type", typew.get_active_text())
+
+        self.__listbox.set_item(self.__current.id,
                                 True,
                                 intvw.get_active_text(),
                                 typew.get_active_text(),
-                                cont)
+                                self.__current.to_human())
 
-        self.__current.reset()
+        self.__listbox.select_item(self.__current.id)
 
-        sec = "qst_%s" % id
-        self.__config.add_section(sec)
-        self.__config.set(sec, "freq", freq)
-        self.__config.set(sec, "enabled", "True")
-        self.__config.set(sec, "content", cont)
-        self.__config.set(sec, "type", tstr)
-        
     def ev_rem(self, button):
-        vals = self.__listbox.get_selected()
-        if vals is None:
+        ident = self.__listbox.get_selected()
+        if ident is None:
             return
 
-        id = vals[0]
-
-        self.__config.remove_section("qst_%s" % id)
-        self.__listbox.remove_selected()
+        self.__config.remove_section("qst_%s" % ident)
+        self.__listbox.del_item(ident)
+        self.__current.reset()
 
     def ev_type_changed(self, box, types):
         wtype = box.get_active_text()
 
         if self.__current:
             self.__current.hide()
-
+            ident = self.__current.id
+        else:
+            ident = None
+        
         self.__current = types[wtype]
         self.__current.show()
+        self.__current.id = ident
 
-    def ev_enable_toggled(self, listw, vals):
-        id = vals[0]
-        en = vals[1]
+    def ev_enable_toggled(self, listw, ident, en):
+        self.__config.set("qst_%s" % ident, "enabled", str(en))
 
-        self.__config.set("qst_%s" % id, "enabled", str(en))
+    def ev_selected(self, listw, ident, typew, intvw):
+        sec = "qst_%s" % ident
+        intvw.child.set_text(self.__config.get(sec, "freq"))
+        combo_select(typew, self.__config.get(sec, "type"))
 
-    def ev_mod(self, button):
-        pass
+        self.__current.from_qst(self.__config.get(sec, "content"))
+
+        self.__current.id = ident
 
     def __init__(self, config, parent=None):
         gtk.Dialog.__init__(self,
@@ -1022,10 +1050,13 @@ class QSTGUI2(gtk.Dialog):
                 (gobject.TYPE_STRING, "Type"),
                 (gobject.TYPE_STRING, "Content")]
 
-        self.__listbox = ListWidget(cols)
-        hbox.pack_start(self.__listbox, 1, 1, 1)
+        self.__listbox = KeyedListWidget(cols)
         self.__listbox.show()
-        self.__listbox.connect("item-toggled", self.ev_enable_toggled)
+        sw = gtk.ScrolledWindow()
+        sw.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
+        sw.add_with_viewport(self.__listbox)
+        sw.show()
+        hbox.pack_start(sw, 1, 1, 1)
 
         cbox = gtk.VBox(False, 2)
 
@@ -1043,55 +1074,57 @@ class QSTGUI2(gtk.Dialog):
         if not HAVE_FEEDPARSER:
             del types["RSS"]
 
+        add = gtk.Button(stock=gtk.STOCK_ADD)
+        add.show()
+        cbox.pack_start(add, 0, 0, 0)
+
         rem = gtk.Button(stock=gtk.STOCK_DELETE)
         rem.connect("clicked", self.ev_rem)
         rem.show()
         cbox.pack_start(rem, 0, 0, 0)
 
-        fbox = gtk.VBox(False, 2)
-        fbox.show()
-        frame = gtk.Frame("New QST")
-        frame.add(fbox)
-        frame.show()
-        cbox.pack_start(frame, 0, 0, 0)
+        cbox.show()
+        hbox.pack_start(cbox, 0, 0, 0)
+
+        eframe = gtk.Frame("QST Parameters")
+        eframe.show()
+        self.vbox.pack_start(eframe, 0, 0, 0)
+
+        ecvbox = gtk.VBox(False, 2)
+        eframe.add(ecvbox)
+        ecvbox.show()
+
+        echbox = gtk.HBox(False, 2)
+        echbox.show()
+        ecvbox.pack_start(echbox, 0, 0, 0)
 
         typew = make_choice(types.keys(), False, default="Text")
-        typew.set_size_request(50, -1)
+        typew.set_size_request(75, -1)
         typew.show()
-        fbox.pack_start(typew, 0, 0, 0)
+        echbox.pack_start(typew, 0, 0, 0)
 
         intervals = ["1", "5", "10", "20", "30", "60", ":30", ":15"]
 
         intvw = make_choice(intervals, True, default="60")
         intvw.set_size_request(75, -1)
         intvw.show()
-        fbox.pack_start(intvw, 0, 0, 0)
+        echbox.pack_start(intvw, 0, 0, 0)
 
-        add = gtk.Button(stock=gtk.STOCK_ADD)
-        add.show()
-        fbox.pack_start(add, 0, 0, 0)
+        update = gtk.Button("Save")
+        update.set_size_request(75, -1)
+        update.show()
+        echbox.pack_start(update, 0, 0, 0)
 
-        mod = gtk.Button(stock=gtk.STOCK_EDIT)
-        mod.connect("clicked", self.ev_mod)
-        mod.show()
-        # FIXME: I don't like this
-        # cbox.pack_start(mod, 0, 0, 0)
-        
-        clr = gtk.Button(stock=gtk.STOCK_CLEAR)
-        clr.connect("clicked", lambda x: self.__current.reset())
-        clr.show()
-        # FIXME: I don't like this
-        # cbox.pack_start(clr, 0, 0, 0)
-        
-        cbox.show()
-        hbox.pack_start(cbox, 0, 0, 0)
-                            
         for i in types.values():
             i.set_size_request(-1, 80)
-            self.vbox.pack_start(i, 0, 0, 0)
+            ecvbox.pack_start(i, 0, 0, 0)
 
         typew.connect("changed", self.ev_type_changed, types)
         add.connect("clicked", self.ev_add, typew, intvw)
+        update.connect("clicked", self.ev_update, typew, intvw)
+        self.__listbox.connect("item-toggled", self.ev_enable_toggled)
+        self.__listbox.connect("item-selected", self.ev_selected, typew, intvw)
+
         self.__current = None
         self.ev_type_changed(typew, types)
         
@@ -1099,9 +1132,9 @@ class QSTGUI2(gtk.Dialog):
             if not i.startswith("qst_"):
                 continue
 
-            qst, id = i.split("_", 2)
-            self.__index = max(self.__index, int(id) + 1)
-            self.__listbox.add_item(id,
+            qst, ident = i.split("_", 2)
+            self.__index = max(self.__index, int(ident) + 1)
+            self.__listbox.set_item(ident,
                                     self.__config.getboolean(i, "enabled"),
                                     self.__config.get(i, "freq"),
                                     self.__config.get(i, "type"),
