@@ -833,13 +833,13 @@ class MapImage:
         p.open_html_file(f.name)
 
 class GPSSource:
-    def __init__(self, port):
+    def __init__(self, port, rate=4800):
         self.port = port
         self.enabled = False
         self.broken = None
 
         try:
-            self.serial = serial.Serial(port=port, baudrate=4800, timeout=1)
+            self.serial = serial.Serial(port=port, baudrate=rate, timeout=1)
         except Exception, e:
             print "Unable to open port `%s': %s" % (port, e)
             self.broken = _("Unable to open GPS port")

@@ -89,6 +89,7 @@ class AppConfig:
         mset("settings", "compression", "True")
         mset("settings", "gpsport", "")
         mset("settings", "gpsenabled", "False")
+        mset("settings", "gpsportspeed", "4800")
         mset("settings", "aprssymtab", "/")
         mset("settings", "aprssymbol", ">")
         mset("settings", "compatmode", "False")
@@ -162,6 +163,7 @@ class AppConfig:
                 "units" : "Units",
                 "gpsport" : "External GPS serial port",
                 "gpsenabled" : "Update position from external GPS",
+                "gpsportspeed" : "GPS Baudrate",
                 "aprssymtab" : "D/APRS Symbol Table ID",
                 "aprssymbol" : "D/APRS Symbol ID",
                 "compatmode" : "Receive raw text as chat data",
@@ -195,6 +197,7 @@ class AppConfig:
               "longitude" : "Current longitude (dd.dddd or dd hh mm)",
               "gpsport" : "Set this to the serial port of your external NMEA GPS",
               "gpsenabled" : "When enabled, update position from GPS data",
+              "gpsportspeed" : "The NMEA standard is 4800",
               "aprssymtab" : "Default is `/'",
               "aprssymbol" : "Default is `>' (Car)",
               "compatmode" : "Pass through raw text as chat data for use with D-RATS 0.1.x and D-CHAT users",
@@ -490,6 +493,8 @@ class AppConfig:
                                      make_choice([])), 0,0,0)
         vbox.pack_start(self.make_sb("gpsenabled",
                                      self.make_bool()), 0,0,0)
+        vbox.pack_start(self.make_sb("gpsportspeed",
+                                     make_choice(baud_rates, False)), 0,0,0)
         vbox.pack_start(self.make_sb("aprssymtab",
                                      gtk.Entry(1)), 0,0,0)
         vbox.pack_start(self.make_sb("aprssymbol",
@@ -903,6 +908,7 @@ D-RATS has been started in safe mode, which means the configuration file has not
                         ("settings", "gpsport")]
 
         choice_v = [("settings", "rate"),
+                    ("settings", "gpsportspeed"),
                     ("settings", "encoding"),
                     ("user", "units")]
 

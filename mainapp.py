@@ -278,9 +278,10 @@ class MainApp:
 
     def refresh_gps(self):
         port = self.config.get("settings", "gpsport")
+        rate = self.config.getint("settings", "gpsportspeed")
         enab = self.config.getboolean("settings", "gpsenabled")
 
-        print "GPS: %s on %s" % (enab, port)
+        print "GPS: %s on %s@%i" % (enab, port, rate)
 
         if enab:
             if self.gps:
@@ -289,7 +290,7 @@ class MainApp:
             if port.startswith("net:"):
                 self.gps = gps.NetworkGPSSource(port)
             else:
-                self.gps = gps.GPSSource(port)
+                self.gps = gps.GPSSource(port, rate)
             self.gps.start()
         else:
             if self.gps:
