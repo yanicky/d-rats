@@ -1052,6 +1052,8 @@ class QSTGUI2(gtk.Dialog):
 
         id = str(self.__index)
 
+        self.editor_frame.set_sensitive(True)
+
         combo_select(typew, "Text")
         self.__current.from_qst("My message")
         self.__current.id = id
@@ -1084,6 +1086,8 @@ class QSTGUI2(gtk.Dialog):
         self.__listbox.del_item(ident)
         self.__current.reset()
 
+        self.editor_frame.set_sensitive(False)
+
     def ev_type_changed(self, box, types):
         wtype = box.get_active_text()
 
@@ -1108,6 +1112,8 @@ class QSTGUI2(gtk.Dialog):
         self.__current.from_qst(self.__config.get(sec, "content"))
 
         self.__current.id = ident
+
+        self.editor_frame.set_sensitive(True)
 
     def __init__(self, config, parent=None):
         gtk.Dialog.__init__(self,
@@ -1171,6 +1177,9 @@ class QSTGUI2(gtk.Dialog):
         ecvbox = gtk.VBox(False, 2)
         eframe.add(ecvbox)
         ecvbox.show()
+
+        self.editor_frame = eframe
+        self.editor_frame.set_sensitive(False)
 
         echbox = gtk.HBox(False, 2)
         echbox.show()
