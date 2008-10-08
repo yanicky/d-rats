@@ -31,6 +31,7 @@ import mainapp
 import platform
 import inputdialog
 import cap
+import wu
 from utils import NetFile, combo_select
 
 try:
@@ -276,6 +277,35 @@ class QSTCAP(QSTThreadedText):
             str += "\r\n-----\r\n%s\r\n-----\r\n" % i.report()
 
         return str        
+
+class QSTWeatherWU(QSTThreadedText):
+    pbase = "http://api.wunderground.com/weatherstation/WXCurrentObXML.asp?ID="
+    abase = "http://api.wunderground.com/auto/wui/geo/WXCurrentObXML/index.xml?query="
+    def do_qst(self):
+        obs = wu.WUObservation()
+        
+        try:
+            t, s = self.text.split("/", 2)
+        except Exception, e:
+            print "Unable to split weather QST %s: %s" % (self.text, e)
+            return None
+
+        try:
+            if t == "Airport":
+                base = self.abase
+            elif t == "Personal":
+                base == self.pbase
+            else:
+                print "Unknown QSTWeatherWU type %s" % t
+                return None
+
+            print "Getting %s%s for %s/%s" % ( base, self.text, t, s)
+            obs.from_uri(base + s)
+        except Exception, e:
+            print "Error getting weather: %s" % e
+            return None
+
+        return str(obs)
 
 class QSTStation(QSTGPSA):
     def do_qst(self):
@@ -776,8 +806,14 @@ class QSTEditWidget(gtk.VBox):
         pass
 
 class QSTTextEditWidget(QSTEditWidget):
+    label_text = "Enter a message:"
+
     def __init__(self):
         QSTEditWidget.__init__(self, False, 2)
+
+        lab = gtk.Label(self.label_text)
+        lab.show()
+        self.pack_start(lab, 0, 0, 0)
 
         self.__tb = gtk.TextBuffer()
         
@@ -969,6 +1005,47 @@ class QSTStationEditWidget(QSTEditWidget):
         return "%s::%s" % (self.__group.get_active_text(),
                            self.__station.get_active_text())
 
+class QSTWUEditWidget(QSTEditWidget):
+    label_text = "Enter a WeatherUnderground station ID:"
+
+    def __init__(self):
+        QSTEditWidget.__init__(self)
+
+        lab = gtk.Label(self.label_text)
+        lab.show()
+        self.pack_start(lab, 1, 1, 1)
+
+        hbox = gtk.HBox(False, 2)
+        hbox.show()
+        self.pack_start(hbox, 0, 0, 0)
+        
+        self.__station = gtk.Entry()
+        self.__station.show()
+        hbox.pack_start(self.__station, 0, 0, 0)
+
+        types = ["Airport", "Personal"]
+        self.__type = miscwidgets.make_choice(types, False, types[0])
+        self.__type.show()
+        hbox.pack_start(self.__type, 0, 0, 0)
+
+    def to_qst(self):
+        return "%s/%s" % (self.__type.get_active_text(),
+                          self.__station.get_text())
+
+    def from_qst(self, content):
+        try:
+            t, s = content.split("/", 2)
+        except:
+            print "Unable to split `%s'" % content
+            t = "Airport"
+            s = "UNKNOWN"
+
+        combo_select(self.__type, t)
+        self.__station.set_text(s)        
+
+    def to_human(self):
+        return self.to_qst()
+
 class QSTGUI2(gtk.Dialog):
     def ev_add(self, button, typew, intvw):
         self.__index += 1
@@ -1069,6 +1146,7 @@ class QSTGUI2(gtk.Dialog):
             "RSS"  : QSTRSSEditWidget(),
             "CAP"  : QSTCAPEditWidget(),
             "Station" : QSTStationEditWidget(),
+            "Weather (WU)" : QSTWUEditWidget(),
             }
 
         if not HAVE_FEEDPARSER:
@@ -1152,6 +1230,7 @@ def get_qst_class(typestr):
         "Station" : QSTStation,
         "RSS"     : QSTRSS,
         "CAP"     : QSTCAP,
+        "Weather (WU)" : QSTWeatherWU,
         }
 
     if not HAVE_FEEDPARSER:
