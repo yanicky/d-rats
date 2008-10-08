@@ -55,7 +55,7 @@ class SniffSession(sessionmgr.StatelessSession, gobject.GObject):
     def decode_control(self, frame):
         if frame.type == sessionmgr.ControlSession.T_ACK:
             l, r = struct.unpack("BB", frame.data)
-            return _("Control: ACK") + " "\
+            return _("Control: ACK") + " " + \
                 _("Local") + ":%i " % l + \
                 _("Remote") + ":%i" % r
         elif frame.type == sessionmgr.ControlSession.T_END:
