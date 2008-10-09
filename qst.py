@@ -875,7 +875,7 @@ class QSTGUI2(gtk.Dialog):
         combo_select(typew, _("Text"))
         self.__current.from_qst(_("My message"))
         self.__current.id = id
-        self.ev_update(None, typew, intvw)
+        self.__listbox.select_item(None)
 
     def ev_update(self, button, typew, intvw):
         sec = "qst_%s" % self.__current.id
