@@ -163,6 +163,8 @@ class FormEmailService:
         tls = self.config.getboolean("settings", "smtp_tls")
         user = self.config.get("settings", "smtp_username")
         pwrd = self.config.get("settings", "smtp_password")
+        port = self.config.getint("settings", "smtp_port")
+
         if not replyto:
             replyto = "DO_NOT_REPLY@danplanet.com"
 
@@ -178,11 +180,13 @@ class FormEmailService:
             "\r\n%s\r\n" % mesg
 
         mailer = smtplib.SMTP(server)
+        mailer.set_debuglevel(1)
+        mailer.ehlo()
         if tls:
             mailer.starttls()
+            mailer.ehlo()
         if user and pwrd:
             mailer.login(user, pwrd)
-        mailer.set_debuglevel(1)
         mailer.sendmail(replyto, recp, mail)
         mailer.quit()
 
