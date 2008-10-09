@@ -80,9 +80,9 @@ class FileBaseThread(SessionThread):
         if vals["sent_wire"]:
             amt = vals["sent_wire"]
             if amt > 1024:
-                sent = " (Total %.1f KB)" % (amt >> 10)
+                sent = " (%s %.1f KB)" % (_("Total"), amt >> 10)
             else:
-                sent = " (Total %i B)" % amt
+                sent = " (%s %i B)" % (_("Total"), amt)
         else:
             sent = ""
 
@@ -95,7 +95,7 @@ class FileBaseThread(SessionThread):
     def completed(self, objname=None):
         gobject.idle_add(self.gui.update,
                          self.session._id,
-                         "Transfer Completed")
+                         _("Transfer Completed"))
 
         if objname:
             msg = " of %s" % objname
@@ -119,11 +119,11 @@ class FileBaseThread(SessionThread):
             exmsg = ""
 
         gui_display(self.gui.chatgui,
-                    "Transfer%s complete%s" % (msg, exmsg),
+                    "%s%s %s%s" % (_("Transfer"), msg, _("complete"), exmsg),
                     "italic")
 
     def failed(self, reason=None):
-        s = "Transfer Failed"
+        s = _("Transfer Failed")
         if reason:
             s += " " + reason
 
@@ -164,7 +164,8 @@ class FormRecvThread(FileBaseThread):
                                            "form_%m%d%Y_%H%M%S.xml"))
         fn = self.session.recv_file(newfn)
 
-        name = "%s from %s" % (self.session.name,
+        name = "%s %s %s" % (self.session.name,
+                               _("from"),
                                self.session.get_station())
 
         if fn == newfn:
@@ -177,12 +178,12 @@ class FormRecvThread(FileBaseThread):
 
             fm.reg_form(name,
                         fn,
-                        "Never",
+                        _("Never"),
                         fm.get_stamp())
             fm.list_add_form(0,
                              name,
                              fn,
-                             stamp="Never",
+                             stamp=_("Never"),
                              xfert=fm.get_stamp())
 
             print "Registering form %s" % fn
@@ -206,14 +207,16 @@ class SocketThread(SessionThread):
         vals = self.session.stats
 
         if vals["retries"] > 0:
-            retries = " (%i retries)" % vals["retries"]
+            retries = " (%i %s)" % (vals["retries"], _("retries"))
         else:
             retries = ""
 
 
-            msg = "%i bytes sent %i bytes received%s" % (vals["sent_size"],
-                                                         vals["recv_size"],
-                                                         retries)
+            msg = "%i %s %s %i %s %s%s" % (vals["sent_size"],
+                                           _("bytes"), _("sent"),
+                                           vals["recv_size"],
+                                           _("bytes"), _("received"),
+                                           retries)
 
         gobject.idle_add(self.gui.update,
                          self.session._id,
@@ -345,19 +348,19 @@ class SessionGUI:
 
         ag = gtk.ActionGroup("menu")
 
-        cancel = gtk.Action("cancel", "Cancel", None, None)
+        cancel = gtk.Action("cancel", _("Cancel"), None, None)
         cancel.connect("activate", self.mh)
         ag.add_action(cancel)
 
-        fcancel = gtk.Action("forcecancel", "Cancel (without ACK)", None, None)
+        fcancel = gtk.Action("forcecancel", _("Cancel (without ACK)"), None, None)
         fcancel.connect("activate", self.mh)
         ag.add_action(fcancel)
 
-        clear = gtk.Action("clear", "Clear", None, None)
+        clear = gtk.Action("clear", _("Clear"), None, None)
         clear.connect("activate", self.mh)
         ag.add_action(clear)
 
-        clearall = gtk.Action("clearall", "Clear all finished", None, None)
+        clearall = gtk.Action("clearall", _("Clear all finished"), None, None)
         clearall.connect("activate", self.mh)
         ag.add_action(clearall)
 
@@ -404,11 +407,11 @@ class SessionGUI:
             menu.popup(None, None, None, event.button, event.time)
 
     def build_list(self):
-        cols = [(gobject.TYPE_INT,    gtk.CellRendererText, "ID"),
-                (gobject.TYPE_STRING, gtk.CellRendererText, "Name"),
-                (gobject.TYPE_STRING, gtk.CellRendererText, "Type"),
-                (gobject.TYPE_STRING, gtk.CellRendererText, "Remote Station"),
-                (gobject.TYPE_STRING, gtk.CellRendererText, "Status")]
+        cols = [(gobject.TYPE_INT,    gtk.CellRendererText, _("ID")),
+                (gobject.TYPE_STRING, gtk.CellRendererText, _("Name")),
+                (gobject.TYPE_STRING, gtk.CellRendererText, _("Type")),
+                (gobject.TYPE_STRING, gtk.CellRendererText, _("Remote Station")),
+                (gobject.TYPE_STRING, gtk.CellRendererText, _("Status"))]
 
         types = tuple([x for x, y, z in cols])
         self.store = gtk.ListStore(*types)
@@ -511,8 +514,8 @@ class SessionGUI:
 
     def new_file_xfer(self, session, direction):
         gui_display(self.chatgui,
-                    "File transfer started with %s (%s)" % (session._st,
-                                                            session.name),
+                    _("File transfer started with") + " %s (%s)" % (session._st,
+                                                                    session.name),
                     "italic")
 
         if direction == "in":
@@ -524,8 +527,8 @@ class SessionGUI:
 
     def new_form_xfer(self, session, direction):
         gui_display(self.chatgui,
-                    "Form transfer started with %s (%s)" % (session._st,
-                                                            session.name),
+                    _("Form transfer started with") + " %s (%s)" % (session._st,
+                                                                    session.name),
                     "italic")
 
         if direction == "in":
@@ -537,8 +540,8 @@ class SessionGUI:
 
     def new_socket(self, session, direction):
         gui_display(self.chatgui,
-                    "Socket session started with %s (%s)" % (session._st,
-                                                             session.name),
+                    _("Socket session started with") + " %s (%s)" % (session._st,
+                                                                     session.name),
                     "italic")
 
         to = float(self.mainapp.config.get("settings", "sockflush"))
@@ -566,7 +569,7 @@ class SessionGUI:
                 raise Exception("Port %i not configured" % port)
             except Exception, e:
                 gui_display(self.chatgui,
-                            "Error starting socket session: %s" % e,
+                            _("Error starting socket session") + ": %s" % e,
                             "italic",
                             "red")
                 session.close()
@@ -589,7 +592,7 @@ class SessionGUI:
                        1, session.name,
                        2, type,
                        3, session._st,
-                       4, "Idle")
+                       4, _("Idle"))
 
         if isinstance(session, sessions.BaseFormTransferSession):
             self.new_form_xfer(session, direction)
