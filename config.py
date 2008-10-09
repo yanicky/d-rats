@@ -105,6 +105,9 @@ class AppConfig:
         mset("settings", "ping_info", "")
         mset("settings", "smtp_server", "")
         mset("settings", "smtp_replyto", "")
+        mset("settings", "smtp_tls", "False")
+        mset("settings", "smtp_username", "")
+        mset("settings", "smtp_password", "")
         mset("settings", "pop3_server", "")
         mset("settings", "pop3_username", "")
         mset("settings", "pop3_password", "")
@@ -177,6 +180,9 @@ class AppConfig:
                 "ping_info" : "Ping Reply",
                 "smtp_server" : "SMTP Server",
                 "smtp_replyto" : "Force SMTP Reply-To",
+                "smtp_tls" : "Use TLS for SMTP",
+                "smtp_username" : "SMTP Username",
+                "smtp_password" : "SMTP Password",
                 "pop3_server" : "POP3 Server",
                 "pop3_username" : "POP3 Username",
                 "pop3_password" : "POP3 Password",
@@ -214,6 +220,9 @@ class AppConfig:
               "ping_info" : "Blank for OS info, A static string, !path for executable, or >path for contents of a file",
               "smtp_server" : "SMTP server for form-to-mail relay (leave blank to disable)",
               "smtp_replyto" : "Set the email Reply-To header for emailed forms",
+              "smtp_tls" : "Use STARTTLS with SMTP server",
+              "smtp_username" : "Username for SMTP server (blank=None)",
+              "smtp_password" : "Password for SMTP server (blank=None)",
               "pop3_server" : "Server to pull mails from for email-to-form",
               "pop3_username" : "Username for POP3 server",
               "pop3_password" : "Password for POP3 server",
@@ -617,6 +626,12 @@ class AppConfig:
                                         gtk.Entry()), 0,0,0)
         topvbox.pack_start(self.make_sb("smtp_replyto",
                                         gtk.Entry()), 0,0,0)
+        topvbox.pack_start(self.make_sb("smtp_tls",
+                                        self.make_bool()), 0,0,0)
+        topvbox.pack_start(self.make_sb("smtp_username",
+                                        gtk.Entry()), 0,0,0)
+        topvbox.pack_start(self.make_sb("smtp_password",
+                                        gtk.Entry()), 0,0,0)
         topvbox.pack_start(self.make_sb("pop3_server",
                                         gtk.Entry()), 0,0,0)
         topvbox.pack_start(self.make_sb("pop3_username",
@@ -883,6 +898,8 @@ D-RATS has been started in safe mode, which means the configuration file has not
                   ("settings", "aprssymbol"),
                   ("settings", "ping_info"),
                   ("settings", "smtp_server"),
+                  ("settings", "smtp_username"),
+                  ("settings", "smtp_password"),
                   ("settings", "smtp_replyto"),
                   ("settings", "pop3_server"),
                   ("settings", "pop3_username"),
@@ -902,6 +919,7 @@ D-RATS has been started in safe mode, which means the configuration file has not
                   ("prefs", "restore_stations"),
                   ("settings", "pipelinexfers"),
                   ("settings", "pop3_usessl"),
+                  ("settings", "smtp_tls"),
                   ("settings", "sniff_packets")]
 
         choicetext_v = [("settings", "port"),
