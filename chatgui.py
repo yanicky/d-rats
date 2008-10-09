@@ -30,7 +30,7 @@ import ConfigParser
 import ddt
 
 from xfergui import FileTransferGUI, FormTransferGUI
-from qst import QSTGUI, QuickMsgGUI, QSTGPS, QSTGPSA, QSTGUI2
+from qst import QuickMsgGUI, QSTGPS, QSTGPSA, QSTGUI2
 from inputdialog import TextInputDialog, ChoiceDialog, ExceptionDialog, EditableChoiceDialog
 from miscwidgets import YesNoDialog
 from utils import filter_to_ascii
