@@ -118,6 +118,11 @@ class KeyedListWidget(gtk.HBox):
             return None
 
     def select_item(self, key):
+        if key is None:
+            sel = self.__view.get_selection()
+            sel.unselect_all()
+            return True
+
         iter = self.__store.get_iter_first()
         while iter:
             if self.__store.get(iter, 0)[0] == key:
