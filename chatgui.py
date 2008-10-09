@@ -42,6 +42,7 @@ import gps
 import mapdisplay
 import sessiongui
 import image
+import emailgw
 
 from mc_xfergui import MulticastGUI, MulticastRecvGUI
 
@@ -1593,6 +1594,22 @@ class FormManager:
         self.list_add_form(0, oform.id, newfn, stamp)
         self.reg_form(oform.id, newfn, stamp)        
 
+    def email(self, button):
+        (list, iter) = self.view.get_selection().get_selected()
+        (filename,) = self.store.get(iter, self.col_filen)
+
+        form = formgui.FormFile("", filename)
+
+        if form.id != "email":
+            d = gtk.MessageDialog(buttons=gtk.STOCK_OK)
+            d.set_property("text", "Only email forms can be emailed")
+            d.run()
+            d.destroy()
+        else:
+            srv = emailgw.FormEmailService(self.gui.config)
+            st, msg = srv.send_email(form)
+            self.gui.display(msg + "\r\n", "italic")
+
     def make_buttons(self):
         box = gtk.VBox(False, 2)
 
@@ -1625,6 +1642,12 @@ class FormManager:
         sendb.connect("clicked", self.send, None)
         sendb.show()
         box.pack_start(sendb, 0,0,0)
+
+        emailb = gtk.Button(_("Email"))
+        emailb.set_size_request(75, 20)
+        emailb.connect("clicked", self.email)
+        emailb.show()
+        box.pack_start(emailb, 0,0,0)
 
         box.show()
 
