@@ -294,7 +294,7 @@ class QSTWeatherWU(QSTThreadedText):
             if t == "Airport":
                 base = self.abase
             elif t == "Personal":
-                base == self.pbase
+                base = self.pbase
             else:
                 print "Unknown QSTWeatherWU type %s" % t
                 return None
