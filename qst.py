@@ -291,9 +291,9 @@ class QSTWeatherWU(QSTThreadedText):
             return None
 
         try:
-            if t == "Airport":
+            if t == _("Airport"):
                 base = self.abase
-            elif t == "Personal":
+            elif t == _("Personal"):
                 base = self.pbase
             else:
                 print "Unknown QSTWeatherWU type %s" % t
@@ -387,9 +387,9 @@ class SelectGUI:
         b_lower = gtk.Button("", gtk.STOCK_GO_DOWN)
 
         try:
-            b_del = gtk.Button("Remove", gtk.STOCK_DISCARD)
+            b_del = gtk.Button(_("Remove"), gtk.STOCK_DISCARD)
         except AttributeError:
-            b_del = gtk.Button("Remove")
+            b_del = gtk.Button(_("Remove"))
 
         b_del.set_size_request(80, -1)
 
@@ -405,9 +405,9 @@ class SelectGUI:
                       self.ev_delete,
                       None)
 
-        self.tips.set_tip(b_raise, "Move item up in list")
-        self.tips.set_tip(b_lower, "Move item down in list")
-        self.tips.set_tip(b_del, "Discard item from list")
+        self.tips.set_tip(b_raise, _("Move item up in list"))
+        self.tips.set_tip(b_lower, _("Move item down in list"))
+        self.tips.set_tip(b_del,   _("Discard item from list"))
 
         vbox.pack_start(b_raise, 0,0,0)
         vbox.pack_start(b_del, 0,0,0)
@@ -466,9 +466,9 @@ class SelectGUI:
     def make_action_buttons(self):
         hbox = gtk.HBox(False, 0)
 
-        okay = gtk.Button("OK", gtk.STOCK_OK)
-        cancel = gtk.Button("Cancel", gtk.STOCK_CANCEL)
-        apply = gtk.Button("Apply", gtk.STOCK_APPLY)
+        okay = gtk.Button(_("OK"), gtk.STOCK_OK)
+        cancel = gtk.Button(_("Cancel"), gtk.STOCK_CANCEL)
+        apply = gtk.Button(_("Apply"), gtk.STOCK_APPLY)
 
         okay.connect("clicked",
                      self.ev_okay,
@@ -522,194 +522,13 @@ class SelectGUI:
 
         self.window.set_geometry_hints(None, min_width=450, min_height=300)
 
-class QSTGUI(SelectGUI):
-    column_bool = 0
-    column_time = 1
-    column_type = 2
-    column_text = 3
-    
-    def __init__(self, config, gui):
-        self.columns = [
-            (gtk.CellRendererToggle, "Enabled", bool),
-            (gtk.CellRendererText, "Period", str),
-            (gtk.CellRendererText, "Type", str),
-            (gtk.CellRendererText, "Message", str),
-            ]
-        self.config = config
-        self.gui = gui
-        self.list_store = gtk.ListStore(gobject.TYPE_BOOLEAN,
-                                        gobject.TYPE_STRING,
-                                        gobject.TYPE_STRING,
-                                        gobject.TYPE_STRING)
-        
-        SelectGUI.__init__(self, "QST Configuration")
-
-        # Unset editability of the type field
-
-        c = self.list.get_column(self.column_type)
-        r = c.get_cell_renderers()[0]
-        r.set_property("editable", False)
-
-    def ev_add(self, widget, data=None):
-        msg = self.msg.get_text(self.msg.get_start_iter(),
-                                self.msg.get_end_iter())
-        tme = self.c_tme.child.get_text()
-
-        
-        model = self.c_typ.get_model()
-        typ = model[self.c_typ.get_active()][0]
-        
-        iter = self.list_store.append()
-        self.list_store.set(iter,
-                            self.column_bool, True,
-                            self.column_time, tme,
-                            self.column_type, typ,
-                            self.column_text, msg)
-
-        self.msg.set_text("")
-
-    def make_b_controls(self):
-        times = ["1", "5", "10", "20", "30", "60", ":15", ":30", ":45"]
-        types = ["Text", "Exec", "File", "GPS", "GPS-A", "Station"]
-
-        self.msg = gtk.TextBuffer()
-        self.entry = gtk.TextView(self.msg)
-        self.entry.set_wrap_mode(gtk.WRAP_WORD)
-
-        self.c_tme = make_choice(times)
-        self.c_tme.set_size_request(80, -1)
-
-        self.c_typ = make_choice(types, False)
-        self.c_typ.set_size_request(80, -1)
-        self.c_typ.set_active(0)
-        self.c_typ.connect("changed", self.type_changed)
-
-        b_add = gtk.Button("Add", gtk.STOCK_ADD)
-
-        self.tips.set_tip(self.entry, "Enter new QST text")
-        self.tips.set_tip(b_add, "Add new QST")
-        self.tips.set_tip(self.c_tme, "Minutes between transmissions")
-        self.tips.set_tip(self.c_typ, "`Text' sends a message, `Exec' runs a program, `File' sends the contents of a text file", "`GPS' sends a position beacon, `GPS-A' sends an APRS beacon")
-
-        vbox = gtk.VBox(True, 5)
-
-        vbox.pack_start(self.c_tme)
-        vbox.pack_start(self.c_typ)
-        vbox.pack_start(b_add)
-
-        b_add.connect("clicked",
-                      self.ev_add,
-                      None)
-#        self.e_msg.connect("activate",
-#                           self.ev_add,
-#                           None)
-
-        hbox = gtk.HBox(False, 5)
-
-        sw = gtk.ScrolledWindow()
-        sw.set_policy(gtk.POLICY_NEVER, gtk.POLICY_AUTOMATIC)
-        sw.add(self.entry)
-        sw.show()
-
-        hbox.pack_start(sw, 1,1,0)
-        hbox.pack_start(vbox, 0,0,0)
-
-        self.c_tme.child.set_text("60")
-
-        self.entry.show()
-        self.c_tme.show()
-        self.c_typ.show()
-        b_add.show()
-        vbox.show()
-        hbox.show()
-
-        return hbox        
-
-    def get_station(self):
-        markers = self.gui.map.get_markers()
-        
-        stations = []
-
-        for gname, group in markers.items():
-            for station in group.keys():
-                stations.append("%s::%s" % (gname, station))
-
-        d = inputdialog.ChoiceDialog(sorted(stations))
-        d.label.set_text("Select a station whose position will be sent")
-        r = d.run()
-        station = d.choice.get_active_text()
-        d.destroy()
-        if r == gtk.RESPONSE_OK:
-            self.msg.set_text(station)
-        
-    def type_changed(self, widget, data=None):
-        if widget.get_active_text() in ["File", "Exec"]:
-            p = platform.get_platform()
-            f = p.gui_open_file()
-            if not f:
-                return
-
-            self.msg.set_text(f)
-        elif widget.get_active_text() in ["Station"]:
-            self.get_station()
-        elif widget.get_active_text() in ["GPS", "GPS-A"]:
-            self.msg.set_text("ON D-RATS")
-
-    def load_qst(self, section):
-        freq = self.config.get(section, "freq")
-        content = self.config.get(section, "content")
-        enabled = self.config.getboolean(section, "enabled")
-        qsttype = self.config.get(section, "type")
-
-        iter = self.list_store.append()
-        self.list_store.set(iter,
-                            self.column_bool, enabled,
-                            self.column_time, freq,
-                            self.column_type, qsttype,
-                            self.column_text, content)
-
-    def save_qst(self, model, path, iter, data=None):
-        pos = path[0]
-
-        text, freq, enabled, qsttype = model.get(iter,
-                                              self.column_text,
-                                              self.column_time,
-                                              self.column_bool,
-                                              self.column_type)
-
-        section = "qst_%i" % int(pos)
-        self.config.config.add_section(section)
-        self.config.set(section, "freq", freq)
-        self.config.set(section, "content", text)
-        self.config.set(section, "enabled", str(enabled))
-        self.config.set(section, "type", qsttype)
-
-    def sync_gui(self, load=True):
-        sections = self.config.config.sections()
-
-        qsts = [x for x in sections if x.startswith("qst_")]
-
-        if load:
-            for sec in qsts:
-                try:
-                    self.load_qst(sec)
-                except Exception, e:
-                    print "Failed to load QST %s: %s" % (sec, e)
-        else:
-            for sec in qsts:
-                self.config.config.remove_section(sec)
-
-            self.list_store.foreach(self.save_qst, None)
-            self.config.save()
-            self.config.refresh_app()
-
 class QuickMsgGUI(SelectGUI):
     def __init__(self, config):
-        self.columns = [(gtk.CellRendererText, "Message", str)]
+        self.columns = [(gtk.CellRendererText, _("Message"), str)]
         self.config = config
         self.list_store = gtk.ListStore(gobject.TYPE_STRING)
 
-        SelectGUI.__init__(self, "Quick Messages")
+        SelectGUI.__init__(self, _("Quick Messages"))
 
     def ev_add(self, widget, data=None):
         msg = self.msg.get_text(self.msg.get_start_iter(),
@@ -727,14 +546,14 @@ class QuickMsgGUI(SelectGUI):
         self.entry = gtk.TextView(self.msg)
         self.entry.set_wrap_mode(gtk.WRAP_WORD)
 
-        b_add = gtk.Button("Add", gtk.STOCK_ADD)
+        b_add = gtk.Button(_("Add"), gtk.STOCK_ADD)
         b_add.set_size_request(80, -1)
         b_add.connect("clicked",
                       self.ev_add,
                       None)
 
-        self.tips.set_tip(self.entry, "Enter new message text")
-        self.tips.set_tip(b_add, "Add new quick message")
+        self.tips.set_tip(self.entry, _("Enter new message text"))
+        self.tips.set_tip(b_add, _("Add new quick message"))
 
         hbox = gtk.HBox(False, 5)
 
@@ -806,7 +625,7 @@ class QSTEditWidget(gtk.VBox):
         pass
 
 class QSTTextEditWidget(QSTEditWidget):
-    label_text = "Enter a message:"
+    label_text = _("Enter a message:")
 
     def __init__(self):
         QSTEditWidget.__init__(self, False, 2)
@@ -839,8 +658,7 @@ class QSTTextEditWidget(QSTEditWidget):
         return str(self)
 
 class QSTFileEditWidget(QSTEditWidget):
-    label_text = "Choose a text file.  The contents will be used " + \
-        "when the QST is sent."
+    label_text = _("Choose a text file.  The contents will be used when the QST is sent.")
 
     def __init__(self):
         QSTEditWidget.__init__(self, False, 2)
@@ -870,8 +688,7 @@ class QSTFileEditWidget(QSTEditWidget):
         return self.__fn.get_filename()
 
 class QSTExecEditWidget(QSTFileEditWidget):
-    label_text = "Choose a script to execute.  The output will be used " + \
-        "when the QST is sent"
+    label_text = _("Choose a script to execute.  The output will be used when the QST is sent")
 
     def __str__(self):
         return "Run: %s" % self.__fn.get_filename()
@@ -883,7 +700,7 @@ class QSTGPSEditWidget(QSTEditWidget):
     def __init__(self):
         QSTEditWidget.__init__(self, False, 2)
 
-        lab = gtk.Label("Enter your GPS message:")
+        lab = gtk.Label(_("Enter your GPS message:"))
         lab.set_line_wrap(True)
         lab.show()
         self.pack_start(lab, 1, 1, 1)
@@ -922,7 +739,8 @@ class QSTGPSAEditWidget(QSTGPSEditWidget):
     type = "GPS-A"
 
 class QSTRSSEditWidget(QSTEditWidget):
-    label_string = "Enter the URL of an RSS feed:"
+    label_string = _("Enter the URL of an RSS feed:")
+
     def __init__(self):
         QSTEditWidget.__init__(self, False, 2)
 
@@ -951,7 +769,7 @@ class QSTRSSEditWidget(QSTEditWidget):
         return self.__url.get_text()
 
 class QSTCAPEditWidget(QSTRSSEditWidget):
-    label_string = "Enter the URL of a CAP feed:"
+    label_string = _("Enter the URL of a CAP feed:")
 
 class QSTStationEditWidget(QSTEditWidget):
     def ev_group_sel(self, group, station):
@@ -967,7 +785,7 @@ class QSTStationEditWidget(QSTEditWidget):
     def __init__(self):
         QSTEditWidget.__init__(self, False, 2)
 
-        lab = gtk.Label("Choose a station whose position will be sent")
+        lab = gtk.Label(_("Choose a station whose position will be sent"))
         lab.show()
         self.pack_start(lab, 1, 1, 1)
 
@@ -978,7 +796,7 @@ class QSTStationEditWidget(QSTEditWidget):
 
         self.__group = miscwidgets.make_choice(self.__markers.keys(),
                                                False,
-                                               "Stations")
+                                               _("Stations"))
         self.__group.show()
         hbox.pack_start(self.__group, 0, 0, 0)
 
@@ -1006,7 +824,7 @@ class QSTStationEditWidget(QSTEditWidget):
                            self.__station.get_active_text())
 
 class QSTWUEditWidget(QSTEditWidget):
-    label_text = "Enter a WeatherUnderground station ID:"
+    label_text = _("Enter a WeatherUnderground station ID:")
 
     def __init__(self):
         QSTEditWidget.__init__(self)
@@ -1023,7 +841,7 @@ class QSTWUEditWidget(QSTEditWidget):
         self.__station.show()
         hbox.pack_start(self.__station, 0, 0, 0)
 
-        types = ["Airport", "Personal"]
+        types = [_("Airport"), _("Personal")]
         self.__type = miscwidgets.make_choice(types, False, types[0])
         self.__type.show()
         hbox.pack_start(self.__type, 0, 0, 0)
@@ -1037,8 +855,8 @@ class QSTWUEditWidget(QSTEditWidget):
             t, s = content.split("/", 2)
         except:
             print "Unable to split `%s'" % content
-            t = "Airport"
-            s = "UNKNOWN"
+            t = _("Airport")
+            s = _("UNKNOWN")
 
         combo_select(self.__type, t)
         self.__station.set_text(s)        
@@ -1054,8 +872,8 @@ class QSTGUI2(gtk.Dialog):
 
         self.editor_frame.set_sensitive(True)
 
-        combo_select(typew, "Text")
-        self.__current.from_qst("My message")
+        combo_select(typew, _("Text"))
+        self.__current.from_qst(_("My message"))
         self.__current.id = id
         self.ev_update(None, typew, intvw)
 
@@ -1128,10 +946,10 @@ class QSTGUI2(gtk.Dialog):
         hbox.show()
 
         cols = [(gobject.TYPE_STRING, "__id"),
-                (gobject.TYPE_BOOLEAN, "Enabled"),
-                (gobject.TYPE_STRING, "Interval"),
-                (gobject.TYPE_STRING, "Type"),
-                (gobject.TYPE_STRING, "Content")]
+                (gobject.TYPE_BOOLEAN, _("Enabled")),
+                (gobject.TYPE_STRING, _("Interval")),
+                (gobject.TYPE_STRING, _("Type")),
+                (gobject.TYPE_STRING, _("Content"))]
 
         self.__listbox = KeyedListWidget(cols)
         self.__listbox.show()
@@ -1144,19 +962,19 @@ class QSTGUI2(gtk.Dialog):
         cbox = gtk.VBox(False, 2)
 
         types = {
-            "Text" : QSTTextEditWidget(),
-            "File" : QSTFileEditWidget(),
-            "Exec" : QSTExecEditWidget(),
-            "GPS"  : QSTGPSEditWidget(),
-            "GPS-A": QSTGPSAEditWidget(),
-            "RSS"  : QSTRSSEditWidget(),
-            "CAP"  : QSTCAPEditWidget(),
-            "Station" : QSTStationEditWidget(),
-            "Weather (WU)" : QSTWUEditWidget(),
+            _("Text") : QSTTextEditWidget(),
+            _("File") : QSTFileEditWidget(),
+            _("Exec") : QSTExecEditWidget(),
+            _("GPS")  : QSTGPSEditWidget(),
+            _("GPS-A"): QSTGPSAEditWidget(),
+            _("RSS")  : QSTRSSEditWidget(),
+            _("CAP")  : QSTCAPEditWidget(),
+            _("Station") : QSTStationEditWidget(),
+            _("Weather (WU)") : QSTWUEditWidget(),
             }
 
         if not HAVE_FEEDPARSER:
-            del types["RSS"]
+            del types[_("RSS")]
 
         add = gtk.Button(stock=gtk.STOCK_ADD)
         add.show()
@@ -1170,7 +988,7 @@ class QSTGUI2(gtk.Dialog):
         cbox.show()
         hbox.pack_start(cbox, 0, 0, 0)
 
-        eframe = gtk.Frame("QST Parameters")
+        eframe = gtk.Frame(_("QST Parameters"))
         eframe.show()
         self.vbox.pack_start(eframe, 0, 0, 0)
 
@@ -1185,7 +1003,7 @@ class QSTGUI2(gtk.Dialog):
         echbox.show()
         ecvbox.pack_start(echbox, 0, 0, 0)
 
-        typew = make_choice(types.keys(), False, default="Text")
+        typew = make_choice(types.keys(), False, default=_("Text"))
         typew.set_size_request(75, -1)
         typew.show()
         echbox.pack_start(typew, 0, 0, 0)
@@ -1197,7 +1015,7 @@ class QSTGUI2(gtk.Dialog):
         intvw.show()
         echbox.pack_start(intvw, 0, 0, 0)
 
-        update = gtk.Button("Save")
+        update = gtk.Button(_("Save"))
         update.set_size_request(75, -1)
         update.show()
         echbox.pack_start(update, 0, 0, 0)
@@ -1231,18 +1049,18 @@ class QSTGUI2(gtk.Dialog):
 
 def get_qst_class(typestr):
     classes = {
-        "Text"    : QSTText,
-        "Exec"    : QSTExec,
-        "File"    : QSTFile,
-        "GPS"     : QSTGPS,
-        "GPS-A"   : QSTGPSA,
-        "Station" : QSTStation,
-        "RSS"     : QSTRSS,
-        "CAP"     : QSTCAP,
-        "Weather (WU)" : QSTWeatherWU,
+        _("Text")    : QSTText,
+        _("Exec")    : QSTExec,
+        _("File")    : QSTFile,
+        _("GPS")     : QSTGPS,
+        _("GPS-A")   : QSTGPSA,
+        _("Station") : QSTStation,
+        _("RSS")     : QSTRSS,
+        _("CAP")     : QSTCAP,
+        _("Weather (WU)") : QSTWeatherWU,
         }
 
     if not HAVE_FEEDPARSER:
-        del classes["RSS"]
+        del classes[_("RSS")]
 
     return classes.get(typestr, None)
