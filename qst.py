@@ -895,6 +895,10 @@ class QSTGUI2(gtk.Dialog):
 
         self.__listbox.select_item(self.__current.id)
 
+    def ev_cancel(self, button):
+        self.__current.reset()
+        self.editor_frame.set_sensitive(False)
+
     def ev_rem(self, button):
         ident = self.__listbox.get_selected()
         if ident is None:
@@ -1004,7 +1008,7 @@ class QSTGUI2(gtk.Dialog):
         ecvbox.pack_start(echbox, 0, 0, 0)
 
         typew = make_choice(types.keys(), False, default=_("Text"))
-        typew.set_size_request(75, -1)
+        typew.set_size_request(100, -1)
         typew.show()
         echbox.pack_start(typew, 0, 0, 0)
 
@@ -1018,7 +1022,12 @@ class QSTGUI2(gtk.Dialog):
         update = gtk.Button(_("Save"))
         update.set_size_request(75, -1)
         update.show()
-        echbox.pack_start(update, 0, 0, 0)
+        echbox.pack_end(update, 0, 0, 0)
+
+        cancel = gtk.Button(_("Cancel"))
+        cancel.set_size_request(75, -1)
+        cancel.show()
+        echbox.pack_end(cancel, 0, 0, 0)
 
         for i in types.values():
             i.set_size_request(-1, 80)
@@ -1027,6 +1036,7 @@ class QSTGUI2(gtk.Dialog):
         typew.connect("changed", self.ev_type_changed, types)
         add.connect("clicked", self.ev_add, typew, intvw)
         update.connect("clicked", self.ev_update, typew, intvw)
+        cancel.connect("clicked", self.ev_cancel)
         self.__listbox.connect("item-toggled", self.ev_enable_toggled)
         self.__listbox.connect("item-selected", self.ev_selected, typew, intvw)
 
