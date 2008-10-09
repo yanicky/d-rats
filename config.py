@@ -108,6 +108,7 @@ class AppConfig:
         mset("settings", "smtp_tls", "False")
         mset("settings", "smtp_username", "")
         mset("settings", "smtp_password", "")
+        mset("settings", "smtp_port", "25")
         mset("settings", "pop3_server", "")
         mset("settings", "pop3_username", "")
         mset("settings", "pop3_password", "")
@@ -183,6 +184,7 @@ class AppConfig:
                 "smtp_tls" : "Use TLS for SMTP",
                 "smtp_username" : "SMTP Username",
                 "smtp_password" : "SMTP Password",
+                "smtp_port" : "SMTP Port",
                 "pop3_server" : "POP3 Server",
                 "pop3_username" : "POP3 Username",
                 "pop3_password" : "POP3 Password",
@@ -223,6 +225,7 @@ class AppConfig:
               "smtp_tls" : "Use STARTTLS with SMTP server",
               "smtp_username" : "Username for SMTP server (blank=None)",
               "smtp_password" : "Password for SMTP server (blank=None)",
+              "smtp_port" : "Default is 25, but 465 is often used with TLS",
               "pop3_server" : "Server to pull mails from for email-to-form",
               "pop3_username" : "Username for POP3 server",
               "pop3_password" : "Password for POP3 server",
@@ -632,6 +635,8 @@ class AppConfig:
                                         gtk.Entry()), 0,0,0)
         topvbox.pack_start(self.make_sb("smtp_password",
                                         gtk.Entry()), 0,0,0)
+        topvbox.pack_start(self.make_sb("smtp_port",
+                                        gtk.Entry()), 0,0,0)
         topvbox.pack_start(self.make_sb("pop3_server",
                                         gtk.Entry()), 0,0,0)
         topvbox.pack_start(self.make_sb("pop3_username",
@@ -901,6 +906,7 @@ D-RATS has been started in safe mode, which means the configuration file has not
                   ("settings", "smtp_username"),
                   ("settings", "smtp_password"),
                   ("settings", "smtp_replyto"),
+                  ("settings", "smtp_port"),
                   ("settings", "pop3_server"),
                   ("settings", "pop3_username"),
                   ("settings", "pop3_password"),
