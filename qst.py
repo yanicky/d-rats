@@ -230,7 +230,12 @@ class QSTRSS(QSTThreadedText):
     def do_qst(self):
         rss = feedparser.parse(self.text)
 
-        entry = rss.entries[-1]
+        try:
+            entry = rss.entries[-1]
+        except IndexError:
+            print "RSS feed had no entries"
+            return None
+
         if entry.id != self.last_id:
             self.last_id = entry.id
             text = str(entry.description)
@@ -268,7 +273,11 @@ class QSTCAP(QSTThreadedText):
         if not newev:
             return None
 
-        self.last_date = newev[-1].effective
+        try:
+            self.last_date = newev[-1].effective
+        except IndexError:
+            print "CAP feed had no entries"
+            return None
 
         str = ""
 
