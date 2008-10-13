@@ -27,7 +27,10 @@ if sys.platform == "win32" or not os.isatty(0):
     sys.stderr = sys.stdout
     print "Enabled debug log"
 else:
-    os.unlink(debug_path)
+    try:
+        os.unlink(debug_path)
+    except OSError:
+        pass
 
 import gettext
 
