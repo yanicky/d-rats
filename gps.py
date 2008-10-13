@@ -56,6 +56,10 @@ for i in range(0, 26):
 #for k in sorted(DPRS_TO_APRS.keys()):
 #    print "%s => %s" % (k, DPRS_TO_APRS[k])
 
+APRS_TO_DPRS = {}
+for k,v in DPRS_TO_APRS.items():
+    APRS_TO_DPRS[v] = k
+
 def dprs_to_aprs(symbol):
     if len(symbol) < 2:
         print "Invalid DPRS symbol: `%s'" % symbol
