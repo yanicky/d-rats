@@ -740,7 +740,7 @@ class MainChatGUI(ChatGUI):
               <menuitem action='manageform'/>
               <separator/>
               <menuitem action='enableqst'/>
-              <menuitem action='connect'/>
+              <!--<menuitem action='connect'/>-->
               <menuitem action='quit'/>
             </menu>
             <menu action='view'>
