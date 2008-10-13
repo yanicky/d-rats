@@ -1341,6 +1341,57 @@ class FormManager:
     def row_clicked(self, view, path, col):
         self.edit(None)
 
+    def _make_menu(self):
+        (list, iter) = self.view.get_selection().get_selected()
+
+        def mh(_action):
+            action = _action.get_name()
+            if action == "email":
+                self.do_email(iter)
+            elif action == "delete":
+                self.delete(None)
+
+        xml = """
+<ui>
+  <popup name="menu">
+    <menuitem action="email"/>
+    <menuitem action="delete"/>
+  </popup>
+</ui>
+"""
+        ag = gtk.ActionGroup("menu")
+
+        email = gtk.Action("email", _("Email"), None, None)
+        email.connect("activate", mh)
+        ag.add_action(email)
+
+        delete = gtk.Action("delete", _("Delete"), None, None)
+        delete.connect("activate", mh)
+        ag.add_action(delete)
+
+        uim = gtk.UIManager()
+        uim.insert_action_group(ag, 0)
+        uim.add_ui_from_string(xml)
+
+        return uim.get_widget("/menu")
+
+    def make_menu(self, view, event):
+        if event.button != 3:
+            return
+
+        if event.window == view.get_bin_window():
+            x, y = event.get_coords()
+            pathinfo = view.get_path_at_pos(int(x), int(y))
+            if pathinfo is None:
+                return
+            else:
+                view.set_cursor_on_cell(pathinfo[0])
+
+        menu = self._make_menu()
+        if menu:
+            menu.set_size_request(100, -1)
+            menu.popup(None, None, None, event.button, event.time)
+
     def make_display(self):
         self.col_index = 0
         self.col_statm = 1
@@ -1393,6 +1444,7 @@ class FormManager:
         self.view.append_column(c)
 
         self.view.connect("row-activated", self.row_clicked)
+        self.view.connect("button_press_event", self.make_menu)
 
         self.view.show()
 
@@ -1594,14 +1646,13 @@ class FormManager:
         self.list_add_form(0, oform.id, newfn, stamp)
         self.reg_form(oform.id, newfn, stamp)        
 
-    def email(self, button):
-        (list, iter) = self.view.get_selection().get_selected()
+    def do_email(self, iter):
         (filename,) = self.store.get(iter, self.col_filen)
 
         form = formgui.FormFile("", filename)
 
         if form.id != "email":
-            d = gtk.MessageDialog(buttons=gtk.STOCK_OK)
+            d = gtk.MessageDialog(buttons=gtk.BUTTONS_OK)
             d.set_property("text", "Only email forms can be emailed")
             d.run()
             d.destroy()
@@ -1642,12 +1693,6 @@ class FormManager:
         sendb.connect("clicked", self.send, None)
         sendb.show()
         box.pack_start(sendb, 0,0,0)
-
-        emailb = gtk.Button(_("Email"))
-        emailb.set_size_request(75, 20)
-        emailb.connect("clicked", self.email)
-        emailb.show()
-        box.pack_start(emailb, 0,0,0)
 
         box.show()
 
