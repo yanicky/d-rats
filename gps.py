@@ -335,8 +335,9 @@ class GPSPosition:
             else:
                 alt = "%i m" % self.altitude
 
-            return "GPS: %s "+_("reporting")+" %.4f,%.4f@%s at %s%s%s%s" % ( \
-                self.station,
+            return "GPS: %s " % self.station + \
+                _("reporting") + \
+                " %.4f,%.4f@%s at %s%s%s%s" % ( \
                 self.latitude,
                 self.longitude,
                 alt,
