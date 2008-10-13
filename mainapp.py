@@ -210,6 +210,8 @@ class MainApp:
             self.comm.connect()
         except comm.DataPathNotConnectedError, e:
             print "COMM did not connect: %s" % e
+            self.chatgui.display("Failed to connect %s: %s\r\n" % (port, e),
+                                 "italic", "red")
             return False
 
         transport_args = {
