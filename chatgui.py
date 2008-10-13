@@ -721,6 +721,17 @@ class MainChatGUI(ChatGUI):
             f = image.send_image()
             if f:
                 self.do_file_transfer(True, f)
+        elif action == "debug":
+            pform = self.config.platform
+            path = pform.config_file("debug.log")
+            if os.path.exists(path):
+                pform.open_text_file(path)            
+            else:
+                d = gtk.MessageDialog(buttons=gtk.BUTTONS_OK)
+                d.set_property("text",
+                               "Debug log not available")
+                d.run()
+                d.destroy()
 
     def make_menubar(self):
         menu_xml = """
@@ -754,6 +765,7 @@ class MainChatGUI(ChatGUI):
               <menuitem action='map'/>
             </menu>
             <menu action='help'>
+              <menuitem action='debug'/>
               <menuitem action='about'/>
             </menu>
           </menubar>
@@ -780,6 +792,7 @@ class MainChatGUI(ChatGUI):
                    ('map', None, _('Map'), "<Control>m", None, self.menu_handler),
 
                    ('help', None, _('_Help'), None, None, self.menu_handler),
+                   ('debug', None, _('Show debug log'), None, None, self.menu_handler),
                    ('about', None, _('_About'), None, None, self.menu_handler)]
 
         advanced = gtk.ToggleAction("advanced", _("_Advanced"), None, None)

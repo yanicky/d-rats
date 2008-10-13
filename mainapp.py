@@ -15,7 +15,20 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import sys
+import platform
 import os
+
+debug_path = platform.get_platform().config_file("debug.log")
+if sys.platform == "win32" or not os.isatty(0):
+    sys.stdout.close()
+    sys.stderr.close()
+    sys.stdout = file(debug_path, "w", 0)
+    sys.stderr = sys.stdout
+    print "Enabled debug log"
+else:
+    os.unlink(debug_path)
+
 import gettext
 
 if os.environ.has_key("LANG"):
@@ -31,7 +44,6 @@ if os.environ.has_key("LANG"):
 else:
     gettext.install("D-RATS")
 
-import sys
 
 if sys.platform == "darwin":
     os.environ["PANGO_RC_FILE"] = "../Resources/etc/pango/pangorc"
@@ -333,26 +345,6 @@ class MainApp:
         self.chatgui.refresh_config()
         self.refresh_mail_threads()
 
-    def maybe_redirect_stdout(self):
-        try:
-            if self.config.getboolean("prefs", "debuglog"):
-                dir = self.config.get("prefs", "download_dir")
-                logfile = os.path.join(dir, "debug.log")
-                sys.stdout = file(logfile, "w", 0)
-                sys.stderr = sys.stdout
-            elif os.name == "nt":
-                class Blackhole(object):
-                    softspace=0
-                    def write(self, text):
-                        pass
-
-                sys.stdout = Blackhole()
-                sys.stderr = Blackhole()
-                del Blackhole
-
-        except Exception, e:
-            print "Unable to open debug log: %s" % e
-
     def TEMP_migrate_config(self):
         import platform
 
@@ -384,8 +376,6 @@ class MainApp:
         self.config = config.AppConfig(self, **args)
 
         self.gps = self._static_gps()
-
-        self.maybe_redirect_stdout()
 
         self.chatgui = chatgui.MainChatGUI(self.config, self)
 
