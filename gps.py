@@ -141,6 +141,14 @@ def GPSA_checksum(string):
 
     return calc(string)
 
+def DPRS_checksum(callsign, msg):
+    csum = 0
+    string = "%-8s,%s" % (callsign, msg)
+    for i in string:
+        csum ^= ord(i)
+
+    return "*%02x" % csum
+
 def deg2rad(deg):
     return deg * (pi / 180)
 
@@ -548,11 +556,16 @@ class NMEAGPSPosition(GPSPosition):
 
     def _parse_dprs_comment(self):
         symbol = self.comment[0:4].strip()
-        checksum = self.comment[-2:]
+        checksum = self.comment[-3:]
 
-        if True: # FIXME: Check checksum
-            self.APRSIcon = dprs_to_aprs(symbol)
+        _checksum = DPRS_checksum(self.station, self.comment[:-3])
 
+        if _checksum != checksum:
+            print "Comment: |%s|" % self.comment
+            print "Check: %s %s" % (checksum, _checksum)
+            raise Exception("DPRS checksum failed")
+
+        self.APRSIcon = dprs_to_aprs(symbol)
         self.comment = self.comment[4:-3].strip()
 
     def _parse_GPGGA(self, string):
@@ -585,8 +598,7 @@ class NMEAGPSPosition(GPSPosition):
                 self.comment = com.strip()[0:20]
 
         if len(self.comment) >=7 and \
-                self.comment[-3] == "*" and \
-                self.comment[-2:-1].isdigit():
+                self.comment[-3] == "*":
             self._parse_dprs_comment()
 
         self.valid = self._test_checksum(string, csum)
