@@ -21,8 +21,6 @@ import os
 
 debug_path = platform.get_platform().config_file("debug.log")
 if sys.platform == "win32" or not os.isatty(0):
-    sys.stdout.close()
-    sys.stderr.close()
     sys.stdout = file(debug_path, "w", 0)
     sys.stderr = sys.stdout
     print "Enabled debug log"
