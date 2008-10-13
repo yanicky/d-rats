@@ -417,8 +417,8 @@ class AppConfig:
         vbox.pack_start(self.make_sb("signoff", gtk.Entry()), 0,0,0)
         vbox.pack_start(self.make_sb("logenabled",
                                      self.make_bool()), 0,0,0)
-        vbox.pack_start(self.make_sb("debuglog",
-                                     self.make_bool()), 0,0,0)
+        #vbox.pack_start(self.make_sb("debuglog",
+        #                             self.make_bool()), 0,0,0)
         vbox.pack_start(self.make_sb("logresume",
                                      self.make_bool()), 0,0,0)
         vbox.pack_start(self.make_sb("restore_stations",
@@ -917,7 +917,6 @@ D-RATS has been started in safe mode, which means the configuration file has not
                   ("prefs", "dosignoff"),
                   ("prefs", "eolstrip"),
                   ("prefs", "logenabled"),
-                  ("prefs", "debuglog"),
                   ("settings", "compression"),
                   ("prefs", "logresume"),
                   ("settings", "gpsenabled"),
