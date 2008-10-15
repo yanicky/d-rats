@@ -23,6 +23,7 @@ import email
 import rfc822
 import time
 import platform
+import gobject
 
 import formbuilder
 import formgui
@@ -154,6 +155,9 @@ class MailThread(threading.Thread):
         self.message("Thread ending")
 
 class FormEmailService:
+    def message(self, msg):
+        print "[SMTP] %s" % msg
+
     def __init__(self, config):
         self.config = config
 
@@ -179,16 +183,30 @@ class FormEmailService:
             "Subject: %s\r\n" % subj +\
             "\r\n%s\r\n" % mesg
 
-        mailer = smtplib.SMTP(server)
+        self.message("Connecting to %s:%i" % (server, port))
+        mailer = smtplib.SMTP(server, port)
+        self.message("Connected")
         mailer.set_debuglevel(1)
+
+        self.message("Sending EHLO")
         mailer.ehlo()
+        self.message("Done")
         if tls:
+            self.message("TLS is enabled, sending STARTTLS")
             mailer.starttls()
+            self.message("Sending EHLO again")
             mailer.ehlo()
+            self.message("Done")
         if user and pwrd:
+            self.message("Doing login with %s,%s" % (user, pwrd))
             mailer.login(user, pwrd)
+            self.message("Done")
+
+        self.message("Sending mail")
         mailer.sendmail(replyto, recp, mail)
+        self.message("Done")
         mailer.quit()
+        self.message("Disconnected")
 
     def send_email(self, form):
         send = form.get_field_value("_auto_sender")
@@ -196,14 +214,29 @@ class FormEmailService:
         subj = form.get_field_value("subject")
         mesg = form.get_field_value("message")
 
+        self.message("Preparing to send `%s' from %s to %s" % (\
+                subj, send, recp))
+
         if not self.config.get("settings", "smtp_server"):
             return False, "Email form received but not configured for SMTP"
-
+        
         try:
+            self.message("Sending mail...")
             self._send_email(send, recp, subj, mesg)
+            self.message("Successfully sent to %s" % recp)
             return True, "Mail sent ('%s' to '%s')" % (subj, recp)
         except Exception, e:
+            self.message("Error sending mail: %s" % e)
             return False, "Error sending mail: %s" % e
+
+    def thread_fn(self, form, cb):
+        status, msg = self.send_email(form)
+        gobject.idle_add(cb, status, msg)
+
+    def send_email_background(self, form, cb):
+        thread = threading.Thread(target=self.thread_fn,
+                                  args=(form,cb))
+        thread.start()
 
 if __name__ == "__main__":
     class fakeout:

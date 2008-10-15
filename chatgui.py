@@ -1670,9 +1670,11 @@ class FormManager:
             d.run()
             d.destroy()
         else:
+            def cb(status, msg):
+                self.gui.display(msg + "\r\n", "italic")
+
             srv = emailgw.FormEmailService(self.gui.config)
-            st, msg = srv.send_email(form)
-            self.gui.display(msg + "\r\n", "italic")
+            srv.send_email_background(form, cb)
 
     def make_buttons(self):
         box = gtk.VBox(False, 2)
