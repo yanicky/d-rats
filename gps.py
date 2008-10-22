@@ -880,6 +880,7 @@ class GPSSource:
         if self.thread and self.enabled:
             self.enabled = False
             self.thread.join()
+            self.serial.close()
 
     def gpsthread(self):
         while self.enabled:
