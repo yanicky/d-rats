@@ -127,10 +127,11 @@ class QSTText:
         return True
 
 class QSTExec(QSTText):
-    size_limit = 256
+    size_limit = 2048
 
     def do_qst(self):
-        s, o = run(self.text)
+        pform = platform.get_platform()
+        s, o = pform.run_sync(self.text)
         if s:
             print "Command failed with status %i" % s
 
@@ -690,7 +691,7 @@ class QSTFileEditWidget(QSTEditWidget):
         self.__fn.set_filename("")
 
     def to_qst(self):
-        return "File", self.__fn.get_filename()
+        return self.__fn.get_filename()
 
     def from_qst(self, content):
         self.__fn.set_filename(content)
