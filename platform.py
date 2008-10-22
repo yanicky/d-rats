@@ -18,6 +18,7 @@
 import os
 import sys
 import glob
+import commands
 from subprocess import Popen
 
 class Platform:
@@ -125,6 +126,13 @@ class Platform:
     def os_version_string(self):
         return "Unknown Operating System"
 
+    def run_sync(self, command):
+        pipe = os.popen(command, 'r')
+        data = pipe.read()
+        pipe.close()
+
+        return 0, data
+
 def _unix_editor():
     macos_textedit = "/Applications/TextEdit.app/Contents/MacOS/TextEdit"
 
@@ -189,6 +197,9 @@ class UnixPlatform(Platform):
             ver = " ".join(os.uname())
 
         return ver
+
+    def run_sync(self, command):
+        return commands.getstatusoutput(command)
 
 class Win32Platform(Platform):
     def __init__(self, basepath=None):
