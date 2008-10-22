@@ -179,6 +179,7 @@ class ChatGUI:
         if self.mainapp.chat_session:
             if raw:
                 self.mainapp.chat_session.write_raw(string)
+                self.display_line(string, "outgoingcolor")
             else:
                 call = self.config.get("user", "callsign")
                 message = "%s> %s" % (call, string)
