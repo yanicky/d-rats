@@ -608,14 +608,16 @@ class NMEAGPSPosition(GPSPosition):
         self.valid = self._test_checksum(string, csum)
 
     def _parse_GPRMC(self, string):
-        elements = string.split(",", 12)
+        nmea, station = string.split("\r\n", 1)
+        elements = nmea.split(",", 12)
         if len(elements) < 12:
             raise Exception("Unable to split GPRMC (%i)" % len(elements))
 
         if elements[2] != "A":
             self.valid = False
-            print "GPRMC marked invalid by GPS"
-            return
+            print "GPRMC marked invalid by GPS (%s)" % elements[2]
+            #return
+            self.valid = True
 
         t = elements[1]
         d = elements[9]
@@ -631,21 +633,21 @@ class NMEAGPSPosition(GPSPosition):
         self.speed = float(elements[7])
         self.direction = float(elements[8])
 
-        if len(elements) == 12:
+        if "*" in elements[11]:
             end = 11 # NMEA <=2.0
-        elif len(elements) == 13:
+        elif "*" in elements[12]:
             end = 12 # NMEA 2.3
         else:
-            raise Exception("GPRMC has too many fields (%i)" % len(elements))
+            raise Exception("GPRMC has no checksum in 12 or 13")
 
-        m = re.match("^.?(\*[A-z0-9]{2})\r?\n?(.*)$", elements[end])
+        m = re.match("^.?(\*[A-z0-9]{2})", elements[end])
         if not m:
             print "Invalid end: %s" % elements[end]
             return
 
         csum = m.group(1)
-        if "," in m.group(2):
-            sta, com = m.group(2).split(",", 1)
+        if "," in station:
+            sta, com = station.split(",", 1)
             self.station = sta.strip()
             self.comment = com.strip()
 
