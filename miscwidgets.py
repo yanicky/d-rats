@@ -29,7 +29,10 @@ class KeyedListWidget(gtk.HBox):
                            (gobject.TYPE_STRING,)),
         "item-toggled" : (gobject.SIGNAL_RUN_LAST,
                           gobject.TYPE_BOOLEAN,
-                          (gobject.TYPE_STRING, gobject.TYPE_BOOLEAN))
+                          (gobject.TYPE_STRING, gobject.TYPE_BOOLEAN)),
+        "item-set" : (gobject.SIGNAL_RUN_LAST,
+                      gobject.TYPE_NONE,
+                      (gobject.TYPE_STRING,)),
         }
 
     def _toggle(self, rend, path, colnum):
@@ -83,14 +86,16 @@ class KeyedListWidget(gtk.HBox):
             iter = self.__store.iter_next(iter)
     
         self.__store.append(row=(key,) + values)
+
+        self.emit("item-set", key)
     
     def get_item(self, key):
         iter = self.__store.get_iter_first()
         while iter:
-            vals = self.__store.get(iter)
+            vals = self.__store.get(iter, *tuple(range(len(self.columns))))
             if vals[0] == key:
                 return vals
-            iter = self.store.iter_next(iter)
+            iter = self.__store.iter_next(iter)
     
         return None
     
