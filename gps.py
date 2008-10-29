@@ -96,10 +96,10 @@ def set_units(units):
     global EARTH_RADIUS
     global EARTH_UNITS
 
-    if units == "Imperial":
+    if units == _("Imperial"):
         EARTH_RADIUS = 3963.1
         EARTH_UNITS = "mi"
-    elif units == "Metric":
+    elif units == _("Metric"):
         EARTH_RADIUS = 6380.0
         EARTH_UNITS = "km"
 
