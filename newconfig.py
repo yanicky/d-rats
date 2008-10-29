@@ -6,6 +6,7 @@ import ConfigParser
 
 import utils
 import miscwidgets
+import inputdialog
 import platform
 
 BAUD_RATES = ["1200", "2400", "4800", "9600", "19200", "38400", "115200"]
@@ -125,6 +126,24 @@ class DratsConfigWidget(gtk.VBox):
         w.show()
 
         self.pack_start(w, 1, 1, 1)
+
+    def add_list(self, cols):
+        def item_set(lw, key):
+            l = eval(self.value)
+            l.append(lw.get_item(int(key))[1:])
+            self.value = str(l)
+
+        w = miscwidgets.KeyedListWidget(cols)
+        l = eval(self.value)
+        for i in l:
+            w.set_item(i[0], *i)
+        
+        w.connect("item-set", item_set)
+        w.show()
+
+        self.pack_start(w, 1, 1, 1)
+
+        return w
 
 class DratsPanel(gtk.VBox):
     LW = 100
@@ -246,7 +265,6 @@ class DratsAppearancePanel(DratsPanel):
 
         for i in colors:
             low = i.lower()
-            print "Doing %scolor" % low
             val = DratsConfigWidget(config, "prefs", "%scolor" % low)
             val.add_color()
             self.mv("%s Color" % i, val)
@@ -325,6 +343,114 @@ class DratsTuningPanel(DratsPanel):
         val.add_numeric(-32, 32, 1)
         self.mv(_("Force transmission delay"), val)
 
+class DratsNetworkPanel(DratsPanel):
+    pass
+
+class DratsTCPPanel(DratsPanel):
+    def mv(self, title, *widgets):
+        self.pack_start(widgets[0], 1, 1, 1)
+        widgets[0].show()
+
+        if len(widgets) > 1:
+            box = gtk.HBox(True, 2)
+
+            for i in widgets[1:]:
+                box.pack_start(i, 0, 0, 0)
+                i.show()
+
+            box.show()
+            self.pack_start(box, 0, 0, 0)
+
+    def but_rem(self, button, lw):
+        lw.del_item(lw.get_selected())
+
+    def prompt_for(self, fields):
+        d = inputdialog.FieldDialog()
+        for n, t in fields:
+            d.add_field(n, gtk.Entry())
+
+        ret = {}
+
+        done = False
+        while not done and d.run() == gtk.RESPONSE_OK:
+            done = True
+            for n, t in fields:
+                try:
+                    s = d.get_field(n).get_text()
+                    if not s:
+                        raise ValueError("empty")
+                    ret[n] = t(s)
+                except ValueError, e:
+                    ed = gtk.MessageDialog(buttons=gtk.BUTTONS_OK)
+                    ed.set_property("text",
+                                    _("Invalid value for") + " %s: %s" % (n, e))
+                    ed.run()
+                    ed.destroy()
+                    done = False
+                    break
+
+        d.destroy()
+
+        if done:
+            return ret
+        else:
+            return None                    
+
+class DratsTCPOutgoingPanel(DratsTCPPanel):
+    def but_add(self, button, lw):
+        values = self.prompt_for([(_("Local Port"), int),
+                                  (_("Remote Port"), int),
+                                  (_("Station"), str)])
+        if values is None:
+            return
+
+        lw.set_item(values[_("Local Port")],
+                    values[_("Local Port")],
+                    values[_("Remote Port")],
+                    values[_("Station")].upper())
+
+    def __init__(self, config):
+        DratsTCPPanel.__init__(self, config)
+
+        outcols = [(gobject.TYPE_INT, "ID"),
+                   (gobject.TYPE_INT, _("Local")),
+                   (gobject.TYPE_INT, _("Remote")),
+                   (gobject.TYPE_STRING, _("Station"))]
+
+        val = DratsConfigWidget(config, "settings", "outports")
+        lw = val.add_list(outcols)
+        add = gtk.Button(_("Add"), gtk.STOCK_ADD)
+        add.connect("clicked", self.but_add, lw)
+        rem = gtk.Button(_("Remove"), gtk.STOCK_DELETE)
+        rem.connect("clicked", self.but_rem, lw)
+        self.mv(_("Outgoing"), val, add, rem)
+
+class DratsTCPIncomingPanel(DratsTCPPanel):
+    def but_add(self, button, lw):
+        values = self.prompt_for([(_("Port"), int),
+                                  (_("Host"), str)])
+        if values is None:
+            return
+
+        lw.set_item(values[_("Port")],
+                    values[_("Port")],
+                    values[_("Host")].upper())
+
+    def __init__(self, config):
+        DratsTCPPanel.__init__(self, config)
+
+        incols = [(gobject.TYPE_INT, "ID"),
+                  (gobject.TYPE_INT, _("Port")),
+                  (gobject.TYPE_STRING, _("Host"))]
+
+        val = DratsConfigWidget(config, "settings", "inports")
+        lw = val.add_list(incols)
+        add = gtk.Button(_("Add"), gtk.STOCK_ADD)
+        add.connect("clicked", self.but_add, lw)
+        rem = gtk.Button(_("Remove"), gtk.STOCK_DELETE)
+        rem.connect("clicked", self.but_rem, lw)
+        self.mv(_("Incoming"), val, add, rem)
+
 class DratsConfigUI(gtk.Dialog):
 
     def mouse_event(self, view, event):
@@ -371,9 +497,14 @@ class DratsConfigUI(gtk.Dialog):
         add_panel(DratsGPSPanel, "gps", _("GPS"), prefs)
         add_panel(DratsAppearancePanel, "appearance", _("Appearance"), prefs)
         add_panel(DratsChatPanel, "chat", _("Chat"), prefs)
+
         radio = add_panel(DratsRadioPanel, "radio", _("Radio"), None)
         add_panel(DratsTransfersPanel, "transfers", _("Transfers"), radio)
         add_panel(DratsTuningPanel, "tuning", _("Tuning"), radio)
+
+        network = add_panel(DratsNetworkPanel, "network", _("Network"), None)
+        add_panel(DratsTCPIncomingPanel, "tcpin", _("TCP Gateway"), network)
+        add_panel(DratsTCPOutgoingPanel, "tcpout", _("TCP Forwarding"), network)
 
         self.panels["prefs"].show()
 
