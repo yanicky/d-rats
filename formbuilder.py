@@ -50,7 +50,7 @@ class FormElementEditor(gtk.Dialog):
 
         return f
 
-    def make_choice_editor(self, id):
+    def make_choice_editor(self, id, single=True):
         self._choice_buffer = gtk.TextBuffer()
         entry = gtk.TextView(self._choice_buffer)
         entry.show()
@@ -60,7 +60,10 @@ class FormElementEditor(gtk.Dialog):
         sw.add(entry)
         sw.show()
 
-        f = gtk.Frame("Options (one per line, first is default)")
+        if single:
+            f = gtk.Frame("Options (one per line, first is default)")
+        else:
+            f = gtk.Frame("Options (one per line)")
         f.add(sw)
 
         self.entries[id] = entry
@@ -96,6 +99,8 @@ class FormElementEditor(gtk.Dialog):
             "numeric"   : self.make_entry_editor("numeric"),
             "toggle"    : self.make_toggle_editor("toggle"),
             "choice"    : self.make_choice_editor("choice"),
+            "multiselect": self.make_choice_editor("multiselect", False),
+            "label"     : self.make_null_editor("label"),
             }
 
         self.type_sel = make_choice(self.vals.keys(), False, "text")
@@ -117,7 +122,7 @@ class FormElementEditor(gtk.Dialog):
 
         if sel in ("text", "multiline", "numeric"):
             return self.entries[sel].get_text()
-        elif sel in ("choice"):
+        elif sel in ("choice",):
             b = self.entries[sel].get_buffer()
             i = b.get_iter_at_line(1)
             i.backward_chars(1)
@@ -141,16 +146,21 @@ class FormElementEditor(gtk.Dialog):
 
     def get_options(self):
         sel = self.type_sel.get_active_text()
-        if sel in ("choice"):
+        if sel == "choice":
             b = self.entries[sel].get_buffer()
             t = b.get_text(b.get_start_iter(), b.get_end_iter())
             return str(t.split("\n"))
+        elif sel == "multiselect":
+            b = self.entries[sel].get_buffer()
+            t = b.get_text(b.get_start_iter(), b.get_end_iter())
+            opts = t.split("\n")
+            return str([(False, x) for x in opts])
         else:
             return ""
         
     def set_options(self, val):
         sel = self.type_sel.get_active_text()
-        if sel in ("choice"):
+        if sel == "choice":
             try:
                 l = eval(val)
             except:
@@ -158,6 +168,14 @@ class FormElementEditor(gtk.Dialog):
 
             b = self.entries[sel].get_buffer()
             b.set_text("\n".join(l))
+        elif sel == "multiselect":
+            try:
+                l = eval(val)
+            except:
+                return
+
+            b = self.entries[sel].get_buffer()
+            b.set_text("\n".join([y for x,y in l]))
 
     def get_type(self):
         return self.type_sel.get_active_text()
@@ -302,10 +320,11 @@ class FormBuilderGUI(gtk.Dialog):
                                                      self.col_opts,
                                                      self.col_inst)
 
-        val = xml_escape(val)
+        if val:
+            val = xml_escape(val)
         print "\n\nField type: %s" % type
         cap_xml = "<caption>%s</caption>" % cap
-        if type != "choice" and val:
+        if type not in ["choice", "multiselect"] and val:
             ent_xml = "<entry type='%s'>%s</entry>" % (type, val)
         elif type == "choice":
             try:
@@ -322,7 +341,19 @@ class FormBuilderGUI(gtk.Dialog):
                     ent_xml += "<choice%s>%s</choice>" % (set, c)
 
                 ent_xml += "</entry>"
+            except Exception, e:
+                print "Exception parsing choice list: %s" % e
+                ent_xml = "<!-- Invalid list: %s -->" % opts
 
+        elif type == "multiselect":
+            try:
+                l = eval(opts)
+
+                ent_xml = "<entry type='%s'>" % type
+                for v, c in l:
+                    setval = v and "y" or "n"
+                    ent_xml += "<choice set='%s'>%s</choice>" % (setval, c)
+                ent_xml += "</entry>"
             except Exception, e:
                 print "Exception parsing choice list: %s" % e
                 ent_xml = "<!-- Invalid list: %s -->" % opts
@@ -430,8 +461,9 @@ class FormBuilderGUI(gtk.Dialog):
     def load_field(self, widget):
         iter = self.store.append()
         print "Type: %s" % widget.type
-        if widget.type == "choice":
+        if widget.type in ["choice", "multiselect"]:
             opts = widget.choices
+            print "Opts for %s: %s" % (widget.type, opts)
         else:
             opts = None
         self.store.set(iter,

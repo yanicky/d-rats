@@ -23,6 +23,7 @@ import libxml2
 import libxslt
 
 import gtk
+import gobject
 
 from miscwidgets import make_choice
 import mainapp
@@ -401,6 +402,113 @@ class ChoiceWidget(FieldWidget):
 
             child = child.next
 
+class MultiselectWidget(FieldWidget):
+    def parse_choice(self, node):
+        if node.name != "choice":
+            return
+
+        try:
+            content = xml_unescape(node.children.getContent().strip())
+            print "Got option %s" % content
+            self.store.append(row=(node.prop("set") == "y", content))
+            self.choices.append((node.prop("set") == "y", content))
+        except Exception, e:
+            print "Error: %s" % e
+            pass
+
+    def toggle(self, rend, path):
+        self.store[path][0] = not self.store[path][0]
+
+    def make_selector(self):
+        self.store = gtk.ListStore(gobject.TYPE_BOOLEAN,
+                                   gobject.TYPE_STRING)
+        self.view = gtk.TreeView(self.store)
+
+        rend = gtk.CellRendererToggle()
+        rend.connect("toggled", self.toggle)
+        col = gtk.TreeViewColumn("", rend, active=0)
+        self.view.append_column(col)
+
+        rend = gtk.CellRendererText()
+        col = gtk.TreeViewColumn("", rend, text=1)
+        self.view.append_column(col)
+
+        self.view.show()
+        self.view.set_headers_visible(False)
+
+        return self.view
+
+    def __init__(self, node):
+        FieldWidget.__init__(self, node)
+
+        self.choices = []
+        self.widget = self.make_selector()
+        self.widget.show()
+
+        child = node.children
+        while child:
+            if child.type == "element":
+                self.parse_choice(child)
+            child = child.next
+
+    def make_container(self):
+        vbox = gtk.VBox(False, 2)
+
+        sw = gtk.ScrolledWindow()
+        sw.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
+        sw.add(self.widget)
+
+        if self.caption:
+            label = gtk.Label(self.caption)
+            vbox.pack_start(label, 0,0,0)
+            label.show()
+        vbox.pack_start(sw, 0,0,0)
+
+        vbox.show()
+        sw.show()
+
+        return vbox
+
+    def get_value(self):
+        return ""
+
+    def update_node(self):
+        vals = {}
+        iter = self.store.get_iter_first()
+        while iter:
+            setval, name = self.store.get(iter, 0, 1)
+            vals[name] = setval
+            iter = self.store.iter_next(iter)
+
+        child = self.node.children
+        while child:
+            choice = child.getContent().strip()
+            if choice not in vals.keys():
+                vals[choice] = False
+
+            if not child.hasProp("set"):
+                child.newProp("set", vals[choice] and "y" or "n")
+            else:
+                child.setProp("set", vals[choice] and "y" or "n")
+
+            child = child.next
+
+class LabelWidget(FieldWidget):
+    def __init__(self, node):
+        FieldWidget.__init__(self, node)
+
+    def update_node(self):
+        pass
+
+    def make_container(self):
+        widget = gtk.Label()
+        widget.set_markup("<b><span color='blue'>%s</span></b>" % self.caption)
+        color = gtk.gdk.color_parse("blue")
+        #widget.modify_fg(gtk.STATE_NORMAL, color)
+        widget.show()
+
+        return widget
+
 class FormField:
     widget_types = {
     "text" : TextWidget,
@@ -410,6 +518,8 @@ class FormField:
     "time" : TimeWidget,
     "numeric" : NumericWidget,
     "choice" : ChoiceWidget,
+    "multiselect" : MultiselectWidget,
+    "label" : LabelWidget,
     }
 
     def get_caption_string(self, node):
