@@ -139,6 +139,16 @@ class KeyedListWidget(gtk.HBox):
 
         return False
         
+    def get_keys(self):
+        keys = []
+        iter = self.__store.get_iter_first()
+        while iter:
+            key, = self.__store.get(iter, 0)
+            keys.append(key)
+            iter = self.__store.iter_next(iter)
+
+        return keys
+
     def __init__(self, columns):
         gtk.HBox.__init__(self, True, 0)
     
