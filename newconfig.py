@@ -29,7 +29,12 @@ class DratsConfigWidget(gtk.VBox):
         self.vsec = sec
         self.vname = name
 
+        self.config.widgets.append(self)
+
         self.value = config.get(sec, name)
+
+    def save(self):
+        self.config.set(self.vsec, self.vname, self.value)
 
     def add_text(self, limit=0):
         def changed(entry):
@@ -38,6 +43,19 @@ class DratsConfigWidget(gtk.VBox):
         w = gtk.Entry(limit)
         w.connect("changed", changed)
         w.set_text(self.value)
+        w.set_size_request(50, -1)
+        w.show()
+
+        self.pack_start(w, 1, 1, 1)
+
+    def add_pass(self, limit=0):
+        def changed(entry):
+            self.value = entry.get_text()
+
+        w = gtk.Entry(limit)
+        w.connect("changed", changed)
+        w.set_text(self.value)
+        w.set_visibility(False)
         w.set_size_request(50, -1)
         w.show()
 
@@ -127,23 +145,78 @@ class DratsConfigWidget(gtk.VBox):
 
         self.pack_start(w, 1, 1, 1)
 
+class DratsListConfigWidget(DratsConfigWidget):
+    def __init__(self, config, section):
+        try:
+            DratsConfigWidget.__init__(self, config, section, "_does_not_exist")
+        except ConfigParser.NoOptionError:
+            pass
+
+    def convert_types(self, coltypes, values):
+        newvals = []
+
+        i = 0
+        while i < len(values):
+            gtype, label = coltypes[i]
+            value = values[i]
+
+            try:
+                if gtype == gobject.TYPE_INT:
+                    value = int(value)
+                elif gtype == gobject.TYPE_FLOAT:
+                    value = float(value)
+                elif gtype == gobject.TYPE_BOOLEAN:
+                    value = eval(value)
+            except ValueError, e:
+                print "Failed to convert %s for %s: %s" % (value, label, e)
+                return []
+
+            i += 1
+            newvals.append(value)
+
+        return newvals
+
     def add_list(self, cols):
         def item_set(lw, key):
-            l = eval(self.value)
-            l.append(lw.get_item(int(key))[1:])
-            self.value = str(l)
+            pass
 
         w = miscwidgets.KeyedListWidget(cols)
-        l = eval(self.value)
-        for i in l:
-            w.set_item(i[0], *i)
+
+        options = self.config.options(self.vsec)
+        for option in options:
+            vals = self.config.get(self.vsec, option).split(",", len(cols))
+            vals = self.convert_types(cols[1:], vals)
+            if not vals:
+                continue
+
+            try:
+                w.set_item(vals[0], *tuple(vals))
+            except Exception, e:
+                print "Failed to set item '%s': %s" % (str(vals), e)
         
         w.connect("item-set", item_set)
         w.show()
 
         self.pack_start(w, 1, 1, 1)
 
+        self.listw = w
+
         return w
+
+    def save(self):
+        for opt in self.config.options(self.vsec):
+            self.config.remove_option(self.vsec, opt)
+
+        count = 0
+
+        for key in self.listw.get_keys():
+            vals = self.listw.get_item(key)
+            vals = [str(x) for x in vals]
+            value = ",".join(vals[1:])
+            label = "%s_%i" % (self.vsec, count)
+            print "Setting %s: %s" % (label, value)
+            self.config.set(self.vsec, label, value)
+            count += 1
 
 class DratsPanel(gtk.VBox):
     LW = 100
@@ -404,7 +477,7 @@ class DratsTCPOutgoingPanel(DratsTCPPanel):
         if values is None:
             return
 
-        lw.set_item(values[_("Local Port")],
+        lw.set_item(str(values[_("Local Port")]),
                     values[_("Local Port")],
                     values[_("Remote Port")],
                     values[_("Station")].upper())
@@ -412,12 +485,12 @@ class DratsTCPOutgoingPanel(DratsTCPPanel):
     def __init__(self, config):
         DratsTCPPanel.__init__(self, config)
 
-        outcols = [(gobject.TYPE_INT, "ID"),
+        outcols = [(gobject.TYPE_STRING, "ID"),
                    (gobject.TYPE_INT, _("Local")),
                    (gobject.TYPE_INT, _("Remote")),
                    (gobject.TYPE_STRING, _("Station"))]
 
-        val = DratsConfigWidget(config, "settings", "outports")
+        val = DratsListConfigWidget(config, "tcp_out")
         lw = val.add_list(outcols)
         add = gtk.Button(_("Add"), gtk.STOCK_ADD)
         add.connect("clicked", self.but_add, lw)
@@ -432,24 +505,132 @@ class DratsTCPIncomingPanel(DratsTCPPanel):
         if values is None:
             return
 
-        lw.set_item(values[_("Port")],
+        lw.set_item(str(values[_("Port")]),
                     values[_("Port")],
                     values[_("Host")].upper())
 
     def __init__(self, config):
         DratsTCPPanel.__init__(self, config)
 
-        incols = [(gobject.TYPE_INT, "ID"),
+        incols = [(gobject.TYPE_STRING, "ID"),
                   (gobject.TYPE_INT, _("Port")),
                   (gobject.TYPE_STRING, _("Host"))]
 
-        val = DratsConfigWidget(config, "settings", "inports")
+        val = DratsListConfigWidget(config, "tcp_in")
         lw = val.add_list(incols)
         add = gtk.Button(_("Add"), gtk.STOCK_ADD)
         add.connect("clicked", self.but_add, lw)
         rem = gtk.Button(_("Remove"), gtk.STOCK_DELETE)
         rem.connect("clicked", self.but_rem, lw)
         self.mv(_("Incoming"), val, add, rem)
+
+class DratsOutEmailPanel(DratsPanel):
+    def __init__(self, config):
+        DratsPanel.__init__(self, config)
+
+        val = DratsConfigWidget(config, "settings", "smtp_server")
+        val.add_text()
+        self.mv("SMTP Server", val)
+
+        port = DratsConfigWidget(config, "settings", "smtp_port")
+        port.add_numeric(1, 65536, 1)
+        mode = DratsConfigWidget(config, "settings", "smtp_tls")
+        mode.add_bool("TLS")
+        self.mv("Port and Mode", port, mode)
+
+        val = DratsConfigWidget(config, "settings", "smtp_replyto")
+        val.add_text()
+        self.mv("Source Address", val)
+        
+        val = DratsConfigWidget(config, "settings", "smtp_username")
+        val.add_text()
+        self.mv("SMTP Username", val)
+
+        val = DratsConfigWidget(config, "settings", "smtp_password")
+        val.add_pass()
+        self.mv("SMTP Password", val)
+
+class DratsInEmailPanel(DratsPanel):
+    def mv(self, title, *widgets):
+        self.pack_start(widgets[0], 1, 1, 1)
+        widgets[0].show()
+
+        if len(widgets) > 1:
+            box = gtk.HBox(True, 2)
+
+            for i in widgets[1:]:
+                box.pack_start(i, 0, 0, 0)
+                i.show()
+
+            box.show()
+            self.pack_start(box, 0, 0, 0)
+
+    def but_rem(self, button, lw):
+        lw.del_item(lw.get_selected())
+
+    def but_add(self, button, lw):
+        fields = [(_("Server"), str, ""),
+                  (_("Username"), str, ""),
+                  (_("Password"), str, ""),
+                  (_("Poll Interval"), int, 5),
+                  (_("Use SSL"), bool, False),
+                  (_("Port"), int, 110),
+                  ]
+
+        dlg = inputdialog.FieldDialog()
+        for n, t, d in fields:
+            w = gtk.Entry()
+            w.set_text(str(d))
+            dlg.add_field(n, w)
+
+        ret = {}
+
+        done = False
+        while not done and dlg.run() == gtk.RESPONSE_OK:
+            done = True
+            for n, t, d in fields:
+                try:
+                    s = dlg.get_field(n).get_text()
+                    if not s:
+                        raise ValueError("empty")
+                    ret[n] = t(s)
+                except ValueError, e:
+                    ed = gtk.MessageDialog(buttons=gtk.BUTTONS_OK)
+                    ed.set_property("text",
+                                    _("Invalid value for") + " %s: %s" % (n, e))
+                    ed.run()
+                    ed.destroy()
+                    done = False
+                    break
+            if done:
+                lw.set_item(ret[_("Server")],
+                            ret[_("Server")],
+                            ret[_("Username")],
+                            ret[_("Password")],
+                            ret[_("Poll Interval")],
+                            ret[_("Use SSL")],
+                            ret[_("Port")])
+
+        dlg.destroy()
+
+    def __init__(self, config):
+        DratsPanel.__init__(self, config)
+
+        cols = [(gobject.TYPE_STRING, "ID"),
+                (gobject.TYPE_STRING, _("Server")),
+                (gobject.TYPE_STRING, _("Username")),
+                (gobject.TYPE_STRING, _("Password")),
+                (gobject.TYPE_INT, _("Poll Interval")),
+                (gobject.TYPE_BOOLEAN, _("Use SSL")),
+                (gobject.TYPE_INT, _("Port"))]
+
+        val = DratsListConfigWidget(config, "incoming_email")
+        lw = val.add_list(cols)
+        add = gtk.Button(_("Add"), gtk.STOCK_ADD)
+        add.connect("clicked", self.but_add, lw)
+        rem = gtk.Button(_("Remove"), gtk.STOCK_DELETE)
+        rem.connect("clicked", self.but_rem, lw)
+        self.mv("Incoming Accounts", val, add, rem)
 
 class DratsConfigUI(gtk.Dialog):
 
@@ -505,6 +686,8 @@ class DratsConfigUI(gtk.Dialog):
         network = add_panel(DratsNetworkPanel, "network", _("Network"), None)
         add_panel(DratsTCPIncomingPanel, "tcpin", _("TCP Gateway"), network)
         add_panel(DratsTCPOutgoingPanel, "tcpout", _("TCP Forwarding"), network)
+        add_panel(DratsOutEmailPanel, "smtp", _("Outgoing Email"), network)
+        add_panel(DratsInEmailPanel, "email", _("Incoming Email"), network)
 
         self.panels["prefs"].show()
 
@@ -512,6 +695,14 @@ class DratsConfigUI(gtk.Dialog):
         self.vbox.pack_start(hbox, 1, 1, 1)
 
         self.__tree.expand_all()
+
+    def save(self, filename):
+        for widget in self.config.widgets:
+            widget.save()
+
+        f = file(filename, "w")
+        self.config.write(f)
+        f.close()
 
     def __init__(self, config):
         gtk.Dialog.__init__(self,
@@ -532,9 +723,12 @@ class DratsConfig:
         self.ui = DratsConfigUI(self)
 
 if __name__ == "__main__":
+    fn = "/home/dan/.d-rats/d-rats.config"
+
     cf = ConfigParser.ConfigParser()
-    cf.read("/home/dan/.d-rats/d-rats.config")
+    cf.read(fn)
+    cf.widgets = []
 
     c = DratsConfigUI(cf)
-    c.run()
-    
+    if c.run() == gtk.RESPONSE_OK:
+        c.save(fn)
