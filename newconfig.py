@@ -577,15 +577,7 @@ class DratsInEmailPanel(DratsPanel):
     def but_rem(self, button, lw):
         lw.del_item(lw.get_selected())
 
-    def but_add(self, button, lw):
-        fields = [(_("Server"), str, ""),
-                  (_("Username"), str, ""),
-                  (_("Password"), str, ""),
-                  (_("Poll Interval"), int, 5),
-                  (_("Use SSL"), bool, False),
-                  (_("Port"), int, 110),
-                  ]
-
+    def prompt_for_acct(self, fields):
         dlg = inputdialog.FieldDialog()
         for n, t, d in fields:
             if t == bool:
@@ -618,16 +610,49 @@ class DratsInEmailPanel(DratsPanel):
                     ed.destroy()
                     done = False
                     break
-            if done:
-                lw.set_item(ret[_("Server")],
-                            ret[_("Server")],
-                            ret[_("Username")],
-                            ret[_("Password")],
-                            ret[_("Poll Interval")],
-                            ret[_("Use SSL")],
-                            ret[_("Port")])
 
         dlg.destroy()
+        if done:
+            return ret
+        else:
+            return None
+
+    def but_add(self, button, lw):
+        fields = [(_("Server"), str, ""),
+                  (_("Username"), str, ""),
+                  (_("Password"), str, ""),
+                  (_("Poll Interval"), int, 5),
+                  (_("Use SSL"), bool, False),
+                  (_("Port"), int, 110),
+                  ]
+        ret = self.prompt_for_acct(fields)
+        if ret:
+            lw.set_item(ret[_("Server")],
+                        ret[_("Server")],
+                        ret[_("Username")],
+                        ret[_("Password")],
+                        ret[_("Poll Interval")],
+                        ret[_("Use SSL")],
+                        ret[_("Port")])
+
+    def but_edit(self, button, lw):
+        vals = lw.get_item(lw.get_selected())
+        fields = [(_("Server"), str, vals[1]),
+                  (_("Username"), str, vals[2]),
+                  (_("Password"), str, vals[3]),
+                  (_("Poll Interval"), int, vals[4]),
+                  (_("Use SSL"), bool, vals[5]),
+                  (_("Port"), int, vals[6]),
+                  ]
+        ret = self.prompt_for_acct(fields)
+        if ret:
+            lw.set_item(ret[_("Server")],
+                        ret[_("Server")],
+                        ret[_("Username")],
+                        ret[_("Password")],
+                        ret[_("Poll Interval")],
+                        ret[_("Use SSL")],
+                        ret[_("Port")])
 
     def __init__(self, config):
         DratsPanel.__init__(self, config)
@@ -644,9 +669,11 @@ class DratsInEmailPanel(DratsPanel):
         lw = val.add_list(cols)
         add = gtk.Button(_("Add"), gtk.STOCK_ADD)
         add.connect("clicked", self.but_add, lw)
+        edit = gtk.Button(_("Edit"), gtk.STOCK_EDIT)
+        edit.connect("clicked", self.but_edit, lw)
         rem = gtk.Button(_("Remove"), gtk.STOCK_DELETE)
         rem.connect("clicked", self.but_rem, lw)
-        self.mv("Incoming Accounts", val, add, rem)
+        self.mv("Incoming Accounts", val, add, edit, rem)
 
 class DratsConfigUI(gtk.Dialog):
 
