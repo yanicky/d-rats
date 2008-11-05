@@ -29,7 +29,7 @@ import formbuilder
 import formgui
 
 class MailThread(threading.Thread):
-    def __init__(self, config, manager):
+    def __init__(self, config, account, manager):
         threading.Thread.__init__(self)
         self.setDaemon(True)
 
@@ -39,10 +39,20 @@ class MailThread(threading.Thread):
         self.config = config
         self.manager = manager
 
-        self.server = config.get("settings", "pop3_server")
-        self.username = config.get("settings", "pop3_username")
-        self.password = config.get("settings", "pop3_password")
-        
+        settings = config.get("incoming_email", account)
+
+        self.server, self.username, \
+        self.password, poll, \
+        ssl, port = settings.split(",", 5)
+
+        if not port:
+            self.port = self.use_tls and 995 or 110
+        else:
+            self.port = int(port)
+
+        self.use_ssl = ssl == "True"
+        self.poll = int(poll)
+
     def trigger(self):
         self.event.set()
 
@@ -51,24 +61,15 @@ class MailThread(threading.Thread):
         self.trigger()
 
     def message(self, message):
-        print "[MAIL] %s" % message
+        print "[MAIL %s@%s] %s" % (self.username, self.server, message)
 
     def fetch_mails(self):
-        try:
-            port = int(float(self.config.get("settings", "pop3_port")))
-        except Exception, e:
-            port = None
+        self.message("Querying %s:%i" % (self.server, self.port))
 
-        if self.config.getboolean("settings", "pop3_usessl"):
-            if not port:
-                port = 995
-            server = poplib.POP3_SSL(self.server, port)
+        if self.use_ssl:
+            server = poplib.POP3_SSL(self.server, self.port)
         else:
-            if not port:
-                port = 110
-            server = poplib.POP3(self.server, port)
-
-        self.message("Querying %s:%i" % (self.server, port))
+            server = poplib.POP3(self.server, self.port)
 
         server.user(self.username)
         server.pass_(self.password)
@@ -149,7 +150,7 @@ class MailThread(threading.Thread):
             for mail in mails:
                 self.create_form_from_mail(mail)
 
-            self.event.wait(self.config.getint("settings", "pop3_interval")*60)
+            self.event.wait(self.poll * 60)
             self.event.clear()
 
         self.message("Thread ending")
