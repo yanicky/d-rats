@@ -588,8 +588,12 @@ class DratsInEmailPanel(DratsPanel):
 
         dlg = inputdialog.FieldDialog()
         for n, t, d in fields:
-            w = gtk.Entry()
-            w.set_text(str(d))
+            if t == bool:
+                w = gtk.CheckButton("Enabled")
+                w.set_active(d)
+            else:
+                w = gtk.Entry()
+                w.set_text(str(d))
             dlg.add_field(n, w)
 
         ret = {}
@@ -599,10 +603,13 @@ class DratsInEmailPanel(DratsPanel):
             done = True
             for n, t, d in fields:
                 try:
-                    s = dlg.get_field(n).get_text()
-                    if not s:
-                        raise ValueError("empty")
-                    ret[n] = t(s)
+                    if t == bool:
+                        v = dlg.get_field(n).get_active()
+                    else:
+                        v = dlg.get_field(n).get_text()
+                        if not v:
+                            raise ValueError("empty")
+                    ret[n] = t(v)
                 except ValueError, e:
                     ed = gtk.MessageDialog(buttons=gtk.BUTTONS_OK)
                     ed.set_property("text",
