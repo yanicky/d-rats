@@ -681,7 +681,7 @@ class MainChatGUI(ChatGUI):
             if self.config.show(self.window):
                 self.mainapp.refresh_config()
         elif action == "qsts":
-            qsts = QSTGUI2(self.config.config)
+            qsts = QSTGUI2(self.config)
             qsts.run()
             qsts.destroy()
             self.config.refresh_app()
