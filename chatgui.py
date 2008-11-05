@@ -678,7 +678,8 @@ class MainChatGUI(ChatGUI):
         elif action == "send":
             self.do_file_transfer(True)
         elif action == "config":
-            self.config.show(self.window)
+            if self.config.show(self.window):
+                self.mainapp.refresh_config()
         elif action == "qsts":
             qsts = QSTGUI2(self.config.config)
             qsts.run()

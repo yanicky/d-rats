@@ -61,7 +61,7 @@ import gtk
 import gobject
 
 import chatgui
-import config
+import newconfig
 import ddt
 import gps
 import mapdisplay
@@ -154,7 +154,7 @@ class MainApp:
 
         self.qsts = []
 
-        sections = self.config.config.sections()
+        sections = self.config.sections()
         qsts = [x for x in sections if x.startswith("qst_")]
 
         for i in qsts:
@@ -286,6 +286,8 @@ class MainApp:
             lon = self.config.get("user", "longitude")
             alt = self.config.get("user", "altitude")
         except Exception, e:
+            import traceback
+            traceback.print_exc(file=sys.stdout)
             print "Invalid static position: %s" % e
 
         print "Static position: %s,%s" % (lat,lon)
@@ -374,7 +376,7 @@ class MainApp:
         # REMOVE ME in 0.1.13
         self.TEMP_migrate_config()
 
-        self.config = config.AppConfig(self, **args)
+        self.config = newconfig.DratsConfig(self)
 
         self.gps = self._static_gps()
 
