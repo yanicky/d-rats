@@ -36,10 +36,11 @@ class KeyedListWidget(gtk.HBox):
         }
 
     def _toggle(self, rend, path, colnum):
-        self.__store[path][colnum] = not self.__store[path][colnum]
-        iter = self.__store.get_iter(path)
-        id, = self.__store.get(iter, 0)
-        self.emit("item-toggled", id, self.__store[path][colnum])
+        if self.__toggle_connected:
+            self.__store[path][colnum] = not self.__store[path][colnum]
+            iter = self.__store.get_iter(path)
+            id, = self.__store.get(iter, 0)
+            self.emit("item-toggled", id, self.__store[path][colnum])
 
     def _mouse(self, view, event):
         x, y = event.get_coords()
@@ -161,9 +162,16 @@ class KeyedListWidget(gtk.HBox):
     
         self.pack_start(self.__view, 1, 1, 1)
     
+        self.__toggle_connected = False
+
         self._make_view()
         self.__view.show()
 
+    def connect(self, signame, *args):
+        if signame == "item-toggled":
+            self.__toggle_connected = True
+        
+        gtk.HBox.connect(self, signame, *args)
 
 class ListWidget(gtk.HBox):
     __gsignals__ = {
