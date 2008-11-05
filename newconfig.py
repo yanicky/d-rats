@@ -12,6 +12,90 @@ import platform
 
 BAUD_RATES = ["1200", "2400", "4800", "9600", "19200", "38400", "115200"]
 
+_DEF_USER = {
+    "name" : "A. Mateur",
+    "callsign" : "W1AW",
+    "latitude" : "41.6970",
+    "longitude" : "-72.7312",
+    "altitude" : "0",
+    "units" : _("Imperial"),
+}
+
+_DEF_PREFS = {
+    "download_dir" : platform.get_platform().default_dir(),
+    "blinkmsg" : "False",
+    "noticere" : "",
+    "ignorere" : "",
+    "signon" : _("Online (D-RATS)"),
+    "signoff" : _("Going offline (D-RATS)"),
+    "dosignon" : "True",
+    "dosignoff" : "True",
+    "incomingcolor" : "#00004444FFFF",
+    "outgoingcolor": "#DDDD44441111",
+    "noticecolor" : "#0000660011DD",
+    "ignorecolor" : "#BB88BB88BB88",
+    "callsigncolor" : "#FFDD99CC77CC",
+    "brokencolor" : "#FFFFFFFF3333",
+    "logenabled" : "True",
+    "debuglog" : "False",
+    "eolstrip" : "True",
+    "font" : "Sans 12",
+    "callsigns" : "%s" % str([(True , "US")]),
+    "logresume" : "True",
+    "scrollback" : "1024",
+    "restore_stations" : "True",
+}
+
+_DEF_SETTINGS = {
+    "port" : "",
+    "rate" : "9600",
+    "ddt_block_size" : "512",
+    "ddt_block_outlimit" : "4",
+    "encoding" : "yenc",
+    "compression" : "True",
+    "gpsport" : "",
+    "gpsenabled" : "False",
+    "gpsportspeed" : "4800",
+    "aprssymtab" : "/",
+    "aprssymbol" : ">",
+    "compatmode" : "False",
+    "inports" : "[]",
+    "outports" : "[]",
+    "sockflush" : "0.5",
+    "pipelinexfers" : "True",
+    "mapdir" : os.path.join(platform.get_platform().config_dir(), "maps"),
+    "warmup_length" : "8",
+    "warmup_timeout" : "3",
+    "force_delay" : "0",
+    "ping_info" : "",
+    "smtp_server" : "",
+    "smtp_replyto" : "",
+    "smtp_tls" : "False",
+    "smtp_username" : "",
+    "smtp_password" : "",
+    "smtp_port" : "25",
+    "sniff_packets" : "False",
+}
+
+_DEF_STATE = {
+    "main_size_x" : "640",
+    "main_size_y" : "400",
+    "main_advanced" : "200",
+    "filters" : "[]",
+    "show_all_filter" : False,
+}
+
+DEFAULTS = {
+    "user" : _DEF_USER,
+    "prefs" : _DEF_PREFS,
+    "settings" : _DEF_SETTINGS,
+    "state" : _DEF_STATE,
+    "quick" : {},
+    "tcp_in" : {},
+    "tcp_out" : {},
+    "incoming_email" : {},
+}
+
 if __name__ == "__main__":
     import gettext
     gettext.install("D-RATS")
@@ -34,7 +118,17 @@ class DratsConfigWidget(gtk.VBox):
 
         self.config.widgets.append(self)
 
-        self.value = config.get(sec, name)
+        if not config.has_section(sec):
+            config.add_section(sec)
+
+
+        if name is not None:
+            if not config.has_option(sec, name):
+                self.value = DEFAULTS[sec][name]
+            else:
+                self.value = config.get(sec, name)
+        else:
+            self.value = None
 
     def save(self):
         #print "Saving %s/%s: %s" % (self.vsec, self.vname, self.value)
@@ -154,7 +248,7 @@ class DratsConfigWidget(gtk.VBox):
 class DratsListConfigWidget(DratsConfigWidget):
     def __init__(self, config, section):
         try:
-            DratsConfigWidget.__init__(self, config, section, "_does_not_exist")
+            DratsConfigWidget.__init__(self, config, section, None)
         except ConfigParser.NoOptionError:
             pass
 
@@ -755,14 +849,25 @@ class DratsConfigUI(gtk.Dialog):
         self.set_geometry_hints(None, max_width=500, max_height=400)
 
 class DratsConfig(ConfigParser.ConfigParser):
+    def set_defaults(self):
+        for sec, opts in DEFAULTS.items():
+            if not self.has_section(sec):
+                self.add_section(sec)
+
+            for opt, value in opts.items():
+                if not self.has_option(sec, opt):
+                    self.set(sec, opt, value)
+
     def __init__(self, mainapp, safe=False):
         ConfigParser.ConfigParser.__init__(self)
 
         self.platform = platform.get_platform()        
         self.filename = self.platform.config_file("d-rats.config")
+        print "FILE: %s" % self.filename
         self.read(self.filename)
         self.widgets = []
-        self.ui = DratsConfigUI(self)
+
+        self.set_defaults()
 
     def show(self, parent=None):
         ui = DratsConfigUI(self, parent)
