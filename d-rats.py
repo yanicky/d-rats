@@ -16,8 +16,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import sys
-import mainapp
-import platform
 
 from optparse import OptionParser
 
@@ -32,8 +30,12 @@ if __name__ == "__main__":
                  help="Use alternate configuration directory")
     (opts, args) = o.parse_args()
 
+    import platform
+
     if opts.config:
         platform.get_platform(opts.config)
+
+    import mainapp
 
     app = mainapp.MainApp(safe=opts.safe)
     sys.exit(app.main())

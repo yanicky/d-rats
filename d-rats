@@ -18,8 +18,6 @@
 import sys
 from optparse import OptionParser
 
-from d_rats import mainapp, platform
-
 if __name__ == "__main__":
     o = OptionParser()
     o.add_option("-s", "--safe",
@@ -31,8 +29,12 @@ if __name__ == "__main__":
                  help="Use alternate configuration directory")
     (opts, args) = o.parse_args()
 
+    import platform
+
     if opts.config:
         platform.get_platform(opts.config)
+
+    import mainapp
 
     app = mainapp.MainApp(safe=opts.safe)
     sys.exit(app.main())
