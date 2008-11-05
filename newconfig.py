@@ -3,6 +3,7 @@
 import gtk
 import gobject
 import ConfigParser
+import os
 
 import utils
 import miscwidgets
@@ -25,6 +26,8 @@ class DratsConfigWidget(gtk.VBox):
     def __init__(self, config, sec, name):
         gtk.VBox.__init__(self, False, 2)
 
+        self.do_not_expand = False
+
         self.config = config
         self.vsec = sec
         self.vname = name
@@ -34,6 +37,7 @@ class DratsConfigWidget(gtk.VBox):
         self.value = config.get(sec, name)
 
     def save(self):
+        #print "Saving %s/%s: %s" % (self.vsec, self.vname, self.value)
         self.config.set(self.vsec, self.vname, self.value)
 
     def add_text(self, limit=0):
@@ -77,22 +81,24 @@ class DratsConfigWidget(gtk.VBox):
 
     def add_bool(self, label=_("Enabled")):
         def toggled(but):
-            self.value = but.get_active()
+            self.value = str(but.get_active())
             
         w = gtk.CheckButton(label)
         w.connect("toggled", toggled)
-        w.set_active(bool(self.value))
+        w.set_active(self.value == "True")
         w.show()
+
+        self.do_not_expand = True
 
         self.pack_start(w, 1, 1, 1)
 
     def add_coords(self):
         def changed(entry):
             try:
-                self.value = entry.value()
+                self.value = "%3.6f" % entry.value()
             except:
                 print "Invalid Coords"
-                self.value = 0
+                self.value = "0"
 
         w = miscwidgets.LatLonEntry()
         w.connect("changed", changed)
@@ -103,7 +109,7 @@ class DratsConfigWidget(gtk.VBox):
 
     def add_numeric(self, min, max, increment, digits=0):
         def value_changed(sb):
-            self.value = sb.get_value()
+            self.value = "%f" % sb.get_value()
 
         adj = gtk.Adjustment(float(self.value), min, max, increment, increment)
         w = gtk.SpinButton(adj, digits)
@@ -237,7 +243,10 @@ class DratsPanel(gtk.VBox):
         for i in args:
             i.show()
             if isinstance(i, DratsConfigWidget):
-                hbox.pack_start(i, 1, 1, 1)
+                if i.do_not_expand:
+                    hbox.pack_start(i, 0, 0, 0)
+                else:
+                    hbox.pack_start(i, 1, 1, 0)
                 self.vals.append(i)
             else:
                 hbox.pack_start(i, 0, 0, 0)
@@ -647,7 +656,6 @@ class DratsConfigUI(gtk.Dialog):
             print "Unable to find selected: %s" % e
             return None
 
-        print "Selected: %s" % selected
         for v in self.panels.values():
             v.hide()
         self.panels[selected].show()
@@ -696,31 +704,70 @@ class DratsConfigUI(gtk.Dialog):
 
         self.__tree.expand_all()
 
-    def save(self, filename):
+    def save(self):
         for widget in self.config.widgets:
             widget.save()
 
-        f = file(filename, "w")
-        self.config.write(f)
-        f.close()
-
-    def __init__(self, config):
+    def __init__(self, config, parent=None):
         gtk.Dialog.__init__(self,
                             title=_("Config"),
                             buttons=(gtk.STOCK_SAVE, gtk.RESPONSE_OK,
-                                     gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL))
+                                     gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL),
+                            parent=parent)
         self.config = config
         self.panels = {}
         self.build_ui()
-        self.set_default_size(320, 240)
+        self.set_default_size(500, 400)
+        self.set_geometry_hints(None, max_width=500, max_height=400)
 
-class DratsConfig:
+class DratsConfig(ConfigParser.ConfigParser):
     def __init__(self, mainapp, safe=False):
-        self.config = ConfigParser.ConfigParser()
+        ConfigParser.ConfigParser.__init__(self)
 
-        self.panels = {}
-
+        self.platform = platform.get_platform()        
+        self.filename = self.platform.config_file("d-rats.config")
+        self.read(self.filename)
+        self.widgets = []
         self.ui = DratsConfigUI(self)
+
+    def show(self, parent=None):
+        ui = DratsConfigUI(self, parent)
+        r = ui.run()
+        if r == gtk.RESPONSE_OK:
+            ui.save()
+            self.save()
+        ui.destroy()
+
+        return r == gtk.RESPONSE_OK
+
+    def save(self):
+        f = file(self.filename, "w")
+        self.write(f)
+        f.close()
+
+    def getboolean(self, sec, key):
+        try:
+            return ConfigParser.ConfigParser.getboolean(self, sec, key)
+        except:
+            print "Failed to get boolean: %s/%s" % (sec, key)
+            return False
+
+    def getint(self, sec, key):
+        return int(float(ConfigParser.ConfigParser.get(self, sec, key)))
+
+    def form_source_dir(self):
+        d = os.path.join(self.platform.config_dir(), "Form_Templates")
+        if not os.path.isdir(d):
+            os.mkdir(d)
+
+        return d
+
+    def form_store_dir(self):
+        d = os.path.join(self.platform.config_dir(), "Saved_Forms")
+        if not os.path.isdir(d):
+            os.mkdir(d)
+
+        return d
 
 if __name__ == "__main__":
     fn = "/home/dan/.d-rats/d-rats.config"
