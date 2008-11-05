@@ -19,7 +19,7 @@ import os
 import sys
 import glob
 import commands
-from subprocess import Popen
+import subprocess
 
 class Platform:
     # pylint: disable-msg=R0201
@@ -127,9 +127,8 @@ class Platform:
         return "Unknown Operating System"
 
     def run_sync(self, command):
-        pipe = os.popen(command, 'r')
-        data = pipe.read()
-        pipe.close()
+        pipe = subprocess.Popen(command, stdout=subprocess.PIPE)
+        data = pipe.stdout.read()
 
         return 0, data
 
@@ -223,7 +222,7 @@ class Win32Platform(Platform):
         return filename
 
     def open_text_file(self, path):
-        Popen(["notepad", path])
+        subprocess.Popen(["notepad", path])
         return
 
     def open_html_file(self, path):
