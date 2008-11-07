@@ -33,15 +33,18 @@ else:
 import gettext
 
 if os.environ.has_key("LANG"):
+    _lang = os.environ["LANG"]
     try:
         lang = gettext.translation("D-RATS",
                                    localedir="locale",
-                                   languages=[os.environ["LANG"]])
+                                   languages=[_lang])
         lang.install()
     except LookupError:
-        print "Unable to load language `%s'" % locale
+        print "Unable to load language `%s'" % _lang
+        gettext.install("D-RATS")
     except IOError, e:
-        print "Unable to load translation for %s: %s" % (locale, e)
+        print "Unable to load translation for %s: %s" % (_lang, e)
+        gettext.install("D-RATS")
 else:
     gettext.install("D-RATS")
 
