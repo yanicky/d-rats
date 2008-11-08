@@ -44,6 +44,7 @@ _DEF_PREFS = {
     "logresume" : "True",
     "scrollback" : "1024",
     "restore_stations" : "True",
+    "useutc" : "False",
 }
 
 _DEF_SETTINGS = {
@@ -375,6 +376,10 @@ class DratsPrefsPanel(DratsPanel):
         val = DratsConfigWidget(config, "user", "units")
         val.add_combo([_("Imperial"), _("Metric")])
         self.mv(_("Units"), val)
+
+        val = DratsConfigWidget(config, "prefs", "useutc")
+        val.add_bool()
+        self.mv(_("Show time in UTC"), val)
 
 class DratsPathsPanel(DratsPanel):
     LW = 150
