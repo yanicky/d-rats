@@ -299,9 +299,15 @@ class TimeWidget(FieldWidget):
             text = node.children.getContent().strip()
             (h, m, s) = (int(x) for x in text.split(":", 3))
         except:
-            h = int(time.strftime("%H"))
-            m = int(time.strftime("%M"))
-            s = int(time.strftime("%S"))
+            config = mainapp.get_mainapp().config
+            if config.getboolean("prefs", "useutc"):
+                t = time.gmtime()
+            else:
+                t = time.localtime()
+
+            h = int(time.strftime("%H", t))
+            m = int(time.strftime("%M", t))
+            s = int(time.strftime("%S", t))
 
         self.hour_a = gtk.Adjustment(h, 0, 23, 1)
         self.min_a = gtk.Adjustment(m, 0, 59, 1, 10)
