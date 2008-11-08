@@ -3,7 +3,7 @@
 <title>HICS 260 - Patient Evacuation Tracking Form</title>
 <field id='date'>
 <caption>Date</caption>
-<entry type='date'>31-Oct-2008</entry>
+<entry type='date'/>
 </field>
 <field id='unit'>
 <caption>Unit</caption>
@@ -67,7 +67,7 @@
 </field>
 <field id='depart_time'>
 <caption>Departure Time</caption>
-<entry type='time'>15:28:10</entry>
+<entry type='time'/>
 </field>
 <field id='depart_idband'>
 <caption>ID Band Confirmed</caption>
@@ -115,7 +115,7 @@
 </field>
 <field id='arrive_time'>
 <caption>Arrival Time</caption>
-<entry type='time'>15:28:10</entry>
+<entry type='time'/>
 </field>
 <field id='arrive_idband'>
 <caption>ID Band Confirmed</caption>
@@ -159,11 +159,11 @@
 </field>
 <field id='time_to_staging'>
 <caption>Time to Staging Area</caption>
-<entry type='time'>15:28:10</entry>
+<entry type='time'/>
 </field>
 <field id='time_depart_to_recv'>
 <caption>Time Departing to Receiving Facility</caption>
-<entry type='time'>15:28:10</entry>
+<entry type='time'/>
 </field>
 <field id='destination'>
 <caption>Destination</caption>
@@ -183,7 +183,7 @@
 </field>
 <field id='fac_depart_time'>
 <caption>Departure Time</caption>
-<entry type='time'>15:28:10</entry>
+<entry type='time'/>
 </field>
 <field id='depart_facility'>
 <caption>Facility Name</caption>
