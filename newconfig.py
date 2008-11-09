@@ -175,11 +175,11 @@ class DratsConfigWidget(gtk.VBox):
         self.pack_start(w, 1, 1, 1)
 
     def add_bool(self, label=_("Enabled")):
-        def toggled(but):
-            self.value = str(but.get_active())
+        def toggled(but, confwidget):
+            confwidget.value = str(but.get_active())
             
         w = gtk.CheckButton(label)
-        w.connect("toggled", toggled)
+        w.connect("toggled", toggled, self)
         w.set_active(self.value == "True")
         w.show()
 
@@ -188,16 +188,18 @@ class DratsConfigWidget(gtk.VBox):
         self.pack_start(w, 1, 1, 1)
 
     def add_coords(self):
-        def changed(entry):
+        def changed(entry, confwidget):
             try:
-                self.value = "%3.6f" % entry.value()
-            except:
-                print "Invalid Coords"
-                self.value = "0"
+                confwidget.value = "%3.6f" % entry.value()
+            except Exception, e:
+                print "Invalid Coords: %s" % e
+                confwidget.value = "0"
 
         w = miscwidgets.LatLonEntry()
-        w.connect("changed", changed)
+        w.connect("changed", changed, self)
+        print "Setting LatLon value: %s" % self.value
         w.set_text(self.value)
+        print "LatLon text: %s" % w.get_text()
         w.show()
 
         self.pack_start(w, 1, 1, 1)
@@ -417,9 +419,11 @@ class DratsGPSPanel(DratsPanel):
         port.add_combo(ports, True, 120)
         rate = DratsConfigWidget(config, "settings", "gpsportspeed")
         rate.add_combo(BAUD_RATES, False)
+        self.mv(_("External GPS"), port, rate)
+
         val = DratsConfigWidget(config, "settings", "gpsenabled")
         val.add_bool()
-        self.mv(_("External GPS"), port, rate, val)
+        self.mv(_("Use External GPS"), val)
 
         val1 = DratsConfigWidget(config, "settings", "aprssymtab")
         val1.add_text(1)
@@ -850,7 +854,7 @@ class DratsConfigUI(gtk.Dialog):
         self.config = config
         self.panels = {}
         self.build_ui()
-        self.set_default_size(500, 400)
+        self.set_default_size(600, 400)
         self.set_geometry_hints(None, max_width=500, max_height=400)
 
 class DratsConfig(ConfigParser.ConfigParser):
