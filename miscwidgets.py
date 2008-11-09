@@ -458,8 +458,10 @@ class LatLonEntry(gtk.Entry):
 
         self.connect("changed", self.format)
 
-    def format(self, _):
-        string = self.get_text()
+    def format(self, entry):
+        string = entry.get_text()
+        if string is None:
+            return
 
         deg = u"\u00b0"
 
@@ -475,7 +477,7 @@ class LatLonEntry(gtk.Entry):
             else:
                 string = string.replace(" ", "")
 
-        self.set_text(string)
+        entry.set_text(string)
 
     def parse_dd(self, string):
         return float(string)
