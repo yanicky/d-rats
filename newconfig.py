@@ -125,7 +125,11 @@ class DratsConfigWidget(gtk.VBox):
 
         if name is not None:
             if not config.has_option(sec, name):
-                self.value = DEFAULTS[sec][name]
+                try:
+                    self.value = DEFAULTS[sec][name]
+                except KeyError:
+                    print "DEFAULTS has no %s/%s" % (sec, name)
+                    self.value = ""
             else:
                 self.value = config.get(sec, name)
         else:
@@ -382,6 +386,10 @@ class DratsPrefsPanel(DratsPanel):
         val = DratsConfigWidget(config, "prefs", "useutc")
         val.add_bool()
         self.mv(_("Show time in UTC"), val)
+
+        val = DratsConfigWidget(config, "settings", "ping_info")
+        val.add_text()
+        self.mv(_("Ping reply"), val)
 
 class DratsPathsPanel(DratsPanel):
     LW = 150
