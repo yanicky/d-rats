@@ -597,10 +597,10 @@ class QuickMsgGUI(SelectGUI):
         self.config.set("quick", "msg_%i" % pos, text)
 
     def sync_gui(self, load=True):
-        if not self.config.config.has_section("quick"):
-            self.config.config.add_section("quick")
+        if not self.config.has_section("quick"):
+            self.config.add_section("quick")
 
-        msgs = self.config.config.options("quick")
+        msgs = self.config.options("quick")
         msgs.sort()
 
         if load:
@@ -609,7 +609,7 @@ class QuickMsgGUI(SelectGUI):
         else:
             old_msgs = [x for x in msgs if x.startswith("msg_")]
             for i in old_msgs:
-                self.config.config.remove_option("quick", i)
+                self.config.remove_option("quick", i)
 
             self.list_store.foreach(self.save_msg, None)
             self.config.save()
