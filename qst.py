@@ -613,7 +613,8 @@ class QuickMsgGUI(SelectGUI):
 
             self.list_store.foreach(self.save_msg, None)
             self.config.save()
-            self.config.refresh_app()        
+            # Fixme
+            mainapp.get_mainapp().refresh_config()
 
 class QSTEditWidget(gtk.VBox):
     def __init__(self, *a, **k):
