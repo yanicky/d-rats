@@ -684,7 +684,7 @@ class MainChatGUI(ChatGUI):
             qsts = QSTGUI2(self.config)
             qsts.run()
             qsts.destroy()
-            self.config.refresh_app()
+            self.mainapp.refresh_config()
         elif action == "clear":
             self.filter_clear_current()
         elif action == "quickmsg":
