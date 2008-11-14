@@ -822,8 +822,14 @@ class DratsConfigUI(gtk.Dialog):
 
         def add_panel(c, s, l, par):
             p = c(self.config)
-            self.panels[s] = p
-            hbox.pack_start(p, 1, 1, 1)
+            p.show()
+            sw = gtk.ScrolledWindow()
+            sw.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
+            sw.add_with_viewport(p)
+            hbox.pack_start(sw, 1, 1, 1)
+
+            self.panels[s] = sw
+
             return self.__store.append(par, row=(s, l))
             
         prefs = add_panel(DratsPrefsPanel, "prefs", _("Preferences"), None)
@@ -863,7 +869,6 @@ class DratsConfigUI(gtk.Dialog):
         self.panels = {}
         self.build_ui()
         self.set_default_size(600, 400)
-        self.set_geometry_hints(None, max_width=500, max_height=400)
 
 class DratsConfig(ConfigParser.ConfigParser):
     def set_defaults(self):
