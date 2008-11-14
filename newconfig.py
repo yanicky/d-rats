@@ -283,7 +283,7 @@ class DratsListConfigWidget(DratsConfigWidget):
 
         return newvals
 
-    def add_list(self, cols):
+    def add_list(self, cols, make_key=None):
         def item_set(lw, key):
             pass
 
@@ -297,7 +297,11 @@ class DratsListConfigWidget(DratsConfigWidget):
                 continue
 
             try:
-                w.set_item(vals[0], *tuple(vals))
+                if make_key:
+                    key = make_key(vals)
+                else:
+                    key = vals[0]
+                w.set_item(key, *tuple(vals))
             except Exception, e:
                 print "Failed to set item '%s': %s" % (str(vals), e)
         
@@ -738,7 +742,8 @@ class DratsInEmailPanel(DratsPanel):
                   ]
         ret = self.prompt_for_acct(fields)
         if ret:
-            lw.set_item(ret[_("Server")],
+            id ="%s@%s" % (ret[_("Server")], ret[_("Username")])
+            lw.set_item(id,
                         ret[_("Server")],
                         ret[_("Username")],
                         ret[_("Password")],
@@ -755,9 +760,12 @@ class DratsInEmailPanel(DratsPanel):
                   (_("Use SSL"), bool, vals[5]),
                   (_("Port"), int, vals[6]),
                   ]
+        id ="%s@%s" % (vals[1], vals[2])
         ret = self.prompt_for_acct(fields)
         if ret:
-            lw.set_item(ret[_("Server")],
+            lw.del_item(id)
+            id ="%s@%s" % (ret[_("Server")], ret[_("Username")])
+            lw.set_item(id,
                         ret[_("Server")],
                         ret[_("Username")],
                         ret[_("Password")],
@@ -777,7 +785,11 @@ class DratsInEmailPanel(DratsPanel):
                 (gobject.TYPE_INT, _("Port"))]
 
         val = DratsListConfigWidget(config, "incoming_email")
-        lw = val.add_list(cols)
+
+        def make_key(vals):
+            return "%s@%s" % (vals[0], vals[1])
+
+        lw = val.add_list(cols, make_key)
         add = gtk.Button(_("Add"), gtk.STOCK_ADD)
         add.connect("clicked", self.but_add, lw)
         edit = gtk.Button(_("Edit"), gtk.STOCK_EDIT)
