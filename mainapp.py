@@ -31,23 +31,7 @@ else:
         pass
 
 import gettext
-
-if os.environ.has_key("LANG"):
-    _lang = os.environ["LANG"]
-    try:
-        lang = gettext.translation("D-RATS",
-                                   localedir="locale",
-                                   languages=[_lang])
-        lang.install()
-    except LookupError:
-        print "Unable to load language `%s'" % _lang
-        gettext.install("D-RATS")
-    except IOError, e:
-        print "Unable to load translation for %s: %s" % (_lang, e)
-        gettext.install("D-RATS")
-else:
-    gettext.install("D-RATS")
-
+gettext.install("D-RATS")
 
 if sys.platform == "darwin":
     os.environ["PANGO_RC_FILE"] = "../Resources/etc/pango/pangorc"
@@ -330,6 +314,25 @@ class MainApp:
             t.start()
             self.mail_threads.append(t)
 
+    def refresh_lang(self):
+        locales = { "English" : "en",
+                    "Italiano" : "it",
+                    }
+        locale = locales.get(self.config.get("prefs", "language"), "English")
+        print "Loading locale `%s'" % locale
+
+        try:
+            lang = gettext.translation("D-RATS",
+                                       localedir="locale",
+                                       languages=[locale])
+            lang.install()
+        except LookupError:
+            print "Unable to load language `%s'" % locale
+            gettext.install("D-RATS")
+        except IOError, e:
+            print "Unable to load translation for %s: %s" % (locale, e)
+            gettext.install("D-RATS")
+
     def refresh_config(self):
         rate = self.config.getint("settings", "rate")
         port = self.config.get("settings", "port")
@@ -382,6 +385,7 @@ class MainApp:
         self.TEMP_migrate_config()
 
         self.config = newconfig.DratsConfig(self)
+        self.refresh_lang()
 
         self.gps = self._static_gps()
 

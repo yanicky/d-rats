@@ -45,6 +45,7 @@ _DEF_PREFS = {
     "scrollback" : "1024",
     "restore_stations" : "True",
     "useutc" : "False",
+    "language" : "English",
 }
 
 _DEF_SETTINGS = {
@@ -394,6 +395,10 @@ class DratsPrefsPanel(DratsPanel):
         val = DratsConfigWidget(config, "settings", "ping_info")
         val.add_text()
         self.mv(_("Ping reply"), val)
+
+        val = DratsConfigWidget(config, "prefs", "language")
+        val.add_combo(["English", "Italiano"])
+        self.mv(_("Language"), val)
 
 class DratsPathsPanel(DratsPanel):
     LW = 150
