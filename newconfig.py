@@ -10,6 +10,7 @@ import miscwidgets
 import inputdialog
 import platform
 import geocode_ui
+import config_tips
 
 BAUD_RATES = ["1200", "2400", "4800", "9600", "19200", "38400", "115200"]
 
@@ -870,6 +871,10 @@ class DratsConfigUI(gtk.Dialog):
 
             self.panels[s] = sw
 
+            for val in p.vals:
+                self.tips.set_tip(val,
+                                  config_tips.get_tip(val.vsec, val.vname))
+
             return self.__store.append(par, row=(s, l))
             
         prefs = add_panel(DratsPrefsPanel, "prefs", _("Preferences"), None)
@@ -907,6 +912,7 @@ class DratsConfigUI(gtk.Dialog):
                             parent=parent)
         self.config = config
         self.panels = {}
+        self.tips = gtk.Tooltips()
         self.build_ui()
         self.set_default_size(600, 400)
 
