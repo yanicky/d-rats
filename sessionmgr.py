@@ -578,14 +578,14 @@ class StatefulSession(Session):
         return buf
 
     def write(self, buf, timeout=0):
-        f = None
-        
         while self.get_state() == self.ST_SYNC:
             print "Waiting for session to open"
             self.wait_for_state_change(5)
 
         if self.get_state() != self.ST_OPEN:
             raise SessionClosedError("State is %s" % self.get_state())
+
+        blocks = []
 
         while buf:
             chunk = buf[:self.bsize]
@@ -598,24 +598,31 @@ class StatefulSession(Session):
             f.sent_event.clear()
 
             self.outq.enqueue(f)
+            blocks.append(f)
 
             self.oseq = (self.oseq + 1) % 256
 
         self.queue_next()
         self.event.set()
 
-        if timeout and f:
-            print "Waiting for last block to be ack'd"
-            f.sent_event.wait()
-            if f.sent_event.isSet():
-                print "Last block is sent, waiting for ack"
-                f.ackd_event.wait(timeout)
-                if f.ackd_event.isSet():
-                    print "ACKED"
+        while timeout is not None and \
+                blocks and \
+                self.get_state() != self.ST_CLSD:
+            block = blocks[0]
+            del blocks[0]
+
+            print "Waiting for block %i to be ack'd" % block.seq
+            block.sent_event.wait()
+            if block.sent_event.isSet():
+                print "Block %i is sent, waiting for ack" % block.seq
+                block.ackd_event.wait(timeout)
+                if block.ackd_event.isSet():
+                    print "%i ACKED" % block.seq
                 else:
-                    print "Not ACKED"
+                    print "%i Not ACKED" % block.seq
+                    break
             else:
-                print "Block not sent?"
+                print "Block %i not sent?" % block.seq
 
 class PipelinedStatefulSession(StatefulSession):
     T_REQACK = 5
