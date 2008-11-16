@@ -85,7 +85,8 @@ _DEF_STATE = {
     "main_size_y" : "400",
     "main_advanced" : "200",
     "filters" : "[]",
-    "show_all_filter" : False,
+    "show_all_filter" : "False",
+    "connected_inet" : "False",
 }
 
 DEFAULTS = {

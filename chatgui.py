@@ -754,6 +754,7 @@ class MainChatGUI(ChatGUI):
               <separator/>
               <menuitem action='enableqst'/>
               <!--<menuitem action='connect'/>-->
+              <menuitem action='connectinet'/>
               <menuitem action='quit'/>
             </menu>
             <menu action='view'>
@@ -813,6 +814,17 @@ class MainChatGUI(ChatGUI):
         enableqst = gtk.ToggleAction("enableqst", _("QSTs Enabled"), None, None)
         enableqst.set_active(True)
 
+        def toggle_inet(toggle, config):
+            config.set("state", "connected_inet", str(toggle.get_active()))
+
+        connectinet = gtk.ToggleAction("connectinet",
+                                       _("Connected to Internet"),
+                                       None,
+                                       None)
+        connectinet.set_active(self.config.getboolean("state",
+                                                      "connected_inet"))
+        connectinet.connect("toggled", toggle_inet, self.config)
+
         isend = gtk.Action("isend", _("Send _Image"), None, None)
         isend.set_sensitive(image.has_image_support())
         isend.connect("activate", self.menu_handler)
@@ -824,6 +836,7 @@ class MainChatGUI(ChatGUI):
         self.menu_ag.add_action_with_accel(advanced, "<Control>a")
         self.menu_ag.add_action_with_accel(connected, "<Control>d")
         self.menu_ag.add_action(enableqst)
+        self.menu_ag.add_action(connectinet)
         self.menu_ag.add_action(isend)
 
         uim.insert_action_group(self.menu_ag, 0)
