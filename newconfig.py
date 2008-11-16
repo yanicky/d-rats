@@ -9,6 +9,7 @@ import utils
 import miscwidgets
 import inputdialog
 import platform
+import geocode_ui
 
 BAUD_RATES = ["1200", "2400", "4800", "9600", "19200", "38400", "115200"]
 
@@ -108,6 +109,18 @@ def color_string(color):
     except:
         return "#%04x%04x%04x" % (color.red, color.green, color.blue)
 
+class AddressLookup(gtk.Button):
+    def __init__(self, caption, latw, lonw):
+        gtk.Button.__init__(self, caption)
+        self.connect("clicked", self.clicked, latw, lonw)
+
+    def clicked(self, me, latw, lonw):
+        aa = geocode_ui.AddressAssistant()
+        r = aa.run()
+        if r == gtk.RESPONSE_OK:
+            latw.latlon.set_text("%.5f" % aa.lat)
+            lonw.latlon.set_text("%.5f" % aa.lon)
+
 class DratsConfigWidget(gtk.VBox):
     def __init__(self, config, sec, name):
         gtk.VBox.__init__(self, False, 2)
@@ -139,6 +152,9 @@ class DratsConfigWidget(gtk.VBox):
     def save(self):
         #print "Saving %s/%s: %s" % (self.vsec, self.vname, self.value)
         self.config.set(self.vsec, self.vname, self.value)
+
+    def set_value(self, value):
+        pass
 
     def add_text(self, limit=0):
         def changed(entry):
@@ -206,6 +222,9 @@ class DratsConfigWidget(gtk.VBox):
         w.set_text(self.value)
         print "LatLon text: %s" % w.get_text()
         w.show()
+
+        # Dirty ugly hack!
+        self.latlon = w
 
         self.pack_start(w, 1, 1, 1)
 
@@ -425,6 +444,9 @@ class DratsGPSPanel(DratsPanel):
         lon = DratsConfigWidget(config, "user", "longitude")
         lon.add_coords()
         self.mv(_("Longitude"), lon)
+
+        geo = AddressLookup("Lookup", lat, lon)
+        self.mv(_("Lookup by address"), geo)
 
         alt = DratsConfigWidget(config, "user", "altitude")
         alt.add_numeric(0, 29028, 1)
