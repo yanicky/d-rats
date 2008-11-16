@@ -1,50 +1,41 @@
+#!/usr/bin/python
+
 TIPS_USER = {
-    "latitude" : u"Your current latitude.  " + \
-        u"Use decimal degrees (DD.DDDDD)\n" + \
-        u"or D\u00b0M'S\".  Use a space for special characters",
-    "longitude" : u"Your current longitude.  " + \
-        u"Use decimal degrees (DD.DDDDD)\n" + \
-        u"or D\u00b0M'S\".  Use a space for special characters",
-    "altitude" : "Your current altitude",
+    "latitude" : _("Your current latitude.  Use decimal degrees (DD.DDDDD)\nor D*M'S\".  Use a space for special characters").replace("*", u"\u00B0"),
+    "longitude" : _("Your current longitude.  Use decimal degrees (DD.DDDDD)\nor D*M'S\".  Use a space for special characters").replace("*", u"\u00B0"),
+    "altitude" : _("Your current altitude"),
 }
 
 TIPS_PREFS = {
-    "useutc" : "When enabled, form time fields will default to current " + \
-        "time in UTC.  When disabled, default to local time",
-    "language" : "Requires a D-RATS restart",
+    "useutc" : _("When enabled, form time fields will default to current time in UTC.  When disabled, default to local time"),
+    "language" : _("Requires a D-RATS restart"),
     }
 
 TIPS_SETTINGS = {
-    "port" : "On Windows, use something like 'COM12'\n" + \
-        "On UNIX, use something like '/dev/ttyUSB0'\n" + \
-        "For a network connection, use something like 'net:host:9000'",
-    "rate" : "9600 for mobile radios, 38400 for handhelds",
-    "gpsport" : "Serial port for an NMEA-compliant external GPS",
-    "gpsenabled" : "If enabled, take current position from the external GPS",
-    "gpsportspeed" : "The NMEA standard is 4800",
-    "aprssymtab" : "The symbol table character for GPS-A beacons",
-    "aprssymbol" : "The symbol character for GPS-A beacons",
-    "compatmode" : "Treat incoming raw text (and garbage) as chat data " + \
-        "and display it on-screen",
-    "mapdir" : "Alternate location to store cached map images",
-    "warmup_length" : "Amount of fake data to send during a warmup cycle",
-    "warmup_timeout" : "Length of time between transmissions that must " + \
-        "pass before we send a warmup block to open the power-save " + \
-        "circuits on handhelds",
-    "force_delay" : "Amount of time to wait between transmissions",
-    "ping_info" : "Text string to return in response to a ping.\n" + \
-        "If prefixed by a > character, interpret as a path to a text file\n" + \
-        "If prefixed by a ! character, interpret as a path to a script",
-    "smtp_server" : "Hostname of outgoing SMTP server.  If this is " + \
-        "specified, this station will be a gateway for email forms.  " + \
-        "If left blank, this feature is disabled",
-    "smtp_replyto" : "Email address to set on outgoing form email messages",
-    "smtp_tls" : "If enabled, attempt to negotiate TLS/SSL with SMTP server",
-    "smtp_username" : "Username for SMTP authentication.  Disabled if blank",
-    "smtp_password" : "Password for SMTP authentication",
-    "smtp_port" : "Default is 25.  Set to the value given by your ISP",
-    "sniff_packets" : "Display information about packets seen that are " + \
-        "destined for other stations",
+    "port" : _("On Windows, use something like 'COM12'") + "\n" + \
+        _("On UNIX, use something like '/dev/ttyUSB0'") + "\n" + \
+        _("For a network connection, use something like 'net:host:9000'"),
+    "rate" : _("9600 for mobile radios, 38400 for handhelds"),
+    "gpsport" : _("Serial port for an NMEA-compliant external GPS"),
+    "gpsenabled" : _("If enabled, take current position from the external GPS"),
+    "gpsportspeed" : _("The NMEA standard is 4800"),
+    "aprssymtab" : _("The symbol table character for GPS-A beacons"),
+    "aprssymbol" : _("The symbol character for GPS-A beacons"),
+    "compatmode" : _("Treat incoming raw text (and garbage) as chat data and display it on-screen"),
+    "mapdir" : _("Alternate location to store cached map images"),
+    "warmup_length" : _("Amount of fake data to send during a warmup cycle"),
+    "warmup_timeout" : _("Length of time between transmissions that must pass before we send a warmup block to open the power-save circuits on handhelds"),
+    "force_delay" : _("Amount of time to wait between transmissions"),
+    "ping_info" : _("Text string to return in response to a ping.") + "\n" + \
+        _("If prefixed by a > character, interpret as a path to a text file") + "\n" + \
+        _("If prefixed by a ! character, interpret as a path to a script"),
+    "smtp_server" : _("Hostname of outgoing SMTP server.  If this is specified, this station will be a gateway for email forms.  If left blank, this feature is disabled"),
+    "smtp_replyto" : _("Email address to set on outgoing form email messages"),
+    "smtp_tls" : _("If enabled, attempt to negotiate TLS/SSL with SMTP server"),
+    "smtp_username" : _("Username for SMTP authentication.  Disabled if blank"),
+    "smtp_password" : _("Password for SMTP authentication"),
+    "smtp_port" : _("Default is 25.  Set to the value given by your ISP"),
+    "sniff_packets" : _("Display information about packets seen that are destined for other stations"),
     }
 
 CONFIG_TIPS = {
