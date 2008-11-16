@@ -683,25 +683,25 @@ class DratsOutEmailPanel(DratsPanel):
 
         val = DratsConfigWidget(config, "settings", "smtp_server")
         val.add_text()
-        self.mv("SMTP Server", val)
+        self.mv(_("SMTP Server"), val)
 
         port = DratsConfigWidget(config, "settings", "smtp_port")
         port.add_numeric(1, 65536, 1)
         mode = DratsConfigWidget(config, "settings", "smtp_tls")
         mode.add_bool("TLS")
-        self.mv("Port and Mode", port, mode)
+        self.mv(_("Port and Mode"), port, mode)
 
         val = DratsConfigWidget(config, "settings", "smtp_replyto")
         val.add_text()
-        self.mv("Source Address", val)
+        self.mv(_("Source Address"), val)
         
         val = DratsConfigWidget(config, "settings", "smtp_username")
         val.add_text()
-        self.mv("SMTP Username", val)
+        self.mv(_("SMTP Username"), val)
 
         val = DratsConfigWidget(config, "settings", "smtp_password")
         val.add_pass()
-        self.mv("SMTP Password", val)
+        self.mv(_("SMTP Password"), val)
 
 class DratsInEmailPanel(DratsPanel):
     def mv(self, title, *widgets):
@@ -725,7 +725,7 @@ class DratsInEmailPanel(DratsPanel):
         dlg = inputdialog.FieldDialog()
         for n, t, d in fields:
             if t == bool:
-                w = gtk.CheckButton("Enabled")
+                w = gtk.CheckButton(_("Enabled"))
                 w.set_active(d)
             else:
                 w = gtk.Entry()
@@ -825,7 +825,7 @@ class DratsInEmailPanel(DratsPanel):
         edit.connect("clicked", self.but_edit, lw)
         rem = gtk.Button(_("Remove"), gtk.STOCK_DELETE)
         rem.connect("clicked", self.but_rem, lw)
-        self.mv("Incoming Accounts", val, add, edit, rem)
+        self.mv(_("Incoming Accounts"), val, add, edit, rem)
 
 class DratsConfigUI(gtk.Dialog):
 
