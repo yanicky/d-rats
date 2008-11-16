@@ -137,6 +137,8 @@ class MailThread(threading.Thread):
                                    ffn,
                                    stamp="Never",
                                    xfert="Never")
+        self.manager.gui.display_line("Email '%s' received from '%s'" % (\
+                subject, sender), "italic")
 
     def run(self):
         self.message("Thread starting")
