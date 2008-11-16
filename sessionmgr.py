@@ -639,7 +639,8 @@ class PipelinedStatefulSession(StatefulSession):
 
         StatefulSession.__init__(self, *args, **kwargs)
         self.outstanding = []
-        
+        self.waiting_for_ack = []
+
     def queue_next(self):
         if self.outstanding is None:
             # This is a silly race condition because the worker thread is
@@ -668,7 +669,6 @@ class PipelinedStatefulSession(StatefulSession):
         f.data = "".join([chr(x) for x in blocks])
 
         print "Requesting ack of blocks %s" % blocks
-
         self._sm.outgoing(self, f)
 
     def send_blocks(self):
@@ -686,6 +686,13 @@ class PipelinedStatefulSession(StatefulSession):
             print "Too many retries, closing..."
             self.set_state(self.ST_CLSD)
             self.enabled = False
+            return
+
+        # Short circuit to just an ack for outstanding blocks, if we're still waiting for
+        # an ack from remote
+        if self.waiting_for_ack:
+            print "Didn't get last ack, asking again"
+            self.send_reqack(self.waiting_for_ack)
             return
 
         toack = []
@@ -709,6 +716,7 @@ class PipelinedStatefulSession(StatefulSession):
             last_block = b
 
         self.send_reqack(toack)
+        self.waiting_for_ack = toack
 
         self.attempts = 0
         self.ts = 0
@@ -746,6 +754,7 @@ class PipelinedStatefulSession(StatefulSession):
 
         for b in blocks:
             if b.type == self.T_ACK:
+                self.waiting_for_ack = False
                 acked = [ord(x) for x in b.data]
                 print "Acked blocks: %s (/%i)" % (acked, len(self.outstanding))
                 for block in self.outstanding[:]:
