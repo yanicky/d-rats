@@ -416,6 +416,8 @@ class TreeWidget(ListWidget):
 class ProgressDialog(gtk.Window):
     def __init__(self, title, parent=None):
         gtk.Window.__init__(self, gtk.WINDOW_TOPLEVEL)
+        self.set_modal(True)
+        self.set_type_hint(gtk.gdk.WINDOW_TYPE_HINT_DIALOG)
         self.set_title(title)
         if parent:
             self.set_transient_for(parent)
