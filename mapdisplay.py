@@ -36,6 +36,19 @@ def set_base_dir(basedir):
 
     BASE_DIR = basedir
 
+CONFIG = None
+
+def fetch_url(url, local):
+    global CONFIG
+
+    if CONFIG is None:
+        CONFIG = mainapp.get_mainapp().config
+
+    if CONFIG.getboolean("state", "connected_inet"):
+        return urllib.urlretrieve(url, local)
+    else:
+        raise Exception("Not connected")
+
 class MapTile:
     def path_els(self):
         # http://svn.openstreetmap.org/applications/routing/pyroute/tilenames.py
@@ -119,7 +132,7 @@ class MapTile:
             for i in range(10):
                 url = self.remote_path()
                 try:
-                    urllib.urlretrieve(url, self._local_path())
+                    fetch_url(url, self._local_path())
                     return True
                 except Exception, e:
                     print "[%i] Failed to fetch `%s': %s" % (i, url, e)
