@@ -11,6 +11,8 @@ import socket
 
 from math import pi,cos,acos,sin,atan2
 
+import utils
+
 TEST = "$GPGGA,180718.02,4531.3740,N,12255.4599,W,1,07,1.4,50.6,M,-21.4,M,,*63 KE7JSS  ,440.350+ PL127.3"
 
 EARTH_RADIUS = 3963.1
@@ -151,7 +153,7 @@ def DPRS_checksum(callsign, msg):
     for i in string:
         csum ^= ord(i)
 
-    return "*%02x" % csum
+    return "*%02X" % csum
 
 def deg2rad(deg):
     return deg * (pi / 180)
@@ -598,8 +600,8 @@ class NMEAGPSPosition(GPSPosition):
         if "," in m.group(3):
             sta, com = m.group(3).split(",", 1)
             if not sta.strip().startswith("$"):
-                self.station = sta.strip()[0:8]
-                self.comment = com.strip()[0:20]
+                self.station = utils.filter_to_ascii(sta.strip()[0:8])
+                self.comment = utils.filter_to_ascii(com.strip()[0:20])
 
         if len(self.comment) >=7 and \
                 self.comment[-3] == "*":
@@ -648,8 +650,8 @@ class NMEAGPSPosition(GPSPosition):
         csum = m.group(1)
         if "," in station:
             sta, com = station.split(",", 1)
-            self.station = sta.strip()
-            self.comment = com.strip()
+            self.station = utils.filter_to_ascii(sta.strip())
+            self.comment = utils.filter_to_ascii(com.strip())
 
         if len(self.comment) >=7 and \
                 self.comment[-3] == "*" and \
