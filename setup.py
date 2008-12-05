@@ -63,9 +63,13 @@ def default_build():
 
     setup(
         name="d-rats",
-        packages=["d_rats"],
+        packages=["d_rats", "d_rats.geopy"],
         version=DRATS_VERSION,
-        scripts=["d-rats", "map_downloader", "repeater"])
+        scripts=["d-rats", "d-rats_mapdownloader", "d-rats_repeater"],
+        data_files=[('/usr/share/applications',
+                     ["share/d-rats.desktop",
+                      "share/d-rats_mapdownloader.desktop",
+                      "share/d-rats_repeater.desktop"])])
 
 if sys.platform == "darwin":
     macos_build()
