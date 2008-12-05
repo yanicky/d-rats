@@ -57,11 +57,21 @@ def macos_build():
         setup_requires=['py2app'],
         )
 
+def default_build():
+    from distutils.core import setup
+    from d_rats.mainapp import DRATS_VERSION
+
+    setup(
+        name="d-rats",
+        packages=["d_rats"],
+        version=DRATS_VERSION,
+        scripts=["d-rats", "map_downloader", "repeater"])
+
 if sys.platform == "darwin":
     macos_build()
 elif sys.platform == "win32":
     win32_build()
 else:
-    print "No build for %s yet" % sys.platform
+    default_build()
 
 
