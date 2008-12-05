@@ -27,9 +27,6 @@ import re
 import glob
 import ConfigParser
 
-import ddt
-
-from xfergui import FileTransferGUI, FormTransferGUI
 from qst import QuickMsgGUI, QSTGPS, QSTGPSA, QSTGUI2
 from inputdialog import TextInputDialog, ChoiceDialog, ExceptionDialog, EditableChoiceDialog
 from miscwidgets import YesNoDialog
@@ -43,8 +40,6 @@ import mapdisplay
 import sessiongui
 import image
 import emailgw
-
-from mc_xfergui import MulticastGUI, MulticastRecvGUI
 
 default_station = None
 

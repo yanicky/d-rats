@@ -48,8 +48,7 @@ import gtk
 import gobject
 
 import chatgui
-import newconfig
-import ddt
+import config
 import gps
 import mapdisplay
 import comm
@@ -341,9 +340,6 @@ class MainApp:
         com = self.config.getboolean("settings", "compression")
         units = self.config.get("user", "units")
 
-        ddt.set_compression(com)
-        ddt.set_encoding(enc)
-
         gps.set_units(units)
         mapdisplay.set_base_dir(self.config.get("settings", "mapdir"))
 
@@ -384,7 +380,7 @@ class MainApp:
         # REMOVE ME in 0.1.13
         self.TEMP_migrate_config()
 
-        self.config = newconfig.DratsConfig(self)
+        self.config = config.DratsConfig(self)
         self.refresh_lang()
 
         self.gps = self._static_gps()
