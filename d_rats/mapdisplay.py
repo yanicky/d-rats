@@ -25,8 +25,10 @@ CROSSHAIR = "+"
 COLORS = ["red", "green", "cornflower blue", "pink", "orange", "grey"]
 
 ICON_MAPS = {
-    "/" : utils.open_icon_map(os.path.join("images", "aprs_pri.png")),
-    "\\": utils.open_icon_map(os.path.join("images", "aprs_sec.png")),
+    "/" : utils.open_icon_map(os.path.join(platform.get_platform().source_dir(),
+                                           "images", "aprs_pri.png")),
+    "\\": utils.open_icon_map(os.path.join(platform.get_platform().source_dir(),
+                                           "images", "aprs_sec.png")),
 }
 
 BASE_DIR = None

@@ -21,6 +21,9 @@ import glob
 import commands
 import subprocess
 
+def find_me():
+    return sys.modules["d_rats.platform"].__file__
+
 class Platform:
     # pylint: disable-msg=R0201
 
@@ -29,6 +32,9 @@ class Platform:
 
     def config_dir(self):
         return self._base
+
+    def source_dir(self):
+        return "."
 
     def log_dir(self):
         logdir = os.path.join(self.config_dir(), "logs")
@@ -156,6 +162,12 @@ class UnixPlatform(Platform):
             os.mkdir(basepath)
 
         Platform.__init__(self, basepath)
+
+    def source_dir(self):
+        if "site-packages" in find_me():
+            return "/usr/share/d-rats"
+        else:
+            return "."
 
     def default_dir(self):
         return os.path.abspath(os.getenv("HOME"))

@@ -42,6 +42,8 @@ from threading import Thread, Lock
 from select import select
 import socket
 from commands import getstatusoutput
+import glob
+import shutil
 
 import serial
 import gtk
@@ -59,7 +61,7 @@ import emailgw
 from utils import hexprint,filter_to_ascii,NetFile
 import qst
 
-DRATS_VERSION = "0.2.8"
+DRATS_VERSION = "0.2.8b8"
 LOGTF = "%m-%d-%Y_%H:%M:%S"
 
 MAINAPP = None
@@ -320,9 +322,13 @@ class MainApp:
         locale = locales.get(self.config.get("prefs", "language"), "English")
         print "Loading locale `%s'" % locale
 
+        localedir = os.path.join(platform.get_platform().source_dir(),
+                                 "locale")
+        print "Locale dir is: %s" % localedir
+
         try:
             lang = gettext.translation("D-RATS",
-                                       localedir="locale",
+                                       localedir=localedir,
                                        languages=[locale])
             lang.install()
         except LookupError:
@@ -402,6 +408,22 @@ class MainApp:
         return p
 
     def main(self):
+        # Copy default forms before we start
+
+        distdir = platform.get_platform().source_dir()
+        userdir = self.config.form_source_dir()
+        dist_forms = glob.glob(os.path.join(distdir, "forms", "*.x?l"))
+        print "FORMS: %s (%s)" % (str(dist_forms), distdir)
+        for form in dist_forms:
+            fname = os.path.basename(form)
+            user_fname = os.path.join(userdir, fname)
+            
+            if not os.path.exists(user_fname):
+                print "Installing dist form %s -> %s" % (fname, user_fname)
+                shutil.copyfile(form, user_fname)
+            else:
+                print "User has form %s" % fname
+
         try:
             gtk.main()
         except KeyboardInterrupt:
