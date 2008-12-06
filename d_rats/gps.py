@@ -610,7 +610,11 @@ class NMEAGPSPosition(GPSPosition):
         self.valid = self._test_checksum(string, csum)
 
     def _parse_GPRMC(self, string):
-        nmea, station = string.split("\r\n", 1)
+        if "\r\n" in string:
+            nmea, station = string.split("\r\n", 1)
+        else:
+            nmea = string
+            station = ""
         elements = nmea.split(",", 12)
         if len(elements) < 12:
             raise Exception("Unable to split GPRMC (%i)" % len(elements))
@@ -666,6 +670,9 @@ class NMEAGPSPosition(GPSPosition):
         try:
             self._parse_GPGGA(string)
         except Exception, e:
+            import traceback
+            import sys
+            traceback.print_exc(file=sys.stdout)
             print "Invalid GPS data: %s" % e
             self.valid = False
 
@@ -673,6 +680,9 @@ class NMEAGPSPosition(GPSPosition):
         try:
             self._parse_GPRMC(string)
         except Exception, e:
+            import traceback
+            import sys
+            traceback.print_exc(file=sys.stdout)
             print "Invalid GPS data: %s" % e
             self.valid = False
 
@@ -1061,7 +1071,6 @@ def parse_GPS(string):
     return fix
 
 if __name__ == "__main__":
-
     nmea_strings = [
         "$GPRMC,010922,A,4603.6695,N,07307.3033,W,0.6,66.8,060508,16.1,W,A*1D\r\nVE2SE  9,MV  VE2SE@RAC.CA*32",
         "$GPGGA,203008.78,4524.9729,N,12246.9580,W,1,03,3.8,00133,M,,,,*39",
@@ -1069,6 +1078,7 @@ if __name__ == "__main__":
         "$GPRMC,215348,A,4529.3672,N,12253.2060,W,0.0,353.8,030508,17.5,E,D*3C",
         "$GPGGA,075519,4531.254,N,12259.400,W,1,3,0,0.0,M,0,M,,*55\r\nK7HIO   ,GPS Info",
         "$GPRMC,074919.04,A,4524.9698,N,12246.9520,W,00.0,000.0,260508,19.,E*79",
+        "$GPRMC,123449.089,A,3405.1123,N,08436.4301,W,000.0,000.0,021208,,,A*71",
         ]
                      
     for s in nmea_strings:
