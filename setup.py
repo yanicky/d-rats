@@ -33,8 +33,8 @@ def win32_build():
     setup(
         windows=[{'script' : "d-rats",
                   'icon_resources': [(0x0004, 'd-rats2.ico')]},
-                 {'script' : 'repeater'},
-                 {'script' : 'mapdownloader'}],
+                 {'script' : 'd-rats_repeater'},
+                 {'script' : 'd-rats_mapdownloader'}],
         data_files=["C:\\GTK\\bin\\jpeg62.dll"],
         options=opts)
 
