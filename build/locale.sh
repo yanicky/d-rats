@@ -1,9 +1,10 @@
 #!/bin/bash
 
 MASTER_FILE=locale/en/LC_MESSAGES/D-RATS.pot
-FILES=$(hg status -nmca | fgrep -v '/' | grep '\.py$')
+FILES=$(hg status -nmca d_rats | grep '\.py$')
 
 echo "Generating master translation file..."
+mkdir -p $(dirname $MASTER_FILE)
 xgettext -o $MASTER_FILE $FILES
 sed -i 's/CHARSET/utf-8/' $MASTER_FILE
 
