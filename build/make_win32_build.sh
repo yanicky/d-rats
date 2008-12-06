@@ -3,7 +3,7 @@
 OUTPUT=$(echo "c:\\cygwin\\${1}/" | sed 's/\//\\/'g)
 
 LOCAL_VERSION=
-eval $(cat mainapp.py | grep ^DRATS_VERSION | sed 's/ //g')
+eval $(cat d_rats/mainapp.py | grep ^DRATS_VERSION | sed 's/ //g')
 VERSION=${DRATS_VERSION}${LOCAL_VERSION}
 ZIP=${OUTPUT}d-rats-$VERSION-win32.zip
 IST=${OUTPUT}d-rats-$VERSION-installer.exe
@@ -65,8 +65,8 @@ Section ""
   File /r 'dist\*.*'
   CreateDirectory "\$SMPROGRAMS\D-RATS"
   CreateShortCut "\$SMPROGRAMS\D-RATS\D-RATS Communications Tool.lnk" "\$INSTDIR\d-rats.exe"
-  CreateShortCut "\$SMPROGRAMS\D-RATS\D-RATS Repeater.lnk" "\$INSTDIR\repeater.exe"
-  CreateShortCut "\$SMPROGRAMS\D-RATS\D-RATS Map Downloader.lnk" "\$INSTDIR\mapdownloader.exe"
+  CreateShortCut "\$SMPROGRAMS\D-RATS\D-RATS Repeater.lnk" "\$INSTDIR\d-rats_repeater.exe"
+  CreateShortCut "\$SMPROGRAMS\D-RATS\D-RATS Map Downloader.lnk" "\$INSTDIR\d-rats_mapdownloader.exe"
   CreateDirectory "\$APPDATA\D-RATS\Form_Templates"
   CopyFiles \$INSTDIR\forms\*.* "\$APPDATA\D-RATS\Form_Templates"
 SectionEnd
@@ -77,7 +77,7 @@ EOF
 
 rm -f $LOG
 
-moduleize
+#moduleize
 copy_data
 build_win32
 copy_lib
