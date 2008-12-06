@@ -60,17 +60,30 @@ def macos_build():
 def default_build():
     from distutils.core import setup
     from d_rats.mainapp import DRATS_VERSION
+    from glob import glob
+    import os
+
+    desktop_files = glob("share/*.desktop")
+    form_files = glob("forms/*.x?l")
+    image_files = glob("images/*")
+    _locale_files = glob("locale/*/LC_MESSAGES/D-RATS.mo")
+
+    locale_files = []
+    for f in _locale_files:
+        locale_files.append(("/usr/share/d-rats/%s" % os.path.dirname(f), [f]))
+
+    print "LOC: %s" % str(locale_files)
 
     setup(
         name="d-rats",
         packages=["d_rats", "d_rats.geopy"],
         version=DRATS_VERSION,
         scripts=["d-rats", "d-rats_mapdownloader", "d-rats_repeater"],
-        data_files=[('/usr/share/applications',
-                     ["share/d-rats.desktop",
-                      "share/d-rats_mapdownloader.desktop",
-                      "share/d-rats_repeater.desktop"])])
-
+        data_files=[('/usr/share/applications', desktop_files),
+                    ('/usr/share/d-rats/forms', form_files),
+                    ('/usr/share/d-rats/images', image_files),
+                    ] + locale_files)
+                    
 if sys.platform == "darwin":
     macos_build()
 elif sys.platform == "win32":

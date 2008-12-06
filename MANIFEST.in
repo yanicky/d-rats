@@ -1,1 +1,5 @@
 include share/*.desktop
+include forms/*.xml
+include forms/*.xsl
+include images/*
+include locale/*/LC_MESSAGES/D-RATS.mo
