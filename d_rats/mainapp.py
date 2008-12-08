@@ -309,9 +309,7 @@ class MainApp:
 
         accts = self.config.options("incoming_email")
         for acct in accts:
-            t = emailgw.MailThread(self.config,
-                                   acct,
-                                   self.chatgui.adv_controls["forms"])
+            t = emailgw.MailThread(self.config, acct, self.chatgui)
             t.start()
             self.mail_threads.append(t)
 

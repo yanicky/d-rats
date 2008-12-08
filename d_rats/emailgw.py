@@ -29,7 +29,7 @@ import formbuilder
 import formgui
 
 class MailThread(threading.Thread):
-    def __init__(self, config, account, manager):
+    def __init__(self, config, account, chatgui):
         threading.Thread.__init__(self)
         self.setDaemon(True)
 
@@ -37,13 +37,32 @@ class MailThread(threading.Thread):
 
         self.enabled = True
         self.config = config
-        self.manager = manager
+        self.chatgui = chatgui
 
         settings = config.get("incoming_email", account)
 
-        self.server, self.username, \
-        self.password, poll, \
-        ssl, port = settings.split(",", 5)
+        try:
+            self.server, self.username, \
+                self.password, poll, \
+                ssl, port, action = settings.split(",", 6)
+        except ValueError:
+            self.server, self.username, \
+                self.password, poll, \
+                ssl, port = settings.split(",", 6)
+            action = "Form"
+
+        actions = {
+            "Form" : self.create_form_from_mail,
+            "Chat" : self.do_chat_from_mail,
+            }
+
+        try:
+            self.action = actions[action]
+        except KeyError:
+            print "Unsupported action `%s' for %s@%s" % (action,
+                                                         self.username,
+                                                         self.server)
+            return
 
         if not port:
             self.port = self.use_tls and 995 or 110
@@ -90,6 +109,8 @@ class MailThread(threading.Thread):
         return messages
 
     def create_form_from_mail(self, mail):
+        manager = self.chatgui.adv_controls["forms"]
+
         subject = mail.get("Subject", "[no subject]")
         sender = mail.get("From", "Unknown <devnull@nowhere.com>")
         
@@ -115,9 +136,9 @@ class MailThread(threading.Thread):
 
         self.message("%s: %s" % (sender, subject))
 
-        efn = os.path.join(self.manager.form_source_dir, "email.xml")
+        efn = os.path.join(manager.form_source_dir, "email.xml")
         mid = platform.get_platform().filter_filename(messageid)
-        ffn = os.path.join(self.manager.form_store_dir, "%s.xml" % mid)
+        ffn = os.path.join(manager.form_store_dir, "%s.xml" % mid)
 
         form = formgui.FormFile("", efn)
         form.set_field_value("_auto_sender", sender)
@@ -128,17 +149,39 @@ class MailThread(threading.Thread):
 
         form_name = "EMAIL: %s" % subject
 
-        self.manager.reg_form(form_name,
+        manager.reg_form(form_name,
+                         ffn,
+                         "Never",
+                         manager.get_stamp())
+        manager.list_add_form(0,
+                              form_name,
                               ffn,
-                              "Never",
-                              self.manager.get_stamp())
-        self.manager.list_add_form(0,
-                                   form_name,
-                                   ffn,
-                                   stamp="Never",
-                                   xfert="Never")
-        self.manager.gui.display_line("Email '%s' received from '%s'" % (\
+                              stamp="Never",
+                              xfert="Never")
+        manager.gui.display_line("Email '%s' received from '%s'" % (\
                 subject, sender), "italic")
+
+    def do_chat_from_mail(self, mail):
+        if mail.is_multipart():
+            body = None
+            for part in mail.walk():
+                html = None
+                if part.get_content_type() == "text/plain":
+                    body = str(part)
+                    break
+                elif part.get_content_type() == "text/html":
+                    html = str(part)
+            if not body:
+                body = html
+        else:
+            body = mail.get_payload()
+
+        text = "Message from %s (%s):\r\n%s" % (\
+            mail.get("From", "Unknown Sender"),
+            mail.get("Subject", ""),
+            body)
+            
+        self.chatgui.tx_msg(text)
 
     def run(self):
         self.message("Thread starting")
@@ -150,7 +193,7 @@ class MailThread(threading.Thread):
             except Exception, e:
                 self.message("Failed to retrieve messages: %s" % e)
             for mail in mails:
-                self.create_form_from_mail(mail)
+                self.action(mail)
 
             self.event.wait(self.poll * 60)
             self.event.clear()

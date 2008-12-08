@@ -724,7 +724,9 @@ class DratsInEmailPanel(DratsPanel):
     def prompt_for_acct(self, fields):
         dlg = inputdialog.FieldDialog()
         for n, t, d in fields:
-            if t == bool:
+            if n in self.choices.keys():
+                w = miscwidgets.make_choice(self.choices[n], False, d)
+            elif t == bool:
                 w = gtk.CheckButton(_("Enabled"))
                 w.set_active(d)
             else:
@@ -739,7 +741,9 @@ class DratsInEmailPanel(DratsPanel):
             done = True
             for n, t, d in fields:
                 try:
-                    if t == bool:
+                    if n in self.choices.keys():
+                        v = dlg.get_field(n).get_active_text()
+                    elif t == bool:
                         v = dlg.get_field(n).get_active()
                     else:
                         v = dlg.get_field(n).get_text()
@@ -768,6 +772,7 @@ class DratsInEmailPanel(DratsPanel):
                   (_("Poll Interval"), int, 5),
                   (_("Use SSL"), bool, False),
                   (_("Port"), int, 110),
+                  (_("Action"), str, "Form"),
                   ]
         ret = self.prompt_for_acct(fields)
         if ret:
@@ -788,6 +793,7 @@ class DratsInEmailPanel(DratsPanel):
                   (_("Poll Interval"), int, vals[4]),
                   (_("Use SSL"), bool, vals[5]),
                   (_("Port"), int, vals[6]),
+                  (_("Action"), str, vals[7]),
                   ]
         id ="%s@%s" % (vals[1], vals[2])
         ret = self.prompt_for_acct(fields)
@@ -800,7 +806,17 @@ class DratsInEmailPanel(DratsPanel):
                         ret[_("Password")],
                         ret[_("Poll Interval")],
                         ret[_("Use SSL")],
-                        ret[_("Port")])
+                        ret[_("Port")],
+                        ret[_("Action")])
+
+    def convert_018_values(self, config, section):
+        options = config.options(section)
+        for opt in options:
+            val = config.get(section, opt)
+            if len(val.split(",")) != 7:
+                val += ",Form"
+                config.set(section, opt, val)
+                print "Converted %s/%s" % (section, opt)
 
     def __init__(self, config):
         DratsPanel.__init__(self, config)
@@ -811,7 +827,16 @@ class DratsInEmailPanel(DratsPanel):
                 (gobject.TYPE_STRING, _("Password")),
                 (gobject.TYPE_INT, _("Poll Interval")),
                 (gobject.TYPE_BOOLEAN, _("Use SSL")),
-                (gobject.TYPE_INT, _("Port"))]
+                (gobject.TYPE_INT, _("Port")),
+                (gobject.TYPE_STRING, _("Action")),
+                ]
+
+        self.choices = {
+            _("Action") : [_("Form"), _("Chat")],
+            }
+
+        # Remove after 0.1.9
+        self.convert_018_values(config, "incoming_email")
 
         val = DratsListConfigWidget(config, "incoming_email")
 
