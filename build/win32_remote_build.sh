@@ -32,7 +32,7 @@ do_build() {
 grab_builds() {
     out=$1
 
-    scp -r "$HOST:$out/*" .
+    scp -r "$HOST:$out/*" dist
 }
 
 tmp1=$(temp_dir drats_build.XXXXX)
