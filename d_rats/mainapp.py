@@ -420,7 +420,10 @@ class MainApp:
             
             if not os.path.exists(user_fname):
                 print "Installing dist form %s -> %s" % (fname, user_fname)
-                shutil.copyfile(form, user_fname)
+                try:
+                    shutil.copyfile(form, user_fname)
+                except Exception, e:
+                    print "FAILED: %s" % e
             else:
                 print "User has form %s" % fname
 
