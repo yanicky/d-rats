@@ -173,8 +173,11 @@ class FormRecvThread(FileBaseThread):
             if form.id == "email":
                 print "Received email form"
                 srv = emailgw.FormEmailService(self.gui.chatgui.config)
-                st, msg = srv.send_email(form)
-                gui_display(self.gui.chatgui, msg)
+                try:
+                    st, msg = srv.send_email(form)
+                    gui_display(self.gui.chatgui, msg)
+                except Exception, e:
+                    gui_display(self.gui.chatgui, str(e))
 
             fm.reg_form(name,
                         fn,

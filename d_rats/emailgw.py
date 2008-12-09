@@ -258,6 +258,9 @@ class FormEmailService:
         self.message("Disconnected")
 
     def send_email(self, form):
+        if not self.config.getboolean("state", "connected_inet"):
+            raise Exception("Unable to send mail: Not connected to internet")
+
         send = form.get_field_value("_auto_sender")
         recp = form.get_field_value("recipient")
         subj = form.get_field_value("subject")
@@ -283,6 +286,9 @@ class FormEmailService:
         gobject.idle_add(cb, status, msg)
 
     def send_email_background(self, form, cb):
+        if not self.config.getboolean("state", "connected_inet"):
+            raise Exception("Unable to send mail: Not connected to internet")
+
         thread = threading.Thread(target=self.thread_fn,
                                   args=(form,cb))
         thread.start()
