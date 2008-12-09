@@ -187,13 +187,16 @@ class MailThread(threading.Thread):
         self.message("Thread starting")
 
         while self.enabled:
-            mails = []
-            try:
-                mails = self.fetch_mails()
-            except Exception, e:
-                self.message("Failed to retrieve messages: %s" % e)
-            for mail in mails:
-                self.action(mail)
+            if not self.config.getboolean("state", "connected_inet"):
+                self.message("Not connected")
+            else:
+                mails = []
+                try:
+                    mails = self.fetch_mails()
+                except Exception, e:
+                    self.message("Failed to retrieve messages: %s" % e)
+                for mail in mails:
+                    self.action(mail)
 
             self.event.wait(self.poll * 60)
             self.event.clear()
