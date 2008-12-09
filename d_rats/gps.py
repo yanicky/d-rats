@@ -13,6 +13,10 @@ from math import pi,cos,acos,sin,atan2
 
 import utils
 
+if __name__ == "__main__":
+    import gettext
+    gettext.install("D-RATS")
+
 TEST = "$GPGGA,180718.02,4531.3740,N,12255.4599,W,1,07,1.4,50.6,M,-21.4,M,,*63 KE7JSS  ,440.350+ PL127.3"
 
 EARTH_RADIUS = 3963.1
@@ -153,7 +157,7 @@ def DPRS_checksum(callsign, msg):
     for i in string:
         csum ^= ord(i)
 
-    return "*%02X" % csum
+    return "*%X" % csum
 
 def deg2rad(deg):
     return deg * (pi / 180)
@@ -562,17 +566,18 @@ class NMEAGPSPosition(GPSPosition):
 
     def _parse_dprs_comment(self):
         symbol = self.comment[0:4].strip()
-        checksum = self.comment[-3:]
+        astidx = self.comment.rindex("*")
+        checksum = self.comment[astidx:]
 
-        _checksum = DPRS_checksum(self.station, self.comment[:-3])
+        _checksum = DPRS_checksum(self.station, self.comment[:astidx])
 
         if _checksum != checksum:
             print "Comment: |%s|" % self.comment
-            print "Check: %s %s" % (checksum, _checksum)
+            print "Check: %s %s (%i)" % (checksum, _checksum, astidx)
             raise Exception("DPRS checksum failed")
 
         self.APRSIcon = dprs_to_aprs(symbol)
-        self.comment = self.comment[4:-3].strip()
+        self.comment = self.comment[4:astidx].strip()
 
     def _parse_GPGGA(self, string):
         elements = string.split(",", 14)
@@ -603,8 +608,7 @@ class NMEAGPSPosition(GPSPosition):
                 self.station = utils.filter_to_ascii(sta.strip()[0:8])
                 self.comment = utils.filter_to_ascii(com.strip()[0:20])
 
-        if len(self.comment) >=7 and \
-                self.comment[-3] == "*":
+        if len(self.comment) >=7 and "*" in self.comment[-3:-2]:
             self._parse_dprs_comment()
 
         self.valid = self._test_checksum(string, csum)
@@ -657,9 +661,7 @@ class NMEAGPSPosition(GPSPosition):
             self.station = utils.filter_to_ascii(sta.strip())
             self.comment = utils.filter_to_ascii(com.strip())
 
-        if len(self.comment) >=7 and \
-                self.comment[-3] == "*" and \
-                self.comment[-2:-1].isdigit():
+        if len(self.comment) >= 7 and "*" in self.comment[-3:-1]:
             self._parse_dprs_comment()
 
         self.valid = self._test_checksum(string, csum)
@@ -1079,6 +1081,7 @@ if __name__ == "__main__":
         "$GPGGA,075519,4531.254,N,12259.400,W,1,3,0,0.0,M,0,M,,*55\r\nK7HIO   ,GPS Info",
         "$GPRMC,074919.04,A,4524.9698,N,12246.9520,W,00.0,000.0,260508,19.,E*79",
         "$GPRMC,123449.089,A,3405.1123,N,08436.4301,W,000.0,000.0,021208,,,A*71",
+        "$GPRMC,123449.089,A,3405.1123,N,08436.4301,W,000.0,000.0,021208,,,A*71\r\nKK7DS  M,LJ  DAN*C",
         ]
                      
     for s in nmea_strings:
