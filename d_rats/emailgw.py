@@ -24,6 +24,7 @@ import rfc822
 import time
 import platform
 import gobject
+import re
 
 import formbuilder
 import formgui
@@ -292,6 +293,25 @@ class FormEmailService:
         thread = threading.Thread(target=self.thread_fn,
                                   args=(form,cb))
         thread.start()
+
+def __validate_access(config, callsign, emailaddr, types):
+    rules = config.options("email_access")
+    for rule in rules:
+        rulespec = config.get("email_access", rule)
+        call, access, filter = rulespec.split(",", 2)
+
+        if call in [callsign, "*"] and re.search(filter, emailaddr):
+            print "%s -> %s matches %s,%s,%s" % (callsign, emailaddr,
+                                                 call, access, filter)
+            return access in types
+
+    return False
+
+def validate_outgoing(config, callsign, emailaddr):
+    return __validate_access(config, callsign, emailaddr, ["Both", "Out"])
+    
+def validate_incoming(config, callsign, emailaddr):
+    return __validate_access(config, callsign, emailaddr, ["Both", "In"])
 
 if __name__ == "__main__":
     class fakeout:

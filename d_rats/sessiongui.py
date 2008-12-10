@@ -158,6 +158,23 @@ class FileSendThread(FileBaseThread):
 class FormRecvThread(FileBaseThread):
     progress_key = "recv_size"
 
+    def maybe_send_form(self, form):
+        print "Received email form"
+
+        if not emailgw.validate_outgoing(self.gui.chatgui.config,
+                                         self.session.get_station(),
+                                         form.get_field_value("recipient")):
+            print "Station not authorized for email forwarding"
+            return
+
+        srv = emailgw.FormEmailService(self.gui.chatgui.config)
+        try:
+            st, msg = srv.send_email(form)
+            gui_display(self.gui.chatgui, msg)
+        except Exception, e:
+            gui_display(self.gui.chatgui, str(e))
+        
+
     def worker(self, path):
         fm = self.gui.chatgui.adv_controls["forms"]
         newfn = time.strftime(os.path.join(fm.form_store_dir,
@@ -171,13 +188,7 @@ class FormRecvThread(FileBaseThread):
         if fn == newfn:
             form = formgui.FormFile(None, fn)
             if form.id == "email":
-                print "Received email form"
-                srv = emailgw.FormEmailService(self.gui.chatgui.config)
-                try:
-                    st, msg = srv.send_email(form)
-                    gui_display(self.gui.chatgui, msg)
-                except Exception, e:
-                    gui_display(self.gui.chatgui, str(e))
+                self.maybe_send_form(form)
 
             fm.reg_form(name,
                         fn,
