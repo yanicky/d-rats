@@ -346,6 +346,8 @@ class MainApp:
 
         gps.set_units(units)
         mapdisplay.set_base_dir(self.config.get("settings", "mapdir"))
+        mapdisplay.set_connected(self.config.getboolean("state",
+                                                        "connected_inet"))
 
         self.refresh_comms()
 

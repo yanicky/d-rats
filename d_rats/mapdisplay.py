@@ -40,13 +40,17 @@ def set_base_dir(basedir):
 
 CONFIG = None
 
+CONNECTED = True
+
+def set_connected(connected):
+    global CONNECTED
+
+    CONNECTED = connected
+
 def fetch_url(url, local):
-    global CONFIG
+    global CONNECTED
 
-    if CONFIG is None:
-        CONFIG = mainapp.get_mainapp().config
-
-    if CONFIG.getboolean("state", "connected_inet"):
+    if CONNECTED:
         return urllib.urlretrieve(url, local)
     else:
         raise Exception("Not connected")

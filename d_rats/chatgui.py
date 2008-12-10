@@ -811,6 +811,7 @@ class MainChatGUI(ChatGUI):
 
         def toggle_inet(toggle, config):
             config.set("state", "connected_inet", str(toggle.get_active()))
+            mapdisplay.set_connected(toggle.get_active())
 
         connectinet = gtk.ToggleAction("connectinet",
                                        _("Connected to Internet"),
