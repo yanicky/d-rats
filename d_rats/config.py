@@ -4,6 +4,7 @@ import gtk
 import gobject
 import ConfigParser
 import os
+import random
 
 import utils
 import miscwidgets
@@ -852,6 +853,120 @@ class DratsInEmailPanel(DratsPanel):
         rem.connect("clicked", self.but_rem, lw)
         self.mv(_("Incoming Accounts"), val, add, edit, rem)
 
+class DratsEmailAccessPanel(DratsPanel):
+    def mv(self, title, *widgets):
+        self.pack_start(widgets[0], 1, 1, 1)
+        widgets[0].show()
+
+        if len(widgets) > 1:
+            box = gtk.HBox(True, 2)
+
+            for i in widgets[1:]:
+                box.pack_start(i, 0, 0, 0)
+                i.show()
+
+            box.show()
+            self.pack_start(box, 0, 0, 0)
+
+    def but_rem(self, button, lw):
+        lw.del_item(lw.get_selected())
+
+    def prompt_for_entry(self, fields):
+        dlg = inputdialog.FieldDialog()
+        for n, t, d in fields:
+            if n in self.choices.keys():
+                w = miscwidgets.make_choice(self.choices[n], False, d)
+            else:
+                w = gtk.Entry()
+                w.set_text(str(d))
+            dlg.add_field(n, w)
+
+        ret = {}
+
+        done = False
+        while not done and dlg.run() == gtk.RESPONSE_OK:
+            done = True
+            for n, t, d in fields:
+                try:
+                    if n in self.choices.keys():
+                        v = dlg.get_field(n).get_active_text()
+                    else:
+                        v = dlg.get_field(n).get_text()
+
+                    if n == _("Callsign"):
+                        if not v:
+                            raise ValueError("empty")
+                        else:
+                            v = v.upper()
+                    ret[n] = t(v)
+                except ValueError, e:
+                    ed = gtk.MessageDialog(buttons=gtk.BUTTONS_OK)
+                    ed.set_property("text",
+                                    _("Invalid value for") + "%s: %s" % (n, e))
+                    ed.run()
+                    ed.destroy()
+                    done = False
+                    break
+
+        dlg.destroy()
+        if done:
+            return ret
+        else:
+            return None
+
+    def but_add(self, button, lw):
+        fields = [(_("Callsign"), str, ""),
+                  (_("Access"), str, _("Both")),
+                  (_("Email Filter"), str, "")]
+        ret = self.prompt_for_entry(fields)
+        if ret:
+            id = "%s/%i" % (ret[_("Callsign")],
+                            random.randint(1, 1000))
+            lw.set_item(id,
+                        ret[_("Callsign")],
+                        ret[_("Access")],
+                        ret[_("Email Filter")])
+
+    def but_edit(self, button, lw):
+        vals = lw.get_item(lw.get_selected())
+        fields = [(_("Callsign"), str, vals[1]),
+                  (_("Access"), str, vals[2]),
+                  (_("Email Filter"), str, vals[3])]
+        id = vals[0]
+        ret = self.prompt_for_entry(fields)
+        if ret:
+            lw.del_item(id)
+            lw.set_item(id,
+                        ret[_("Callsign")],
+                        ret[_("Access")],
+                        ret[_("Email Filter")])
+
+    def __init__(self, config):
+        DratsPanel.__init__(self, config)
+
+        cols = [(gobject.TYPE_STRING, "ID"),
+                (gobject.TYPE_STRING, _("Callsign")),
+                (gobject.TYPE_STRING, _("Access")),
+                (gobject.TYPE_STRING, _("Email Filter"))]
+
+        self.choices = {
+            _("Access") : [_("None"), _("Both"), _("Incoming"), _("Outgoing")],
+            }
+
+        val = DratsListConfigWidget(config, "email_access")
+
+        def make_key(vals):
+            return "%s/%i" % (vals[0], random.randint(0, 1000))
+
+        lw = val.add_list(cols, make_key)
+        add = gtk.Button(_("Add"), gtk.STOCK_ADD)
+        add.connect("clicked", self.but_add, lw)
+        edit = gtk.Button(_("Edit"), gtk.STOCK_EDIT)
+        edit.connect("clicked", self.but_edit, lw)
+        rem = gtk.Button(_("Remove"), gtk.STOCK_DELETE)
+        rem.connect("clicked", self.but_rem, lw)
+        self.mv(_("Email Access"), val, add, edit, rem)
+
 class DratsConfigUI(gtk.Dialog):
 
     def mouse_event(self, view, event):
@@ -917,6 +1032,7 @@ class DratsConfigUI(gtk.Dialog):
         add_panel(DratsTCPOutgoingPanel, "tcpout", _("TCP Forwarding"), network)
         add_panel(DratsOutEmailPanel, "smtp", _("Outgoing Email"), network)
         add_panel(DratsInEmailPanel, "email", _("Incoming Email"), network)
+        add_panel(DratsEmailAccessPanel, "email_ac", _("Email Access"), network)
 
         self.panels["prefs"].show()
 
