@@ -91,6 +91,9 @@ class FieldDialog(gtk.Dialog):
 
         gtk.Dialog.__init__(self, **kwargs)
 
+        self.set_modal(True)
+        self.set_type_hint(gtk.gdk.WINDOW_TYPE_HINT_DIALOG)        
+
     def response(self, _):
         print "Blocking response"
         return
