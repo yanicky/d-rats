@@ -320,10 +320,10 @@ def __validate_access(config, callsign, emailaddr, types):
     return False
 
 def validate_outgoing(config, callsign, emailaddr):
-    return __validate_access(config, callsign, emailaddr, ["Both", "Out"])
+    return __validate_access(config, callsign, emailaddr, ["Both", "Outgoing"])
     
 def validate_incoming(config, callsign, emailaddr):
-    return __validate_access(config, callsign, emailaddr, ["Both", "In"])
+    return __validate_access(config, callsign, emailaddr, ["Both", "Incoming"])
 
 if __name__ == "__main__":
     class fakeout:
