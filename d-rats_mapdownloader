@@ -15,7 +15,7 @@ except ImportError:
     from d_rats import miscwidgets
 
 ZOOM_MIN = 10
-ZOOM_MAX = 15
+ZOOM_MAX = 17
 
 ZOOMS = {}
 for x in range(ZOOM_MIN, ZOOM_MAX+1):
