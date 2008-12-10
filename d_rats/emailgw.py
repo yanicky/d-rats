@@ -109,6 +109,16 @@ class MailThread(threading.Thread):
 
         return messages
 
+    def maybe_send_form(self, formfn, sender, recip):
+        if not validate_incoming(self.config, recip, sender):
+            print "Not auto-sending %s -> %s" % (sender, recip)
+            return False
+
+        print "Auto-sending form %s -> %s" % (sender, recip)
+
+        sessiongui = self.chatgui.adv_controls["sessions"]
+        sessiongui.send_form(recip, formfn, "Email")
+
     def create_form_from_mail(self, mail):
         manager = self.chatgui.adv_controls["forms"]
 
@@ -161,6 +171,8 @@ class MailThread(threading.Thread):
                               xfert="Never")
         manager.gui.display_line("Email '%s' received from '%s'" % (\
                 subject, sender), "italic")
+
+        self.maybe_send_form(ffn, sender, recip)
 
     def do_chat_from_mail(self, mail):
         if mail.is_multipart():
