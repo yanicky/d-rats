@@ -1091,6 +1091,51 @@ class MapWindow(gtk.Window):
         x, y = event.get_coords()
         lat, lon = self.map.xy2latlon(x, y)
 
+        ha = self.sw.get_hadjustment()
+        va = self.sw.get_vadjustment()
+        mx = x - int(ha.get_value())
+        my = y - int(va.get_value())
+
+        hit = False
+
+        for group in self.markers.values():
+            for vals in group.values():
+                fix = vals[0]
+                
+                _x, _y = self.map.latlon2xy(fix.latitude, fix.longitude)
+
+                dx = abs(x - _x)
+                dy = abs(y - _y)
+
+                if dx < 20 and dy < 20:
+                    hit = True
+
+                    text = "Station: %s" % fix.station + \
+                        "\nLatitude: %.5f" % fix.latitude + \
+                        "\nLongitude: %.5f"% fix.longitude
+
+                    if fix.comment:
+                        text += "\nInfo: %s" % fix.comment
+
+                    label = gtk.Label(text)
+                    label.show()
+                    for child in self.info_window.get_children():
+                        self.info_window.remove(child)
+                    self.info_window.add(label)
+                    
+                    posx, posy = self.get_position()
+                    posx += mx + 10
+                    posy += my - 10
+
+                    self.info_window.move(int(posx), int(posy))
+                    self.info_window.show()
+
+                    break
+
+
+        if not hit:
+            self.info_window.hide()
+
         self.sb_coords.pop(self.STATUS_COORD)
         self.sb_coords.push(self.STATUS_COORD, "%.4f, %.4f" % (lat, lon))
 
@@ -1215,6 +1260,12 @@ class MapWindow(gtk.Window):
                                lambda a, vals:
                                    self.prompt_to_send_loc(vals["lat"],
                                                            vals["lon"]))
+
+        self.info_window = gtk.Window(gtk.gdk.WINDOW_CHILD)
+        self.info_window.set_type_hint(gtk.gdk.WINDOW_TYPE_HINT_MENU)
+        self.info_window.set_decorated(False)
+        self.info_window.modify_bg(gtk.STATE_NORMAL,
+                                   gtk.gdk.color_parse("yellow"))
 
     def add_popup_handler(self, name, handler):
         self._popup_items[name] = handler
