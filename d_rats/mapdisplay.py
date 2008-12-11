@@ -1344,9 +1344,6 @@ class MapWindow(gtk.Window):
         else:
             raise Exception("Invalid CSV format: %s" % line)
 
-        print "Line: %s" % line
-        print "Comment: %s (%i)" % (comment, len(vals))
-
         if add:
             pos = GPSPosition(station=id.strip(),
                               lat=float(lat),
