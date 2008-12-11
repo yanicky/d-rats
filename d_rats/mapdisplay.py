@@ -1110,9 +1110,15 @@ class MapWindow(gtk.Window):
                 if dx < 20 and dy < 20:
                     hit = True
 
+                    if fix.date:
+                        date = fix.date.strftime("%Y-%m-%d %H:%M:%S")
+                    else:
+                        date = "Unknown"
+
                     text = "Station: %s" % fix.station + \
                         "\nLatitude: %.5f" % fix.latitude + \
-                        "\nLongitude: %.5f"% fix.longitude
+                        "\nLongitude: %.5f"% fix.longitude + \
+                        "\nLast update: %s" % date
 
                     if fix.comment:
                         text += "\nInfo: %s" % fix.comment
