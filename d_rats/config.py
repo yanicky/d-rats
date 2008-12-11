@@ -784,7 +784,8 @@ class DratsInEmailPanel(DratsPanel):
                         ret[_("Password")],
                         ret[_("Poll Interval")],
                         ret[_("Use SSL")],
-                        ret[_("Port")])
+                        ret[_("Port")],
+                        ret[_("Action")])
 
     def but_edit(self, button, lw):
         vals = lw.get_item(lw.get_selected())
