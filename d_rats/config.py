@@ -171,6 +171,18 @@ class DratsConfigWidget(gtk.VBox):
 
         self.pack_start(w, 1, 1, 1)
 
+    def add_upper_text(self, limit=0):
+        def changed(entry):
+            self.value = entry.get_text().upper()
+
+        w = gtk.Entry(limit)
+        w.connect("changed", changed)
+        w.set_text(self.value)
+        w.set_size_request(50, -1)
+        w.show()
+
+        self.pack_start(w, 1, 1, 1)
+
     def add_pass(self, limit=0):
         def changed(entry):
             self.value = entry.get_text()
@@ -387,7 +399,7 @@ class DratsPrefsPanel(DratsPanel):
         DratsPanel.__init__(self, config)
 
         val = DratsConfigWidget(config, "user", "callsign")
-        val.add_text()
+        val.add_upper_text()
         self.mv(_("Callsign"), val)
 
         val = DratsConfigWidget(config, "user", "name")
