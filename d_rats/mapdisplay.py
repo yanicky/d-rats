@@ -553,7 +553,8 @@ class MapWindow(gtk.Window):
                                       _lon=fix.longitude,
                                       name=id,
                                       grp=group,
-                                      _icon=fix.APRSIcon)
+                                      _icon=fix.APRSIcon,
+                                      _com=fix.comment)
 
     def _make_marker_menu(self, store, iter):
         menu_xml = """
@@ -895,7 +896,8 @@ class MapWindow(gtk.Window):
                              _lon=None,
                              name=None,
                              grp=None,
-                             _icon="/#"):
+                             _icon="/#",
+                             _com=""):
         def do_address(button, latw, lonw, namew):
             dlg = geocode_ui.AddressAssistant()
             r = dlg.run()
@@ -939,6 +941,11 @@ class MapWindow(gtk.Window):
                 icons.append((icon, sym))
         d.add_field(_("Icon"), miscwidgets.make_pixbuf_choice(icons, _icon))
 
+        comment = gtk.Entry()
+        if _com:
+            comment.set_text(_com)
+        d.add_field(_("Comment"), comment)
+
         while d.run() == gtk.RESPONSE_OK:
             try:
                 grp = d.get_field(_("Group")).get_active_text()
@@ -946,6 +953,7 @@ class MapWindow(gtk.Window):
                 lat = d.get_field(_("Latitude")).value()
                 lon = d.get_field(_("Longitude")).value()
                 idx = d.get_field(_("Icon")).get_active()
+                com = d.get_field(_("Comment")).get_text()
 
                 if not grp:
                     raise Exception(_("Group name required"))
@@ -964,6 +972,8 @@ class MapWindow(gtk.Window):
             fix = GPSPosition(lat=lat, lon=lon, station=nme)
             if idx:
                 fix.APRSIcon = icons[idx][1]
+            if com:
+                fix.comment = com
             self.set_marker(fix, None, grp)
             break
         d.destroy()                    
@@ -1270,18 +1280,28 @@ class MapWindow(gtk.Window):
         if line.startswith("//"):
             return
             
-        try:
-            (id, icon, lat, lon, alt) = line.split(",", 5)
-        except ValueError:
-            # Handle old-style format as well
-            (id, lat, lon, alt) = line.split(",", 4)
-            icon = ''
-            
+        comment = None
+        icon = ''
+
+        vals = line.split(",")
+        if len(vals) == 5:
+            id, icon, lat, lon, alt = vals
+        elif len(vals) == 4:
+            id, lat, lon, alt = vals
+        elif len(vals) == 6:
+            id, icon, lat, lon, alt, comment = vals
+        else:
+            raise Exception("Invalid CSV format: %s" % line)
+
+        print "Line: %s" % line
+        print "Comment: %s (%i)" % (comment, len(vals))
+
         if add:
             pos = GPSPosition(station=id.strip(),
                               lat=float(lat),
                               lon=float(lon))
             pos.APRSIcon = icon
+            pos.comment = comment
 
             self.set_marker(pos, color, group)
         else:
@@ -1378,10 +1398,11 @@ class MapWindow(gtk.Window):
 
         for (fix, _, _, _) in stations.values():
             icon = fix.APRSIcon or ''
-            print >>f, "%s,%s,%0.4f,%0.4f," % (fix.station,
-                                               icon,
-                                               fix.latitude,
-                                               fix.longitude)
+            print >>f, "%s,%s,%0.4f,%0.4f,,%s" % (fix.station,
+                                                  icon,
+                                                  fix.latitude,
+                                                  fix.longitude,
+                                                  fix.comment or '')
 
         f.close()
 
