@@ -1082,8 +1082,11 @@ if __name__ == "__main__":
         "$GPRMC,074919.04,A,4524.9698,N,12246.9520,W,00.0,000.0,260508,19.,E*79",
         "$GPRMC,123449.089,A,3405.1123,N,08436.4301,W,000.0,000.0,021208,,,A*71",
         "$GPRMC,123449.089,A,3405.1123,N,08436.4301,W,000.0,000.0,021208,,,A*71\r\nKK7DS  M,LJ  DAN*C",
+        "$GPRMC,230710,A,2748.1414,N,08238.5556,W,000.0,033.1,111208,004.3,W*77",
         ]
                      
+    print "-- NMEA --"
+    
     for s in nmea_strings:
         p = NMEAGPSPosition(s)
         if p.valid:
@@ -1097,6 +1100,8 @@ if __name__ == "__main__":
         "$$CRC80C3,VA2PBI>APU25N,DSTAR*:=4539.33N/07330.28W-73 de Pierre D-Star Montreal {UIV32N}",
         "$$CRCA31F,VA2PBI>API282,DSTAR*:/221812z4526.56N07302.34W/\r",
         ]
+
+    print "\n-- GPS-A --"
 
     for s in aprs_strings:
         p = APRSGPSPosition(s)
