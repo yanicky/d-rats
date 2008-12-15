@@ -806,8 +806,12 @@ class MainChatGUI(ChatGUI):
         connected.set_active(True)
         connected.connect("toggled", self.connect, None)
 
+        def toggle_qsts(toggle, config):
+            config.set("state", "qsts_enabled", str(toggle.get_active()))
+
         enableqst = gtk.ToggleAction("enableqst", _("QSTs Enabled"), None, None)
-        enableqst.set_active(True)
+        enableqst.set_active(self.config.getboolean("state", "qsts_enabled"))
+        enableqst.connect("toggled", toggle_qsts, self.config)
 
         def toggle_inet(toggle, config):
             config.set("state", "connected_inet", str(toggle.get_active()))
