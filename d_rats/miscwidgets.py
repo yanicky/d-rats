@@ -615,7 +615,7 @@ class FilenameBox(gtk.HBox):
         if dir:
             fn = platform.get_platform().gui_select_dir(start)
         else:
-            fn = platform.get_platform().gui_save_file(start, types=self.types)
+            fn = platform.get_platform().gui_save_file(start)
         if fn:
             self.filename.set_text(fn)
 
