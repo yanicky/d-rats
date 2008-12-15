@@ -1279,7 +1279,7 @@ class MapWindow(gtk.Window):
     def get_markers(self):
         return self.markers
 
-    def set_marker(self, fix, color=None, group=_("Misc")):
+    def set_marker(self, fix, color=None, group=_("Misc"), show=True):
         if not color:
             color = self.colors.get(group, "yellow")
 
@@ -1295,7 +1295,7 @@ class MapWindow(gtk.Window):
                                       0)
         if not self.markers[group].has_key(fix.station):
             self.marker_list.add_item(group,
-                                      True,
+                                      show,
                                       fix.station,
                                       0,
                                       0,
@@ -1304,7 +1304,7 @@ class MapWindow(gtk.Window):
 
         icon = utils.get_icon(ICON_MAPS, fix.APRSIcon)
 
-        self.markers[group][fix.station] = (fix, True, color, icon)
+        self.markers[group][fix.station] = (fix, show, color, icon)
         self.map.set_marker(fix.station, fix.latitude, fix.longitude, icon)
 
         self.refresh_marker_list()
@@ -1339,6 +1339,7 @@ class MapWindow(gtk.Window):
             
         comment = None
         icon = ''
+        show = True
 
         vals = line.split(",")
         if len(vals) == 5:
@@ -1347,6 +1348,9 @@ class MapWindow(gtk.Window):
             id, lat, lon, alt = vals
         elif len(vals) == 6:
             id, icon, lat, lon, alt, comment = vals
+        elif len(vals) == 7:
+            id, icon, lat, lon, alt, comment, _show = vals
+            show = _show.upper() == "TRUE"
         else:
             raise Exception("Invalid CSV format: %s" % line)
 
@@ -1357,7 +1361,7 @@ class MapWindow(gtk.Window):
             pos.APRSIcon = icon
             pos.comment = comment
 
-            self.set_marker(pos, color, group)
+            self.set_marker(pos, color, group, show=show)
         else:
             self.del_marker(id.strip(), group)
 
@@ -1450,13 +1454,14 @@ class MapWindow(gtk.Window):
 
         f = file(filename, "w")
 
-        for (fix, _, _, _) in stations.values():
+        for (fix, show, _, _) in stations.values():
             icon = fix.APRSIcon or ''
-            print >>f, "%s,%s,%0.4f,%0.4f,,%s" % (fix.station,
-                                                  icon,
-                                                  fix.latitude,
-                                                  fix.longitude,
-                                                  fix.comment or '')
+            print >>f, "%s,%s,%0.4f,%0.4f,,%s,%s" % (fix.station,
+                                                     icon,
+                                                     fix.latitude,
+                                                     fix.longitude,
+                                                     fix.comment or '',
+                                                     show)
 
         f.close()
 
