@@ -104,8 +104,13 @@ class RPCJob(gobject.GObject):
         return encode_dict(self._args)
 
 class RPCFileListJob(RPCJob):
+    def set_file_list(self, list):
+        self._args = {}
+        for item in list:
+            self._args[item] = ""
+
     def get_file_list(self):
-        return []
+        return self._args.keys()
 
 class RPCFormListJob(RPCJob):
     def get_form_list(self):
@@ -114,6 +119,9 @@ class RPCFormListJob(RPCJob):
 class RPCPullFileJob(RPCJob):
     def set_file(self, filename):
         self._args = {"fn" : filename}
+
+    def get_file(self):
+        return self._args.get("fn", None)
 
 class RPCPullFormJob(RPCJob):
     def set_form(self, form):
