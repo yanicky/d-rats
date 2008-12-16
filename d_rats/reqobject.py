@@ -32,6 +32,7 @@ class RequestRemoteObjectUI(gtk.Dialog):
             [(gobject.TYPE_STRING, "_ID"),
              (gobject.TYPE_STRING, "Name"),
              (gobject.TYPE_STRING, "Info")])
+        self.__list.set_resizable(0, True)
         self.__list.show()
 
         sw = gtk.ScrolledWindow()
