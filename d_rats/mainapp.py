@@ -236,6 +236,20 @@ class MainApp:
                                                                 path)
             else:
                 result["rc"] = "File not found"
+        elif isinstance(job, rpcsession.RPCFormListJob):
+            result = {}
+            forms = self.chatgui.adv_controls["forms"].get_forms()
+            for ident, stamp, filen in forms:
+                result[ident] = "%s" % stamp
+        elif isinstance(job, rpcsession.RPCPullFormJob):
+            forms = self.chatgui.adv_controls["forms"].get_forms()
+            result["rc"] = "Form not found"
+            for ident, stamp, filen in forms:
+                if ident == job.get_form():
+                    result["rc"] = "OK"
+                    self.chatgui.adv_controls["sessions"].send_form(\
+                        job.get_dest(), filen, ident)
+                    break
 
         job.set_state("complete", result)
 

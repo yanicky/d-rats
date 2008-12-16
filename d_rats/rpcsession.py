@@ -127,6 +127,9 @@ class RPCPullFormJob(RPCJob):
     def set_form(self, form):
         self._args = {"fn" : form}
 
+    def get_form(self):
+        return self._args.get("fn", None)
+
 class RPCPositionReport(RPCJob):
     def set_station(self, station):
         self._args = {"st" : station}
