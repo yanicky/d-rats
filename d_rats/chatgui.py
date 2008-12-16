@@ -49,7 +49,7 @@ def log_job_state(job, state, result, gui):
     if state == "complete":
         msg = "%s completed %s: %s" % (job.get_dest(), job.get_desc(), result)
     else:
-        msg = "%s: %s" % (job.get_dest(), job.get_desc(), state)
+        msg = "%s: %s ended (%s)" % (job.get_dest(), job.get_desc(), state)
 
     gobject.idle_add(gui.display_line, msg, "italic")
     print msg
