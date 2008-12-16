@@ -31,6 +31,7 @@ T_FORMXFER  = 3
 T_SOCKET    = 4
 T_PFILEXFER = 5
 T_PFORMXFER = 6
+T_RPC       = 7
 
 class SessionClosedError(Exception):
     pass

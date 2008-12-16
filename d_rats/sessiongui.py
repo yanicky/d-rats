@@ -28,6 +28,7 @@ import sessionmgr
 import sessions
 import formgui
 import emailgw
+import rpcsession
 
 from utils import run_safe
 
@@ -456,7 +457,7 @@ class SessionGUI:
 
         def render_id(col, rend, model, iter, colnum):
             v = model.get_value(iter, colnum)
-            if v < 2:
+            if v < 3:
                 rend.set_property("text", "")
             else:
                 rend.set_property("text", "%i" % v)
@@ -642,7 +643,7 @@ class SessionGUI:
     def session_cb(self, data, reason, session):
         t = str(session.__class__).replace("Session", "")
         if "." in t:
-            t = t.split(".")[1]
+            t = t.split(".")[2]
 
         print "Session GUI callback: %s %s" % (reason, session._id)
             
