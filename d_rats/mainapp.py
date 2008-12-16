@@ -57,6 +57,7 @@ import comm
 import sessionmgr
 import sessions
 import emailgw
+import rpcsession
 
 from utils import hexprint,filter_to_ascii,NetFile
 import qst
@@ -197,6 +198,18 @@ class MainApp:
         if self.comm:
             self.comm.disconnect()
 
+    def do_rpcjob(self, session, job):
+        print "Got job exec: %s" % job.__class__.__name__
+        
+        res = "Failed: unsupported"
+
+        if isinstance(job, rpcsession.RPCPositionReport):
+            res = "OK"
+            gobject.idle_add(self.chatgui.tx_msg,
+                             self.get_position().to_NMEA_GGA(), True)
+
+        job.set_state("complete", {"rc" : res})
+
     def start_comms(self):
         rate = self.config.get("settings", "rate")
         port = self.config.get("settings", "port")
@@ -239,6 +252,12 @@ class MainApp:
                 self.sm.set_sniffer_session(ss._id)
                 ss.connect("incoming_frame",
                            lambda o,m: self.chatgui.display(m, "italic"))
+
+            self.rpc_session = self.sm.start_session("rpc",
+                                                     dest="CQCQCQ",
+                                                     cls=rpcsession.RPCSession)
+            self.rpc_session.connect("exec-job", self.do_rpcjob)
+
         else:
             self.sm.set_comm(self.comm, **transport_args)
             self.sm.set_call(callsign)
