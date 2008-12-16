@@ -61,7 +61,7 @@ import emailgw
 from utils import hexprint,filter_to_ascii,NetFile
 import qst
 
-DRATS_VERSION = "0.2.9b1"
+DRATS_VERSION = "0.2.9b4"
 LOGTF = "%m-%d-%Y_%H:%M:%S"
 
 MAINAPP = None
