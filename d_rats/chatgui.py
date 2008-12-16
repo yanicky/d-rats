@@ -41,6 +41,7 @@ import sessiongui
 import image
 import emailgw
 import rpcsession
+import reqobject
 
 default_station = None
 
@@ -52,6 +53,33 @@ def log_job_state(job, state, result, gui):
 
     gobject.idle_add(gui.display_line, msg, "italic")
     print msg
+
+def _show_file_list(job, result, gui):
+    d = reqobject.RequestRemoteObjectUI(gui.mainapp.rpc_session,
+                                        job.get_dest(),
+                                        gui.window)
+    items = []
+    for k,v in result.items():
+        items.append((k,v))
+    d.set_objects(items)
+    r = d.run()
+    to_request = d.get_selected_item()
+    if r == gtk.RESPONSE_OK and to_request:
+        job = rpcsession.RPCPullFileJob(job.get_dest(),
+                                        "Request file %s" % to_request)
+        job.set_file(to_request)
+        job.connect("state-change", log_job_state, gui)
+        gui.mainapp.rpc_session.submit(job)
+
+    d.destroy()
+
+def show_file_list(job, state, result, gui):
+    if state != "complete":
+        gobject.idle_add(gui.display_line,
+                         "Failed to list files",
+                         "italic", "red")
+    else:
+        gobject.idle_add(_show_file_list, job, result, gui)
 
 def prompt_for_station(parent=None):
     global default_station
@@ -1844,6 +1872,8 @@ class CallCatcher:
             self.mnu_ping()
         elif action == "reqpos":
             self.mnu_reqpos()
+        elif action == "getfile":
+            self.mnu_listfiles()
         else:
             print "Unknown action `%s'" % action
 
@@ -1851,6 +1881,7 @@ class CallCatcher:
         a = [('echoposgps', None, _('Echo position (GPS)'), None, None, self.mh),
              ('echoposgpsa', None, _('Echo position (GPS-A)'), None, None, self.mh),
              ('reqpos', None, _('Request Position'), None, None, self.mh),
+             ('getfile', None, _('Get File'), None, None, self.mh),
              ('remove', None, _('Remove'), None, None, self.mh),
              ('reset', None, _('Reset'), None, None, self.mh),
              ('forget', None, _('Forget'), None, None, self.mh),
@@ -1862,7 +1893,9 @@ class CallCatcher:
   <popup name="Menu">
     <menuitem action='echoposgps'/>
     <menuitem action='echoposgpsa'/>
+    <separator/>
     <menuitem action='reqpos'/>
+    <menuitem action='getfile'/>
     <separator/>
     <menuitem action='remove'/>
     <menuitem action='reset'/>
@@ -2004,6 +2037,14 @@ class CallCatcher:
         job = rpcsession.RPCPositionReport(call, "Position Request")
         job.set_station(call)
         job.connect("state-change", log_job_state, self.gui)
+        self.mainapp.rpc_session.submit(job)
+
+    def mnu_listfiles(self):
+        list, iter = self._get_first_selected()
+        (call,) = list.get(iter, self.col_call)
+
+        job = rpcsession.RPCFileListJob(call, "File List Request")
+        job.connect("state-change", show_file_list, self.gui)
         self.mainapp.rpc_session.submit(job)
 
     def but_remove(self, widget):
