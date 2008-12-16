@@ -1541,6 +1541,18 @@ class FormManager:
                        self.col_statm, statm)
         return iter
 
+    def get_forms(self):
+        forms = []
+        iter = self.store.get_iter_first()
+        while iter:
+            forms.append(self.store.get(iter,
+                                        self.col_ident,
+                                        self.col_stamp,
+                                        self.col_filen))
+            iter = self.store.iter_next(iter)
+
+        return forms
+
     def new(self, widget, data=None):
         form_files = glob.glob(os.path.join(self.form_source_dir,
                                             "*.xml"))
