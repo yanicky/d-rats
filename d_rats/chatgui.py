@@ -54,7 +54,7 @@ def log_job_state(job, state, result, gui):
     gobject.idle_add(gui.display_line, msg, "italic")
     print msg
 
-def _show_file_list(job, result, gui):
+def _show_object_list(job, result, gui, jobtype):
     d = reqobject.RequestRemoteObjectUI(gui.mainapp.rpc_session,
                                         job.get_dest(),
                                         gui.window)
@@ -65,8 +65,7 @@ def _show_file_list(job, result, gui):
     r = d.run()
     to_request = d.get_selected_item()
     if r == gtk.RESPONSE_OK and to_request:
-        job = rpcsession.RPCPullFileJob(job.get_dest(),
-                                        "Request file %s" % to_request)
+        job = rpcsession.jobtype(job.get_dest(), "Request %s" % to_request)
         job.set_file(to_request)
         job.connect("state-change", log_job_state, gui)
         gui.mainapp.rpc_session.submit(job)
@@ -79,7 +78,17 @@ def show_file_list(job, state, result, gui):
                          "Failed to list files",
                          "italic", "red")
     else:
-        gobject.idle_add(_show_file_list, job, result, gui)
+        gobject.idle_add(_show_object_list,
+                         job, result, gui, rpcsession.RPCPullFileJob)
+
+def show_form_list(job, state, result, gui):
+    if state != "complete":
+        gobject.idle_add(gui.display_line,
+                         "Failed to list files",
+                         "italic", "red")
+    else:
+        gobject.idle_add(_show_object_list,
+                         job, result, gui, rpcsession.RPCPullFormJob)
 
 def prompt_for_station(parent=None):
     global default_station
@@ -1886,6 +1895,8 @@ class CallCatcher:
             self.mnu_reqpos()
         elif action == "getfile":
             self.mnu_listfiles()
+        elif action == "getform":
+            self.mnu_listforms()
         else:
             print "Unknown action `%s'" % action
 
@@ -1894,6 +1905,7 @@ class CallCatcher:
              ('echoposgpsa', None, _('Echo position (GPS-A)'), None, None, self.mh),
              ('reqpos', None, _('Request Position'), None, None, self.mh),
              ('getfile', None, _('Get File'), None, None, self.mh),
+             ('getform', None, _('Get Form'), None, None, self.mh),
              ('remove', None, _('Remove'), None, None, self.mh),
              ('reset', None, _('Reset'), None, None, self.mh),
              ('forget', None, _('Forget'), None, None, self.mh),
@@ -1908,6 +1920,7 @@ class CallCatcher:
     <separator/>
     <menuitem action='reqpos'/>
     <menuitem action='getfile'/>
+    <menuitem action='getform'/>
     <separator/>
     <menuitem action='remove'/>
     <menuitem action='reset'/>
@@ -2057,6 +2070,14 @@ class CallCatcher:
 
         job = rpcsession.RPCFileListJob(call, "File List Request")
         job.connect("state-change", show_file_list, self.gui)
+        self.mainapp.rpc_session.submit(job)
+
+    def mnu_listforms(self):
+        list, iter = self._get_first_selected()
+        (call,) = list.get(iter, self.col_call)
+
+        job = rpcsession.RPCFormListJob(call, "Form List Request")
+        job.connect("state-change", show_form_list, self.gui)
         self.mainapp.rpc_session.submit(job)
 
     def but_remove(self, widget):
