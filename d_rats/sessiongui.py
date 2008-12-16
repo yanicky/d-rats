@@ -161,15 +161,22 @@ class FormRecvThread(FileBaseThread):
     def maybe_send_form(self, form):
         print "Received email form"
 
+        def cb(status, msg):
+            self.gui.chatgui.tx_msg("[EMAIL GW] %s" % msg)
+
         if not emailgw.validate_outgoing(self.gui.chatgui.config,
                                          self.session.get_station(),
                                          form.get_field_value("recipient")):
-            print "Station not authorized for email forwarding"
+            msg = "Remote station %s " % self.session.get_station() + \
+                "not authorized for automatic outbound email service; " + \
+                "Message held for local station operator."
+            print msg
+            cb(False, msg)
             return
 
         srv = emailgw.FormEmailService(self.gui.chatgui.config)
         try:
-            st, msg = srv.send_email(form)
+            st, msg = srv.send_email_background(form, cb)
             gui_display(self.gui.chatgui, msg)
         except Exception, e:
             gui_display(self.gui.chatgui, str(e))
