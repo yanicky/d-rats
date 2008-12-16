@@ -80,7 +80,7 @@ def _show_object_list(job, result, gui, jobtype):
 def show_file_list(job, state, result, gui):
     if state != "complete":
         gobject.idle_add(gui.display_line,
-                         "Failed to list files",
+                         "Failed to list files on %s" % job.get_dest(),
                          "italic", "red")
     else:
         gobject.idle_add(_show_object_list,
@@ -89,7 +89,7 @@ def show_file_list(job, state, result, gui):
 def show_form_list(job, state, result, gui):
     if state != "complete":
         gobject.idle_add(gui.display_line,
-                         "Failed to list files",
+                         "Failed to list forms on %s" % job.get_dest(),
                          "italic", "red")
     else:
         gobject.idle_add(_show_object_list,
