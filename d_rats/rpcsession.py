@@ -229,7 +229,7 @@ class RPCSession(gobject.GObject, sessionmgr.StatelessSession):
 
         elif frame.type == self.T_RPCACK:
             if self.__jobs.has_key(frame.seq):
-                ts, job = self.__jobs[frame.seq]
+                ts, att, job = self.__jobs[frame.seq]
                 del self.__jobs[frame.seq]
                 job.set_state("complete", decode_dict(frame.data))
             else:
@@ -246,15 +246,18 @@ class RPCSession(gobject.GObject, sessionmgr.StatelessSession):
         print "RPC Thread Active"
 
         while self.__enabled:
-            for id, (ts, job) in self.__jobs.items():
-                if (time.time() - ts) > self.__t_retry:
+            for id, (ts, att, job) in self.__jobs.items():
+                if att == 4:
+                    del self.__jobs[id]
+                    job.set_state("timeout")
+                elif (time.time() - ts) > self.__t_retry:
                     self.__send_job(job, id)
-                    self.__jobs[id] = (time.time(), job)
+                    self.__jobs[id] = (time.time(), att + 1, job)
 
             time.sleep(1)
 
     def submit(self, job):
         self.__lock.acquire()
-        self.__jobs[self.__get_seq()] = (0, job)
+        self.__jobs[self.__get_seq()] = (0, 0, job)
         self.__lock.release()
 
