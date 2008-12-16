@@ -190,6 +190,15 @@ class KeyedListWidget(gtk.HBox):
             value = column
         col = self.__view.get_column(column)
         col.set_sort_column_id(value)
+    
+    def set_resizable(self, column, resizable, ellipsize=False):
+        col = self.__view.get_column(column)
+        col.set_resizable(resizable)
+        rend = col.get_cell_renderers()[0]
+        rend.set_property("ellipsize",
+                          ellipsize and pango.ELLIPSIZE_END \
+                              or pango.ELLIPSIZE_NONE)
+        
 
 class ListWidget(gtk.HBox):
     __gsignals__ = {
