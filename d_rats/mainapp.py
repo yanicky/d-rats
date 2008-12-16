@@ -44,6 +44,7 @@ import socket
 from commands import getstatusoutput
 import glob
 import shutil
+import datetime
 
 import serial
 import gtk
@@ -201,14 +202,42 @@ class MainApp:
     def do_rpcjob(self, session, job):
         print "Got job exec: %s" % job.__class__.__name__
         
-        res = "Failed: unsupported"
+        result = {"rc" : "Failed: unsupported"}
 
         if isinstance(job, rpcsession.RPCPositionReport):
-            res = "OK"
+            result["rc"] = "OK"
             gobject.idle_add(self.chatgui.tx_msg,
                              self.get_position().to_NMEA_GGA(), True)
+        elif isinstance(job, rpcsession.RPCFileListJob):
+            result = {}
+            dir = self.config.get("prefs", "download_dir")
+            files = glob.glob(os.path.join(dir, "*.*"))
+            for fn in files:
+                size = os.path.getsize(fn)
+                if size < 1024:
+                    units = "B"
+                else:
+                    size >>= 10
+                    units = "KB"
 
-        job.set_state("complete", {"rc" : res})
+                ds = datetime.datetime.fromtimestamp(os.path.getmtime(fn))
+
+                fn = os.path.basename(fn)
+                result[fn] = "%i %s (%s)" % (size,
+                                             units,
+                                             ds.strftime("%Y-%m-%d %H:%M:%S"))
+        elif isinstance(job, rpcsession.RPCPullFileJob):
+            dir = self.config.get("prefs", "download_dir")
+            path = os.path.join(dir, job.get_file())
+            print "Remote requested %s" % path
+            if os.path.exists(path):
+                result["rc"] = "OK"
+                self.chatgui.adv_controls["sessions"].send_file(job.get_dest(),
+                                                                path)
+            else:
+                result["rc"] = "File not found"
+
+        job.set_state("complete", result)
 
     def start_comms(self):
         rate = self.config.get("settings", "rate")
