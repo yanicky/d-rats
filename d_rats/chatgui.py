@@ -40,8 +40,18 @@ import mapdisplay
 import sessiongui
 import image
 import emailgw
+import rpcsession
 
 default_station = None
+
+def log_job_state(job, state, result, gui):
+    if state == "complete":
+        msg = "%s completed %s: %s" % (job.get_dest(), job.get_desc(), result)
+    else:
+        msg = "%s: %s" % (job.get_dest(), job.get_desc(), state)
+
+    gobject.idle_add(gui.display_line, msg, "italic")
+    print msg
 
 def prompt_for_station(parent=None):
     global default_station
@@ -1832,12 +1842,15 @@ class CallCatcher:
             self.but_reset(None, False)
         elif action == "ping":
             self.mnu_ping()
+        elif action == "reqpos":
+            self.mnu_reqpos()
         else:
             print "Unknown action `%s'" % action
 
     def make_menu(self):
         a = [('echoposgps', None, _('Echo position (GPS)'), None, None, self.mh),
              ('echoposgpsa', None, _('Echo position (GPS-A)'), None, None, self.mh),
+             ('reqpos', None, _('Request Position'), None, None, self.mh),
              ('remove', None, _('Remove'), None, None, self.mh),
              ('reset', None, _('Reset'), None, None, self.mh),
              ('forget', None, _('Forget'), None, None, self.mh),
@@ -1849,6 +1862,7 @@ class CallCatcher:
   <popup name="Menu">
     <menuitem action='echoposgps'/>
     <menuitem action='echoposgpsa'/>
+    <menuitem action='reqpos'/>
     <separator/>
     <menuitem action='remove'/>
     <menuitem action='reset'/>
@@ -1982,6 +1996,15 @@ class CallCatcher:
         (call,) = list.get(iter, self.col_call)
 
         self.mainapp.chat_session.ping_station(call)
+
+    def mnu_reqpos(self):
+        list, iter = self._get_first_selected()
+        (call,) = list.get(iter, self.col_call)
+
+        job = rpcsession.RPCPositionReport(call, "Position Request")
+        job.set_station(call)
+        job.connect("state-change", log_job_state, self.gui)
+        self.mainapp.rpc_session.submit(job)
 
     def but_remove(self, widget):
         (list, paths) = self.view.get_selection().get_selected_rows()
