@@ -508,7 +508,7 @@ class SessionGUI:
             print "Failed to register session CB: %s" % e
 
         try:
-            ports = eval(self.mainapp.config.get("settings", "outports"))
+            ports = self.mainapp.config.options("tcp_out")
 
             for l in self.socket_listeners.values():
                 l.stop()
@@ -516,7 +516,11 @@ class SessionGUI:
 
             print "Refresh listeners: %s" % self.socket_listeners
 
-            for sport, dport, dest in ports:
+            for _port in ports:
+                port = self.mainapp.config.get("tcp_out", _port)
+                sport, dport, dest = port.split(",")
+                sport = int(sport)
+                dport = int(dport)
                 if dport not in self.socket_listeners.keys():
                     print "Starting a listener for port %i->%s:%i" % (sport,
                                                                       dest,
@@ -568,7 +572,7 @@ class SessionGUI:
         to = float(self.mainapp.config.get("settings", "sockflush"))
 
         try:
-            _, port = session.name.split(":", 2)
+            foo, port = session.name.split(":", 2)
             port = int(port)
         except Exception, e:
             print "Invalid socket session name %s: %s" % (session.name, e)
@@ -577,8 +581,11 @@ class SessionGUI:
 
         if direction == "in":
             try:
-                ports = eval(self.mainapp.config.get("settings", "inports"))
-                for p, h in ports:
+                ports = self.mainapp.config.options("tcp_in")
+                for _portspec in ports:
+                    portspec = self.mainapp.config.get("tcp_in", _portspec)
+                    p, h = portspec.split(",")
+                    p = int(p)
                     if p == port:
                         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                         sock.connect((h, port))
