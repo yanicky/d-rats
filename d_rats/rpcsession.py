@@ -16,7 +16,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import time
-import threading
 import uuid
 
 import gobject
@@ -88,7 +87,7 @@ class RPCJob(gobject.GObject):
             raise Exception("Value of result property must be dict")
 
         if state in self.STATES:
-            self.emit("state-change", state, result)
+            gobject.idle_add(self.emit, "state-change", state, result)
         else:
             raise Exception("Invalid status `%s'" % state)
 
@@ -152,7 +151,6 @@ class RPCSession(gobject.GObject, sessionmgr.StatelessSession):
     def __init__(self, *args, **kwargs):
         gobject.GObject.__init__(self)
         sessionmgr.StatelessSession.__init__(self, *args, **kwargs)
-        self.__lock = threading.Lock()
         self.__jobs = {}
         self.__jobq = []
         self.__jobc = 0
@@ -161,9 +159,7 @@ class RPCSession(gobject.GObject, sessionmgr.StatelessSession):
 
         self.__enabled = True
 
-        self.__thread = threading.Thread(target=self.__worker_thread)
-        self.__thread.setDaemon(True)
-        self.__thread.start()
+        gobject.timeout_add(1000, self.__worker)
 
         self.handler = self.incoming_data
 
@@ -242,22 +238,21 @@ class RPCSession(gobject.GObject, sessionmgr.StatelessSession):
         print "Sending job `%s' to %s" % (job.get_desc(), job.get_dest())
         self._sm.outgoing(self, self.__job_to_frame(job, id))
 
-    def __worker_thread(self):
-        print "RPC Thread Active"
+    def __worker(self):
+        for id, (ts, att, job) in self.__jobs.items():
+            if att == 4:
+                print "Cancelling job %i due to timeout" % id
+                del self.__jobs[id]
+                job.set_state("timeout")
+            elif (time.time() - ts) > self.__t_retry:
+                print "Re-sending job %i due to no response" % id
+                self.__send_job(job, id)
+                self.__jobs[id] = (time.time(), att + 1, job)
 
-        while self.__enabled:
-            for id, (ts, att, job) in self.__jobs.items():
-                if att == 4:
-                    del self.__jobs[id]
-                    job.set_state("timeout")
-                elif (time.time() - ts) > self.__t_retry:
-                    self.__send_job(job, id)
-                    self.__jobs[id] = (time.time(), att + 1, job)
-
-            time.sleep(1)
+        return True
 
     def submit(self, job):
-        self.__lock.acquire()
         self.__jobs[self.__get_seq()] = (0, 0, job)
-        self.__lock.release()
 
+    def stop(self):
+        self.__enabled = False
