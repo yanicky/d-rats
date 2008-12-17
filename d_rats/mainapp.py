@@ -206,8 +206,10 @@ class MainApp:
 
         if isinstance(job, rpcsession.RPCPositionReport):
             result["rc"] = "OK"
-            gobject.idle_add(self.chatgui.tx_msg,
-                             self.get_position().to_NMEA_GGA(), True)
+            # Some bug requires me to delay a little.  How broken...
+            gobject.timeout_add(500,
+                                self.chatgui.tx_msg,
+                                self.get_position().to_NMEA_GGA(), True)
         elif isinstance(job, rpcsession.RPCFileListJob):
             result = {}
             dir = self.config.get("prefs", "download_dir")
