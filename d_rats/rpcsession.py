@@ -155,7 +155,7 @@ class RPCSession(gobject.GObject, sessionmgr.StatelessSession):
         self.__jobq = []
         self.__jobc = 0
 
-        self.__t_retry = 5
+        self.__t_retry = 30
 
         self.__enabled = True
 
@@ -236,23 +236,26 @@ class RPCSession(gobject.GObject, sessionmgr.StatelessSession):
 
     def __send_job(self, job, id):
         print "Sending job `%s' to %s" % (job.get_desc(), job.get_dest())
-        self._sm.outgoing(self, self.__job_to_frame(job, id))
+        frame = self.__job_to_frame(job, id)
+        job.frame = frame
+        self._sm.outgoing(self, frame)
 
     def __worker(self):
         for id, (ts, att, job) in self.__jobs.items():
-            if att == 4:
+            if job.frame and not job.frame.sent_event.isSet():
+                # Reset timer until the block is sent
+                self.__jobs[id] = (time.time(), att, job)
+            elif (time.time() - ts) > self.__t_retry:
                 print "Cancelling job %i due to timeout" % id
                 del self.__jobs[id]
                 job.set_state("timeout")
-            elif (time.time() - ts) > self.__t_retry:
-                print "Re-sending job %i due to no response" % id
-                self.__send_job(job, id)
-                self.__jobs[id] = (time.time(), att + 1, job)
 
         return True
 
     def submit(self, job):
-        self.__jobs[self.__get_seq()] = (0, 0, job)
+        id = self.__get_seq()
+        self.__send_job(job, id)
+        self.__jobs[id] = (time.time(), 0, job)
 
     def stop(self):
         self.__enabled = False
