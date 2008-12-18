@@ -61,6 +61,7 @@ Icon d-rats2.ico
 SetCompressor 'lzma'
 Section ""
   InitPluginsDir
+  RMDir /r "\$INSTDIR"
   SetOutPath "\$INSTDIR"
   File /r 'dist\*.*'
   CreateDirectory "\$SMPROGRAMS\D-RATS"
@@ -73,6 +74,7 @@ SectionEnd
 EOF
 	unix2dos d-rats.nsi
 	/cygdrive/c/Program\ Files/NSIS/makensis d-rats.nsi
+	chmod a+x /tmp/drats_output*/*.exe
 }
 
 rm -f $LOG
