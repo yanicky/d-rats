@@ -111,7 +111,7 @@ class MailThread(threading.Thread):
 
     def maybe_send_form(self, formfn, sender, recip):
         if not validate_incoming(self.config, recip, sender):
-            print "Not auto-sending %s -> %s" % (sender, recip)
+            print "Not auto-sending %s -> %s (no access rule)" % (sender, recip)
             return False
 
         print "Auto-sending form %s -> %s" % (sender, recip)
@@ -308,6 +308,11 @@ class FormEmailService:
 
 def __validate_access(config, callsign, emailaddr, types):
     rules = config.options("email_access")
+
+    for i in ["'", '"']:
+        callsign.replace(i, "")
+    callsign = callsign.strip()
+
     for rule in rules:
         rulespec = config.get("email_access", rule)
         call, access, filter = rulespec.split(",", 2)
@@ -315,7 +320,13 @@ def __validate_access(config, callsign, emailaddr, types):
         if call in [callsign, "*"] and re.search(filter, emailaddr):
             print "%s -> %s matches %s,%s,%s" % (callsign, emailaddr,
                                                  call, access, filter)
+            print "Access types allowed: %s" % types
             return access in types
+        else:
+            print "%s -> %s does not match %s,%s,%s" % (callsign, emailaddr,
+                                                        call, access, filter)
+
+    print "No match found"
 
     return False
 
