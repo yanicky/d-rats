@@ -16,7 +16,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import time
-import uuid
 
 import gobject
 
@@ -70,11 +69,6 @@ class RPCJob(gobject.GObject):
         self.__dest = dest
         self.__desc = desc
         self._args = {}
-
-        self.__id = str(uuid.uuid4())
-
-    def get_id(self):
-        return self.__id
 
     def get_dest(self):
         return self.__dest
