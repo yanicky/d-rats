@@ -110,6 +110,10 @@ class MailThread(threading.Thread):
         return messages
 
     def maybe_send_form(self, formfn, sender, recip):
+        for i in ["'", '"']:
+            recip = recip.replace(i, "")
+        recip = recip.strip()
+
         if not validate_incoming(self.config, recip, sender):
             print "Not auto-sending %s -> %s (no access rule)" % (sender, recip)
             return False
@@ -308,10 +312,6 @@ class FormEmailService:
 
 def __validate_access(config, callsign, emailaddr, types):
     rules = config.options("email_access")
-
-    for i in ["'", '"']:
-        callsign.replace(i, "")
-    callsign = callsign.strip()
 
     for rule in rules:
         rulespec = config.get("email_access", rule)
