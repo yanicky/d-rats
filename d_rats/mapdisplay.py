@@ -1387,7 +1387,8 @@ class MapWindow(gtk.Window):
             try:
                 self.parse_static_line(line, group, color=color)
             except Exception, e:
-                print "Failed to parse line `%s': %s" % (line, e)
+                if line:
+                    print "Failed to parse line `%s': %s" % (line, e)
 
         f.close()
 
