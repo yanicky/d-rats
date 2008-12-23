@@ -408,6 +408,8 @@ class PipelinedFormTransfer(BaseFormTransferSession, PipelinedFileTransfer):
 class SocketSession(sessionmgr.PipelinedStatefulSession):
     type = sessionmgr.T_SOCKET
 
+    IDLE_TIMEOUT = None
+
     def __init__(self, name, status_cb=None):
         sessionmgr.PipelinedStatefulSession.__init__(self, name)
 

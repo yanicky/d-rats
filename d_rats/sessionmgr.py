@@ -368,6 +368,8 @@ class StatefulSession(Session):
     T_NAK = 2
     T_DAT = 4
 
+    IDLE_TIMEOUT = 90
+
     def __init__(self, name, **kwargs):
         Session.__init__(self, name)
         self.outq = transport.BlockQueue()
@@ -517,7 +519,7 @@ class StatefulSession(Session):
                 self.event.wait(1)
             else:
                 print "Deep sleep"
-                self.event.wait(90)
+                self.event.wait(self.IDLE_TIMEOUT)
                 if not self.event.isSet():
                     print "Session timed out!"
                     self.set_state(self.ST_CLSD)
