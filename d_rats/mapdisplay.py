@@ -1267,7 +1267,7 @@ class MapWindow(gtk.Window):
                                    self.prompt_to_send_loc(vals["lat"],
                                                            vals["lon"]))
 
-        self.info_window = gtk.Window(gtk.gdk.WINDOW_CHILD)
+        self.info_window = gtk.Window(gtk.WINDOW_POPUP)
         self.info_window.set_type_hint(gtk.gdk.WINDOW_TYPE_HINT_MENU)
         self.info_window.set_decorated(False)
         self.info_window.modify_bg(gtk.STATE_NORMAL,
