@@ -16,6 +16,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import time
+import datetime
+import os
+import glob
 
 import gobject
 
@@ -253,3 +256,92 @@ class RPCSession(gobject.GObject, sessionmgr.StatelessSession):
 
     def stop(self):
         self.__enabled = False
+
+def RPC_pos_report(job, app):
+    result = {}
+
+    mycall = app.config.get("user", "callsign")
+    rqcall = job.get_station()
+
+    print "[RPC] Position request for `%s'" % rqcall
+
+    if mycall == rqcall:
+        # Some bug requires me to delay a little.  How broken...
+        gobject.timeout_add(500,
+                            app.chatgui.tx_msg,
+                            app.get_position().to_NMEA_GGA(), True)
+        result["rc"] = "OK"
+        return result
+
+    else:
+        for group in app.chatgui.map.get_markers().values():
+            for call, info in group.items():
+                if call == rqcall:
+                    fix = info[0]
+                    gobject.timeout_add(500,
+                                        app.chatgui.tx_msg,
+                                        fix.to_NMEA_GGA(), True)
+                    result["rc"] = "OK"
+                    return result
+
+    result["rc"] = "Unknown station"
+    return result
+
+def RPC_file_list(job, app):
+    result = {}
+
+    dir = app.config.get("prefs", "download_dir")
+    files = glob.glob(os.path.join(dir, "*.*"))
+    for fn in files:
+        size = os.path.getsize(fn)
+        if size < 1024:
+            units = "B"
+        else:
+            size >>= 10
+            units = "KB"
+
+            ds = datetime.datetime.fromtimestamp(os.path.getmtime(fn))
+
+            fn = os.path.basename(fn)
+            result[fn] = "%i %s (%s)" % (size,
+                                         units,
+                                         ds.strftime("%Y-%m-%d %H:%M:%S"))
+
+    return result
+
+def RPC_form_list(job, app):
+    result = {}
+    forms = app.chatgui.adv_controls["forms"].get_forms()
+    for ident, stamp, filen in forms:
+        result[ident] = "%s" % stamp
+
+    return result
+
+def RPC_file_pull(job, app):
+    result = {}
+
+    dir = app.config.get("prefs", "download_dir")
+    path = os.path.join(dir, job.get_file())
+    print "Remote requested %s" % path
+    if os.path.exists(path):
+        result["rc"] = "OK"
+        app.chatgui.adv_controls["sessions"].send_file(job.get_dest(),
+                                                        path)
+    else:
+        result["rc"] = "File not found"
+
+    return result
+
+def RPC_form_pull(job, app):
+    result = {}
+
+    forms = app.chatgui.adv_controls["forms"].get_forms()
+    result["rc"] = "Form not found"
+    for ident, stamp, filen in forms:
+        if ident == job.get_form():
+            result["rc"] = "OK"
+            app.chatgui.adv_controls["sessions"].send_form(\
+                job.get_dest(), filen, ident)
+            break
+
+    return result

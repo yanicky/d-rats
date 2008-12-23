@@ -63,7 +63,7 @@ import rpcsession
 from utils import hexprint,filter_to_ascii,NetFile
 import qst
 
-DRATS_VERSION = "0.2.9b4"
+DRATS_VERSION = "0.2.9b13"
 LOGTF = "%m-%d-%Y_%H:%M:%S"
 
 MAINAPP = None
@@ -205,53 +205,15 @@ class MainApp:
         result = {"rc" : "Failed: unsupported"}
 
         if isinstance(job, rpcsession.RPCPositionReport):
-            result["rc"] = "OK"
-            # Some bug requires me to delay a little.  How broken...
-            gobject.timeout_add(500,
-                                self.chatgui.tx_msg,
-                                self.get_position().to_NMEA_GGA(), True)
+            result = rpcsession.RPC_pos_report(job, self)
         elif isinstance(job, rpcsession.RPCFileListJob):
-            result = {}
-            dir = self.config.get("prefs", "download_dir")
-            files = glob.glob(os.path.join(dir, "*.*"))
-            for fn in files:
-                size = os.path.getsize(fn)
-                if size < 1024:
-                    units = "B"
-                else:
-                    size >>= 10
-                    units = "KB"
-
-                ds = datetime.datetime.fromtimestamp(os.path.getmtime(fn))
-
-                fn = os.path.basename(fn)
-                result[fn] = "%i %s (%s)" % (size,
-                                             units,
-                                             ds.strftime("%Y-%m-%d %H:%M:%S"))
+            result = rpcsession.RPC_file_list(job, self)
         elif isinstance(job, rpcsession.RPCPullFileJob):
-            dir = self.config.get("prefs", "download_dir")
-            path = os.path.join(dir, job.get_file())
-            print "Remote requested %s" % path
-            if os.path.exists(path):
-                result["rc"] = "OK"
-                self.chatgui.adv_controls["sessions"].send_file(job.get_dest(),
-                                                                path)
-            else:
-                result["rc"] = "File not found"
+            result = rpcsession.RPC_file_pull(job, self)
         elif isinstance(job, rpcsession.RPCFormListJob):
-            result = {}
-            forms = self.chatgui.adv_controls["forms"].get_forms()
-            for ident, stamp, filen in forms:
-                result[ident] = "%s" % stamp
+            result = rpcsession.RPC_form_list(job, self)
         elif isinstance(job, rpcsession.RPCPullFormJob):
-            forms = self.chatgui.adv_controls["forms"].get_forms()
-            result["rc"] = "Form not found"
-            for ident, stamp, filen in forms:
-                if ident == job.get_form():
-                    result["rc"] = "OK"
-                    self.chatgui.adv_controls["sessions"].send_form(\
-                        job.get_dest(), filen, ident)
-                    break
+            result = rpcsession.RPC_form_pull(job, self)
 
         job.set_state("complete", result)
 

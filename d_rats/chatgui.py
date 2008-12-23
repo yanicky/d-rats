@@ -1897,7 +1897,9 @@ class CallCatcher:
         elif action == "ping":
             self.mnu_ping()
         elif action == "reqpos":
-            self.mnu_reqpos()
+            self.mnu_reqpos(False)
+        elif action == "reqposof":
+            self.mnu_reqpos(True)
         elif action == "getfile":
             self.mnu_listfiles()
         elif action == "getform":
@@ -1909,6 +1911,7 @@ class CallCatcher:
         a = [('echoposgps', None, _('Echo position (GPS)'), None, None, self.mh),
              ('echoposgpsa', None, _('Echo position (GPS-A)'), None, None, self.mh),
              ('reqpos', None, _('Request Position'), None, None, self.mh),
+             ('reqposof', None, _('Request Position of...'), None, None, self.mh),
              ('getfile', None, _('Get File'), None, None, self.mh),
              ('getform', None, _('Get Form'), None, None, self.mh),
              ('remove', None, _('Remove'), None, None, self.mh),
@@ -1924,6 +1927,7 @@ class CallCatcher:
     <menuitem action='echoposgpsa'/>
     <separator/>
     <menuitem action='reqpos'/>
+    <menuitem action='reqposof'/>
     <menuitem action='getfile'/>
     <menuitem action='getform'/>
     <separator/>
@@ -2060,12 +2064,20 @@ class CallCatcher:
 
         self.mainapp.chat_session.ping_station(call)
 
-    def mnu_reqpos(self):
+    def mnu_reqpos(self, prompt):
         list, iter = self._get_first_selected()
         (call,) = list.get(iter, self.col_call)
 
+        if prompt:
+            station = prompt_for_station(self.gui.window)
+        else:
+            station = call
+
+        if not station:
+            return
+
         job = rpcsession.RPCPositionReport(call, "Position Request")
-        job.set_station(call)
+        job.set_station(station)
         job.connect("state-change", log_job_state, self.gui)
         self.mainapp.rpc_session.submit(job)
 
