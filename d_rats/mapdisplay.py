@@ -1279,7 +1279,7 @@ class MapWindow(gtk.Window):
     def get_markers(self):
         return self.markers
 
-    def set_marker(self, fix, color=None, group=_("Misc"), show=True):
+    def _set_marker(self, fix, color=None, group=_("Misc"), show=True):
         if not color:
             color = self.colors.get(group, "yellow")
 
@@ -1306,6 +1306,9 @@ class MapWindow(gtk.Window):
 
         self.markers[group][fix.station] = (fix, show, color, icon)
         self.map.set_marker(fix.station, fix.latitude, fix.longitude, icon)
+
+    def set_marker(self, fix, color=None, group=_("Misc"), show=True):
+        self._set_marker(fix, color, group, show)
 
         self.refresh_marker_list()
 
@@ -1361,7 +1364,7 @@ class MapWindow(gtk.Window):
             pos.APRSIcon = icon
             pos.comment = comment
 
-            self.set_marker(pos, color, group, show=show)
+            self._set_marker(pos, color, group, show=show)
         else:
             self.del_marker(id.strip(), group)
 
