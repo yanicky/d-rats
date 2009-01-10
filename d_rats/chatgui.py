@@ -1200,7 +1200,9 @@ class QuickMessageControl:
         self.gui = gui
         self.config = config
         
-        self.root = gtk.VBox(False, 5)
+        vbox = gtk.VBox(False, 5)
+        self.root = gtk.ScrolledWindow()
+        self.root.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
 
         self.store = gtk.ListStore(gobject.TYPE_STRING)
         self.list = gtk.TreeView(self.store)
@@ -1212,16 +1214,18 @@ class QuickMessageControl:
 
         self.list.connect("row-activated", self.implicit_send, None)
 
-        self.root.pack_start(self.list, 1,1,1)
+        vbox.pack_start(self.list, 1,1,1)
 
         send = gtk.Button(_("Send"))
         send.set_size_request(100, -1)
         send.connect("clicked", self.send, None)
 
-        self.root.pack_start(send, 0,0,0)
+        vbox.pack_start(send, 0,0,0)
 
         self.list.show()
         send.show()
+        self.root.add_with_viewport(vbox)
+        vbox.show()
 
         self.gui.tips.set_tip(self.list, _("Double-click to send"))
 
