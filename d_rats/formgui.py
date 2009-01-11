@@ -638,6 +638,11 @@ class Form(gtk.Dialog):
                 chk_field = f
             elif f.id == "_auto_message":
                 msg_field = f
+            elif f.id == "_auto_sender":
+                config = mainapp.get_mainapp().config
+                if not f.entry.widget.get_text():
+                    f.entry.widget.set_text(config.get("user", "callsign"))
+                f.entry.widget.set_sensitive(False)
             
             field_box.pack_start(f.get_widget(), 0,0,0)
 
