@@ -63,7 +63,7 @@ import rpcsession
 from utils import hexprint,filter_to_ascii,NetFile
 import qst
 
-DRATS_VERSION = "0.2.9b13"
+DRATS_VERSION = "0.2.9"
 LOGTF = "%m-%d-%Y_%H:%M:%S"
 
 MAINAPP = None
