@@ -190,8 +190,6 @@ class ChatGUI:
             self.main_buffer.delete(start, end)
 
     def display(self, string, *attrs):
-        string = filter_to_ascii(string)
-
         (start, end) = self.main_buffer.get_bounds()
         mark = self.main_buffer.create_mark(None, end, True)
 

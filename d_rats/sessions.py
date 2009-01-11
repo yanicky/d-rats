@@ -120,7 +120,7 @@ class ChatSession(sessionmgr.StatelessSession):
         if frame.type == self.T_DEF:
             args = { "From" : frame.s_station,
                      "To" : frame.d_station,
-                     "Msg" : frame.data,
+                     "Msg" : unicode(frame.data, "utf-8"),
                      }
 
             print "Calling chat callback with %s" % args
