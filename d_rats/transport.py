@@ -131,7 +131,7 @@ class Transporter:
                     print "Got a block: %s" % f
                     self._handle_frame(f)
                 elif self.compat:
-                    self._send_text_block(utils.filter_to_ascii(block))
+                    self._send_text_block(block)
                 else:
                     print "Found a broken block (S:%i E:%i len(buf):%i" % (\
                         s, e, len(self.inbuf))
@@ -159,7 +159,7 @@ class Transporter:
         f.session = 1 # Chat (for now)
         f.s_station = "CQCQCQ"
         f.d_station = "CQCQCQ"
-        f.data = string
+        f.data = utils.filter_to_ascii(string)
         
         self._handle_frame(f)
 
