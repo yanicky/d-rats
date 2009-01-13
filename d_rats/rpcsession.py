@@ -300,12 +300,12 @@ def RPC_file_list(job, app):
             size >>= 10
             units = "KB"
 
-            ds = datetime.datetime.fromtimestamp(os.path.getmtime(fn))
+        ds = datetime.datetime.fromtimestamp(os.path.getmtime(fn))
 
-            fn = os.path.basename(fn)
-            result[fn] = "%i %s (%s)" % (size,
-                                         units,
-                                         ds.strftime("%Y-%m-%d %H:%M:%S"))
+        fn = os.path.basename(fn)
+        result[fn] = "%i %s (%s)" % (size,
+                                     units,
+                                     ds.strftime("%Y-%m-%d %H:%M:%S"))
 
     return result
 
