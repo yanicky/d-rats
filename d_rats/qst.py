@@ -43,6 +43,12 @@ except ImportError, e:
     print "FeedParser not available"
     HAVE_FEEDPARSER = False
 
+try:
+    from hashlib import md5
+except ImportError:
+    print "Installing hashlib replacement hack"
+    from utils import ExternalHash as md5
+
 class QSTText:
     def __init__(self, gui, config, text=None, freq=None):
         self.gui = gui
@@ -239,8 +245,14 @@ class QSTRSS(QSTThreadedText):
             print "RSS feed had no entries"
             return None
 
-        if entry.id != self.last_id:
-            self.last_id = entry.id
+        try:
+            id = entry.id
+        except AttributeError:
+            # Not all feeds will have an id (I guess)
+            id = md5(entry.description)
+
+        if id != self.last_id:
+            self.last_id = id
             text = str(entry.description)
 
             text = re.sub("<[^>]*?>", "", text)
