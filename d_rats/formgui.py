@@ -776,8 +776,6 @@ class Form(gtk.Dialog):
         return pathels
     
     def add_path_element(self, element):
-        print "Before"
-        print self.get_xml()
         ctx = self.doc.xpathNewContext()
         els = ctx.xpathEval("//form/path")
         if not els:
@@ -787,8 +785,6 @@ class Form(gtk.Dialog):
             path = els[0]
 
         pathel = path.newChild(None, "e", element)
-        print "After"
-        print self.get_xml()
 
 class FormFile(Form):
     def __init__(self, title, filename, buttons=None, parent=None):
