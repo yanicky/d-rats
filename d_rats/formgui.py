@@ -656,7 +656,7 @@ class Form(gtk.Dialog):
                 config = mainapp.get_mainapp().config
                 if not f.entry.widget.get_text():
                     f.entry.widget.set_text(config.get("user", "callsign"))
-                f.entry.widget.set_sensitive(False)
+                f.entry.widget.set_property("editable", False)
             
             field_box.pack_start(f.get_widget(), 0,0,0)
 
