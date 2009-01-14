@@ -195,6 +195,9 @@ class FormRecvThread(FileBaseThread):
 
         if fn == newfn:
             form = formgui.FormFile(None, fn)
+            form.add_path_element(self.gui.chatgui.config.get("user",
+                                                              "callsign"))
+            form.save_to(fn)
             if form.id == "email":
                 self.maybe_send_form(form)
 

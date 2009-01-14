@@ -160,6 +160,8 @@ class MailThread(threading.Thread):
         form.set_field_value("recipient", recip)
         form.set_field_value("subject", subject)
         form.set_field_value("message", body)
+        form.add_path_element("EMAIL")
+        form.add_path_element(self.config.get("user", "callsign"))
         form.save_to(ffn)
 
         form_name = "EMAIL: %s" % subject

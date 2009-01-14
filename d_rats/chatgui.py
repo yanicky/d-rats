@@ -1603,6 +1603,7 @@ class FormManager:
             form = formgui.FormFile(_("New %s form") % formid,
                                     forms[formid],
                                     buttons=(_("Send"), 999))
+            form.add_path_element(self.gui.config.get("user", "callsign"))
             r = form.run_auto(newfn)
             form.destroy()
             if r == gtk.RESPONSE_CANCEL:
