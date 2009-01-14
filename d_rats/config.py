@@ -103,7 +103,8 @@ _DEF_STATE = {
     "main_advanced" : "200",
     "filters" : "[]",
     "show_all_filter" : "False",
-    "connected_inet" : "False",
+    "connected_inet" : "True",
+    "qsts_enabled" : "True",
 }
 
 DEFAULTS = {
