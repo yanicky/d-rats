@@ -603,6 +603,20 @@ class Form(gtk.Dialog):
                                   buffer.get_end_iter())
         checkwidget.set_text("%i" % len(message.split()))
 
+    def build_path_widget(self):
+        pathels = self.get_path()
+
+        pathbox = gtk.Entry()
+        pathbox.set_text(";".join(pathels))
+        pathbox.set_property("editable", False)
+        pathbox.show()
+
+        expander = gtk.Expander("Path")
+        expander.add(pathbox)
+        expander.show()
+
+        return expander
+
     def build_gui(self, allow_export=True):
         tlabel = gtk.Label()
         tlabel.set_markup("<big><b>%s</b></big>" % self.title_text)
@@ -645,6 +659,8 @@ class Form(gtk.Dialog):
                 f.entry.widget.set_sensitive(False)
             
             field_box.pack_start(f.get_widget(), 0,0,0)
+
+        self.vbox.pack_start(self.build_path_widget(), 0, 0, 0)
 
         if msg_field and chk_field:
             mw = msg_field.entry.buffer
@@ -749,6 +765,30 @@ class Form(gtk.Dialog):
             if field.id == id:
                 field.entry.set_value(value)
                 break
+
+    def get_path(self):
+        pathels = []
+        ctx = self.doc.xpathNewContext()
+        els = ctx.xpathEval("//form/path/e")
+        for element in els:
+            pathels.append(element.getContent().strip())
+
+        return pathels
+    
+    def add_path_element(self, element):
+        print "Before"
+        print self.get_xml()
+        ctx = self.doc.xpathNewContext()
+        els = ctx.xpathEval("//form/path")
+        if not els:
+            form, = ctx.xpathEval("//form")
+            path = form.newChild(None, "path", None)
+        else:
+            path = els[0]
+
+        pathel = path.newChild(None, "e", element)
+        print "After"
+        print self.get_xml()
 
 class FormFile(Form):
     def __init__(self, title, filename, buttons=None, parent=None):
