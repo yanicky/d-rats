@@ -1421,7 +1421,7 @@ class FormManager:
         self.reg_form(ident, filename, stamp, xfert, statm)
     
     def row_clicked(self, view, path, col):
-        self.edit(None)
+        self.open(None)
 
     def _make_menu(self):
         (list, iter) = self.view.get_selection().get_selected()
@@ -1654,7 +1654,7 @@ class FormManager:
 
         self.gui.adv_controls["sessions"].send_form(dest, filename, name)
 
-    def edit(self, widget, data=None):
+    def open(self, widget, data=None):
         (list, iter) = self.view.get_selection().get_selected()
 
         (filename, id, stamp) = self.store.get(iter,
@@ -1772,9 +1772,9 @@ class FormManager:
         newb.show()
         box.pack_start(newb, 0,0,0)
 
-        edit = gtk.Button(_("Edit"))
+        edit = gtk.Button(_("Open"))
         edit.set_size_request(75, 30)
-        edit.connect("clicked", self.edit, None)
+        edit.connect("clicked", self.open, None)
         edit.show()
         box.pack_start(edit, 0,0,0)
 
