@@ -652,7 +652,7 @@ class SessionGUI:
             print "No iter"
 
     def session_cb(self, data, reason, session):
-        t = str(session.__class__).replace("Session", "")
+        t = str(session.__class__.__name__).replace("Session", "")
         if "." in t:
             t = t.split(".")[2]
 
