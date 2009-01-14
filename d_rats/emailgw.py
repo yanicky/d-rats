@@ -288,7 +288,7 @@ class FormEmailService:
         self.message("Preparing to send `%s' from %s to %s" % (\
                 subj, send, recp))
 
-        if not self.config.get("settings", "smtp_dogw"):
+        if not self.config.getboolean("settings", "smtp_dogw"):
             return False, "Email form received but not configured for SMTP"
         
         try:
