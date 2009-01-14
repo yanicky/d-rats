@@ -824,6 +824,9 @@ class SessionManager:
 
         self.set_comm(pipe, **kwargs)
 
+        self._sid_counter = 0
+        self._sid_lock = threading.Lock()
+
         self.control = ControlSession()
         self._register_session(self.control, "CQCQCQ", "new,out")
 
@@ -896,14 +899,24 @@ class SessionManager:
 
         self.tport.send_frame(block)
 
-    def _register_session(self, session, dest, reason):
-        id = None
-        for _id in range(0, 256):
-            if _id not in self.sessions.keys():
-                id = _id
-                break
+    def _get_new_session_id(self):
+        self._sid_lock.acquire()
+        if self._sid_counter >= 255:
+            for id in range(0, 255):
+                if id not in self.sessions.keys():
+                    self._sid_counter = id
+        else:
+            id = self._sid_counter
+            self._sid_counter += 1
 
+        self._sid_lock.release()
+
+        return id
+
+    def _register_session(self, session, dest, reason):
+        id = self._get_new_session_id()
         if id is None:
+            # FIXME
             print "No free slots?  I can't believe it!"
 
         print "Registered session %i: %s" % (id, session.name)
