@@ -165,7 +165,7 @@ class FormRecvThread(FileBaseThread):
         def cb(status, msg):
             self.gui.chatgui.tx_msg("[EMAIL GW] %s" % msg)
 
-        if not self.gui.chatgui.config.get("settings", "smtp_server"):
+        if not self.gui.chatgui.config.get("settings", "smtp_dogw"):
             print "Not configured as a mail gateway"
             return
 

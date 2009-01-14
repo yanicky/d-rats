@@ -94,6 +94,7 @@ _DEF_SETTINGS = {
     "smtp_username" : "",
     "smtp_password" : "",
     "smtp_port" : "25",
+    "smtp_dogw" : "False",
     "sniff_packets" : "False",
 }
 
@@ -731,6 +732,10 @@ class DratsOutEmailPanel(DratsPanel):
         val = DratsConfigWidget(config, "settings", "smtp_password")
         val.add_pass()
         self.mv(_("SMTP Password"), val)
+
+        val = DratsConfigWidget(config, "settings", "smtp_dogw")
+        val.add_bool()
+        self.mv(_("Gateway"), val)
 
 class DratsInEmailPanel(DratsPanel):
     def mv(self, title, *widgets):
