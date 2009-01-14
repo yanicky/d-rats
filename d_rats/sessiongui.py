@@ -165,6 +165,14 @@ class FormRecvThread(FileBaseThread):
         def cb(status, msg):
             self.gui.chatgui.tx_msg("[EMAIL GW] %s" % msg)
 
+        if not self.gui.chatgui.config.get("settings", "smtp_server"):
+            print "Not configured as a mail gateway"
+            return
+
+        if "EMAIL" in form.get_path():
+            print "This form has already been through the internet"
+            return
+
         if not emailgw.validate_outgoing(self.gui.chatgui.config,
                                          self.session.get_station(),
                                          form.get_field_value("recipient")):
