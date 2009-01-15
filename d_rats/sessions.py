@@ -256,6 +256,8 @@ class BaseFileTransferSession:
 
         self.filename = os.path.basename(filename)
 
+        offset = None
+
         for i in range(10):
             print "Waiting for start"
             try:
@@ -268,23 +270,33 @@ class BaseFileTransferSession:
                 self.status(_("Waiting for response"))
             elif resp == "OK":
                 self.status(_("Negotiation Complete"))
+                offset = 0
+                break
+            elif resp.startswith("RESUME:"):
+                resume, _offset = resp.split(":", 1)
+                print "Got RESUME request at %s" % _offset
+                try:
+                    offset = int(_offset)
+                except Exception, e:
+                    print "Unable to parse RESUME value: %s" % e
+                    offset = 0
                 break
             else:
                 print "Got unknown start: `%s'" % resp
 
             time.sleep(2)
 
-        if resp != "OK":
-            print "Got non-OK response: %s" % resp
+        if offset is None:
+            print "Did not get start response"
             return False
 
         self.stats["total_size"] = len(data)
-        self.stats["sent_size"] = 0
+        self.stats["sent_size"] = offset
         self.stats["start_time"] = time.time()
         
         try:
             self.status("Sending")
-            self.write(data, timeout=120)
+            self.write(data[offset:], timeout=120)
         except sessionmgr.SessionClosedError:
             print "Session closed while doing write"
             pass
@@ -326,23 +338,35 @@ class BaseFileTransferSession:
         else:
             filename = dir
 
+        partfilename = filename + ".part"
+
+        if os.path.exists(partfilename):
+            data = BaseFileTransferSession.get_file_data(self, partfilename)
+            offset = os.path.getsize(partfilename)
+            print "Part file exists, resuming at %i" % offset
+        else:
+            data = ""
+            offset = 0
+
         self.status(_("Receiving file") + \
                         " %s " % name + \
                         _("of size") + \
                         " %i" % size)
-        self.stats["recv_size"] = 0
+        self.stats["recv_size"] = offset
         self.stats["total_size"] = size
         self.stats["start_time"] = time.time()
 
         try:
-            self.write("OK")
+            if offset:
+                print "Sending resume at %i" % offset
+                self.write("RESUME:%i" % offset)
+            else:
+                self.write("OK")
         except sessionmgr.SessionClosedError, e:
             print "Session closed while sending start ack"
             return None
 
         self.status(_("Waiting for first block"))
-
-        data = ""
 
         while True:
             try:
@@ -357,8 +381,12 @@ class BaseFileTransferSession:
 
         try:
             self.put_file_data(filename, data)
+            if os.path.exists(partfilename):
+                print "Removing old file part"
+                os.remove(partfilename)
         except Exception, e:
             print "Failed to write transfer data: %s" % e
+            BaseFileTransferSession.put_file_data(self, partfilename, data)
             return None
 
         if self.stats["recv_size"] != self.stats["total_size"]:
@@ -392,9 +420,13 @@ class PipelinedFileTransfer(BaseFileTransferSession, sessionmgr.PipelinedStatefu
         return zlib.compress(data, 9)
 
     def put_file_data(self, filename, data):
-        f = file(filename, "wb")
-        f.write(zlib.decompress(data))
-        f.close()
+        try:
+            f = file(filename, "wb")
+            f.write(zlib.decompress(data))
+            f.close()
+        except zlib.error, e:
+            os.remove(filename)
+            raise e
 
 class BaseFormTransferSession:
     pass
