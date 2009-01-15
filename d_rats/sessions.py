@@ -280,6 +280,7 @@ class BaseFileTransferSession:
                 except Exception, e:
                     print "Unable to parse RESUME value: %s" % e
                     offset = 0
+                self.status(_("Resuming at") + "%i" % offset)
                 break
             else:
                 print "Got unknown start: `%s'" % resp
