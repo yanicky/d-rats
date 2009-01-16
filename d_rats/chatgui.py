@@ -985,7 +985,7 @@ class MainChatGUI(ChatGUI):
 
         cc = CallCatcher(self)
         cc.show()
-        nb.append_page(cc.root, gtk.Label(_("Callsigns")))
+        nb.append_page(cc.root, gtk.Label(_("Stations")))
         self.adv_controls["calls"] = cc
 
         sg = sessiongui.SessionGUI(self)
