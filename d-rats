@@ -27,6 +27,10 @@ if __name__ == "__main__":
     o.add_option("-c", "--config",
                  dest="config",
                  help="Use alternate configuration directory")
+    o.add_option("-p", "--profile",
+                 dest="profile",
+                 action="store_true",
+                 help="Enable profiling")
     (opts, args) = o.parse_args()
 
     from d_rats import platform
@@ -37,5 +41,9 @@ if __name__ == "__main__":
     from d_rats import mainapp
 
     app = mainapp.MainApp(safe=opts.safe)
-    sys.exit(app.main())
+    if opts.profile:
+        import cProfile
+        cProfile.run('app.main()')
+    else:
+        sys.exit(app.main())
 
