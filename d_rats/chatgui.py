@@ -1478,16 +1478,30 @@ class FormManager:
             menu.set_size_request(100, -1)
             menu.popup(None, None, None, event.button, event.time)
 
+    def toggle_private(self, rend, path):
+        self.store[path][self.col_privt] = not self.store[path][self.col_privt]
+        iter = self.store.get_iter(path)
+        s, p, i, e, f, x = self.store.get(iter,
+                                          self.col_statm,
+                                          self.col_privt,
+                                          self.col_ident,
+                                          self.col_stamp,
+                                          self.col_filen,
+                                          self.col_xfert)
+        self.reg_form(i, f, e, x, s, p)
+
     def make_display(self):
         self.col_index = 0
         self.col_statm = 1
-        self.col_ident = 2
-        self.col_stamp = 3
-        self.col_filen = 4
-        self.col_xfert = 5
+        self.col_privt = 2
+        self.col_ident = 3
+        self.col_stamp = 4
+        self.col_filen = 5
+        self.col_xfert = 6
 
         self.store = gtk.ListStore(gobject.TYPE_INT,
                                    gobject.TYPE_STRING,
+                                   gobject.TYPE_BOOLEAN,
                                    gobject.TYPE_STRING,
                                    gobject.TYPE_STRING,
                                    gobject.TYPE_STRING,
@@ -1515,6 +1529,7 @@ class FormManager:
         c.set_resizable(True)
         c.set_sort_column_id(self.col_ident)
         self.view.append_column(c)
+        c.set_expand(True)
 
         r.set_property("editable", True)
         r.connect("edited", self.val_edited, self.col_ident)
@@ -1522,11 +1537,21 @@ class FormManager:
         r = gtk.CellRendererText()
         c = gtk.TreeViewColumn(_("Last Edited"), r, text=self.col_stamp)
         c.set_sort_column_id(self.col_stamp)
+        c.set_resizable(True)
         self.view.append_column(c)
 
         r = gtk.CellRendererText()
         c = gtk.TreeViewColumn(_("Last Transferred"), r, text=self.col_xfert)
         c.set_sort_column_id(self.col_xfert)
+        c.set_resizable(True)
+        self.view.append_column(c)
+
+        r = gtk.CellRendererToggle()
+        r.connect("toggled", self.toggle_private)
+        c = gtk.TreeViewColumn(_("Private"), r, active=self.col_privt)
+        c.set_resizable(True)
+        c.set_sort_column_id(self.col_privt)
+        c.set_min_width(10)
         self.view.append_column(c)
 
         self.view.connect("row-activated", self.row_clicked)
@@ -1557,7 +1582,8 @@ class FormManager:
                       filen,
                       stamp=None,
                       xfert=_("Never"),
-                      statm=_("New")):
+                      statm=_("New"),
+                      privt=False):
         if not stamp:
             stamp = self.get_stamp()
 
@@ -1571,17 +1597,21 @@ class FormManager:
                        self.col_stamp, stamp,
                        self.col_filen, filen,
                        self.col_xfert, xfert,
-                       self.col_statm, statm)
+                       self.col_statm, statm,
+                       self.col_privt, privt)
         return iter
 
     def get_forms(self):
         forms = []
         iter = self.store.get_iter_first()
         while iter:
-            forms.append(self.store.get(iter,
+            i, s, f, p = self.store.get(iter,
                                         self.col_ident,
                                         self.col_stamp,
-                                        self.col_filen))
+                                        self.col_filen,
+                                        self.col_privt)
+            if not p:
+                forms.append((i, s, f))
             iter = self.store.iter_next(iter)
 
         return forms
@@ -1830,11 +1860,14 @@ class FormManager:
         self.reg.write(f)
         f.close()
 
-    def reg_form(self, id, file, editstamp, xferstamp=_("Never"), status=_("New")):
+    def reg_form(self, id, file, editstamp, xferstamp=_("Never"), status=_("New"), private=None):
         sec = os.path.basename(file)
 
         if not self.reg.has_section(sec):
             self.reg.add_section(sec)
+
+        if private is None:
+            private = self.config.getboolean("prefs", "form_default_private")
 
         try :
             self.reg.set(sec, "id", id)
@@ -1842,12 +1875,14 @@ class FormManager:
             self.reg.set(sec, "editstamp", editstamp)
             self.reg.set(sec, "xferstamp", xferstamp)
             self.reg.set(sec, "status", status)
+            self.reg.set(sec, "private", private)
+                         
             self.reg_save()
         except Exception, e:
             print "Failed to register new form: %s" % e
             return
 
-        self.list_add_form(0, id, file, editstamp, xferstamp, status)
+        self.list_add_form(0, id, file, editstamp, xferstamp, status, private)
 
     def unreg_form(self, file):
         sec = os.path.basename(file)
@@ -1868,9 +1903,12 @@ class FormManager:
                 try:
                     statm = self.reg.get(i, "status")
                     xfert = self.reg.get(i, "xferstamp")
+                    privt = self.reg.getboolean(i, "private")
                 except:
                     statm = _("New")
-                self.list_add_form(0, id, filename, stamp, xfert, statm)
+                    xfert = _("Never")
+                    privt = False
+                self.list_add_form(0, id, filename, stamp, xfert, statm, privt)
             except Exception, e:
                 print "Failed to load form: %s" % e
                 self.reg.remove_section(i)
