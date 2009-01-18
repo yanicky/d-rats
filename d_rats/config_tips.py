@@ -9,6 +9,8 @@ TIPS_USER = {
 TIPS_PREFS = {
     "useutc" : _("When enabled, form time fields will default to current time in UTC.  When disabled, default to local time"),
     "language" : _("Requires a D-RATS restart"),
+    "allow_remote_forms" : _("Allow remote stations to pull forms"),
+    "allow_remote_files" : _("Allow remote stations to pull files"),
     }
 
 TIPS_SETTINGS = {

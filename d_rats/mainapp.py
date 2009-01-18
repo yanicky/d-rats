@@ -63,7 +63,7 @@ import rpcsession
 from utils import hexprint,filter_to_ascii,NetFile
 import qst
 
-DRATS_VERSION = "0.2.10b1"
+DRATS_VERSION = "0.2.10b4"
 LOGTF = "%m-%d-%Y_%H:%M:%S"
 
 MAINAPP = None
@@ -204,16 +204,31 @@ class MainApp:
         
         result = {"rc" : "Failed: unsupported"}
 
+        allow_forms = self.config.getboolean("prefs", "allow_remote_forms")
+        allow_files = self.config.getboolean("prefs", "allow_remote_files")
+
         if isinstance(job, rpcsession.RPCPositionReport):
             result = rpcsession.RPC_pos_report(job, self)
         elif isinstance(job, rpcsession.RPCFileListJob):
-            result = rpcsession.RPC_file_list(job, self)
+            if allow_files:
+                result = rpcsession.RPC_file_list(job, self)
+            else:
+                result = {"rc" : "Access denied"}
         elif isinstance(job, rpcsession.RPCPullFileJob):
-            result = rpcsession.RPC_file_pull(job, self)
+            if allow_files:
+                result = rpcsession.RPC_file_pull(job, self)
+            else:
+                result = {"rc" : "Access denied"}
         elif isinstance(job, rpcsession.RPCFormListJob):
-            result = rpcsession.RPC_form_list(job, self)
+            if allow_forms:
+                result = rpcsession.RPC_form_list(job, self)
+            else:
+                result = {"rc" : "Access denied"}
         elif isinstance(job, rpcsession.RPCPullFormJob):
-            result = rpcsession.RPC_form_pull(job, self)
+            if allow_forms:
+                result = rpcsession.RPC_form_pull(job, self)
+            else:
+                result = {"rc" : "Access denied"}
 
         job.set_state("complete", result)
 

@@ -64,6 +64,8 @@ _DEF_PREFS = {
     "restore_stations" : "True",
     "useutc" : "False",
     "language" : "English",
+    "allow_remote_forms" : "False",
+    "allow_remote_files" : "False",
 }
 
 _DEF_SETTINGS = {
@@ -566,6 +568,8 @@ class DratsRadioPanel(DratsPanel):
         self.mv(_("Sniff packets"), val)
 
 class DratsTransfersPanel(DratsPanel):
+    LW = 150
+
     def __init__(self, config):
         DratsPanel.__init__(self, config)
 
@@ -580,6 +584,14 @@ class DratsTransfersPanel(DratsPanel):
         val = DratsConfigWidget(config, "settings", "pipelinexfers")
         val.add_bool()
         self.mv(_("Pipeline transfers"), val)
+
+        val = DratsConfigWidget(config, "prefs", "allow_remote_forms")
+        val.add_bool()
+        self.mv(_("Remote form transfers"), val)
+
+        val = DratsConfigWidget(config, "prefs", "allow_remote_files")
+        val.add_bool()
+        self.mv(_("Remote file transfers"), val)
 
 class DratsTuningPanel(DratsPanel):
     LW = 200
