@@ -1654,9 +1654,17 @@ class FormManager:
             return
 
         (list, iter) = self.view.get_selection().get_selected()
-        (filename, name) = self.store.get(iter, self.col_filen, self.col_ident)
+        (filename, name, stamp) = self.store.get(iter,
+                                                 self.col_filen,
+                                                 self.col_ident,
+                                                 self.col_stamp)
 
         self.gui.adv_controls["sessions"].send_form(dest, filename, name)
+
+        xstamp = self.get_stamp()
+        self.reg_form(name, filename, stamp, xferstamp=xstamp)
+        self.store.set(iter,
+                       self.col_xfert, xstamp)
 
     def open(self, widget, data=None):
         (list, iter) = self.view.get_selection().get_selected()
