@@ -2141,9 +2141,9 @@ class CallCatcher:
 
             try:
                 if now:
-                    self.mainapp.seen_callsigns.set_call_time(time.time())
+                    self.mainapp.seen_callsigns.set_call_time(call, time.time())
                 else:
-                    self.mainapp.seen_callsigns.set_call_time(0)
+                    self.mainapp.seen_callsigns.set_call_time(call, 0)
             except Exception, e:
                 pass
 
