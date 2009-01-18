@@ -213,11 +213,6 @@ class FormRecvThread(FileBaseThread):
                         fn,
                         _("Never"),
                         fm.get_stamp())
-            fm.list_add_form(0,
-                             name,
-                             fn,
-                             stamp=_("Never"),
-                             xfert=fm.get_stamp())
 
             print "Registering form %s" % fn
             self.completed("form")

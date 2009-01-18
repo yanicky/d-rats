@@ -170,11 +170,6 @@ class MailThread(threading.Thread):
                          ffn,
                          "Never",
                          manager.get_stamp())
-        manager.list_add_form(0,
-                              form_name,
-                              ffn,
-                              stamp="Never",
-                              xfert="Never")
         manager.gui.display_line("Email '%s' received from '%s'" % (\
                 subject, sender), "italic")
 

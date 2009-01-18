@@ -1541,6 +1541,16 @@ class FormManager:
 
         return sw
 
+    def iter_for_form_file(self, filen):
+        iter = self.store.get_iter_first()
+        while iter:
+            _filen, = self.store.get(iter, self.col_filen)
+            if filen == _filen:
+                break
+            iter = self.store.iter_next(iter)
+
+        return iter
+
     def list_add_form(self,
                       index,
                       ident,
@@ -1551,7 +1561,10 @@ class FormManager:
         if not stamp:
             stamp = self.get_stamp()
 
-        iter = self.store.append()
+        iter = self.iter_for_form_file(filen)
+        if not iter:
+            iter = self.store.append()
+
         self.store.set(iter,
                        self.col_index, index,
                        self.col_ident, ident,
@@ -1620,13 +1633,14 @@ class FormManager:
 
         stamp = self.get_stamp()
 
-        iter = self.list_add_form(0, formid, newfn, stamp)
         self.reg_form(formid, newfn, stamp)
 
         if r == 999:
-            path = self.store.get_path(iter)
-            self.view.set_cursor(path)
-            self.send(widget)
+            iter = self.iter_for_form_file(newfn)
+            if iter:
+                path = self.store.get_path(iter)
+                self.view.set_cursor(path)
+                self.send(widget)
 
     def delete(self, widget, data=None):
         d = YesNoDialog(parent=self.gui.window,
@@ -1750,7 +1764,6 @@ class FormManager:
 
         stamp = self.get_stamp()
 
-        self.list_add_form(0, oform.id, newfn, stamp)
         self.reg_form(oform.id, newfn, stamp)        
 
     def do_email(self, iter):
@@ -1832,6 +1845,9 @@ class FormManager:
             self.reg_save()
         except Exception, e:
             print "Failed to register new form: %s" % e
+            return
+
+        self.list_add_form(0, id, file, editstamp, xferstamp, status)
 
     def unreg_form(self, file):
         sec = os.path.basename(file)
