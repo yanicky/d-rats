@@ -419,7 +419,7 @@ class DratsPrefsPanel(DratsPanel):
         DratsPanel.__init__(self, config)
 
         val = DratsConfigWidget(config, "user", "callsign")
-        val.add_upper_text()
+        val.add_upper_text(8)
         self.mv(_("Callsign"), val)
 
         val = DratsConfigWidget(config, "user", "name")
