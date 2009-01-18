@@ -11,6 +11,7 @@ TIPS_PREFS = {
     "language" : _("Requires a D-RATS restart"),
     "allow_remote_forms" : _("Allow remote stations to pull forms"),
     "allow_remote_files" : _("Allow remote stations to pull files"),
+    "form_default_private" : _("Default state for private flag on new forms"),
     }
 
 TIPS_SETTINGS = {

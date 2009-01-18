@@ -66,6 +66,7 @@ _DEF_PREFS = {
     "language" : "English",
     "allow_remote_forms" : "False",
     "allow_remote_files" : "False",
+    "form_default_private" : "False",
 }
 
 _DEF_SETTINGS = {
@@ -452,6 +453,10 @@ class DratsPrefsPanel(DratsPanel):
         val = DratsConfigWidget(config, "prefs", "language")
         val.add_combo(["English", "Italiano"])
         self.mv(_("Language"), val)
+
+        val = DratsConfigWidget(config, "prefs", "form_default_private")
+        val.add_bool()
+        self.mv(_("Private default"), val)
 
 class DratsPathsPanel(DratsPanel):
     LW = 150
