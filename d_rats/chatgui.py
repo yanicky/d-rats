@@ -55,6 +55,10 @@ def log_job_state(job, state, result, gui):
     print msg
 
 def _show_object_list(job, result, gui, jobtype):
+    if len(result.keys()) == 1 and "rc" in result.keys():
+        log_job_state(job, "complete", result, gui)
+        return
+
     d = reqobject.RequestRemoteObjectUI(gui.mainapp.rpc_session,
                                         job.get_dest(),
                                         gui.window)
