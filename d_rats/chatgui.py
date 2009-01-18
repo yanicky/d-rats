@@ -67,8 +67,10 @@ def _show_object_list(job, result, gui, jobtype):
         items.append((k,v))
     d.set_objects(items)
     r = d.run()
-    if r == gtk.RESPONSE_OK:
-        to_req = d.get_selected_item()
+    to_req = d.get_selected_item()
+    d.destroy()
+
+    if to_req and r == gtk.RESPONSE_OK:
         newjob = jobtype(job.get_dest(), "Request %s" % to_req)
 
         if jobtype == rpcsession.RPCPullFileJob:
@@ -78,8 +80,6 @@ def _show_object_list(job, result, gui, jobtype):
 
         newjob.connect("state-change", log_job_state, gui)
         gui.mainapp.rpc_session.submit(newjob)
-
-    d.destroy()
 
 def show_file_list(job, state, result, gui):
     if state != "complete":
