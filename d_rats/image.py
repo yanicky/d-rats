@@ -110,10 +110,10 @@ def build_image_dialog(filename, image, dlgParent=None):
 
     return d
 
-def send_image(dlgParent=None):
+def send_image(start_dir, dlgParent=None):
     p = platform.get_platform()
 
-    f = p.gui_open_file()
+    f = p.gui_open_file(start_dir)
     if not f:
         return
 

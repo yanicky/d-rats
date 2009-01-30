@@ -769,7 +769,8 @@ class MainChatGUI(ChatGUI):
             if s:
                 self.mainapp.chat_session.ping_station(s)
         elif action == "isend":
-            f = image.send_image()
+            ddir = self.config.get("prefs", "download_dir")
+            f = image.send_image(ddir)
             if f:
                 self.do_file_transfer(True, f)
         elif action == "debug":
