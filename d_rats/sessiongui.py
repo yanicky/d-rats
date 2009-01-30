@@ -129,7 +129,7 @@ class FileBaseThread(SessionThread):
                     "italic")
 
     def failed(self, reason=None):
-        s = _("Transfer Failed")
+        s = _("Transfer Interrupted")
         if reason:
             s += " " + reason
 
