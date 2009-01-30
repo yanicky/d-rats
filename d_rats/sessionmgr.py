@@ -409,6 +409,9 @@ class StatefulSession(Session):
         if isinstance(self.outstanding, list):
             for b in self.outstanding:
                 b.sent_event.set()
+                b.sent_event.clear()
+                b.ackd_event.set()
+                
         elif self.outstanding:
             b.sent_event.set()                
 
@@ -619,10 +622,10 @@ class StatefulSession(Session):
             if block.sent_event.isSet():
                 print "Block %i is sent, waiting for ack" % block.seq
                 block.ackd_event.wait(timeout)
-                if block.ackd_event.isSet():
+                if block.ackd_event.isSet() and block.sent_event.isSet():
                     print "%i ACKED" % block.seq
                 else:
-                    print "%i Not ACKED" % block.seq
+                    print "%i Not ACKED (probably canceled)" % block.seq
                     break
             else:
                 print "Block %i not sent?" % block.seq
