@@ -706,15 +706,15 @@ class MainChatGUI(ChatGUI):
         self.toggle_sendable(True)
         
     def do_file_transfer(self, send, fname=None):
-        station = prompt_for_station(self.window)
-        if not station:
-            return
-
         if not fname:
             ddir = self.config.get("prefs", "download_dir")
             fname = self.config.platform.gui_open_file(ddir)
             if not fname:
                 return
+
+        station = prompt_for_station(self.window)
+        if not station:
+            return
 
         print "Going to request file send of %s to %s" % (fname, station)
         self.adv_controls["sessions"].send_file(station, fname)
