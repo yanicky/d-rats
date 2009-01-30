@@ -36,9 +36,12 @@ def gui_display(gui, *args):
     gobject.idle_add(gui.display_line, *args)
 
 class SessionThread:
+    OUTGOING = False
+
     def __init__(self, session, data, gui):
         self.enabled = True
         self.session = session
+        self.arg = data
         self.gui = gui
 
         self.thread = threading.Thread(target=self.worker, args=(data,))
@@ -89,6 +92,8 @@ class FileBaseThread(SessionThread):
 
         msg = "%s [%02.0f%%]%s%s%s" % (vals["msg"], pct, speed, sent, retries)
 
+        self.pct_complete = pct
+
         gobject.idle_add(self.gui.update,
                          self.session._id,
                          msg)
@@ -135,6 +140,8 @@ class FileBaseThread(SessionThread):
     def __init__(self, *args):
         SessionThread.__init__(self, *args)
 
+        self.pct_complete = 0.0
+
         self.session.status_cb = self.status_cb
 
 class FileRecvThread(FileBaseThread):
@@ -148,6 +155,7 @@ class FileRecvThread(FileBaseThread):
             self.failed()
 
 class FileSendThread(FileBaseThread):
+    OUTGOING = True
     progress_key = "sent_size"
 
     def worker(self, path):
@@ -222,6 +230,7 @@ class FormRecvThread(FileBaseThread):
             print "<--- Form transfer failed -->"
 
 class FormSendThread(FileBaseThread):
+    OUTGOING = True
     progress_key = "sent_size"
 
     def worker(self, path):
@@ -335,6 +344,11 @@ class SessionGUI:
 
     def clear_selected_session(self):
         (list, iter) = self.view.get_selection().get_selected()
+
+        id, = list.get(iter, 0)
+        if self.sthreads_resume.has_key(abs(id)):
+            del self.sthreads_resume[abs(id)]
+
         list.remove(iter)
 
     def clear_all_finished_sessions(self):
@@ -348,6 +362,42 @@ class SessionGUI:
                 self.store.remove(iter)
             iter = tmp
 
+    def stop_selected_session(self):
+        (list, iter) = self.view.get_selection().get_selected()
+        id, = list.get(iter, 0)
+        
+        if not self.sthreads.has_key(id):
+            print "Aiee!  Stop session with no thread?"
+            return
+
+        self.sthreads_resume[id] = self.sthreads[id]
+        del self.sthreads[id]        
+
+        self.cancel_selected_session()
+
+    def resume_selected_session(self):
+        (list, iter) = self.view.get_selection().get_selected()
+        id = abs(list.get(iter, 0)[0])
+
+        if not self.sthreads_resume.has_key(id):
+            print "Aiee!  Can't resume a running session!"
+            return
+
+        sthread = self.sthreads_resume[id]
+
+        dest = sthread.session._st
+        name = sthread.session.name
+        sobj = sthread.arg
+
+        if isinstance(sthread.session, sessions.BaseFileTransferSession):
+            self.send_file(dest, sobj)
+        elif isinstance(sthread.session, sessions.BaseFormTransferSession):
+            self.send_form(dest, sobj, name)
+        else:
+            print "Unable to resume this session type!"
+
+        self.store.remove(iter)
+
     def mh(self, _action):
         action = _action.get_name()
 
@@ -359,6 +409,10 @@ class SessionGUI:
             self.clear_selected_session()
         elif action == "clearall":
             self.clear_all_finished_sessions()
+        elif action == "stop":
+            self.stop_selected_session()
+        elif action == "resume":
+            self.resume_selected_session()
 
     def make_menu(self):
         (list, iter) = self.view.get_selection().get_selected()
@@ -370,6 +424,9 @@ class SessionGUI:
     <menuitem action="forcecancel"/>
     <menuitem action="clear"/>
     <menuitem action="clearall"/>
+    <separator/>
+    <menuitem action="stop"/>
+    <menuitem action="resume"/>
   </popup>
 </ui>
 """
@@ -392,10 +449,19 @@ class SessionGUI:
         clearall.connect("activate", self.mh)
         ag.add_action(clearall)
 
+        resume = gtk.Action("resume", _("Resume transfer"), None, None)
+        resume.connect("activate", self.mh)
+        ag.add_action(resume)
+
+        stop = gtk.Action("stop", _("Stop transfer"), None, None)
+        stop.connect("activate", self.mh)
+        ag.add_action(stop)
+
         if iter:
-            id = list.get(iter, 0)[0]
+            id, stype = list.get(iter, 0, 2)
         else:
             id = None
+            type = None
 
         if id is None:
             cancel.set_sensitive(False)
@@ -407,6 +473,21 @@ class SessionGUI:
             fcancel.set_sensitive(False)
         else:
             clear.set_sensitive(False)
+
+        if "FileTransfer" not in stype and "FormTransfer" not in stype:
+            stop.set_visible(False)
+            resume.set_visible(False)
+        else:
+            thread = self.sthreads.get(id, None)
+            if thread and not thread.OUTGOING:
+                stop.set_visible(False)
+                resume.set_visible(False)
+
+            if id > 0:
+                resume.set_sensitive(False)
+            else:
+                stop.set_sensitive(False)
+                clear.set_sensitive(True)
 
         if id is not None and id < 2:
             cancel.set_sensitive(False)
@@ -641,10 +722,18 @@ class SessionGUI:
     def end_session(self, id):
         print "session ended"
         iter = self.iter_of(0, id)
-        if iter:
+        if not iter:
+            print "No iter of session at death"
+            return
+
+
+        if self.sthreads.has_key(id):
+            del self.sthreads[id]
             self.store.remove(iter)
-        else:
-            print "No iter"
+        elif self.sthreads_resume.has_key(id):
+            sthread = self.sthreads_resume[id]
+            msg = "Stopped (%02.0f%% complete)" % sthread.pct_complete
+            self.store.set(iter, 0, 0 - id, 4, msg)
 
     def session_cb(self, data, reason, session):
         t = str(session.__class__.__name__).replace("Session", "")
@@ -658,7 +747,10 @@ class SessionGUI:
         elif reason == "end":
             self.end_session(session._id)
 
-    def send_file(self, dest, filename):
+    def send_file(self, dest, filename, name=None):
+        if name is None:
+            name = os.path.basename(filename)
+
         self.outgoing_files.insert(0, filename)
         print "Outgoing files: %s" % self.outgoing_files
 
@@ -671,7 +763,7 @@ class SessionGUI:
         ol = self.mainapp.config.getint("settings", "ddt_block_outlimit")
 
         t = threading.Thread(target=self.mainapp.sm.start_session,
-                             kwargs={"name"      : os.path.basename(filename),
+                             kwargs={"name"      : name,
                                      "dest"      : dest,
                                      "cls"       : xfer,
                                      "blocksize" : bs,
@@ -701,6 +793,7 @@ class SessionGUI:
         self.build_gui()
 
         self.sthreads = {}
+        self.sthreads_resume = {}
         self.registered = False
 
         self.outgoing_files = []
