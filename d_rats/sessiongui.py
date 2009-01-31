@@ -129,7 +129,8 @@ class FileBaseThread(SessionThread):
                     "italic")
 
     def failed(self, reason=None):
-        s = _("Transfer Interrupted")
+        s = _("Transfer Interrupted") + \
+            " (%.0f%% complete)" % self.pct_complete
         if reason:
             s += " " + reason
 
@@ -362,6 +363,10 @@ class SessionGUI:
                 self.store.remove(iter)
             iter = tmp
 
+    def session_thread_stopped(self, id):
+        self.sthreads_resume[id] = self.sthreads[id]
+        del self.sthreads[id]        
+
     def stop_selected_session(self):
         (list, iter) = self.view.get_selection().get_selected()
         id, = list.get(iter, 0)
@@ -369,9 +374,8 @@ class SessionGUI:
         if not self.sthreads.has_key(id):
             print "Aiee!  Stop session with no thread?"
             return
-
-        self.sthreads_resume[id] = self.sthreads[id]
-        del self.sthreads[id]        
+        
+        self.session_thread_stopped(id)
 
         self.cancel_selected_session()
 
@@ -726,13 +730,21 @@ class SessionGUI:
             print "No iter of session at death"
             return
 
-
         if self.sthreads.has_key(id):
-            del self.sthreads[id]
-            self.store.remove(iter)
+            sthread = self.sthreads[id]
+            session = sthread.session
+            if isinstance(session, sessions.BaseFileTransferSession) and \
+                    session.stats["sent_size"] > 0 and \
+                    session.stats["sent_size"] != session.stats["total_size"]:
+                self.session_thread_stopped(id)
+                msg = "Interrupted (%.0f%% complete)" % sthread.pct_complete
+                self.store.set(iter, 0, 0 - id, 4, msg)
+            else:
+                del self.sthreads[id]
+                self.store.remove(iter)
         elif self.sthreads_resume.has_key(id):
             sthread = self.sthreads_resume[id]
-            msg = "Stopped (%02.0f%% complete)" % sthread.pct_complete
+            msg = "Stopped (%.0f%% complete)" % sthread.pct_complete
             self.store.set(iter, 0, 0 - id, 4, msg)
 
     def session_cb(self, data, reason, session):
