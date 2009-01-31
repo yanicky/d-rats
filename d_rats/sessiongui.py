@@ -341,6 +341,8 @@ class SessionGUI:
             print "Session `%i' not found: %s" % (id, e)
             return        
 
+        if self.sthreads.has_key(id):
+            del self.sthreads[id]
         session.close(force)
 
     def clear_selected_session(self):
@@ -747,6 +749,8 @@ class SessionGUI:
             sthread = self.sthreads_resume[id]
             msg = "Stopped (%.0f%% complete)" % sthread.pct_complete
             self.store.set(iter, 0, 0 - id, 4, msg)
+        else:
+            self.store.remove(iter)
 
     def session_cb(self, data, reason, session):
         t = str(session.__class__.__name__).replace("Session", "")
