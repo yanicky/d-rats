@@ -420,13 +420,13 @@ class PipelinedFileTransfer(BaseFileTransferSession, sessionmgr.PipelinedStatefu
 
         return zlib.compress(data, 9)
 
-    def put_file_data(self, filename, data):
+    def put_file_data(self, filename, zdata):
         try:
+            data = zlib.decompress(zdata)
             f = file(filename, "wb")
-            f.write(zlib.decompress(data))
+            f.write(data)
             f.close()
         except zlib.error, e:
-            os.remove(filename)
             raise e
 
 class BaseFormTransferSession:
