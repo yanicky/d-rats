@@ -734,6 +734,7 @@ class SessionGUI:
             sthread = self.sthreads[id]
             session = sthread.session
             if isinstance(session, sessions.BaseFileTransferSession) and \
+                    sthread.OUTGOING and \
                     session.stats["sent_size"] > 0 and \
                     session.stats["sent_size"] != session.stats["total_size"]:
                 self.session_thread_stopped(id)
