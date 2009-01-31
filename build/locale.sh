@@ -1,7 +1,12 @@
 #!/bin/bash
 
 MASTER_FILE=locale/en/LC_MESSAGES/D-RATS.pot
-FILES=$(hg status -nmca d_rats | grep '\.py$')
+
+if [ -d .hg ]; then
+    FILES=$(hg status -nmca d_rats | grep '\.py$')
+else
+    FILES=$(find d_rats -name '*.py')
+fi
 
 echo "Generating master translation file..."
 mkdir -p $(dirname $MASTER_FILE)
