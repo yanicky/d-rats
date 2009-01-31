@@ -393,10 +393,10 @@ class SessionGUI:
         name = sthread.session.name
         sobj = sthread.arg
 
-        if isinstance(sthread.session, sessions.BaseFileTransferSession):
-            self.send_file(dest, sobj)
-        elif isinstance(sthread.session, sessions.BaseFormTransferSession):
+        if isinstance(sthread.session, sessions.BaseFormTransferSession):
             self.send_form(dest, sobj, name)
+        elif isinstance(sthread.session, sessions.BaseFileTransferSession):
+            self.send_file(dest, sobj)
         else:
             print "Unable to resume this session type!"
 
