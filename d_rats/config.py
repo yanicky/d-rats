@@ -384,21 +384,29 @@ class DratsListConfigWidget(DratsConfigWidget):
             self.config.set(self.vsec, label, value)
             count += 1
 
-class DratsPanel(gtk.VBox):
-    LW = 100
+class DratsPanel(gtk.Table):
+    INITIAL_ROWS = 13
+    INITIAL_COLS = 2
 
     def __init__(self, config):
-        gtk.VBox.__init__(self, False, 2)
+        gtk.Table.__init__(self, self.INITIAL_ROWS, self.INITIAL_COLS)
         self.config = config
         self.vals = []
 
+        self.row = 0
+        self.rows = self.INITIAL_ROWS
+
     def mv(self, title, *args):
+        if self.row+1 == self.rows:
+            self.rows += 1
+            print "Resizing box to %i" % self.rows
+            self.resize(self.rows, 2)
+
         hbox = gtk.HBox(False, 2)
 
         lab = gtk.Label(title)
-        lab.set_size_request(self.LW, -1)
         lab.show()
-        hbox.pack_start(lab, 0, 0, 0)
+        self.attach(lab, 0, 1, self.row, self.row+1, gtk.SHRINK, gtk.SHRINK, 5)
 
         for i in args:
             i.show()
@@ -412,7 +420,9 @@ class DratsPanel(gtk.VBox):
                 hbox.pack_start(i, 0, 0, 0)
 
         hbox.show()
-        self.pack_start(hbox, 0, 0, 0)
+        self.attach(hbox, 1, 2, self.row, self.row+1, yoptions=gtk.SHRINK)
+
+        self.row += 1
 
 class DratsPrefsPanel(DratsPanel):
     def __init__(self, config):
@@ -459,8 +469,6 @@ class DratsPrefsPanel(DratsPanel):
         self.mv(_("Private default"), val)
 
 class DratsPathsPanel(DratsPanel):
-    LW = 150
-
     def __init__(self, config):
         DratsPanel.__init__(self, config)
 
@@ -573,8 +581,6 @@ class DratsRadioPanel(DratsPanel):
         self.mv(_("Sniff packets"), val)
 
 class DratsTransfersPanel(DratsPanel):
-    LW = 150
-
     def __init__(self, config):
         DratsPanel.__init__(self, config)
 
@@ -599,8 +605,6 @@ class DratsTransfersPanel(DratsPanel):
         self.mv(_("Remote file transfers"), val)
 
 class DratsTuningPanel(DratsPanel):
-    LW = 200
-
     def __init__(self, config):
         DratsPanel.__init__(self, config)
 
@@ -620,8 +624,10 @@ class DratsNetworkPanel(DratsPanel):
     pass
 
 class DratsTCPPanel(DratsPanel):
+    INITIAL_ROWS = 2
+
     def mv(self, title, *widgets):
-        self.pack_start(widgets[0], 1, 1, 1)
+        self.attach(widgets[0], 0, 2, 0, 1)
         widgets[0].show()
 
         if len(widgets) > 1:
@@ -632,7 +638,7 @@ class DratsTCPPanel(DratsPanel):
                 i.show()
 
             box.show()
-            self.pack_start(box, 0, 0, 0)
+            self.attach(box, 0, 2, 1, 2, yoptions=gtk.SHRINK)
 
     def but_rem(self, button, lw):
         lw.del_item(lw.get_selected())
@@ -755,8 +761,10 @@ class DratsOutEmailPanel(DratsPanel):
         self.mv(_("Gateway"), val)
 
 class DratsInEmailPanel(DratsPanel):
+    INITIAL_ROWS = 2
+
     def mv(self, title, *widgets):
-        self.pack_start(widgets[0], 1, 1, 1)
+        self.attach(widgets[0], 0, 2, 0, 1)
         widgets[0].show()
 
         if len(widgets) > 1:
@@ -767,7 +775,7 @@ class DratsInEmailPanel(DratsPanel):
                 i.show()
 
             box.show()
-            self.pack_start(box, 0, 0, 0)
+            self.attach(box, 0, 2, 1, 2, yoptions=gtk.SHRINK)
 
     def but_rem(self, button, lw):
         lw.del_item(lw.get_selected())
@@ -905,8 +913,10 @@ class DratsInEmailPanel(DratsPanel):
         self.mv(_("Incoming Accounts"), val, add, edit, rem)
 
 class DratsEmailAccessPanel(DratsPanel):
+    INITIAL_ROWS = 2
+
     def mv(self, title, *widgets):
-        self.pack_start(widgets[0], 1, 1, 1)
+        self.attach(widgets[0], 0, 2, 0, 1)
         widgets[0].show()
 
         if len(widgets) > 1:
@@ -917,7 +927,7 @@ class DratsEmailAccessPanel(DratsPanel):
                 i.show()
 
             box.show()
-            self.pack_start(box, 0, 0, 0)
+            self.attach(box, 0, 2, 1, 2, yoptions=gtk.SHRINK)
 
     def but_rem(self, button, lw):
         lw.del_item(lw.get_selected())
