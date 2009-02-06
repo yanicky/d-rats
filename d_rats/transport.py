@@ -33,6 +33,11 @@ class BlockQueue:
         self._queue.insert(0, block)
         self._lock.release()
 
+    def requeue(self, block):
+        self._lock.acquire()
+        self._queue.append(block)
+        self._lock.release()
+
     def dequeue(self):
         self._lock.acquire()
         try:

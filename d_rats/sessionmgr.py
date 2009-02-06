@@ -661,6 +661,11 @@ class PipelinedStatefulSession(StatefulSession):
         for i in range(count):
             b = self.outq.dequeue()
             if b:
+                if b.seq == 0 and self.outstanding:
+                    print "### Pausing at rollover boundary ###"
+                    self.outq.requeue(b)
+                    break
+
                 print "Queuing %i for send (%i)" % (b.seq, count)
                 self.outstanding.append(b)
                 self.ts = 0
@@ -672,6 +677,7 @@ class PipelinedStatefulSession(StatefulSession):
         f = DDT2EncodedFrame()
         f.seq = 0
         f.type = self.T_REQACK
+        # FIXME: This needs to support 16-bit block numbers!
         f.data = "".join([chr(x) for x in blocks])
 
         print "Requesting ack of blocks %s" % blocks
@@ -749,6 +755,7 @@ class PipelinedStatefulSession(StatefulSession):
         blocks.reverse()
 
         def next(i):
+            # FIXME: For 16 bit blocks
             return (i + 1) % 256
 
         def enqueue(_block):
@@ -773,6 +780,13 @@ class PipelinedStatefulSession(StatefulSession):
                         print "Block %i outstanding, but not acked" % block.seq
             elif b.type == self.T_DAT:
                 print "Got block %i" % b.seq
+                # FIXME: For 16-bit blocks
+                if b.seq == 0 and self.iseq == 255:
+                    # Reset received list, because remote will only send
+                    # a block 0 following a block 255 if it has received
+                    # our ack of the previous 0-255
+                    self.recv_list = []
+
                 if b.seq not in self.recv_list:
                     self.recv_list.append(b.seq)
                     self.stats["recv_size"] += len(b.data)
@@ -780,6 +794,7 @@ class PipelinedStatefulSession(StatefulSession):
             elif b.type == self.T_REQACK:
                 toack = []
 
+                # FIXME: This needs to support 16-bit block numbers!
                 for i in [ord(x) for x in b.data]:
                     if i in self.recv_list:
                         print "Acking block %i" % i
