@@ -230,7 +230,10 @@ class DratsConfigWidget(gtk.VBox):
 
         self.pack_start(w, 1, 1, 1)
 
-    def add_bool(self, label=_("Enabled")):
+    def add_bool(self, label=None):
+        if label is None:
+            label = _("Enabled")
+
         def toggled(but, confwidget):
             confwidget.value = str(but.get_active())
             
