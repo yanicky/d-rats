@@ -1,5 +1,8 @@
 import sys
 
+from d_rats.mainapp import DRATS_VERSION
+import os
+
 def win32_build():
     from distutils.core import setup
     import py2exe
@@ -40,10 +43,12 @@ def win32_build():
 
 def macos_build():
     from setuptools import setup
+    import shutil
 
-    APP = ['d-rats.py']
+    APP = ['d-rats-%s.py' % DRATS_VERSION]
+    shutil.copy("d-rats", APP[0])
     DATA_FILES = [('../Frameworks',
-                   ['/opt/local/lib/libpangox-1.0.0.2002.3.dylib']),
+                   ['/opt/local/lib/libpangox-1.0.0.2203.1.dylib']),
                   ('../Resources/pango/1.6.0/modules', ['/opt/local/lib/pango/1.6.0/modules/pango-basic-atsui.so']),
                   ('../Resources',
                    ['images']),
@@ -59,9 +64,7 @@ def macos_build():
 
 def default_build():
     from distutils.core import setup
-    from d_rats.mainapp import DRATS_VERSION
     from glob import glob
-    import os
 
     desktop_files = glob("share/*.desktop")
     form_files = glob("forms/*.x?l")
