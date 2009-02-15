@@ -138,20 +138,6 @@ class Platform:
 
         return 0, data
 
-def _unix_editor():
-    macos_textedit = "/Applications/TextEdit.app/Contents/MacOS/TextEdit"
-
-    if os.path.exists(macos_textedit):
-        return macos_textedit
-    else:
-        return "gedit"
-
-def _unix_browser():
-    if sys.platform == "darwin":
-        return "open"
-    else:
-        return "firefox"
-
 class UnixPlatform(Platform):
     def __init__(self, basepath):
         if not basepath:
@@ -175,24 +161,24 @@ class UnixPlatform(Platform):
     def filter_filename(self, filename):
         return filename.replace("/", "")
 
-    def open_text_file(self, path):
+    def _unix_doublefork_run(self, *args):
         pid1 = os.fork()
         if pid1 == 0:
             pid2 = os.fork()
             if pid2 == 0:
-                editor = _unix_editor()
-                print "calling `%s %s'" % (editor, path)
-                os.execlp(editor, editor, path)
+                print "Exec'ing %s" % str(args)
+                os.execlp(args[0], *args)
             else:
                 sys.exit(0)
         else:
             os.waitpid(pid1, 0)
             print "Exec child exited"
 
+    def open_text_file(self, path):
+        self._unix_doublefork_run("gedit", path)
+
     def open_html_file(self, path):
-        cmd = "%s '%s'" % (_unix_browser(), path)
-        print "Calling `%s' to open html" % cmd
-        os.system(cmd)
+        self._unix_doublefork_run("firefox", path)
 
     def list_serial_ports(self):
         return sorted(glob.glob("/dev/ttyS*") + glob.glob("/dev/ttyUSB*"))
@@ -211,6 +197,33 @@ class UnixPlatform(Platform):
 
     def run_sync(self, command):
         return commands.getstatusoutput(command)
+
+class MacOSXPlatform(UnixPlatform):
+    def __init__(self, basepath):
+        # We need to make sure DISPLAY is set
+        if not os.environ.has_key("DISPLAY"):
+            print "Forcing DISPLAY for MacOS"
+            os.environ["DISPLAY"] = ":0"
+
+        os.environ["PANGO_RC_FILE"] = "../Resources/etc/pango/pangorc"
+
+        UnixPlatform.__init__(self, basepath)
+
+    def open_html_file(self, path):
+        self._unix_doublefork_run("open", path)
+
+    def open_text_file(self, path):
+        macos_textedit = "/Applications/TextEdit.app/Contents/MacOS/TextEdit"
+        self._unix_doublefork_run(macos_textedit, path)
+
+    def list_serial_ports(self):
+        keyspan = glob.glob("/dev/cu.KeySerial*")
+        prolific = glob.glob("/dev/tty.usbserial*")
+
+        return sorted(keyspan + prolific)
+
+    def os_version_string(self):
+        return "MacOS X"
 
 class Win32Platform(Platform):
     def __init__(self, basepath=None):
@@ -316,6 +329,8 @@ class Win32Platform(Platform):
 def _get_platform(basepath):
     if os.name == "nt":
         return Win32Platform(basepath)
+    elif sys.platform == "darwin":
+        return MacOSXPlatform(basepath)
     else:
         return UnixPlatform(basepath)
 
