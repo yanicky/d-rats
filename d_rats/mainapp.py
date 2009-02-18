@@ -47,7 +47,7 @@ import serial
 import gtk
 import gobject
 
-import chatgui
+#import chatgui
 import config
 import gps
 import mapdisplay
