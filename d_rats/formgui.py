@@ -26,7 +26,6 @@ import gtk
 import gobject
 
 from miscwidgets import make_choice
-import mainapp
 import platform
 
 test = """
@@ -108,13 +107,10 @@ class FormWriter:
         doc.freeDoc()
 
 class HTMLFormWriter(FormWriter):
-    def __init__(self, type):
-        config = mainapp.get_mainapp().config
-        dir = config.form_source_dir()
-
-        self.xslpath = os.path.join(dir, "%s.xsl" % type)
+    def __init__(self, type, xsl_dir):
+        self.xslpath = os.path.join(xsl_dir, "%s.xsl" % type)
         if not os.path.exists(self.xslpath):
-            self.xslpath = os.path.join(dir, "default.xsl")
+            self.xslpath = os.path.join(xsl_dir, "default.xsl")
         
     def writeDoc(self, doc, outfile):
         print "Writing to %s" % outfile
@@ -299,8 +295,9 @@ class TimeWidget(FieldWidget):
             text = node.children.getContent().strip()
             (h, m, s) = (int(x) for x in text.split(":", 3))
         except:
-            config = mainapp.get_mainapp().config
-            if config.getboolean("prefs", "useutc"):
+            #FIXME
+            #config = mainapp.get_mainapp().config
+            if False and config.getboolean("prefs", "useutc"):
                 t = time.gmtime()
             else:
                 t = time.localtime()
@@ -652,7 +649,7 @@ class Form(gtk.Dialog):
                 chk_field = f
             elif f.id == "_auto_message":
                 msg_field = f
-            elif f.id == "_auto_sender":
+            elif f.id == "_auto_senderX": # FIXME
                 config = mainapp.get_mainapp().config
                 if not f.entry.widget.get_text():
                     f.entry.widget.set_text(config.get("user", "callsign"))
@@ -726,7 +723,7 @@ class Form(gtk.Dialog):
         for f in self.fields:
             f.update_node()
 
-        w = HTMLFormWriter(self.id)
+        w = HTMLFormWriter(self.id, self.xsl_dir)
         w.writeDoc(self.doc, outfile)
 
     def __init__(self, title, xmlstr, buttons=None, parent=None):
@@ -751,6 +748,9 @@ class Form(gtk.Dialog):
         print "Form ID: %s" % self.id
 
         self.build_gui(gtk.RESPONSE_CANCEL in _buttons)
+
+    def configure(self, config):
+        self.xsl_dir = config.form_source_dir()
         
     def get_field_value(self, id):
         for field in self.fields:
