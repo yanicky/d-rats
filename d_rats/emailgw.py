@@ -26,7 +26,6 @@ import platform
 import gobject
 import re
 
-import formbuilder
 import formgui
 
 class MailThread(threading.Thread):
