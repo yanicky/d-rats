@@ -27,10 +27,10 @@ if __name__ == "__main__":
     lang.install()
     print sys.path
 
+import libxml2
 import gtk
 import gtk.glade
 import gobject
-import libxml2
 
 from d_rats.ui.main_messages import MessagesTab
 from d_rats.ui.main_chat import ChatTab
