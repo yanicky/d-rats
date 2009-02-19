@@ -786,6 +786,14 @@ class Form(gtk.Dialog):
 
         pathel = path.newChild(None, "e", element)
 
+    def get_subject_string(self):
+        for field in ["_auto_subject", "subject"]:
+            subj = self.get_field_value(field)
+            if subj:
+                return subj
+
+        return "Unknown"
+
 class FormFile(Form):
     def __init__(self, title, filename, buttons=None, parent=None):
         self._filename = filename
