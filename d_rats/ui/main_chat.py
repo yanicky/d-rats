@@ -16,11 +16,14 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
+import time
 
 import gobject
 import gtk
+import pango
 
 from d_rats.ui.main_common import MainWindowElement
+from d_rats import inputdialog
 
 class ChatQM(MainWindowElement):
     __gsignals__ = {
@@ -40,12 +43,16 @@ class ChatQM(MainWindowElement):
         d.label.set_text(_("Enter text for the new quick message:"))
         r = d.run()
         if r == gtk.RESPONSE_OK:
-            store.append((d.text.get_text(),))
-        d.destroy()                        
+            key = time.strftime("%Y%m%d%H%M%S")
+            store.append((d.text.get_text(), key))
+            self._config.set("quick", key, d.text.get_text())
+        d.destroy()
 
     def _rem_qm(self, button, view):
         (store, iter) = view.get_selection().get_selected()
+        key, = store.get(iter, 1)
         store.remove(iter)
+        self._config.remove_option("quick", key)
 
     def __init__(self, wtree, config):
         MainWindowElement.__init__(self, wtree, config, "chat")
@@ -53,7 +60,7 @@ class ChatQM(MainWindowElement):
         qm_add, qm_rem, qm_list = self._getw("qm_add", "qm_remove",
                                              "qm_list")
 
-        store = gtk.ListStore(gobject.TYPE_STRING)
+        store = gtk.ListStore(gobject.TYPE_STRING, gobject.TYPE_STRING)
         qm_list.set_model(store)
         qm_list.set_headers_visible(False)
         qm_list.connect("row-activated", self._send_qm)
@@ -63,7 +70,7 @@ class ChatQM(MainWindowElement):
         qm_list.append_column(col)
 
         for key, msg in self._config.items("quick"):
-            store.append((msg,))
+            store.append((msg, key))
 
         qm_add.connect("clicked", self._add_qm, store)
         qm_rem.connect("clicked", self._rem_qm, qm_list)
@@ -171,5 +178,7 @@ class ChatTab(MainWindowElement):
         self._qm.connect("user-sent-qm", self._send_qm)
         self._qst = ChatQST(wtree, config)
 
-
+        fontname = self._config.get("prefs", "font")
+        font = pango.FontDescription(fontname)
+        display.modify_font(font)
 
