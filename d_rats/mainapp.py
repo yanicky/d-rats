@@ -47,13 +47,14 @@ import serial
 import gtk
 import gobject
 
-#import chatgui
+import mainwindow
 import config
 import gps
 import mapdisplay
 import comm
 import sessionmgr
 import sessions
+import session_coordinator
 import emailgw
 import rpcsession
 
@@ -159,20 +160,16 @@ class MainApp:
                 print "Unknown QST type: %s" % qtyp
                 continue
             
-            qstinst = qstclass(self.chatgui, self.config,
-                               text=text, freq=freq)
-            qstinst.enable()
+            #qstinst = qstclass(self.chatgui, self.config,
+            #                   text=text, freq=freq)
+            #qstinst.enable()
 
-            self.qsts.append(qstinst)
-
-    def connected(self, is_connected):
-        self.chatgui.set_connected(is_connected)
+            #self.qsts.append(qstinst)
 
     def incoming_chat(self, data, args):
         sender = args["From"]
         if sender != "CQCQCQ":
             self.seen_callsigns.set_call_time(sender, time.time())
-            gobject.idle_add(self.chatgui.adv_controls["calls"].refresh)
 
         if args["To"] != "CQCQCQ":
             to = " -> %s:" % args["To"]
@@ -185,7 +182,7 @@ class MainApp:
             color = "incomingcolor"
 
         line = "%s%s %s" % (sender, to, args["Msg"])
-        gobject.idle_add(self.chatgui.display_line, line, color)
+        gobject.idle_add(self.mainwindow.tabs["chat"].display_line, line, color)
 
     def stop_comms(self):
         if self.sm:
@@ -243,8 +240,7 @@ class MainApp:
             self.comm.connect()
         except comm.DataPathNotConnectedError, e:
             print "COMM did not connect: %s" % e
-            self.chatgui.display("Failed to connect %s: %s\r\n" % (port, e),
-                                 "italic", "red")
+            self.mainwindow.set_status("Failed to connect %s: %s", (port, e))
             return False
 
         transport_args = {
@@ -270,12 +266,37 @@ class MainApp:
                                            cls=sessions.SniffSession)
                 self.sm.set_sniffer_session(ss._id)
                 ss.connect("incoming_frame",
-                           lambda o,m: self.chatgui.display(m, "italic"))
+                           lambda o,m: self.mainwindow.tabs["chat"].display_line(m, "italic"))
 
             self.rpc_session = self.sm.start_session("rpc",
                                                      dest="CQCQCQ",
                                                      cls=rpcsession.RPCSession)
             self.rpc_session.connect("exec-job", self.do_rpcjob)
+
+
+            self.sc = session_coordinator.SessionCoordinator(self.config,
+                                                             self.sm)
+
+            def TEMP_LOG(sc, id, msg):
+                print "[SESSION %i]: %s" % (id, msg)
+            self.sc.connect("session-started", TEMP_LOG)
+            self.sc.connect("session-status-update", TEMP_LOG)
+            self.sc.connect("session-ended",
+                            lambda sc, id: TEMP_LOG(sc, id, "ended"))
+
+
+            def new_form(sc, id, fn):
+                print "[NEWFORM %i]: %s" % (id, fn)
+                self.mainwindow.tabs["messages"].refresh_if_folder("Inbox")
+            self.sc.connect("form-received", new_form)
+
+            self.sm.register_session_cb(self.sc.session_cb, None)
+
+
+            def send_form(msgs, sta, fn, name):
+                self.sc.send_form(sta, fn, name)
+            self.mainwindow.tabs["messages"].connect("user-send-form",
+                                                     send_form)
 
         else:
             self.sm.set_comm(self.comm, **transport_args)
@@ -346,6 +367,7 @@ class MainApp:
             i.stop()
 
         accts = self.config.options("incoming_email")
+        accts = [] # FIXME
         for acct in accts:
             t = emailgw.MailThread(self.config, acct, self.chatgui)
             t.start()
@@ -389,11 +411,8 @@ class MainApp:
 
         self.refresh_comms()
 
-        self.chatgui.display("My Call: %s\n" % call, "blue", "italic")
-
         self.refresh_qsts()
         self.refresh_gps()
-        self.chatgui.refresh_config()
         self.refresh_mail_threads()
 
     def TEMP_migrate_config(self):
@@ -408,6 +427,9 @@ class MainApp:
             print "Migrating broken UNIX config filename"
             newfn = p.config_file("d-rats.config")
             os.rename(fn, newfn)            
+
+    def send_chat(self, chattab, station, msg):
+        self.chat_session.write(msg)
             
     def __init__(self, **args):
         global MAINAPP
@@ -429,17 +451,17 @@ class MainApp:
 
         self.gps = self._static_gps()
 
-        self.chatgui = chatgui.MainChatGUI(self.config, self)
-
-        self.chatgui.display("D-RATS v%s " % DRATS_VERSION, "red")
-        self.chatgui.display("(Copyright 2008 Dan Smith KK7DS)\n",
-                             "blue", "italic")
+        self.mainwindow = mainwindow.MainWindow(self.config)
+        self.mainwindow.tabs["chat"].connect("user-sent-message",
+                                             self.send_chat)
         
         self.refresh_config()
         
         if self.config.getboolean("prefs", "dosignon"):
-            self.chatgui.tx_msg(self.config.get("prefs", "signon"))
-            
+            msg = self.config.get("prefs", "signon")
+            self.mainwindow.tabs["chat"].display_line(msg)
+            self.chat_session.write(msg)
+
     def get_position(self):
         p = self.gps.get_position()
         p.set_station(self.config.get("user", "callsign"))
@@ -474,7 +496,7 @@ class MainApp:
 
         print "Saving config..."
         self.config.save()
-        self.chatgui.save_static_locations()
+        #self.chatgui.save_static_locations()
 
         #if self.sm:
         #    print "Stopping session manager..."
