@@ -17,6 +17,7 @@
 
 import os
 import time
+from datetime import datetime
 
 import gobject
 import gtk
@@ -309,10 +310,11 @@ class MessageList(MainWindowElement):
         if fn is None:
             self.store.clear()
             for msg in self.current_info.files():
+                stamp = datetime.fromtimestamp(os.stat(msg).st_ctime)
                 self.store.append((self.message_pixbuf,
                                    self.current_info.get_msg_subject(msg),
                                    self.current_info.get_msg_type(msg),
-                                   "Today",
+                                   stamp.strftime("%H:%M:%S %Y-%m-%d"),
                                    msg))
         else:
             iter = self.store.get_iter_first()
@@ -345,7 +347,23 @@ class MessageList(MainWindowElement):
         store.remove(iter)
         self.current_info.delete(fn)
 
+    def get_selected_message(self):
+        msglist, = self._getw("msglist")
+
+        (store, iter) = msglist.get_selection().get_selected()
+        fn, = store.get(iter, 4)
+        
+        return fn
+
 class MessagesTab(MainWindowElement):
+    __gsignals__ = {
+        "user-send-form" : (gobject.SIGNAL_RUN_LAST,
+                            gobject.TYPE_NONE,
+                            (gobject.TYPE_STRING,
+                             gobject.TYPE_STRING,
+                             gobject.TYPE_STRING)),
+        }
+
     def _new_msg(self, button):
         types = glob(os.path.join(self._config.form_source_dir(), "*.xml"))
 
@@ -391,6 +409,23 @@ class MessagesTab(MainWindowElement):
     def _del_msg(self, button):
         self._messages.delete_selected_message()
 
+    def _snd_msg(self, button):
+        fn = self._messages.get_selected_message()
+        if not fn:
+            return
+
+        d = inputdialog.EditableChoiceDialog([])
+        d.label.set_text(_("Select (or enter) a destination station"))
+        r = d.run()
+        station = d.choice.get_active_text()
+        d.destroy()
+        if r != gtk.RESPONSE_OK:
+            return
+
+        station = station[:8].upper()
+
+        self.emit("user-send-form", station, fn, "foo")
+
     def _init_toolbar(self):
         tb, = self._getw("toolbar")
 
@@ -407,6 +442,7 @@ class MessagesTab(MainWindowElement):
         icon.show()
         item = gtk.ToolButton(icon, _("Send"))
         item.show()
+        item.connect("clicked", self._snd_msg)
         tb.insert(item, 1)
         
         icon = gtk.Image()
@@ -420,11 +456,14 @@ class MessagesTab(MainWindowElement):
     def __init__(self, wtree, config):
         MainWindowElement.__init__(self, wtree, config, "msg")
 
+        self._init_toolbar()
         self._folders = MessageFolders(wtree, config)
         self._messages = MessageList(wtree, config)
-        self._messages.open_folder(_("Inbox"))
 
         self._folders.connect("user-selected-folder",
                               lambda x, y: self._messages.open_folder(y))
+        self._folders.select_folder(_("Inbox"))
 
-        self._init_toolbar()
+    def refresh_if_folder(self, folder):
+        if self._messages.current_info.name() == folder:
+            self._messages.refresh()
