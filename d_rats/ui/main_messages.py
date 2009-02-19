@@ -17,6 +17,7 @@
 
 import os
 import time
+import shutil
 from datetime import datetime
 
 import gobject
@@ -78,6 +79,13 @@ class MessageFolderInfo:
 
     def set_msg_type(self, filename, type):
         self._setprop(filename, "type", type)
+
+    def get_msg_read(self, filename):
+        val = self._getprop(filename, "read")
+        return val == "True"
+
+    def set_msg_read(self, filename, read):
+        self._setprop(filename, "read", str(read == True))
 
     def subfolders(self):
         """Return a list of MessageFolderInfo objects representing this
@@ -252,15 +260,7 @@ class MessageList(MainWindowElement):
         r = form.run_auto()
         form.destroy()
 
-        if r == gtk.RESPONSE_CANCEL:
-            return r
-
-        for field in ["_auto_subject", "subject"]:
-            subject = form.get_field_value(field)
-            if subject:
-                self.current_info.set_msg_subject(filename, subject)
-                self.current_info.set_msg_type(filename, form.id)
-                break
+        self.current_info.set_msg_subject(filename, form.get_subject_string())
 
         return r
 
@@ -270,10 +270,8 @@ class MessageList(MainWindowElement):
         path, = store.get(iter, 4)
 
         self.open_msg(path)
-        
-        store.set(iter,
-                  1, self.current_info.get_msg_subject(path),
-                  2, self.current_info.get_msg_type(path))
+        self.current_info.set_msg_read(path, True)
+        self._update_message_info(iter)
 
     def __init__(self, wtree, config):
         MainWindowElement.__init__(self, wtree, config, "msg")
@@ -284,38 +282,76 @@ class MessageList(MainWindowElement):
                                    gobject.TYPE_STRING,
                                    gobject.TYPE_STRING,
                                    gobject.TYPE_STRING,
-                                   gobject.TYPE_STRING)
+                                   gobject.TYPE_STRING,
+                                   gobject.TYPE_BOOLEAN)
         msglist.set_model(self.store)
+        msglist.get_selection().set_mode(gtk.SELECTION_MULTIPLE)
 
         col = gtk.TreeViewColumn("", gtk.CellRendererPixbuf(), pixbuf=0)
         msglist.append_column(col)
 
-        col = gtk.TreeViewColumn(_("Subject"), gtk.CellRendererText(), text=1)
+        def bold_if_unread(col, rend, model, iter):
+            subj, read, = model.get(iter, 1, 5)
+            if not read:
+                rend.set_property("markup", "<b>%s</b>" % subj)
+
+        r = gtk.CellRendererText()
+        col = gtk.TreeViewColumn(_("Subject"), r, text=1)
+        col.set_cell_data_func(r, bold_if_unread)
         col.set_expand(True)
+        col.set_sort_column_id(1)
+        col.set_sizing(gtk.TREE_VIEW_COLUMN_AUTOSIZE)
         msglist.append_column(col)
 
         col = gtk.TreeViewColumn(_("Type"), gtk.CellRendererText(), text=2)
+        col.set_sort_column_id(2)
         msglist.append_column(col)
 
         col = gtk.TreeViewColumn(_("Date"), gtk.CellRendererText(), text=3)
+        col.set_sort_column_id(3)
         msglist.append_column(col)
 
         msglist.connect("row-activated", self._open_msg)
+        self.store.set_sort_column_id(3, gtk.SORT_DESCENDING)
 
         self.message_pixbuf = gtk.gdk.pixbuf_new_from_file("images/message.png")
+        self.unread_pixbuf = gtk.gdk.pixbuf_new_from_file("images/msg-markunread.png")
         self.current_info = None
+
+    def _update_message_info(self, iter):
+        fn, = self.store.get(iter, 4)
+
+        subj = self.current_info.get_msg_subject(fn)
+        if subj == _("Unknown"):
+            # Not registered, so update the registry
+            form = formgui.FormFile(_("Form"), fn)
+            self.current_info.set_msg_type(fn, form.id)
+            self.current_info.set_msg_read(fn, False)
+            self.current_info.set_msg_subject(fn, form.get_subject_string())
+
+        _stamp = datetime.fromtimestamp(os.stat(fn).st_ctime)
+        stamp = _stamp.strftime("%H:%M:%S %Y-%m-%d")
+        read = self.current_info.get_msg_read(fn)
+        if read:
+            icon = self.message_pixbuf
+        else:
+            icon = self.unread_pixbuf
+        self.store.set(iter,
+                       0, icon,
+                       1, self.current_info.get_msg_subject(fn),
+                       2, self.current_info.get_msg_type(fn),
+                       3, stamp,
+                       5, read)
 
     def refresh(self, fn=None):
         """Refresh the current folder"""
         if fn is None:
             self.store.clear()
             for msg in self.current_info.files():
-                stamp = datetime.fromtimestamp(os.stat(msg).st_ctime)
-                self.store.append((self.message_pixbuf,
-                                   self.current_info.get_msg_subject(msg),
-                                   self.current_info.get_msg_type(msg),
-                                   stamp.strftime("%H:%M:%S %Y-%m-%d"),
-                                   msg))
+                iter = self.store.append()
+                self.store.set(iter,
+                               4, msg)
+                self._update_message_info(iter)
         else:
             iter = self.store.get_iter_first()
             while iter:
@@ -326,34 +362,48 @@ class MessageList(MainWindowElement):
 
             if not iter:
                 iter = self.store.append()
+                self.store.set(iter,
+                               4, fn)
 
-            self.store.set(iter,
-                           0, self.message_pixbuf,
-                           1, self.current_info.get_msg_subject(fn),
-                           2, self.current_info.get_msg_type(fn),
-                           3, "Today",
-                           4, fn)
+            self._update_message_info(iter)
 
     def open_folder(self, path):
         """Open a folder by path"""
         self.current_info = MessageFolderInfo(self._folder_path(path))
         self.refresh()
 
-    def delete_selected_message(self):
+    def delete_selected_messages(self):
         msglist, = self._getw("msglist")
 
-        (store, iter) = msglist.get_selection().get_selected()
-        fn, = store.get(iter, 4)
-        store.remove(iter)
-        self.current_info.delete(fn)
+        iters = []
+        (store, paths) = msglist.get_selection().get_selected_rows()
+        for path in paths:
+            iters.append(store.get_iter(path))
 
-    def get_selected_message(self):
+        for iter in iters:
+            fn, = store.get(iter, 4)
+            store.remove(iter)
+            self.current_info.delete(fn)
+
+    def move_selected_messages(self, folder):
+        dest = MessageFolderInfo(self._folder_path(folder))
+        for msg in self.get_selected_messages():
+            newfn = dest.create_msg(os.path.basename(msg))
+            print "Moving %s -> %s" % (msg, newfn)
+            shutil.copy(msg, newfn)
+            self.current_info.delete(msg)
+            
+        self.refresh()
+
+    def get_selected_messages(self):
         msglist, = self._getw("msglist")
 
-        (store, iter) = msglist.get_selection().get_selected()
-        fn, = store.get(iter, 4)
+        selected = []
+        (store, paths) = msglist.get_selection().get_selected_rows()
+        for path in paths:
+            selected.append(store[path][4])
         
-        return fn
+        return selected
 
 class MessagesTab(MainWindowElement):
     __gsignals__ = {
@@ -403,16 +453,27 @@ class MessagesTab(MainWindowElement):
         r = form.run_auto(newfn)
         form.destroy()
         if r != gtk.RESPONSE_CANCEL:
-            self._messages.current_info.set_msg_subject(newfn, form.get_field_value("subject"))
+            subj = form.get_field_value("subject")
+            self._messages.current_info.set_msg_subject(newfn, subj)
             self._messages.refresh()
 
     def _del_msg(self, button):
-        self._messages.delete_selected_message()
+        if self._messages.current_info.name() == _("Trash"):
+            self._messages.delete_selected_messages()
+        else:
+            self._messages.move_selected_messages(_("Trash"))
 
     def _snd_msg(self, button):
-        fn = self._messages.get_selected_message()
-        if not fn:
+        try:
+            sel = self._messages.get_selected_messages()
+        except TypeError:
             return
+
+        if len(sel) > 1:
+            print "FIXME: Warn about multiple send"
+            return
+
+        fn = sel[0]
 
         d = inputdialog.EditableChoiceDialog([])
         d.label.set_text(_("Select (or enter) a destination station"))
@@ -426,32 +487,40 @@ class MessagesTab(MainWindowElement):
 
         self.emit("user-send-form", station, fn, "foo")
 
+    def _mrk_msg(self, button, read):
+        try:
+            sel = self._messages.get_selected_messages()
+        except TypeError:
+            return
+
+        for fn in sel:
+            self._messages.current_info.set_msg_read(fn, read)
+
+        self._messages.refresh()
+
     def _init_toolbar(self):
         tb, = self._getw("toolbar")
 
-        icon = gtk.Image()
-        icon.set_from_file("images/msg-new.png")
-        icon.show()
-        item = gtk.ToolButton(icon, _("New"))
-        item.show()
-        item.connect("clicked", self._new_msg)
-        tb.insert(item, 0)
+        read = lambda b: self._mrk_msg(b, True)
+        unread = lambda b: self._mrk_msg(b, False)
 
-        icon = gtk.Image()
-        icon.set_from_file("images/msg-send.png")
-        icon.show()
-        item = gtk.ToolButton(icon, _("Send"))
-        item.show()
-        item.connect("clicked", self._snd_msg)
-        tb.insert(item, 1)
-        
-        icon = gtk.Image()
-        icon.set_from_file("images/msg-delete.png")
-        icon.show()
-        item = gtk.ToolButton(icon, _("Delete"))
-        item.show()
-        item.connect("clicked", self._del_msg)
-        tb.insert(item, 2)
+        buttons = [("msg-new.png", _("New"), self._new_msg),
+                   ("msg-send.png", _("Send"), self._snd_msg),
+                   ("msg-delete.png", _("Delete"), self._del_msg),
+                   ("msg-markread.png", _("Mark Read"), read),
+                   ("msg-markunread.png", _("Mark Unread"), unread),
+                   ]
+
+        c = 0
+        for i, l, f in buttons:
+            icon = gtk.Image()
+            icon.set_from_file("images/%s" % i)
+            icon.show()
+            item = gtk.ToolButton(icon, l)
+            item.show()
+            item.connect("clicked", f)
+            tb.insert(item, c)
+            c += 1
 
     def __init__(self, wtree, config):
         MainWindowElement.__init__(self, wtree, config, "msg")
