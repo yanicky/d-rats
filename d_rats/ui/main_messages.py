@@ -164,6 +164,9 @@ class MessageFolders(MainWindowElement):
     def get_folders(self):
         return MessageFolderInfo(self._folders_path()).subfolders()
 
+    def get_folder(self, name):
+        return MessageFolderInfo(os.path.join(self._folders_path(), name))
+
     def _get_folder_by_iter(self, store, iter):
         els = []
         while iter:
@@ -542,3 +545,17 @@ class MessagesTab(MainWindowElement):
     def refresh_if_folder(self, folder):
         if self._messages.current_info.name() == folder:
             self._messages.refresh()
+
+    def message_sent(self, fn):
+        outbox = self._folders.get_folder(_("Outbox"))
+        files = outbox.files()
+        if fn in files:
+            sent = self._folders.get_folder(_("Sent"))
+            newfn = sent.create_msg(os.path.basename(fn))
+            print "Moving %s -> %s" % (fn, newfn)
+            shutil.copy(fn, newfn)
+            outbox.delete(fn)
+            self.refresh_if_folder(_("Outbox"))
+            self.refresh_if_folder(_("Sent"))
+        else:
+            print "Form %s sent but not in outbox" % os.path.basename(fn)
