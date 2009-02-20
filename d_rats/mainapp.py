@@ -58,6 +58,8 @@ import session_coordinator
 import emailgw
 import rpcsession
 
+from ui import main_events
+
 from utils import hexprint,filter_to_ascii,NetFile
 import qst
 
@@ -279,17 +281,36 @@ class MainApp:
 
             def TEMP_LOG(sc, id, msg):
                 print "[SESSION %i]: %s" % (id, msg)
-            self.sc.connect("session-started", TEMP_LOG)
-            self.sc.connect("session-status-update", TEMP_LOG)
-            self.sc.connect("session-ended",
-                            lambda sc, id: TEMP_LOG(sc, id, "ended"))
 
+            def log_session_info(sc, id, msg=None):
+                if msg is None:
+                    msg = "Ended"
+
+                print "[SESSION %i]: %s" % (id, msg)
+
+                event = main_events.Event(id, msg)
+                self.mainwindow.tabs["event"].event(event)
+
+            self.sc.connect("session-started", log_session_info)
+            self.sc.connect("session-status-update", log_session_info)
+            self.sc.connect("session-ended", log_session_info)
 
             def new_form(sc, id, fn):
                 print "[NEWFORM %i]: %s" % (id, fn)
+                event = main_events.FormEvent(id, "Form Received")
+                event.set_as_final()
                 self.mainwindow.tabs["messages"].refresh_if_folder("Inbox")
+                self.mainwindow.tabs["event"].event(event)
             self.sc.connect("form-received", new_form)
 
+            def new_file(sc, id, fn):
+                _fn = os.path.basename(fn)
+                event = main_events.FileEvent(id, "File %s Received" % _fn)
+                event.set_as_final()
+                # notify file tab
+                self.mainwindow.tabs["event"].event(event)
+            self.sc.connect("file-received", new_file)
+                
             self.sm.register_session_cb(self.sc.session_cb, None)
 
 
