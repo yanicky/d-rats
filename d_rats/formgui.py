@@ -727,14 +727,14 @@ class Form(gtk.Dialog):
         w.writeDoc(self.doc, outfile)
 
     def __init__(self, title, xmlstr, buttons=None, parent=None):
-        _buttons = (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
-                   gtk.STOCK_SAVE, gtk.RESPONSE_OK)
+        self._title = title
+        self._parent = parent
+        self._buttons = (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
+                         gtk.STOCK_SAVE, gtk.RESPONSE_OK)
         if buttons:
-            _buttons += buttons
+            self._buttons += buttons
 
-        gtk.Dialog.__init__(self, title=title, buttons=_buttons, parent=parent)
 
-        self.vbox.set_spacing(5)
 
         self.fields = []
 
@@ -747,14 +747,22 @@ class Form(gtk.Dialog):
 
         print "Form ID: %s" % self.id
 
-        self.build_gui(gtk.RESPONSE_CANCEL in _buttons)
+    def run(self):
+        gtk.Dialog.__init__(self,
+                            title=self._title,
+                            buttons=self._buttons,
+                            parent=self._parent)
+        self.vbox.set_spacing(5)
+        self.build_gui(gtk.RESPONSE_CANCEL in self._buttons)
+        self.set_size_request(380, 450)
+
+        gtk.Dialog.run(self)
 
     def configure(self, config):
         self.xsl_dir = config.form_source_dir()
         
     def get_field_value(self, id):
         for field in self.fields:
-            print "Checking %s for %s" % (field.id, id)
             if field.id == id:
                 return field.entry.get_value()
 
