@@ -281,7 +281,7 @@ class MessageList(MainWindowElement):
         self.store = gtk.ListStore(gobject.TYPE_OBJECT,
                                    gobject.TYPE_STRING,
                                    gobject.TYPE_STRING,
-                                   gobject.TYPE_STRING,
+                                   gobject.TYPE_INT,
                                    gobject.TYPE_STRING,
                                    gobject.TYPE_BOOLEAN)
         msglist.set_model(self.store)
@@ -307,7 +307,14 @@ class MessageList(MainWindowElement):
         col.set_sort_column_id(2)
         msglist.append_column(col)
 
-        col = gtk.TreeViewColumn(_("Date"), gtk.CellRendererText(), text=3)
+        def render_date(col, rend, model, iter):
+            ts, = model.get(iter, 3)
+            stamp = datetime.fromtimestamp(ts).strftime("%H:%M:%S %Y-%m-%d")
+            rend.set_property("text", stamp)
+
+        r = gtk.CellRendererText()
+        col = gtk.TreeViewColumn(_("Date"), r, text=3)
+        col.set_cell_data_func(r, render_date)
         col.set_sort_column_id(3)
         msglist.append_column(col)
 
@@ -329,8 +336,7 @@ class MessageList(MainWindowElement):
             self.current_info.set_msg_read(fn, False)
             self.current_info.set_msg_subject(fn, form.get_subject_string())
 
-        _stamp = datetime.fromtimestamp(os.stat(fn).st_ctime)
-        stamp = _stamp.strftime("%H:%M:%S %Y-%m-%d")
+        ts = os.stat(fn).st_ctime
         read = self.current_info.get_msg_read(fn)
         if read:
             icon = self.message_pixbuf
@@ -340,7 +346,7 @@ class MessageList(MainWindowElement):
                        0, icon,
                        1, self.current_info.get_msg_subject(fn),
                        2, self.current_info.get_msg_type(fn),
-                       3, stamp,
+                       3, ts,
                        5, read)
 
     def refresh(self, fn=None):
