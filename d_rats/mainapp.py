@@ -311,6 +311,14 @@ class MainApp:
                 self.mainwindow.tabs["event"].event(event)
             self.sc.connect("file-received", new_file)
                 
+            def form_sent(sc, id, fn):
+                print "[FORMSENT %i]: %s" % (id, fn)
+                event = main_events.FormEvent(id, "Form Sent")
+                event.set_as_final()
+                self.mainwindow.tabs["messages"].message_sent(fn)
+                self.mainwindow.tabs["event"].event(event)
+            self.sc.connect("form-sent", form_sent)
+
             self.sm.register_session_cb(self.sc.session_cb, None)
 
 
