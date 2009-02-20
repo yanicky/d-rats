@@ -141,7 +141,14 @@ class ChatTab(MainWindowElement):
 
     def display_line(self, text, *attrs):
         """Display a single line of text with datestamp"""
-        line = "[DATE] %s%s" % (text, os.linesep)
+
+        if (time.time() - self._last_date) > 600:
+            stamp = time.strftime("%Y-%m-%d %H:%M:%S")
+        else:
+            stamp = time.strftime("%H:%M:%S")
+
+        line = "[%s] %s%s" % (stamp, text, os.linesep)
+        self._last_date = time.time()
 
         display, = self._getw("display")
         buffer = display.get_buffer()
@@ -182,3 +189,4 @@ class ChatTab(MainWindowElement):
         font = pango.FontDescription(fontname)
         display.modify_font(font)
 
+        self._last_date = 0
