@@ -34,9 +34,14 @@ import gobject
 
 from d_rats.ui.main_messages import MessagesTab
 from d_rats.ui.main_chat import ChatTab
+from d_rats.ui.main_events import EventTab
 from d_rats.ui.main_common import MainWindowElement
 
 class MainWindow(MainWindowElement):
+    def _open_prefs(self, menuitem):
+        win = self._wtree.get_widget("mainwindow")
+        self._config.show(parent=win)
+
     def __init__(self, config):
         # FIXME
         wtree = gtk.glade.XML("ui/mainwindow.glade", "mainwindow")
@@ -47,6 +52,10 @@ class MainWindow(MainWindowElement):
 
         self.tabs["chat"] = ChatTab(wtree, config)
         self.tabs["messages"] = MessagesTab(wtree, config)
+        self.tabs["event"] = EventTab(wtree, config)
+
+        menu_prefs = self._wtree.get_widget("main_menu_prefs")
+        menu_prefs.connect("activate", self._open_prefs)
 
     def set_status(self, msg):
         sb = self._wtree.get_widget("statusbar")
