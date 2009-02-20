@@ -144,6 +144,7 @@ class FileSendThread(FileBaseThread):
     def worker(self, path):
         if self.session.send_file(path):
             self.completed("file %s" % os.path.basename(path))
+            self.coord.session_file_sent(self.session, path)
         else:
             self.failed()
 
@@ -214,6 +215,7 @@ class FormSendThread(FileBaseThread):
     def worker(self, path):
         if self.session.send_file(path):
             self.completed()
+            self.coord.session_form_sent(self.session, path)
         else:
             self.failed()
 
