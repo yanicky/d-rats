@@ -196,13 +196,12 @@ class FormRecvThread(FileBaseThread):
             form.add_path_element(self.coord.config.get("user", "callsign"))
             form.save_to(fn)
 
+            self.completed("form")
             self.coord.session_newform(self.session, fn)
 
             # FIXME: Handle this elsewhere
             #if form.id == "email":
             #    self.maybe_send_form(form)
-
-            self.completed("form")
 
         else:
             self.failed()
@@ -318,7 +317,12 @@ class SessionCoordinator(gobject.GObject):
         "form-received" : (gobject.SIGNAL_RUN_LAST,
                            gobject.TYPE_NONE,
                            (gobject.TYPE_INT, gobject.TYPE_STRING)),
-
+        "file-sent" : (gobject.SIGNAL_RUN_LAST,
+                       gobject.TYPE_NONE,
+                       (gobject.TYPE_INT, gobject.TYPE_STRING)),
+        "form-sent" : (gobject.SIGNAL_RUN_LAST,
+                       gobject.TYPE_NONE,
+                       (gobject.TYPE_INT, gobject.TYPE_STRING)),
         }
 
     def session_status(self, session, msg):
@@ -329,6 +333,12 @@ class SessionCoordinator(gobject.GObject):
 
     def session_newfile(self, session, path):
         self.emit("file-received", session._id, path)
+
+    def session_form_sent(self, session, path):
+        self.emit("form-sent", session._id, path)
+
+    def session_file_sent(self, session, path):
+        self.emit("file-sent", session._id, path)
 
     def cancel_session(self, id, force=False):
         if id < 2:
