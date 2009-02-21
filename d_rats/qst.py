@@ -49,88 +49,27 @@ except ImportError:
     print "Installing hashlib replacement hack"
     from utils import ExternalHash as md5
 
-class QSTText:
-    def __init__(self, gui, config, text=None, freq=None):
-        self.gui = gui
+class QSTText(gobject.GObject):
+    __gsignals__ = {
+        "qst-fired" : (gobject.SIGNAL_RUN_LAST,
+                 gobject.TYPE_NONE,
+                 (gobject.TYPE_STRING,)),
+        }
+
+    def __init__(self, config, content):
+        gobject.GObject.__init__(self)
+
         self.config = config
-
         self.prefix = "[QST] "
-        self.text = text
-        self.freq = freq
-        self.enabled = False
+        self.text = content
         self.raw = False
-        
-        self.reschedule()        
-
-    def _reschedule(self):
-        if self.freq.startswith(":"):
-            tmins = int(self.freq[1:])
-            nmins = datetime.datetime.now().minute
-
-            delta = tmins - nmins
-            if delta <= 0:
-                delta = 60 + delta
-
-            print "Scheduling %s for %i mins from now" % (self.text, delta)
-            self.next = time.time() + (delta * 60)
-        else:
-            self.next = time.time() + (int(self.freq) * 60)
-
-    def reschedule(self):
-        try:
-            self._reschedule()
-        except Exception, e:
-            print "Failed to reschedule %s: %s" % (self.text, e)
-            self.next = time.time() + 3600
-
-    def reset(self):
-        self.next = 0
-        if not self.enabled:
-            self.fire()
-
-    def remaining(self):
-        delta = int(self.next - time.time())
-        if delta >= 0:
-            return delta
-        else:
-            return 0
-
-    def enable(self):
-        if self.freq[0] != "0":
-            self.enabled = True
-            print "Starting QST `%s'" % self.text
-            gobject.timeout_add(1000, self.tick)
-        else:
-            print "Not starting idle thread for 0-time QST"
-
-    def disable(self):
-        self.enabled = False
 
     def do_qst(self):
         return self.text
 
     def fire(self):
-        if self.gui.sendable:
-            print "Tick: %s" % self.text
-            msg = self.do_qst()
-            if msg:
-                self.gui.tx_msg("%s%s" % (self.prefix, msg), self.raw)
-            else:
-                print "Skipping QST because GUI is not sendable"
-
-    def tick(self):
-        if not self.enabled:
-            return False
-
-        if self.remaining() == 0:
-            if self.gui.menu_ag.get_action("enableqst").get_active():
-                self.fire()
-            else:
-                print "Not firing because QSTs are disabled"
-
-            self.reschedule()
-
-        return True
+        val = self.do_qst()
+        self.emit("qst-fired", val)
 
 class QSTExec(QSTText):
     size_limit = 2048
@@ -162,8 +101,8 @@ class QSTFile(QSTText):
         return text
 
 class QSTGPS(QSTText):
-    def __init__(self, gui, config, text=None, freq=None):
-        QSTText.__init__(self, gui, config, text, freq)
+    def __init__(self, config, content):
+        QSTText.__init__(self, config, content)
 
         self.prefix = ""
         self.raw = True
@@ -216,9 +155,7 @@ class QSTThreadedText(QSTText):
             print "Skipping QST because no data was returned"
             return
 
-        gobject.idle_add(self.gui.tx_msg,
-                         "%s%s" % (self.prefix, msg),
-                         self.raw)
+        gobject.idle_add(self.emit, "qst-fired", "%s%s" % (self.prefix, msg))
 
     def fire(self):
         if self.thread:
@@ -231,8 +168,8 @@ class QSTThreadedText(QSTText):
         print "Started a thread for QST data..."
 
 class QSTRSS(QSTThreadedText):
-    def __init__(self, gui, config, text=None, freq=None):
-        QSTThreadedText.__init__(self, gui, config, text, freq)
+    def __init__(self, config, content):
+        QSTThreadedText.__init__(self, config, content)
 
         self.last_id = ""
 
