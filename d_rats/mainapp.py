@@ -61,7 +61,6 @@ import rpcsession
 from ui import main_events
 
 from utils import hexprint,filter_to_ascii,NetFile
-import qst
 
 DRATS_VERSION = "0.2.10"
 LOGTF = "%m-%d-%Y_%H:%M:%S"
@@ -135,38 +134,6 @@ class CallList:
 class MainApp:
     def setup_autoid(self):
         idtext = "(ID)"
-
-    def refresh_qsts(self):
-        for i in self.qsts:
-            print "Disabling QST %s" % i.text
-            i.disable()
-            print "Done"
-
-        self.qsts = []
-
-        sections = self.config.sections()
-        qsts = [x for x in sections if x.startswith("qst_")]
-
-        for i in qsts:
-            print "Doing QST %s" % i
-            text = self.config.get(i, "content")
-            freq = self.config.get(i, "freq")
-            qtyp = self.config.get(i, "type")
-            enab = self.config.getboolean(i, "enabled")
-
-            if not enab:
-                continue
-            
-            qstclass = qst.get_qst_class(qtyp)
-            if not qstclass:
-                print "Unknown QST type: %s" % qtyp
-                continue
-            
-            #qstinst = qstclass(self.chatgui, self.config,
-            #                   text=text, freq=freq)
-            #qstinst.enable()
-
-            #self.qsts.append(qstinst)
 
     def incoming_chat(self, data, args):
         sender = args["From"]
@@ -348,9 +315,14 @@ class MainApp:
 
         return True
 
-    def refresh_comms(self):
-        self.stop_comms()
-        return self.start_comms()
+    def refresh_comms(self, port, rate):
+        if self.comm and (self.comm.port != port or self.comm.baud != rate):
+            self.stop_comms()
+            return self.start_comms()
+        elif not self.comm:
+            return self.start_comms()
+        else:
+            print "No comm change from %s@%s" % (port, rate)
 
     def _static_gps(self):
         lat = 0.0
@@ -429,35 +401,16 @@ class MainApp:
         rate = self.config.getint("settings", "rate")
         port = self.config.get("settings", "port")
         call = self.config.get("user", "callsign")
-        enc = self.config.get("settings", "encoding")
-        com = self.config.getboolean("settings", "compression")
-        units = self.config.get("user", "units")
-
-        gps.set_units(units)
+        gps.set_units(self.config.get("user", "units"))
         mapdisplay.set_base_dir(self.config.get("settings", "mapdir"))
         mapdisplay.set_connected(self.config.getboolean("state",
                                                         "connected_inet"))
 
-        self.refresh_comms()
-
-        self.refresh_qsts()
+        self.refresh_comms(port, rate)
         self.refresh_gps()
         self.refresh_mail_threads()
 
-    def TEMP_migrate_config(self):
-        import platform
-
-        if os.name != "posix":
-            return
-
-        p = platform.get_platform()
-        fn = p.config_file("drats.config")
-        if os.path.exists(fn):
-            print "Migrating broken UNIX config filename"
-            newfn = p.config_file("d-rats.config")
-            os.rename(fn, newfn)            
-
-    def send_chat(self, chattab, station, msg):
+    def send_chat(self, chattab, station, msg, raw):
         self.chat_session.write(msg)
             
     def __init__(self, **args):
@@ -467,13 +420,9 @@ class MainApp:
         self.comm = None
         self.sm = None
         self.chat_session = None
-        self.qsts = []
         self.seen_callsigns = CallList()
         self.position = None
         self.mail_threads = []
-
-        # REMOVE ME in 0.1.13
-        self.TEMP_migrate_config()
 
         self.config = config.DratsConfig(self)
         self.refresh_lang()
