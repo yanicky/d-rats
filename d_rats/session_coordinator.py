@@ -327,20 +327,23 @@ class SessionCoordinator(gobject.GObject):
                        (gobject.TYPE_INT, gobject.TYPE_STRING)),
         }
 
+    def _emit(self, signal, *args):
+        gobject.idle_add(self.emit, signal, *args)
+
     def session_status(self, session, msg):
-        self.emit("session-status-update", session._id, msg)
+        self._emit("session-status-update", session._id, msg)
 
     def session_newform(self, session, path):
-        self.emit("form-received", session._id, path)
+        self._emit("form-received", session._id, path)
 
     def session_newfile(self, session, path):
-        self.emit("file-received", session._id, path)
+        self._emit("file-received", session._id, path)
 
     def session_form_sent(self, session, path):
-        self.emit("form-sent", session._id, path)
+        self._emit("form-sent", session._id, path)
 
     def session_file_sent(self, session, path):
-        self.emit("file-sent", session._id, path)
+        self._emit("file-sent", session._id, path)
 
     def cancel_session(self, id, force=False):
         if id < 2:
