@@ -30,16 +30,21 @@ from d_rats.ui.main_common import MainWindowElement
 from d_rats import inputdialog
 from d_rats import formgui
 
+_FOLDER_CACHE = {}
+
 class MessageFolderInfo:
     def __init__(self, folder_path):
         self._path = folder_path
-        
-        self._config = ConfigParser()
-        regpath = os.path.join(self._path, ".db")
-        if os.path.exists(regpath):
-            self._config.read(regpath)
 
-        self._save()
+        if _FOLDER_CACHE.has_key(folder_path):
+            self._config = _FOLDER_CACHE[folder_path]
+        else:
+            self._config = ConfigParser()
+            regpath = os.path.join(self._path, ".db")
+            if os.path.exists(regpath):
+                self._config.read(regpath)
+            self._save()
+            _FOLDER_CACHE[folder_path] = self._config
 
     def _save(self):
         regpath = os.path.join(self._path, ".db")
@@ -224,6 +229,35 @@ class MessageFolders(MainWindowElement):
         
         self.emit("user-selected-folder", self._get_folder_by_iter(store, iter))
 
+    def _dragged_to(self, view, ctx, x, y, sel, info, ts):
+        (path, place) = view.get_dest_row_at_pos(x, y)
+
+        data = sel.data.split("\x01")
+        msgs = data[1:]
+
+        src_folder = data[0]
+        dst_folder = view.get_model()[path][0]
+
+        if src_folder == dst_folder:
+            return
+
+        dst = MessageFolderInfo(os.path.join(self._folders_path(), dst_folder))
+        src = MessageFolderInfo(os.path.join(self._folders_path(), src_folder))
+                                
+        for record in msgs:
+            fn, subj, type, read = record.split("\0")
+            print "Dragged %s from %s into %s" % (fn, src_folder, dst_folder)
+            print "  %s %s %s" % (subj, type, read)
+
+            newfn = dst.create_msg(os.path.basename(fn))
+            shutil.copy(fn, newfn)
+            src.delete(fn)
+
+            dst.set_msg_read(fn, read == "True")
+            dst.set_msg_subject(fn, subj)
+            dst.set_msg_type(fn, type)
+
+    # MessageFolders
     def __init__(self, wtree, config):
         MainWindowElement.__init__(self, wtree, config, "msg")
 
@@ -232,6 +266,9 @@ class MessageFolders(MainWindowElement):
         store = gtk.TreeStore(gobject.TYPE_STRING, gobject.TYPE_OBJECT)
         folderlist.set_model(store)
         folderlist.set_headers_visible(False)
+        folderlist.enable_model_drag_dest([("text/d-rats_message", 0, 0)],
+                                          gtk.gdk.ACTION_DEFAULT)
+        folderlist.connect("drag-data-received", self._dragged_to)
         folderlist.connect("button_press_event", self._select_folder)
 
         col = gtk.TreeViewColumn("", gtk.CellRendererPixbuf(), pixbuf=1)
@@ -276,6 +313,20 @@ class MessageList(MainWindowElement):
         self.current_info.set_msg_read(path, True)
         self._update_message_info(iter)
 
+    def _dragged_from(self, view, ctx, sel, info, ts):
+        store, paths = view.get_selection().get_selected_rows()
+        msgs = [self.current_info.name()]
+        for path in paths:
+            data = "%s\0%s\0%s\0%s" % (store[path][4],
+                                       store[path][1],
+                                       store[path][2],
+                                       store[path][5])
+            msgs.append(data)
+
+        sel.set("text/d-rats_message", 0, "\x01".join(msgs))
+        gobject.idle_add(self.refresh)
+
+    # MessageList
     def __init__(self, wtree, config):
         MainWindowElement.__init__(self, wtree, config, "msg")
 
@@ -289,6 +340,11 @@ class MessageList(MainWindowElement):
                                    gobject.TYPE_BOOLEAN)
         msglist.set_model(self.store)
         msglist.get_selection().set_mode(gtk.SELECTION_MULTIPLE)
+        msglist.enable_model_drag_source(gtk.gdk.BUTTON1_MASK,
+                                         [("text/d-rats_message", 0, 0)],
+                                         gtk.gdk.ACTION_DEFAULT|
+                                         gtk.gdk.ACTION_MOVE)
+        msglist.connect("drag-data-get", self._dragged_from)
 
         col = gtk.TreeViewColumn("", gtk.CellRendererPixbuf(), pixbuf=0)
         msglist.append_column(col)
