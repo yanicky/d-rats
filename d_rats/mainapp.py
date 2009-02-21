@@ -315,7 +315,7 @@ class MainApp:
 
         return True
 
-    def refresh_comms(self, port, rate):
+    def _refresh_comms(self, port, rate):
         if self.comm and (self.comm.port != port or self.comm.baud != rate):
             self.stop_comms()
             return self.start_comms()
@@ -341,7 +341,7 @@ class MainApp:
         print "Static position: %s,%s" % (lat,lon)
         return gps.StaticGPSSource(lat, lon, alt)
 
-    def refresh_gps(self):
+    def _refresh_gps(self):
         port = self.config.get("settings", "gpsport")
         rate = self.config.getint("settings", "gpsportspeed")
         enab = self.config.getboolean("settings", "gpsenabled")
@@ -363,7 +363,7 @@ class MainApp:
 
             self.gps = self._static_gps()
 
-    def refresh_mail_threads(self):
+    def _refresh_mail_threads(self):
         for i in self.mail_threads:
             i.stop()
 
@@ -374,7 +374,7 @@ class MainApp:
             t.start()
             self.mail_threads.append(t)
 
-    def refresh_lang(self):
+    def _refresh_lang(self):
         locales = { "English" : "en",
                     "Italiano" : "it",
                     }
@@ -406,9 +406,9 @@ class MainApp:
         mapdisplay.set_connected(self.config.getboolean("state",
                                                         "connected_inet"))
 
-        self.refresh_comms(port, rate)
-        self.refresh_gps()
-        self.refresh_mail_threads()
+        self._refresh_comms(port, rate)
+        self._refresh_gps()
+        self._refresh_mail_threads()
 
     def send_chat(self, chattab, station, msg, raw):
         self.chat_session.write(msg)
@@ -425,7 +425,7 @@ class MainApp:
         self.mail_threads = []
 
         self.config = config.DratsConfig(self)
-        self.refresh_lang()
+        self._refresh_lang()
 
         self.gps = self._static_gps()
 
