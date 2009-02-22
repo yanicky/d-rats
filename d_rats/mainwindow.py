@@ -35,6 +35,7 @@ import gobject
 from d_rats.ui.main_messages import MessagesTab
 from d_rats.ui.main_chat import ChatTab
 from d_rats.ui.main_events import EventTab
+from d_rats.ui.main_files import FilesTab
 from d_rats.ui.main_common import MainWindowElement
 
 class MainWindow(MainWindowElement):
@@ -53,6 +54,7 @@ class MainWindow(MainWindowElement):
         self.tabs["chat"] = ChatTab(wtree, config)
         self.tabs["messages"] = MessagesTab(wtree, config)
         self.tabs["event"] = EventTab(wtree, config)
+        self.tabs["files"] = FilesTab(wtree, config)
 
         menu_prefs = self._wtree.get_widget("main_menu_prefs")
         menu_prefs.connect("activate", self._open_prefs)
