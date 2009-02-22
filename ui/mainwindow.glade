@@ -174,6 +174,7 @@
                       <widget class="GtkTreeView" id="msg_msglist">
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
+                        <property name="rules_hint">True</property>
                       </widget>
                       <packing>
                         <property name="resize">True</property>
@@ -432,57 +433,83 @@ KE7FTE</property>
               </packing>
             </child>
             <child>
-              <widget class="GtkScrolledWindow" id="scrolledwindow4">
+              <widget class="GtkHPaned" id="hpaned1">
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
-                <property name="hscrollbar_policy">GTK_POLICY_AUTOMATIC</property>
-                <property name="vscrollbar_policy">GTK_POLICY_AUTOMATIC</property>
-                <property name="shadow_type">GTK_SHADOW_IN</property>
+                <property name="position">300</property>
                 <child>
                   <widget class="GtkVBox" id="vbox4">
                     <property name="visible">True</property>
                     <child>
-                      <widget class="GtkToolbar" id="files_toolbar">
+                      <widget class="GtkToolbar" id="files_local_toolbar">
                         <property name="visible">True</property>
-                        <property name="icon_size">GTK_ICON_SIZE_SMALL_TOOLBAR</property>
                       </widget>
                       <packing>
                         <property name="expand">False</property>
                       </packing>
                     </child>
                     <child>
-                      <widget class="GtkHPaned" id="files_folderpane">
+                      <widget class="GtkTreeView" id="files_local_list">
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
-                        <property name="position">150</property>
-                        <property name="position_set">True</property>
-                        <child>
-                          <widget class="GtkTreeView" id="files_folderlist">
-                            <property name="visible">True</property>
-                            <property name="can_focus">True</property>
-                            <property name="headers_clickable">True</property>
-                          </widget>
-                          <packing>
-                            <property name="resize">False</property>
-                            <property name="shrink">True</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <widget class="GtkIconView" id="files_iconlist">
-                            <property name="visible">True</property>
-                            <property name="can_focus">True</property>
-                          </widget>
-                          <packing>
-                            <property name="resize">True</property>
-                            <property name="shrink">True</property>
-                          </packing>
-                        </child>
+                        <property name="headers_clickable">True</property>
                       </widget>
                       <packing>
                         <property name="position">1</property>
                       </packing>
                     </child>
                   </widget>
+                  <packing>
+                    <property name="resize">False</property>
+                    <property name="shrink">True</property>
+                  </packing>
+                </child>
+                <child>
+                  <widget class="GtkVBox" id="vbox6">
+                    <property name="visible">True</property>
+                    <child>
+                      <widget class="GtkHBox" id="hbox5">
+                        <property name="visible">True</property>
+                        <child>
+                          <widget class="GtkToolbar" id="files_remote_toolbar">
+                            <property name="visible">True</property>
+                          </widget>
+                        </child>
+                        <child>
+                          <widget class="GtkComboBoxEntry" id="files_remote_station">
+                            <property name="visible">True</property>
+                            <child internal-child="entry">
+                              <widget class="GtkEntry" id="comboboxentry-entry2">
+                                <property name="visible">True</property>
+                                <property name="can_focus">True</property>
+                              </widget>
+                            </child>
+                          </widget>
+                          <packing>
+                            <property name="position">1</property>
+                          </packing>
+                        </child>
+                      </widget>
+                      <packing>
+                        <property name="expand">False</property>
+                        <property name="fill">False</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <widget class="GtkTreeView" id="files_remote_list">
+                        <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                        <property name="headers_clickable">True</property>
+                      </widget>
+                      <packing>
+                        <property name="position">1</property>
+                      </packing>
+                    </child>
+                  </widget>
+                  <packing>
+                    <property name="resize">True</property>
+                    <property name="shrink">True</property>
+                  </packing>
                 </child>
               </widget>
               <packing>
@@ -571,6 +598,7 @@ Pings</property>
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="headers_clickable">True</property>
+                        <property name="rules_hint">True</property>
                       </widget>
                     </child>
                   </widget>
