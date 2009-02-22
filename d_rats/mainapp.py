@@ -209,7 +209,7 @@ class MainApp:
             self.comm.connect()
         except comm.DataPathNotConnectedError, e:
             print "COMM did not connect: %s" % e
-            self.mainwindow.set_status("Failed to connect %s: %s", (port, e))
+            self.mainwindow.set_status("Failed to connect %s: %s" % (port, e))
             return False
 
         transport_args = {
@@ -435,7 +435,7 @@ class MainApp:
         
         self.refresh_config()
         
-        if self.config.getboolean("prefs", "dosignon"):
+        if self.config.getboolean("prefs", "dosignon") and self.chat_session:
             msg = self.config.get("prefs", "signon")
             self.mainwindow.tabs["chat"].display_line(msg)
             self.chat_session.write(msg)
