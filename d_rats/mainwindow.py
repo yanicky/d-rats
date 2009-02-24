@@ -43,6 +43,21 @@ class MainWindow(MainWindowElement):
         win = self._wtree.get_widget("mainwindow")
         self._config.show(parent=win)
 
+    def _delete(self, window, event):
+        window.set_default_size(*window.get_size())
+
+    def _destroy(self, window):
+        w, h = window.get_size()
+        print "Saving %i,%i" % (h, w)
+        
+        maximized = window.maximize_initially
+        self._config.set("state", "main_maximized", maximized)
+        if not maximized:
+            self._config.set("state", "main_size_x", w)
+            self._config.set("state", "main_size_y", h)
+
+        gtk.main_quit()
+
     def __init__(self, config):
         # FIXME
         wtree = gtk.glade.XML("ui/mainwindow.glade", "mainwindow")
@@ -58,6 +73,18 @@ class MainWindow(MainWindowElement):
 
         menu_prefs = self._wtree.get_widget("main_menu_prefs")
         menu_prefs.connect("activate", self._open_prefs)
+
+        window = self._wtree.get_widget("mainwindow")
+        window.connect("destroy", self._destroy)
+        window.connect("delete_event", self._delete)
+        h = self._config.getint("state", "main_size_x")
+        w = self._config.getint("state", "main_size_y")
+        print "Setting %i,%i" % (h, w)
+        if self._config.getboolean("state", "main_maximized"):
+            window.maximize()
+            window.set_default_size(h, w)
+        else:
+            window.resize(h, w)
 
     def set_status(self, msg):
         sb = self._wtree.get_widget("statusbar")
