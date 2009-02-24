@@ -441,18 +441,45 @@ KE7FTE</property>
                   <widget class="GtkVBox" id="vbox4">
                     <property name="visible">True</property>
                     <child>
-                      <widget class="GtkToolbar" id="files_local_toolbar">
+                      <widget class="GtkHBox" id="hbox6">
                         <property name="visible">True</property>
+                        <child>
+                          <widget class="GtkToolbar" id="files_local_toolbar">
+                            <property name="visible">True</property>
+                            <property name="show_arrow">False</property>
+                          </widget>
+                          <packing>
+                            <property name="expand">False</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <widget class="GtkLabel" id="files_local_label">
+                            <property name="visible">True</property>
+                            <property name="label" translatable="yes">Local</property>
+                            <property name="justify">GTK_JUSTIFY_CENTER</property>
+                          </widget>
+                          <packing>
+                            <property name="position">1</property>
+                          </packing>
+                        </child>
                       </widget>
                       <packing>
                         <property name="expand">False</property>
                       </packing>
                     </child>
                     <child>
-                      <widget class="GtkTreeView" id="files_local_list">
+                      <widget class="GtkScrolledWindow" id="scrolledwindow4">
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
-                        <property name="headers_clickable">True</property>
+                        <property name="hscrollbar_policy">GTK_POLICY_AUTOMATIC</property>
+                        <property name="vscrollbar_policy">GTK_POLICY_AUTOMATIC</property>
+                        <child>
+                          <widget class="GtkTreeView" id="files_local_list">
+                            <property name="visible">True</property>
+                            <property name="can_focus">True</property>
+                            <property name="headers_clickable">True</property>
+                          </widget>
+                        </child>
                       </widget>
                       <packing>
                         <property name="position">1</property>
@@ -473,7 +500,11 @@ KE7FTE</property>
                         <child>
                           <widget class="GtkToolbar" id="files_remote_toolbar">
                             <property name="visible">True</property>
+                            <property name="show_arrow">False</property>
                           </widget>
+                          <packing>
+                            <property name="expand">False</property>
+                          </packing>
                         </child>
                         <child>
                           <widget class="GtkComboBoxEntry" id="files_remote_station">
@@ -489,6 +520,16 @@ KE7FTE</property>
                             <property name="position">1</property>
                           </packing>
                         </child>
+                        <child>
+                          <widget class="GtkImage" id="files_remote_throb">
+                            <property name="width_request">16</property>
+                            <property name="visible">True</property>
+                          </widget>
+                          <packing>
+                            <property name="expand">False</property>
+                            <property name="position">2</property>
+                          </packing>
+                        </child>
                       </widget>
                       <packing>
                         <property name="expand">False</property>
@@ -496,10 +537,18 @@ KE7FTE</property>
                       </packing>
                     </child>
                     <child>
-                      <widget class="GtkTreeView" id="files_remote_list">
+                      <widget class="GtkScrolledWindow" id="scrolledwindow7">
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
-                        <property name="headers_clickable">True</property>
+                        <property name="hscrollbar_policy">GTK_POLICY_AUTOMATIC</property>
+                        <property name="vscrollbar_policy">GTK_POLICY_AUTOMATIC</property>
+                        <child>
+                          <widget class="GtkTreeView" id="files_remote_list">
+                            <property name="visible">True</property>
+                            <property name="can_focus">True</property>
+                            <property name="headers_clickable">True</property>
+                          </widget>
+                        </child>
                       </widget>
                       <packing>
                         <property name="position">1</property>
