@@ -134,22 +134,23 @@ class MainApp:
     def setup_autoid(self):
         idtext = "(ID)"
 
-    def incoming_chat(self, data, args):
-        sender = args["From"]
-        if sender != "CQCQCQ":
-            self.seen_callsigns.set_call_time(sender, time.time())
+    def incoming_chat(self, cs, src, dst, data, incoming):
+        if src != "CQCQCQ":
+            self.seen_callsigns.set_call_time(src, time.time())
 
-        if args["To"] != "CQCQCQ":
-            to = " -> %s:" % args["To"]
+        if dst != "CQCQCQ":
+            to = " -> %s:" % dst
         else:
             to = ":"
 
-        if args["From"] == "CQCQCQ":
+        if src == "CQCQCQ":
             color = "brokencolor"
-        else:
+        elif incoming:
             color = "incomingcolor"
+        else:
+            color = "outgoingcolor"
 
-        line = "%s%s %s" % (sender, to, args["Msg"])
+        line = "%s%s %s" % (src, to, data)
         gobject.idle_add(self.mainwindow.tabs["chat"].display_line, line, color)
 
     def stop_comms(self):
@@ -223,10 +224,28 @@ class MainApp:
             self.sm = sessionmgr.SessionManager(self.comm,
                                                 callsign,
                                                 **transport_args)
+
+            def in_ping(cs, src, dst, data):
+                msg = "%s pinged %s" % (src, dst)
+                print msg
+                event = main_events.PingEvent(-1, msg)
+                self.mainwindow.tabs["event"].event(event)
+
+            def out_ping(cs, src, dst, data):
+                msg = "%s replied to ping from %s with: %s" % (src, dst, data)
+                print msg
+                event = main_events.PingEvent(-1, msg)
+                self.mainwindow.tabs["event"].event(event)
+
             self.chat_session = self.sm.start_session("chat",
                                                       dest="CQCQCQ",
                                                       cls=sessions.ChatSession)
-            self.chat_session.register_cb(self.incoming_chat)
+            self.chat_session.connect("incoming-chat-message",
+                                      self.incoming_chat, True)
+            self.chat_session.connect("outgoing-chat-message",
+                                      self.incoming_chat, False)
+            self.chat_session.connect("ping-request", in_ping)
+            self.chat_session.connect("ping-response", out_ping)
 
             if self.config.getboolean("settings", "sniff_packets"):
                 ss = self.sm.start_session("Sniffer",
@@ -453,7 +472,6 @@ class MainApp:
         
         if self.config.getboolean("prefs", "dosignon") and self.chat_session:
             msg = self.config.get("prefs", "signon")
-            self.mainwindow.tabs["chat"].display_line(msg)
             self.chat_session.write(msg)
 
     def get_position(self):
