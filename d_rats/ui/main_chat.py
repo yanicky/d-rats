@@ -294,9 +294,6 @@ class ChatTab(MainWindowElement):
         text = entry.get_text()
         entry.set_text("")
 
-        text = "%s: %s" % (self._config.get("user", "callsign"), text)
-
-        self.display_line(text, "outgoingcolor")
         self.emit("user-sent-message", station, text, False)
 
     def _send_msg(self, qm, msg, raw):
