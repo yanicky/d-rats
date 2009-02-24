@@ -27,6 +27,8 @@ if __name__ == "__main__":
     lang.install()
     print sys.path
 
+import os
+
 import libxml2
 import gtk
 import gtk.glade
@@ -39,16 +41,17 @@ from d_rats.ui.main_files import FilesTab
 from d_rats.ui.main_common import MainWindowElement
 
 class MainWindow(MainWindowElement):
-    def _open_prefs(self, menuitem):
-        win = self._wtree.get_widget("mainwindow")
-        self._config.show(parent=win)
+    __gsignals__ = {
+        "config-changed" : (gobject.SIGNAL_RUN_LAST,
+                            gobject.TYPE_NONE,
+                            ()),
+        }
 
     def _delete(self, window, event):
         window.set_default_size(*window.get_size())
 
     def _destroy(self, window):
         w, h = window.get_size()
-        print "Saving %i,%i" % (h, w)
         
         maximized = window.maximize_initially
         self._config.set("state", "main_maximized", maximized)
@@ -57,6 +60,60 @@ class MainWindow(MainWindowElement):
             self._config.set("state", "main_size_y", h)
 
         gtk.main_quit()
+
+    def _connect_menu_items(self, window):
+        def do_save_and_quit(but):
+            window.set_default_size(*window.get_size())
+            window.destroy()
+
+        def do_about(but):
+            d = gtk.AboutDialog()
+            d.set_transient_for(self._wtree.get_widget("mainwindow"))
+
+            verinfo = "GTK %s\nPyGTK %s\n" % ( \
+                ".".join([str(x) for x in gtk.gtk_version]),
+                ".".join([str(x) for x in gtk.pygtk_version]))
+
+            d.set_name("D-RATS")
+            d.set_version("FOO")
+            d.set_copyright("Copyright 2009 Dan Smith (KK7DS)")
+            d.set_website("http://www.d-rats.com")
+            d.set_authors(("Dan Smith <dsmith@danplanet.com>",))
+            d.set_comments(verinfo)
+
+            d.set_translator_credits("Italian: Leo, IZ5FSA")
+        
+            d.run()
+            d.destroy()
+
+        def do_debug(but):
+            path = self._config.platform.config_file("debug.log")
+            if os.path.exists(path):
+                self._config.platform.open_text_file(path)
+            else:
+                d = gtk.MessageDialog(buttons=gtk.BUTTONS_OK,
+                                      parent=window)
+                d.set_property("text",
+                               "Debug log not available")
+                d.run()
+                d.destroy()
+
+        def do_prefs(but):
+            saved = self._config.show(parent=window)
+            if saved:
+                self.emit("config-changed")
+
+        quit = self._wtree.get_widget("main_menu_quit")
+        quit.connect("activate", do_save_and_quit)
+
+        about = self._wtree.get_widget("main_menu_about")
+        about.connect("activate", do_about)
+
+        debug = self._wtree.get_widget("main_menu_debuglog")
+        debug.connect("activate", do_debug)
+
+        menu_prefs = self._wtree.get_widget("main_menu_prefs")
+        menu_prefs.connect("activate", do_prefs)
 
     def __init__(self, config):
         # FIXME
@@ -71,15 +128,15 @@ class MainWindow(MainWindowElement):
         self.tabs["event"] = EventTab(wtree, config)
         self.tabs["files"] = FilesTab(wtree, config)
 
-        menu_prefs = self._wtree.get_widget("main_menu_prefs")
-        menu_prefs.connect("activate", self._open_prefs)
 
         window = self._wtree.get_widget("mainwindow")
         window.connect("destroy", self._destroy)
         window.connect("delete_event", self._delete)
+
+        self._connect_menu_items(window)
+
         h = self._config.getint("state", "main_size_x")
         w = self._config.getint("state", "main_size_y")
-        print "Setting %i,%i" % (h, w)
         if self._config.getboolean("state", "main_maximized"):
             window.maximize()
             window.set_default_size(h, w)

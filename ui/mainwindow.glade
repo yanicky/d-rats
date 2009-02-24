@@ -34,7 +34,7 @@
                       </widget>
                     </child>
                     <child>
-                      <widget class="GtkImageMenuItem" id="quit1">
+                      <widget class="GtkImageMenuItem" id="main_menu_quit">
                         <property name="visible">True</property>
                         <property name="label">gtk-quit</property>
                         <property name="use_underline">True</property>
@@ -111,7 +111,14 @@
                 <child>
                   <widget class="GtkMenu" id="menu4">
                     <child>
-                      <widget class="GtkImageMenuItem" id="about1">
+                      <widget class="GtkMenuItem" id="main_menu_debuglog">
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">Show debug log</property>
+                        <property name="use_underline">True</property>
+                      </widget>
+                    </child>
+                    <child>
+                      <widget class="GtkImageMenuItem" id="main_menu_about">
                         <property name="visible">True</property>
                         <property name="label" translatable="yes">gtk-about</property>
                         <property name="use_underline">True</property>
