@@ -23,7 +23,7 @@ from datetime import datetime
 import gobject
 import gtk
 
-from d_rats.ui.main_common import MainWindowElement
+from d_rats.ui.main_common import MainWindowElement, ask_for_confirmation
 from d_rats import rpcsession
 
 #THROB_IMAGE = "images/Spinning_wheel_throbber.gif"
@@ -177,7 +177,16 @@ class FilesTab(MainWindowElement):
         self._refresh_local()
 
     def _del(self, button, fileview):
-        pass
+        fname = self._local.get_selected_filename()
+
+        question = _("Really delete %s?") % fname
+        mainwin = self._wtree.get_widget("mainwindow")
+        if not ask_for_confirmation(question, mainwin):
+            return
+
+        fn = os.path.join(self._config.get("prefs", "download_dir"), fname)
+        os.remove(fn)
+        self._local.refresh()
 
     def _upload(self, button, lfview):
         fname = self._local.get_selected_filename()

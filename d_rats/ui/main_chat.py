@@ -23,7 +23,7 @@ import gobject
 import gtk
 import pango
 
-from d_rats.ui.main_common import MainWindowElement
+from d_rats.ui.main_common import MainWindowElement, ask_for_confirmation
 from d_rats import inputdialog
 from d_rats import qst
 
@@ -51,6 +51,10 @@ class ChatQM(MainWindowElement):
         d.destroy()
 
     def _rem_qm(self, button, view):
+        if not ask_for_confirmation(_("Really delete?"),
+                                    self._wtree.get_widget("mainwindow")):
+            return
+
         (store, iter) = view.get_selection().get_selected()
         key, = store.get(iter, 1)
         store.remove(iter)
@@ -110,6 +114,10 @@ class ChatQST(MainWindowElement):
         d.destroy()
 
     def _rem_qst(self, button, view):
+        if not ask_for_confirmation(_("Really delete?"),
+                                    self._wtree.get_widget("mainwindow")):
+            return
+
         (model, iter) = view.get_selection().get_selected()
 
         ident, = model.get(iter, 0)
@@ -270,14 +278,22 @@ class ChatTab(MainWindowElement):
         display, = self._getw("display")
         buffer = display.get_buffer()
 
-        buffer.insert_at_cursor(line)
+        (start, end) = buffer.get_bounds()
+        mark = buffer.create_mark(None, end, True)
+        buffer.insert_with_tags_by_name(end, line, *attrs)
+        buffer.delete_mark(mark)
+
+        endmark = buffer.get_mark("end")
+        display.scroll_to_mark(endmark, 0.0, True, 0, 1)
 
     def _send_button(self, button, dest, entry, buffer):
         station = dest.get_active_text()
         text = entry.get_text()
         entry.set_text("")
 
-        self.display_line(text)
+        text = "%s: %s" % (self._config.get("user", "callsign"), text)
+
+        self.display_line(text, "outgoingcolor")
         self.emit("user-sent-message", station, text, False)
 
     def _send_msg(self, qm, msg, raw):
@@ -290,6 +306,7 @@ class ChatTab(MainWindowElement):
         display, entry, send, dest = self._getw("display", "entry", "send",
                                                 "destination")
         buffer = display.get_buffer()
+        buffer.create_mark("end", buffer.get_end_iter(), False)
 
         send.connect("clicked", self._send_button, dest, entry, buffer)
         send.set_flags(gtk.CAN_DEFAULT)
@@ -305,8 +322,44 @@ class ChatTab(MainWindowElement):
 
         self._last_date = 0
 
+        self.reconfigure()
+
+    def _reconfigure_colors(self, buffer):
+        tags = buffer.get_tag_table()
+
+        if not tags.lookup("incomingcolor"):
+            for color in ["red", "blue", "green", "grey"]:
+                tag = gtk.TextTag(color)
+                tag.set_property("foreground", color)
+                tags.add(tag)
+
+            tag = gtk.TextTag("bold")
+            tag.set_property("weight", pango.WEIGHT_BOLD)
+            tags.add(tag)
+
+            tag = gtk.TextTag("italic")
+            tag.set_property("style", pango.STYLE_ITALIC)
+            tags.add(tag)
+
+        regular = ["incomingcolor", "outgoingcolor",
+                   "noticecolor", "ignorecolor"]
+        reverse = ["brokencolor"]
+
+        for i in regular + reverse:
+            tag = tags.lookup(i)
+            if not tag:
+                tag = gtk.TextTag(i)
+                tags.add(tag)
+
+            if i in regular:
+                tag.set_property("foreground", self._config.get("prefs", i))
+            elif i in reverse:
+                tag.set_property("background", self._config.get("prefs", i))
+
     def reconfigure(self):
         display, = self._getw("display")
+
+        self._reconfigure_colors(display.get_buffer())
 
         fontname = self._config.get("prefs", "font")
         font = pango.FontDescription(fontname)

@@ -16,6 +16,16 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import gobject
+import gtk
+
+def ask_for_confirmation(question, parent=None):
+    d = gtk.MessageDialog(buttons=gtk.BUTTONS_YES_NO,
+                          parent=parent,
+                          message_format=question)
+    r = d.run()
+    d.destroy()
+
+    return r == gtk.RESPONSE_YES
 
 class MainWindowElement(gobject.GObject):
     def __init__(self, wtree, config, prefix):
