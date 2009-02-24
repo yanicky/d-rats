@@ -849,7 +849,6 @@ class SessionManager:
         self._register_session(self.control, "CQCQCQ", "new,out")
 
     def fire_session_cb(self, session, reason):
-        print "=-=-=-=-=-=-=-=- FIRING SESSION CB"
         for f,d in self.session_cb.items():
             try:
                 f(d, reason, session)

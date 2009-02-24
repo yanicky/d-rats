@@ -461,8 +461,6 @@ class SessionCoordinator(gobject.GObject):
         if "." in t:
             t = t.split(".")[2]
 
-        print "Session GUI callback: %s %s" % (reason, session._id)
-            
         if reason.startswith("new,"):
             self.new_session(t, session, reason.split(",", 2)[1])
         elif reason == "end":
