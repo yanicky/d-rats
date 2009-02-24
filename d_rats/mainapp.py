@@ -335,13 +335,8 @@ class MainApp:
         return True
 
     def _refresh_comms(self, port, rate):
-        if self.comm and (self.comm.port != port or self.comm.baud != rate):
-            self.stop_comms()
-            return self.start_comms()
-        elif not self.comm:
-            return self.start_comms()
-        else:
-            print "No comm change from %s@%s" % (port, rate)
+        self.stop_comms()
+        return self.start_comms()
 
     def _static_gps(self):
         lat = 0.0
@@ -417,6 +412,8 @@ class MainApp:
             gettext.install("D-RATS")
 
     def refresh_config(self):
+        print "Refreshing config..."
+
         rate = self.config.getint("settings", "rate")
         port = self.config.get("settings", "port")
         call = self.config.get("user", "callsign")
@@ -451,7 +448,8 @@ class MainApp:
         self.mainwindow = mainwindow.MainWindow(self.config)
         self.mainwindow.tabs["chat"].connect("user-sent-message",
                                              self.send_chat)
-        
+        self.mainwindow.connect("config-changed",
+                                lambda w: self.refresh_config())
         self.refresh_config()
         
         if self.config.getboolean("prefs", "dosignon") and self.chat_session:
@@ -470,7 +468,6 @@ class MainApp:
         distdir = platform.get_platform().source_dir()
         userdir = self.config.form_source_dir()
         dist_forms = glob.glob(os.path.join(distdir, "forms", "*.x?l"))
-        print "FORMS: %s (%s)" % (str(dist_forms), distdir)
         for form in dist_forms:
             fname = os.path.basename(form)
             user_fname = os.path.join(userdir, fname)
@@ -481,9 +478,6 @@ class MainApp:
                     shutil.copyfile(form, user_fname)
                 except Exception, e:
                     print "FAILED: %s" % e
-            else:
-                print "User has form %s" % fname
-
         try:
             gtk.main()
         except KeyboardInterrupt:
