@@ -126,6 +126,8 @@ class EventTab(MainWindowElement):
     def __init__(self, wtree, config):
         MainWindowElement.__init__(self, wtree, config, "event")
 
+        self.__ctr = 0
+
         eventlist, = self._getw("list")
 
         self.store = gtk.ListStore(gobject.TYPE_INT,    # 0: id
@@ -133,6 +135,7 @@ class EventTab(MainWindowElement):
                                    gobject.TYPE_INT,    # 2: timestamp
                                    gobject.TYPE_STRING, # 3: message
                                    gobject.TYPE_STRING, # 4: details
+                                   gobject.TYPE_INT,    # 5: order
                                    )
         self._filter_icon = None
         filter = self.store.filter_new()
@@ -150,14 +153,14 @@ class EventTab(MainWindowElement):
         r = gtk.CellRendererText()
         col = gtk.TreeViewColumn(_("Time"), r, text=2)
         col.set_cell_data_func(r, render_time)
-        col.set_sort_column_id(2)
+        col.set_sort_column_id(5)
         eventlist.append_column(col)
 
         r = gtk.CellRendererText()
         col = gtk.TreeViewColumn(_("Description"), r, text=3)
         eventlist.append_column(col)
 
-        self.store.set_sort_column_id(2, gtk.SORT_DESCENDING)
+        self.store.set_sort_column_id(5, gtk.SORT_DESCENDING)
 
         typesel, = self._getw("typesel")
         typesel.set_active(0)
@@ -194,4 +197,6 @@ class EventTab(MainWindowElement):
                        1, _EVENT_TYPES[event._evtype],
                        2, time.time(),
                        3, event._message,
-                       4, event._details)
+                       4, event._details,
+                       5, self.__ctr)
+        self.__ctr += 1
