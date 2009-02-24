@@ -14,7 +14,7 @@ temp_dir() {
 
 copy_source() {
     tmp=$1
-    list=$(hg status -nmca; find . -name '*.mo')
+    list="$(hg status -nmca; find . -name '*.mo') d_rats/version.py"
 
     rsync -arRv $list $HOST:$tmp
 }
