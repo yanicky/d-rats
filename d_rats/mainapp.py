@@ -243,6 +243,11 @@ class MainApp:
             self.rpc_session.connect("exec-job", self.do_rpcjob)
 
 
+            def do_rpc(files, job):
+                self.rpc_session.submit(job)
+
+            self.mainwindow.tabs["files"].connect("submit-rpc-job", do_rpc)
+
             self.sc = session_coordinator.SessionCoordinator(self.config,
                                                              self.sm)
 
@@ -274,7 +279,7 @@ class MainApp:
                 _fn = os.path.basename(fn)
                 event = main_events.FileEvent(id, "File %s Received" % _fn)
                 event.set_as_final()
-                # notify file tab
+                self.mainwindow.tabs["files"].refresh_local()
                 self.mainwindow.tabs["event"].event(event)
             self.sc.connect("file-received", new_file)
                 
@@ -286,13 +291,27 @@ class MainApp:
                 self.mainwindow.tabs["event"].event(event)
             self.sc.connect("form-sent", form_sent)
 
-            self.sm.register_session_cb(self.sc.session_cb, None)
+            def file_sent(sc, id, fn):
+                print "[FILESENT %i]: %s" % (id, fn)
+                _fn = os.path.basename(fn)
+                event = main_events.FileEvent(id, "File %s Sent" % _fn)
+                event.set_as_final()
+                self.mainwindow.tabs["files"].file_sent(fn)
+                self.mainwindow.tabs["event"].event(event)
+            self.sc.connect("file-sent", file_sent)
 
+            def send_file(ft, sta, fn, name):
+                self.sc.send_file(sta, fn, name)
+            self.mainwindow.tabs["files"].connect("user-send-file",
+                                                  send_file)
 
             def send_form(msgs, sta, fn, name):
                 self.sc.send_form(sta, fn, name)
             self.mainwindow.tabs["messages"].connect("user-send-form",
                                                      send_form)
+
+            self.sm.register_session_cb(self.sc.session_cb, None)
+
 
         else:
             self.sm.set_comm(self.comm, **transport_args)
