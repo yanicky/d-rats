@@ -284,287 +284,6 @@ class QSTStation(QSTGPSA):
 
         return QSTGPSA.do_qst(self)
 
-class SelectGUI:
-    def sync_gui(self, load=True):
-        pass
-
-    def ev_cancel(self, widget, data=None):
-        print "Cancel"
-        self.window.hide()
-
-    def ev_okay(self, widget, data=None):
-        print "Okay"
-        self.sync_gui(load=False)
-        self.window.hide()
-
-    def ev_apply(self, widget, data=None):
-        print "Apply"
-        self.sync_gui(load=False)
-
-    def ev_delete(self, widget, data=None):
-        (list, iter) = self.list.get_selection().get_selected()
-        list.remove(iter)
-
-    def ev_add(self, widget, data=None):
-        print "ADD event"
-
-    def ev_reorder(self, widget, data):
-        (list, iter) = self.list.get_selection().get_selected()
-
-        pos = int(list.get_path(iter)[0])
-
-        try:
-            if data > 0:
-                target = list.get_iter(pos-1)
-            else:
-                target = list.get_iter(pos+1)
-        except:
-            return
-
-        if target:
-            list.swap(iter, target)
-
-    def ev_edited_text(self, renderer, path, new_text, colnum):
-        iter = self.list_store.get_iter(path)
-        self.list_store.set(iter, colnum, new_text)
-
-    def ev_edited_int(self, renderer, path, new_text, colnum):
-        try:
-            val = int(new_text)
-            iter = self.list_store.get_iter(path)
-            self.list_store.set(iter, colnum, val)
-        except:
-            print "Non-integral new text: %s" % new_text
-
-    def make_b_controls(self):
-        self.entry = gtk.Button("Foo")
-        self.entry.show()
-        return self.entry
-
-    def make_s_controls(self):
-        vbox = gtk.VBox(True, 0)
-
-        b_raise = gtk.Button("", gtk.STOCK_GO_UP)
-        b_lower = gtk.Button("", gtk.STOCK_GO_DOWN)
-
-        try:
-            b_del = gtk.Button(_("Remove"), gtk.STOCK_DISCARD)
-        except AttributeError:
-            b_del = gtk.Button(_("Remove"))
-
-        b_del.set_size_request(80, -1)
-
-        b_raise.connect("clicked",
-                        self.ev_reorder,
-                        1)
-
-        b_lower.connect("clicked",
-                        self.ev_reorder,
-                        -1)
-
-        b_del.connect("clicked",
-                      self.ev_delete,
-                      None)
-
-        self.tips.set_tip(b_raise, _("Move item up in list"))
-        self.tips.set_tip(b_lower, _("Move item down in list"))
-        self.tips.set_tip(b_del,   _("Discard item from list"))
-
-        vbox.pack_start(b_raise, 0,0,0)
-        vbox.pack_start(b_del, 0,0,0)
-        vbox.pack_start(b_lower, 0,0,0)
-
-        b_raise.show()
-        b_lower.show()
-        b_del.show()
-
-        vbox.show()
-
-        return vbox
-
-    def toggle(self, render, path, data=None):
-        column = data
-        self.list_store[path][column] = not self.list_store[path][column]
-
-    def make_display(self, side):
-        hbox = gtk.HBox(False, 5)
-
-        self.list = gtk.TreeView(self.list_store)
-        self.list.set_rules_hint(True)
-
-        sw = gtk.ScrolledWindow()
-        sw.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
-        sw.add(self.list)
-        sw.show()
-
-        i=0
-        for R,c,t in self.columns:
-            r = R()
-            if R == gtk.CellRendererToggle:
-                r.set_property("activatable", True)
-                r.connect("toggled", self.toggle, i)
-                col = gtk.TreeViewColumn(c, r, active=i)
-            elif R == gtk.CellRendererText:
-                r.set_property("editable", True)
-                if t == int:
-                    r.connect("edited", self.ev_edited_int, i)
-                elif t == str:
-                    r.connect("edited", self.ev_edited_text, i)
-                col = gtk.TreeViewColumn(c, r, text=i)
-
-            self.list.append_column(col)
-
-            i += 1
-
-        hbox.pack_start(sw, 1,1,1)
-        hbox.pack_start(side, 0,0,0)
-
-        self.list.show()
-        hbox.show()
-
-        return hbox
-
-    def make_action_buttons(self):
-        hbox = gtk.HBox(False, 0)
-
-        okay = gtk.Button(_("OK"), gtk.STOCK_OK)
-        cancel = gtk.Button(_("Cancel"), gtk.STOCK_CANCEL)
-        apply = gtk.Button(_("Apply"), gtk.STOCK_APPLY)
-
-        okay.connect("clicked",
-                     self.ev_okay,
-                     None)
-        cancel.connect("clicked",
-                       self.ev_cancel,
-                       None)
-        apply.connect("clicked",
-                      self.ev_apply,
-                      None)        
-
-        hbox.pack_end(cancel, 0,0,0)
-        hbox.pack_end(apply, 0,0,0)
-        hbox.pack_end(okay, 0,0,0)
-
-        okay.set_size_request(100, -1)
-        apply.set_size_request(100, -1)
-        cancel.set_size_request(100, -1)
-        
-        okay.show()
-        cancel.show()
-        apply.show()
-        hbox.show()
-
-        return hbox
-
-    def show(self):
-        self.sync_gui(load=True)
-        self.window.show()
-
-    def __init__(self, title="--"):
-        self.tips = gtk.Tooltips()
-        self.window = gtk.Window(gtk.WINDOW_TOPLEVEL)
-        self.window.set_title(title)
-
-        vbox = gtk.VBox(False, 10)
-
-        vbox.pack_start(self.make_display(self.make_s_controls()),1,1,1)
-        vbox.pack_start(self.make_b_controls(), 0,0,0)
-
-        rule = gtk.HSeparator()
-        rule.show()
-        vbox.pack_start(rule, 0,0,0)
-        
-        vbox.pack_start(self.make_action_buttons(), 0,0,0)
-        vbox.show()
-        
-        self.entry.grab_focus()
-
-        self.window.add(vbox)
-
-        self.window.set_geometry_hints(None, min_width=450, min_height=300)
-
-class QuickMsgGUI(SelectGUI):
-    def __init__(self, config):
-        self.columns = [(gtk.CellRendererText, _("Message"), str)]
-        self.config = config
-        self.list_store = gtk.ListStore(gobject.TYPE_STRING)
-
-        SelectGUI.__init__(self, _("Quick Messages"))
-
-    def ev_add(self, widget, data=None):
-        msg = self.msg.get_text(self.msg.get_start_iter(),
-                                self.msg.get_end_iter())
-
-        iter = self.list_store.append()
-        self.list_store.set(iter, 0, msg)
-
-        print "Message: %s" % msg
-
-        self.msg.set_text("")
-
-    def make_b_controls(self):
-        self.msg = gtk.TextBuffer()
-        self.entry = gtk.TextView(self.msg)
-        self.entry.set_wrap_mode(gtk.WRAP_WORD)
-
-        b_add = gtk.Button(_("Add"), gtk.STOCK_ADD)
-        b_add.set_size_request(80, -1)
-        b_add.connect("clicked",
-                      self.ev_add,
-                      None)
-
-        self.tips.set_tip(self.entry, _("Enter new message text"))
-        self.tips.set_tip(b_add, _("Add new quick message"))
-
-        hbox = gtk.HBox(False, 5)
-
-        sw = gtk.ScrolledWindow()
-        sw.set_policy(gtk.POLICY_NEVER, gtk.POLICY_AUTOMATIC)
-        sw.add(self.entry)
-        sw.show()
-
-        hbox.pack_start(sw, 1,1,0)
-        hbox.pack_start(b_add, 0,0,0)
-
-        b_add.show()
-        self.entry.show()
-        hbox.show()
-
-        return hbox
-
-    def load_msg(self, id):
-        text = self.config.get("quick", id)
-
-        iter = self.list_store.append()
-        self.list_store.set(iter, 0, text)
-
-    def save_msg(self, model, path, iter, data=None):
-        pos = path[0]
-
-        text = model.get(iter, 0)[0]
-
-        self.config.set("quick", "msg_%i" % pos, text)
-
-    def sync_gui(self, load=True):
-        if not self.config.has_section("quick"):
-            self.config.add_section("quick")
-
-        msgs = self.config.options("quick")
-        msgs.sort()
-
-        if load:
-            for i in msgs:
-                self.load_msg(i)
-        else:
-            old_msgs = [x for x in msgs if x.startswith("msg_")]
-            for i in old_msgs:
-                self.config.remove_option("quick", i)
-
-            self.list_store.foreach(self.save_msg, None)
-            self.config.save()
-            # Fixme
-            mainapp.get_mainapp().refresh_config()
-
 class QSTEditWidget(gtk.VBox):
     def __init__(self, *a, **k):
         gtk.VBox.__init__(self, *a, **k)
@@ -881,108 +600,35 @@ class QSTWUEditWidget(QSTEditWidget):
     def to_human(self):
         return self.to_qst()
 
-class QSTGUI2(gtk.Dialog):
-    def ev_add(self, button, typew, intvw):
-        self.__index += 1
-
-        id = str(self.__index)
-
-        self.editor_frame.set_sensitive(True)
-
-        combo_select(typew, _("Text"))
-        self.__current.from_qst(_("My message"))
-        self.__current.id = id
-        self.__listbox.select_item(None)
-
-    def ev_update(self, button, typew, intvw):
-        sec = "qst_%s" % self.__current.id
-        if not self.__config.has_section(sec):
-            self.__config.add_section(sec)
-            self.__config.set(sec, "enabled", "True")
-
-        self.__config.set(sec, "freq", intvw.get_active_text())
-        self.__config.set(sec, "content", self.__current.to_qst())
-        self.__config.set(sec, "type", typew.get_active_text())
-
-        self.__listbox.set_item(self.__current.id,
-                                True,
-                                intvw.get_active_text(),
-                                typew.get_active_text(),
-                                self.__current.to_human())
-
-        self.__listbox.select_item(self.__current.id)
-
-    def ev_cancel(self, button):
-        self.__current.reset()
-        self.editor_frame.set_sensitive(False)
-
-    def ev_rem(self, button):
-        ident = self.__listbox.get_selected()
-        if ident is None:
-            return
-
-        self.__config.remove_section("qst_%s" % ident)
-        self.__listbox.del_item(ident)
-        self.__current.reset()
-
-        self.editor_frame.set_sensitive(False)
-
-    def ev_type_changed(self, box, types):
+class QSTEditDialog(gtk.Dialog):
+    def _select_type(self, box):
         wtype = box.get_active_text()
 
         if self.__current:
             self.__current.hide()
-            ident = self.__current.id
-        else:
-            ident = None
-        
-        self.__current = types[wtype]
+        self.__current = self._types[wtype]
         self.__current.show()
-        self.__current.id = ident
 
-    def ev_enable_toggled(self, listw, ident, en):
-        self.__config.set("qst_%s" % ident, "enabled", str(en))
-
-    def ev_selected(self, listw, ident, typew, intvw):
-        sec = "qst_%s" % ident
-        intvw.child.set_text(self.__config.get(sec, "freq"))
-        combo_select(typew, self.__config.get(sec, "type"))
-
-        self.__current.from_qst(self.__config.get(sec, "content"))
-
-        self.__current.id = ident
-
-        self.editor_frame.set_sensitive(True)
-
-    def __init__(self, config, parent=None):
-        gtk.Dialog.__init__(self,
-                            parent=parent,
-                            buttons=(gtk.STOCK_CLOSE, gtk.RESPONSE_OK))
-        
-        self.__index = 0
-        self.__config = config
-
+    def _make_controls(self):
         hbox = gtk.HBox(False, 2)
-        self.vbox.pack_start(hbox, 1, 1, 1)
+
+        self._type = make_choice(self._types.keys(), False, default=_("Text"))
+        self._type.set_size_request(100, -1)
+        self._type.show()
+        self._type.connect("changed", self._select_type)
+        hbox.pack_start(self._type, 0, 0, 0)
+
+        intervals = ["1", "5", "10", "20", "30", "60", ":30", ":15"]
+        self._freq = make_choice(intervals, True, default="60")
+        self._freq.set_size_request(75, -1)
+        self._freq.show()
+        hbox.pack_start(self._freq, 0, 0, 0)
+
         hbox.show()
+        return hbox
 
-        cols = [(gobject.TYPE_STRING, "__id"),
-                (gobject.TYPE_BOOLEAN, _("Enabled")),
-                (gobject.TYPE_STRING, _("Interval")),
-                (gobject.TYPE_STRING, _("Type")),
-                (gobject.TYPE_STRING, _("Content"))]
-
-        self.__listbox = KeyedListWidget(cols)
-        self.__listbox.show()
-        sw = gtk.ScrolledWindow()
-        sw.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
-        sw.add_with_viewport(self.__listbox)
-        sw.show()
-        hbox.pack_start(sw, 1, 1, 1)
-
-        cbox = gtk.VBox(False, 2)
-
-        types = {
+    def __init__(self, config, ident, parent=None):
+        self._types = {
             _("Text") : QSTTextEditWidget(),
             _("File") : QSTFileEditWidget(),
             _("Exec") : QSTExecEditWidget(),
@@ -990,89 +636,44 @@ class QSTGUI2(gtk.Dialog):
             _("GPS-A"): QSTGPSAEditWidget(),
             _("RSS")  : QSTRSSEditWidget(),
             _("CAP")  : QSTCAPEditWidget(),
-            _("Station") : QSTStationEditWidget(),
+            #_("Station") : QSTStationEditWidget(),
             _("Weather (WU)") : QSTWUEditWidget(),
             }
 
-        if not HAVE_FEEDPARSER:
-            del types[_("RSS")]
-
-        add = gtk.Button(stock=gtk.STOCK_ADD)
-        add.show()
-        cbox.pack_start(add, 0, 0, 0)
-
-        rem = gtk.Button(stock=gtk.STOCK_DELETE)
-        rem.connect("clicked", self.ev_rem)
-        rem.show()
-        cbox.pack_start(rem, 0, 0, 0)
-
-        cbox.show()
-        hbox.pack_start(cbox, 0, 0, 0)
-
-        eframe = gtk.Frame(_("QST Parameters"))
-        eframe.show()
-        self.vbox.pack_start(eframe, 0, 0, 0)
-
-        ecvbox = gtk.VBox(False, 2)
-        eframe.add(ecvbox)
-        ecvbox.show()
-
-        self.editor_frame = eframe
-        self.editor_frame.set_sensitive(False)
-
-        echbox = gtk.HBox(False, 2)
-        echbox.show()
-        ecvbox.pack_start(echbox, 0, 0, 0)
-
-        typew = make_choice(types.keys(), False, default=_("Text"))
-        typew.set_size_request(100, -1)
-        typew.show()
-        echbox.pack_start(typew, 0, 0, 0)
-
-        intervals = ["1", "5", "10", "20", "30", "60", ":30", ":15"]
-
-        intvw = make_choice(intervals, True, default="60")
-        intvw.set_size_request(75, -1)
-        intvw.show()
-        echbox.pack_start(intvw, 0, 0, 0)
-
-        update = gtk.Button(_("Save"))
-        update.set_size_request(75, -1)
-        update.show()
-        echbox.pack_end(update, 0, 0, 0)
-
-        cancel = gtk.Button(_("Cancel"))
-        cancel.set_size_request(75, -1)
-        cancel.show()
-        echbox.pack_end(cancel, 0, 0, 0)
-
-        for i in types.values():
-            i.set_size_request(-1, 80)
-            ecvbox.pack_start(i, 0, 0, 0)
-
-        typew.connect("changed", self.ev_type_changed, types)
-        add.connect("clicked", self.ev_add, typew, intvw)
-        update.connect("clicked", self.ev_update, typew, intvw)
-        cancel.connect("clicked", self.ev_cancel)
-        self.__listbox.connect("item-toggled", self.ev_enable_toggled)
-        self.__listbox.connect("item-selected", self.ev_selected, typew, intvw)
+        gtk.Dialog.__init__(self,
+                            parent=parent,
+                            buttons=(gtk.STOCK_OK, gtk.RESPONSE_OK,
+                                     gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL))
+        self._ident = ident
+        self._config = config
 
         self.__current = None
-        self.ev_type_changed(typew, types)
-        
-        for i in self.__config.sections():
-            if not i.startswith("qst_"):
-                continue
 
-            qst, ident = i.split("_", 2)
-            self.__index = max(self.__index, int(ident) + 1)
-            self.__listbox.set_item(ident,
-                                    self.__config.getboolean(i, "enabled"),
-                                    self.__config.get(i, "freq"),
-                                    self.__config.get(i, "type"),
-                                    self.__config.get(i, "content"))
+        self.set_size_request(300, 150)
 
-        self.set_size_request(600,300)
+        self.vbox.pack_start(self._make_controls(), 0, 0, 0)
+
+        for i in self._types.values():
+            i.set_size_request(-1, 80)
+            self.vbox.pack_start(i, 0, 0, 0)
+
+
+        if self._config.has_section(self._ident):
+            combo_select(self._type, self._config.get(self._ident, "type"))
+            self._freq.child.set_text(self._config.get(self._ident, "freq"))
+            self._select_type(self._type)
+            self.__current.from_qst(self._config.get(self._ident, "content"))
+        else:
+            self._select_type(self._type)
+
+    def save(self):
+        if not self._config.has_section(self._ident):
+            self._config.add_section(self._ident)
+            self._config.set(self._ident, "enabled", "True")
+
+        self._config.set(self._ident, "freq", self._freq.get_active_text())
+        self._config.set(self._ident, "content", self.__current.to_qst())
+        self._config.set(self._ident, "type", self._type.get_active_text())
 
 def get_qst_class(typestr):
     classes = {

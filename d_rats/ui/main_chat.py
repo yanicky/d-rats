@@ -101,19 +101,47 @@ class ChatQST(MainWindowElement):
         q, c = self._qsts[id]
         self._qsts[id] = q, self._remaining_for(freq) * 60
 
+    def _add_qst(self, button, view):
+        d = qst.QSTEditDialog(self._config,
+                              "qst_%s" % time.strftime("%Y%m%d%H%M%S"))
+        if d.run() == gtk.RESPONSE_OK:
+            d.save()
+            self.reconfigure()
+        d.destroy()
+
+    def _rem_qst(self, button, view):
+        (model, iter) = view.get_selection().get_selected()
+
+        ident, = model.get(iter, 0)
+        self._config.remove_section(ident)
+        self._store.remove(iter)
+
+    def _edit_qst(self, button, view):
+        (model, iter) = view.get_selection().get_selected()
+
+        ident, = model.get(iter, 0)
+
+        d = qst.QSTEditDialog(self._config, ident)
+        if d.run() == gtk.RESPONSE_OK:
+            d.save()
+            self.reconfigure()
+        d.destroy()
+
     def __init__(self, wtree, config):
         MainWindowElement.__init__(self, wtree, config, "chat")
 
-        qst_add, qst_rem, qst_list = self._getw("qst_add", "qst_remove",
-                                                "qst_list")
+        qst_add, qst_rem, qst_edit, qst_list = self._getw("qst_add",
+                                                          "qst_remove",
+                                                          "qst_edit",
+                                                          "qst_list")
 
-        self.store = gtk.ListStore(gobject.TYPE_STRING,
-                                   gobject.TYPE_STRING,
-                                   gobject.TYPE_STRING,
-                                   gobject.TYPE_FLOAT,
-                                   gobject.TYPE_STRING,
-                                   gobject.TYPE_BOOLEAN)
-        qst_list.set_model(self.store)
+        self._store = gtk.ListStore(gobject.TYPE_STRING,
+                                    gobject.TYPE_STRING,
+                                    gobject.TYPE_STRING,
+                                    gobject.TYPE_FLOAT,
+                                    gobject.TYPE_STRING,
+                                    gobject.TYPE_BOOLEAN)
+        qst_list.set_model(self._store)
         qst_list.connect("row-activated", self._send_qst)
 
         def render_remaining(col, rend, model, iter):
@@ -142,7 +170,7 @@ class ChatQST(MainWindowElement):
                                  gtk.CellRendererText(), text=4)
 
         r = gtk.CellRendererToggle()
-        r.connect("toggled", self._toggle_qst, self.store, 5, 0, 2)
+        r.connect("toggled", self._toggle_qst, self._store, 5, 0, 2)
         enb = gtk.TreeViewColumn("On", r, active=5)
 
         qst_list.append_column(typ)
@@ -153,6 +181,10 @@ class ChatQST(MainWindowElement):
 
         self._qsts = {}
         self.reconfigure()
+
+        qst_add.connect("clicked", self._add_qst, qst_list)
+        qst_rem.connect("clicked", self._rem_qst, qst_list)
+        qst_edit.connect("clicked", self._edit_qst, qst_list)
 
         gobject.timeout_add(1000, self._tick)
 
@@ -172,9 +204,9 @@ class ChatQST(MainWindowElement):
         self.emit("qst-fired", content, q.raw)
 
     def _tick(self):
-        iter = self.store.get_iter_first()
+        iter = self._store.get_iter_first()
         while iter:
-            i, t, f, p, c, e = self.store.get(iter, 0, 1, 2, 3, 4, 5)
+            i, t, f, p, c, e = self._store.get(iter, 0, 1, 2, 3, 4, 5)
             if e:
                 q, cnt = self._qsts[i]
                 cnt -= 1
@@ -192,20 +224,22 @@ class ChatQST(MainWindowElement):
                 period = int(f) * 60
 
             p = (float(cnt) / period) * 100.0
-            self.store.set(iter, 3, p)
+            self._store.set(iter, 3, p)
 
-            iter = self.store.iter_next(iter)
+            iter = self._store.iter_next(iter)
 
         return True
 
     def reconfigure(self):
+        self._store.clear()
+
         qsts = [x for x in self._config.sections() if x.startswith("qst_")]
         for i in qsts:
             t = self._config.get(i, "type")
             c = self._config.get(i, "content")
             f = self._config.get(i, "freq")
             e = self._config.getboolean(i, "enabled")
-            self.store.append((i, t, f, 0.0, c, e))
+            self._store.append((i, t, f, 0.0, c, e))
                               
             qc = qst.get_qst_class(t)
             q = qc(self._config, c)
