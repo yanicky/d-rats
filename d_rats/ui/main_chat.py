@@ -269,8 +269,12 @@ class ChatTab(MainWindowElement):
         self._qm.connect("user-sent-qm", self._send_msg, False)
         self._qst.connect("qst-fired", self._send_msg)
 
+        self._last_date = 0
+
+    def reconfigure(self):
+        display, = self._getw("display")
+
         fontname = self._config.get("prefs", "font")
         font = pango.FontDescription(fontname)
         display.modify_font(font)
 
-        self._last_date = 0

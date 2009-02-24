@@ -33,3 +33,6 @@ class MainWindowElement(gobject.GObject):
             widgets.append(self._wtree.get_widget(name))
 
         return tuple(widgets)
+
+    def reconfigure(self):
+        pass

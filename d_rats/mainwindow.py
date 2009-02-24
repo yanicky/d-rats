@@ -102,6 +102,8 @@ class MainWindow(MainWindowElement):
             saved = self._config.show(parent=window)
             if saved:
                 self.emit("config-changed")
+                for tabs in self.tabs.values():
+                    tabs.reconfigure()
 
         quit = self._wtree.get_widget("main_menu_quit")
         quit.connect("activate", do_save_and_quit)

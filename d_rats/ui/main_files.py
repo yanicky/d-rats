@@ -48,6 +48,9 @@ class FileView:
     def get_path(self):
         return self._path
 
+    def set_path(self, path):
+        self._path = path
+
     def refresh(self):
         pass
 
@@ -279,8 +282,7 @@ class FilesTab(MainWindowElement):
 
         ddir = self._config.get("prefs", "download_dir")
 
-        self._local = LocalFileView(lview, ddir)
-        self._local.refresh()
+        self._local = LocalFileView(lview, None)
 
         self._remote = None
         rview.set_sensitive(False)
@@ -288,9 +290,15 @@ class FilesTab(MainWindowElement):
         self._init_toolbar()
         self._stop_throb()
 
+        self.reconfigure()
+
     def file_sent(self, _fn):
         fn = os.path.basename(_fn)
         if self._remote and self._remote.outstanding.has_key(fn):
             size = self._remote.outstanding[fn]
             del self._remote.outstanding[fn]
             self._remote.add_explicit(fn, size, time.time())
+
+    def reconfigure(self):
+        self._local.set_path(self._config.get("prefs", "download_dir"))
+        self._local.refresh()
