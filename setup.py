@@ -69,6 +69,7 @@ def default_build():
     desktop_files = glob("share/*.desktop")
     form_files = glob("forms/*.x?l")
     image_files = glob("images/*")
+    ui_files = glob("ui/*")
     _locale_files = glob("locale/*/LC_MESSAGES/D-RATS.mo")
 
     locale_files = []
@@ -79,12 +80,13 @@ def default_build():
 
     setup(
         name="d-rats",
-        packages=["d_rats", "d_rats.geopy"],
+        packages=["d_rats", "d_rats.geopy", "d_rats.ui"],
         version=DRATS_VERSION,
         scripts=["d-rats", "d-rats_mapdownloader", "d-rats_repeater"],
         data_files=[('/usr/share/applications', desktop_files),
                     ('/usr/share/d-rats/forms', form_files),
                     ('/usr/share/d-rats/images', image_files),
+                    ('/usr/share/d-rats/ui', ui_files),
                     ] + locale_files)
                     
 if sys.platform == "darwin":
