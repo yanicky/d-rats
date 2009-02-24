@@ -27,7 +27,7 @@ import gobject
 
 import sessionmgr
 from ddt2 import DDT2RawData, DDT2EncodedFrame
-import mainapp
+from version import DRATS_VERSION
 import platform
 
 session_types = {
@@ -110,7 +110,7 @@ class ChatSession(sessionmgr.StatelessSession):
 
     def ping_data(self):
         p = platform.get_platform()
-        return _("Running") + " D-RATS %s (%s)" % (mainapp.DRATS_VERSION,
+        return _("Running") + " D-RATS %s (%s)" % (DRATS_VERSION,
                                                    p.os_version_string())
 
     def incoming_data(self, frame):

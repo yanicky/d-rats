@@ -1,6 +1,6 @@
 import sys
 
-from d_rats.mainapp import DRATS_VERSION
+from d_rats.version import DRATS_VERSION
 import os
 
 def win32_build():

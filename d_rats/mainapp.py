@@ -62,7 +62,6 @@ from ui import main_events
 
 from utils import hexprint,filter_to_ascii,NetFile
 
-DRATS_VERSION = "0.2.10"
 LOGTF = "%m-%d-%Y_%H:%M:%S"
 
 MAINAPP = None

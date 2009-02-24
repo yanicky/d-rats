@@ -39,6 +39,7 @@ from d_rats.ui.main_chat import ChatTab
 from d_rats.ui.main_events import EventTab
 from d_rats.ui.main_files import FilesTab
 from d_rats.ui.main_common import MainWindowElement
+from d_rats.version import DRATS_VERSION
 
 class MainWindow(MainWindowElement):
     __gsignals__ = {
@@ -75,7 +76,7 @@ class MainWindow(MainWindowElement):
                 ".".join([str(x) for x in gtk.pygtk_version]))
 
             d.set_name("D-RATS")
-            d.set_version("FOO")
+            d.set_version(DRATS_VERSION)
             d.set_copyright("Copyright 2009 Dan Smith (KK7DS)")
             d.set_website("http://www.d-rats.com")
             d.set_authors(("Dan Smith <dsmith@danplanet.com>",))
@@ -130,6 +131,11 @@ class MainWindow(MainWindowElement):
         self.tabs["event"] = EventTab(wtree, config)
         self.tabs["files"] = FilesTab(wtree, config)
 
+        ic = "incomingcolor"
+        self.tabs["chat"]._display_line("D-RATS v%s" % DRATS_VERSION, ic)
+        self.tabs["chat"]._display_line("Copyright 2009 Dan Smith (KK7DS)", ic)
+        self.tabs["chat"]._display_line("")
+        
 
         window = self._wtree.get_widget("mainwindow")
         window.connect("destroy", self._destroy)

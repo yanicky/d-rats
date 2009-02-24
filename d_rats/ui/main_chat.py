@@ -272,15 +272,18 @@ class ChatTab(MainWindowElement):
         else:
             stamp = time.strftime("%H:%M:%S")
 
-        line = "[%s] %s%s" % (stamp, text, os.linesep)
+        line = "[%s] %s" % (stamp, text)
         self._last_date = time.time()
 
+        self._display_line(line, *attrs)
+
+    def _display_line(self, text, *attrs):
         display, = self._getw("display")
         buffer = display.get_buffer()
 
         (start, end) = buffer.get_bounds()
         mark = buffer.create_mark(None, end, True)
-        buffer.insert_with_tags_by_name(end, line, *attrs)
+        buffer.insert_with_tags_by_name(end, text + os.linesep, *attrs)
         buffer.delete_mark(mark)
 
         endmark = buffer.get_mark("end")
