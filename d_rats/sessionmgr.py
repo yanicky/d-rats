@@ -876,7 +876,9 @@ class SessionManager:
             self.sessions[self.sniff_session].handler(frame)
 
         if frame.d_station != "CQCQCQ" and \
-                frame.d_station != self.station:
+                frame.d_station != self.station and \
+                frame.session != 1:
+            # Not CQ, not us, and not chat
             print "Received frame for station `%s'" % frame.d_station
             return
 
