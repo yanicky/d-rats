@@ -297,7 +297,6 @@ class ChatTab(MainWindowElement):
         self.emit("user-sent-message", station, text, False)
 
     def _send_msg(self, qm, msg, raw):
-        self.display_line(msg)
         self.emit("user-sent-message", "CQCQCQ", msg, raw)
 
     def __init__(self, wtree, config):
