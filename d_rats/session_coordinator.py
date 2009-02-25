@@ -118,6 +118,7 @@ class FileBaseThread(SessionThread):
             s += " " + reason
 
         self.coord.session_status(self.session, s)
+        self.coord.session_failed(self.session, s)
 
     def __init__(self, *args):
         SessionThread.__init__(self, *args)
@@ -325,6 +326,9 @@ class SessionCoordinator(gobject.GObject):
         "form-sent" : (gobject.SIGNAL_RUN_LAST,
                        gobject.TYPE_NONE,
                        (gobject.TYPE_INT, gobject.TYPE_STRING)),
+        "session-failed" : (gobject.SIGNAL_RUN_LAST,
+                            gobject.TYPE_NONE,
+                            (gobject.TYPE_INT, gobject.TYPE_STRING)),
         }
 
     def _emit(self, signal, *args):
@@ -344,6 +348,9 @@ class SessionCoordinator(gobject.GObject):
 
     def session_file_sent(self, session, path):
         self._emit("file-sent", session._id, path)
+
+    def session_failed(self, session, msg):
+        self._emit("session-failed", session._id, msg)
 
     def cancel_session(self, id, force=False):
         if id < 2:
