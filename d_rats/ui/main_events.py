@@ -28,6 +28,7 @@ EVENT_FILE_XFER  = 1
 EVENT_FORM_XFER  = 2
 EVENT_PING       = 3
 EVENT_POS_REPORT = 4
+EVENT_SESSION    = 5
 
 EVENT_GROUP_NONE = -1
 
@@ -36,6 +37,7 @@ _EVENT_TYPES = {EVENT_INFO : None,
                 EVENT_FORM_XFER : None,
                 EVENT_PING : None,
                 EVENT_POS_REPORT : None,
+                EVENT_SESSION : None,
                 }
 
 class Event:
@@ -72,6 +74,10 @@ class PosReportEvent(Event):
     def __init__(self, group_id, message):
         Event.__init__(self, group_id, message, EVENT_POS_REPORT)
 
+class SessionEvent(Event):
+    def __init__(self, group_id, message):
+        Event.__init__(self, group_id, message, EVENT_SESSION)
+
 def filter_rows(model, iter, evtab):
     search = evtab._wtree.get_widget("event_searchtext").get_text().upper()
 
@@ -86,6 +92,69 @@ def filter_rows(model, iter, evtab):
         return icon == evtab._filter_icon
 
 class EventTab(MainWindowElement):
+    __gsignals__ = {
+        "user-stop-session" : (gobject.SIGNAL_RUN_LAST, gobject.TYPE_NONE,
+                               (gobject.TYPE_INT,)),
+        "user-cancel-session" : (gobject.SIGNAL_RUN_LAST, gobject.TYPE_NONE,
+                                 (gobject.TYPE_INT,)),
+        }
+
+    def _mh_xfer(self, _action, sid):
+        action = _action.get_name()
+
+        if action == "stop":
+            self.emit("user-stop-session", sid)
+        elif action == "cancel":
+            self.emit("user-cancel-session", sid)
+
+    def _make_session_menu(self, sid):
+        xml = """
+<ui>
+  <popup name="menu">
+    <menuitem action="stop"/>
+    <menuitem action="cancel"/>
+  </popup>
+</ui>
+"""
+        ag = gtk.ActionGroup("menu")
+
+        actions = [("stop", _("Stop")),
+                   ("cancel", _("Cancel"))]
+        for action, label in actions:
+            a = gtk.Action(action, label, None, None)
+            a.connect("activate", self._mh_xfer, sid)
+            ag.add_action(a)
+
+        uim = gtk.UIManager()
+        uim.insert_action_group(ag, 0)
+        uim.add_ui_from_string(xml)
+
+        return uim.get_widget("/menu")
+
+    def _mouse_cb(self, view, event):
+        if event.button != 3:
+            return
+
+        if event.window == view.get_bin_window():
+            x, y = event.get_coords()
+            pathinfo = view.get_path_at_pos(int(x), int(y))
+            if pathinfo is None:
+                return
+            else:
+                view.set_cursor_on_cell(pathinfo[0])
+
+        (model, iter) = view.get_selection().get_selected()
+        type, id = model.get(iter, 1, 0)
+
+        menus = {
+            _EVENT_TYPES[EVENT_SESSION] : self._make_session_menu,
+            }
+                
+        menufn = menus.get(type, None)
+        if menufn:
+            menu = menufn(id)
+            menu.popup(None, None, None, event.button, event.time)
+
     def _type_selected(self, typesel, filtermodel):
         filter = typesel.get_active_text()
         print "Filter on %s" % filter
@@ -122,6 +191,8 @@ class EventTab(MainWindowElement):
             gtk.gdk.pixbuf_new_from_file("images/event_ping.png")
         _EVENT_TYPES[EVENT_POS_REPORT] = \
             gtk.gdk.pixbuf_new_from_file("images/event_posreport.png")
+        _EVENT_TYPES[EVENT_SESSION] = \
+            gtk.gdk.pixbuf_new_from_file("images/event_session.png")
 
     def __init__(self, wtree, config):
         MainWindowElement.__init__(self, wtree, config, "event")
@@ -129,6 +200,8 @@ class EventTab(MainWindowElement):
         self.__ctr = 0
 
         eventlist, = self._getw("list")
+
+        eventlist.connect("button_press_event", self._mouse_cb)
 
         self.store = gtk.ListStore(gobject.TYPE_INT,    # 0: id
                                    gobject.TYPE_OBJECT, # 1: icon

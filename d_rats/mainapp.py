@@ -266,11 +266,23 @@ class MainApp:
 
             self.mainwindow.tabs["files"].connect("submit-rpc-job", do_rpc)
 
+            def do_stop_session(events, sid, force):
+                print "User did stop session %i (force=%s)" % (sid, force)
+                try:
+                    session = self.sm.sessions[sid]
+                    session.close(force)
+                except Exception, e:
+                    print "Session `%i' not found: %s" % (sid, e)
+
+            self.mainwindow.tabs["event"].connect("user-stop-session",
+                                                  do_stop_session,
+                                                  False)
+            self.mainwindow.tabs["event"].connect("user-cancel-session",
+                                                  do_stop_session,
+                                                  True)
+
             self.sc = session_coordinator.SessionCoordinator(self.config,
                                                              self.sm)
-
-            def TEMP_LOG(sc, id, msg):
-                print "[SESSION %i]: %s" % (id, msg)
 
             def log_session_info(sc, id, msg=None):
                 if msg is None:
@@ -278,12 +290,17 @@ class MainApp:
 
                 print "[SESSION %i]: %s" % (id, msg)
 
+                event = main_events.SessionEvent(id, msg)
+                self.mainwindow.tabs["event"].event(event)
+
+            def failed_session(sc, id, msg):
                 event = main_events.Event(id, msg)
                 self.mainwindow.tabs["event"].event(event)
 
             self.sc.connect("session-started", log_session_info)
             self.sc.connect("session-status-update", log_session_info)
             self.sc.connect("session-ended", log_session_info)
+            self.sc.connect("session-failed", failed_session)
 
             def new_form(sc, id, fn):
                 print "[NEWFORM %i]: %s" % (id, fn)
