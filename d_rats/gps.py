@@ -353,7 +353,7 @@ class GPSPosition:
             else:
                 alt = "%i m" % self.altitude
 
-            return "GPS: %s " % self.station + \
+            return "%s " % self.station + \
                 _("reporting") + \
                 " %.4f,%.4f@%s at %s%s%s%s" % ( \
                 self.latitude,
@@ -364,7 +364,7 @@ class GPSPosition:
                 distance,
                 dir)
         else:
-            return "GPS: (" + _("Invalid GPS data") + ")"
+            return "(" + _("Invalid GPS data") + ")"
 
     def _NMEA_format(self, val, latitude):
         if latitude:
