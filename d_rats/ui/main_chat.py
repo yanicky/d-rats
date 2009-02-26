@@ -292,6 +292,8 @@ class ChatTab(MainWindowElement):
     def _send_button(self, button, dest, entry, buffer):
         station = dest.get_active_text()
         text = entry.get_text()
+        if not text:
+            return
         entry.set_text("")
 
         self.emit("user-sent-message", station, text, False)
@@ -309,7 +311,7 @@ class ChatTab(MainWindowElement):
 
         send.connect("clicked", self._send_button, dest, entry, buffer)
         send.set_flags(gtk.CAN_DEFAULT)
-        send.grab_default()
+        send.connect("expose-event", lambda w, e: w.grab_default())
 
         entry.set_activates_default(True)
         entry.grab_focus()
