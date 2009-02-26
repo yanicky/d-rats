@@ -253,6 +253,7 @@ KE7FTE</property>
                       <widget class="GtkEntry" id="chat_entry">
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
+                        <property name="activates_default">True</property>
                       </widget>
                       <packing>
                         <property name="position">1</property>
