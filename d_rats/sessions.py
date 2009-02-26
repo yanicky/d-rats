@@ -29,6 +29,7 @@ import sessionmgr
 from ddt2 import DDT2RawData, DDT2EncodedFrame
 from version import DRATS_VERSION
 import platform
+import gps
 
 session_types = {
     4 : "General",
@@ -107,6 +108,9 @@ class ChatSession(sessionmgr.StatelessSession, gobject.GObject):
                            (gobject.TYPE_STRING,  # Src Station
                             gobject.TYPE_STRING,  # Dst Station
                             gobject.TYPE_STRING)),# Content
+        "incoming-gps-fix" : (gobject.SIGNAL_RUN_LAST,
+                              gobject.TYPE_NONE,
+                              (gobject.TYPE_PYOBJECT,)),
         }
 
     __cb = None
@@ -138,13 +142,23 @@ class ChatSession(sessionmgr.StatelessSession, gobject.GObject):
         return _("Running") + " D-RATS %s (%s)" % (DRATS_VERSION,
                                                    p.os_version_string())
 
+    def _incoming_chat(self, frame):
+        self.emit("incoming-chat-message",
+                  frame.s_station,
+                  frame.d_station,
+                  unicode(frame.data, "utf-8"))
+
+    def _incoming_gps(self, fix):
+        self.emit("incoming-gps-fix", fix)
+
     def incoming_data(self, frame):
         print "Got chat frame: %s" % frame
         if frame.type == self.T_DEF:
-            self.emit("incoming-chat-message",
-                      frame.s_station,
-                      frame.d_station,
-                      unicode(frame.data, "utf-8"))
+            fix = gps.parse_GPS(frame.data)
+            if fix and fix.valid:
+                self._incoming_gps(fix)
+            else:
+                self._incoming_chat(frame)
 
         elif frame.type == self.T_PNG_REQ:
             self.emit("ping-request",

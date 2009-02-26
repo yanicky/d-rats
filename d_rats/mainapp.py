@@ -237,6 +237,12 @@ class MainApp:
                 event = main_events.PingEvent(-1, msg)
                 self.mainwindow.tabs["event"].event(event)
 
+            def in_gps(cs, fix):
+                fix.set_relative_to_current(self.get_position())
+                event = main_events.PosReportEvent(-1, str(fix))
+                event.set_as_final()
+                self.mainwindow.tabs["event"].event(event)
+
             self.chat_session = self.sm.start_session("chat",
                                                       dest="CQCQCQ",
                                                       cls=sessions.ChatSession)
@@ -246,6 +252,7 @@ class MainApp:
                                       self.incoming_chat, False)
             self.chat_session.connect("ping-request", in_ping)
             self.chat_session.connect("ping-response", out_ping)
+            self.chat_session.connect("incoming-gps-fix", in_gps)
 
             if self.config.getboolean("settings", "sniff_packets"):
                 ss = self.sm.start_session("Sniffer",
