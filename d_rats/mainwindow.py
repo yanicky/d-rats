@@ -46,6 +46,9 @@ class MainWindow(MainWindowElement):
         "config-changed" : (gobject.SIGNAL_RUN_LAST,
                             gobject.TYPE_NONE,
                             ()),
+        "show-map-station" : (gobject.SIGNAL_RUN_LAST,
+                              gobject.TYPE_NONE,
+                              (gobject.TYPE_STRING,)),
         }
 
     def _delete(self, window, event):
@@ -106,6 +109,10 @@ class MainWindow(MainWindowElement):
                 for tabs in self.tabs.values():
                     tabs.reconfigure()
 
+        def do_map(but):
+            call = self._config.get("user", "callsign")
+            self.emit("show-map-station", call)
+
         quit = self._wtree.get_widget("main_menu_quit")
         quit.connect("activate", do_save_and_quit)
 
@@ -117,6 +124,9 @@ class MainWindow(MainWindowElement):
 
         menu_prefs = self._wtree.get_widget("main_menu_prefs")
         menu_prefs.connect("activate", do_prefs)
+
+        menu_map = self._wtree.get_widget("main_menu_map")
+        menu_map.connect("activate", do_map)
 
     def __init__(self, config):
         # FIXME

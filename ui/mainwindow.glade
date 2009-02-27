@@ -99,6 +99,13 @@
                 <property name="use_underline">True</property>
                 <child>
                   <widget class="GtkMenu" id="menu3">
+                    <child>
+                      <widget class="GtkMenuItem" id="main_menu_map">
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">Map</property>
+                        <property name="use_underline">True</property>
+                      </widget>
+                    </child>
                   </widget>
                 </child>
               </widget>
