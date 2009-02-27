@@ -487,11 +487,21 @@ class MainApp:
 
         self.gps = self._static_gps()
 
+        self.map = mapdisplay.MapWindow()
+        self.map.set_title("D-RATS Map Window")
+        pos = self.get_position()
+        self.map.set_center(pos.latitude, pos.longitude)
+        self.map.set_zoom(14)
+        #self.map.add_popup_handler(_("Set as current location"),
+        #                           self.set_loc_from_map)
+
         self.mainwindow = mainwindow.MainWindow(self.config)
         self.mainwindow.tabs["chat"].connect("user-sent-message",
                                              self.send_chat)
         self.mainwindow.connect("config-changed",
                                 lambda w: self.refresh_config())
+        self.mainwindow.connect("show-map-station",
+                                lambda w, s: self.map.show())
         self.refresh_config()
         
         if self.config.getboolean("prefs", "dosignon") and self.chat_session:
