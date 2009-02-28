@@ -112,7 +112,7 @@ class RemoteFileView(FileView):
 
         return job
 
-class FilesTab(MainWindowElement):
+class FilesTab(MainWindowTab):
     __gsignals__ = {
         "submit-rpc-job" : (gobject.SIGNAL_RUN_LAST,
                             gobject.TYPE_NONE,

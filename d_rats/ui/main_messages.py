@@ -470,7 +470,7 @@ class MessageList(MainWindowElement):
         
         return selected
 
-class MessagesTab(MainWindowElement):
+class MessagesTab(MainWindowTab):
     __gsignals__ = {
         "user-send-form" : (gobject.SIGNAL_RUN_LAST,
                             gobject.TYPE_NONE,

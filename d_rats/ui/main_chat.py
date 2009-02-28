@@ -255,7 +255,7 @@ class ChatQST(MainWindowElement):
 
             self._qsts[i] = (q, self._remaining_for(f) * 60)
 
-class ChatTab(MainWindowElement):
+class ChatTab(MainWindowTab):
     __gsignals__ = {
         "user-sent-message" : (gobject.SIGNAL_RUN_LAST,
                                gobject.TYPE_NONE,

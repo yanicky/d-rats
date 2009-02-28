@@ -91,7 +91,7 @@ def filter_rows(model, iter, evtab):
     else:
         return icon == evtab._filter_icon
 
-class EventTab(MainWindowElement):
+class EventTab(MainWindowTab):
     __gsignals__ = {
         "user-stop-session" : (gobject.SIGNAL_RUN_LAST, gobject.TYPE_NONE,
                                (gobject.TYPE_INT,)),

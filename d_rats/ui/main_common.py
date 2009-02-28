@@ -46,3 +46,13 @@ class MainWindowElement(gobject.GObject):
 
     def reconfigure(self):
         pass
+
+class MainWindowTab(MainWindowElement):
+    def reconfigure(self):
+        pass
+
+    def selected(self):
+        pass
+
+    def deselected(self):
+        pass
