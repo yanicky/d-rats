@@ -24,13 +24,6 @@ CROSSHAIR = "+"
 
 COLORS = ["red", "green", "cornflower blue", "pink", "orange", "grey"]
 
-ICON_MAPS = {
-    "/" : utils.open_icon_map(os.path.join(platform.get_platform().source_dir(),
-                                           "images", "aprs_pri.png")),
-    "\\": utils.open_icon_map(os.path.join(platform.get_platform().source_dir(),
-                                           "images", "aprs_sec.png")),
-}
-
 BASE_DIR = None
 
 def set_base_dir(basedir):
@@ -208,6 +201,12 @@ class MapTile:
             os.mkdir(self.dir)
 
 class MapWidget(gtk.DrawingArea):
+    __gsignals__ = {
+        "redraw-markers" : (gobject.SIGNAL_RUN_LAST,
+                            gobject.TYPE_NONE,
+                            (gobject.TYPE_STRING,)),
+        }
+
     def draw_text_marker_at(self, x, y, text, color="yellow"):
         gc = self.get_style().black_gc
 
@@ -219,6 +218,8 @@ class MapWidget(gtk.DrawingArea):
             size = ''
 
             text = utils.filter_to_ascii(text)
+
+        #print "Drawing %s at %i,%i" % (text, x, y)
 
         pl = self.create_pango_layout("")
         markup = '<span %s background="%s">%s</span>' % (size, color, text)
@@ -266,21 +267,18 @@ class MapWidget(gtk.DrawingArea):
 
         return lat, lon
 
-    def draw_marker(self, id):
-        (lat, lon, color, img) = self.markers[id]
+    def draw_marker(self, label, lat, lon, img=None):
+        #(lat, lon, color, img) = self.markers[id]
+        color = "red"
 
         x, y = self.latlon2xy(lat, lon)
 
-        if id == CROSSHAIR:
+        if label == CROSSHAIR:
             self.draw_cross_marker_at(x, y)
         else:
             if img:
                 y += (4 + self.draw_image_at(x, y, img))
-            self.draw_text_marker_at(x, y, id, color)
-
-    def draw_markers(self):
-        for id in self.markers.keys():
-            self.draw_marker(id)
+            self.draw_text_marker_at(x, y, label, color)
 
     def expose(self, area, event):
         if len(self.map_tiles) == 0:
@@ -293,7 +291,7 @@ class MapWidget(gtk.DrawingArea):
                                   0, 0,
                                   -1, -1)
 
-        self.draw_markers()
+        self.emit("redraw-markers", "")
 
     def calculate_bounds(self):
         topleft = self.map_tiles[0]
@@ -370,7 +368,7 @@ class MapWidget(gtk.DrawingArea):
                         pb = self.broken_tile()
                     pb = gtk.gdk.pixbuf_new_from_file(tile.local_path())
                 except Exception, e:
-                    print "Broken cached file"
+                    print "Broken cached file: %s" % e
                     pb = self.broken_tile()
  
                 self.pixmap.draw_pixbuf(gc,
@@ -422,7 +420,6 @@ class MapWidget(gtk.DrawingArea):
         self.lat_max = self.lat_min = 0
         self.lon_max = self.lon_min = 0
 
-        self.markers = {}
         self.map_tiles = []
 
         self.set_size_request(self.tilesize * self.width,
@@ -448,13 +445,6 @@ class MapWidget(gtk.DrawingArea):
 
     def get_zoom(self):
         return self.zoom
-
-    def set_marker(self, id, lat, lon, color="yellow", img=None):
-        self.markers[id] = (lat, lon, color, img)
-        self.queue_draw()
-
-    def del_marker(self, id):
-        del self.markers[id]
 
     def scale(self, x, y, pixels=128):
         shift = 15
@@ -936,7 +926,7 @@ class MapWindow(gtk.Window):
 
         icons = []
         for sym in sorted(DPRS_TO_APRS.values()):
-            icon = utils.get_icon(ICON_MAPS, sym)
+            icon = utils.get_icon(sym)
             if icon:
                 icons.append((icon, sym))
         d.add_field(_("Icon"), miscwidgets.make_pixbuf_choice(icons, _icon))
@@ -1098,11 +1088,13 @@ class MapWindow(gtk.Window):
 
         hit = False
 
-        for group in self.markers.values():
-            for vals in group.values():
-                fix = vals[0]
-                
-                _x, _y = self.map.latlon2xy(fix.latitude, fix.longitude)
+        for source in self.map_sources:
+            for point in source.get_points():
+                try:
+                    _x, _y = self.map.latlon2xy(point.get_latitude(),
+                                                point.get_longitude())
+                except ZeroDivisionError:
+                    continue
 
                 dx = abs(x - _x)
                 dy = abs(y - _y)
@@ -1110,20 +1102,17 @@ class MapWindow(gtk.Window):
                 if dx < 20 and dy < 20:
                     hit = True
 
-                    if fix.date:
-                        date = fix.date.strftime("%Y-%m-%d %H:%M:%S")
-                    else:
-                        date = "Unknown"
+                    date = time.ctime(point.get_timestamp())
 
-                    text = "Station: %s" % fix.station + \
-                        "\nLatitude: %.5f" % fix.latitude + \
-                        "\nLongitude: %.5f"% fix.longitude + \
-                        "\nLast update: %s" % date
+                    text = "<b>Station:</b> %s" % point.get_name() + \
+                        "\n<b>Latitude:</b> %.5f" % point.get_latitude() + \
+                        "\n<b>Longitude:</b> %.5f"% point.get_longitude() + \
+                        "\n<b>Last update:</b> %s" % date
 
-                    if fix.comment:
-                        text += "\nInfo: %s" % fix.comment
+                    text += "\n<b>Info</b>: %s" % point.get_comment()
 
-                    label = gtk.Label(text)
+                    label = gtk.Label()
+                    label.set_markup(text)
                     label.show()
                     for child in self.info_window.get_children():
                         self.info_window.remove(child)
@@ -1157,6 +1146,48 @@ class MapWindow(gtk.Window):
         self.sb_gps.pop(self.STATUS_GPS)
         self.sb_gps.push(self.STATUS_GPS, string)
 
+    def update_point(self, source, point):
+        self.marker_list.set_item(source.get_name(),
+                                  point.get_visible(),
+                                  point.get_name(),
+                                  point.get_latitude(),
+                                  point.get_longitude(),
+                                  0, 0)
+        self.map.queue_draw()
+
+    def add_point(self, source, point):
+        self.marker_list.add_item(source.get_name(),
+                                  point.get_visible(), point.get_name(),
+                                  point.get_latitude(),
+                                  point.get_longitude(),
+                                  0, 0)
+        self.map.queue_draw()
+
+    def add_map_source(self, source):
+        self.map_sources.append(source)
+        self.marker_list.add_item(None,
+                                  source.get_visible(), source.get_name(),
+                                  0, 0, 0, 0)
+        for point in source.get_points():
+            self.add_point(source, point)
+
+        source.connect("point-updated", self.update_point)
+        source.connect("point-added", self.add_point)
+
+    def clear_map_sources(self):
+        self.map_sources = []
+
+    def redraw_markers(self, map, foo):
+        for src in self.map_sources:
+            for point in src.get_points():
+                if not point.get_visible():
+                    continue
+
+                map.draw_marker(point.get_name(),
+                                point.get_latitude(),
+                                point.get_longitude(),
+                                point.get_icon())
+
     def __init__(self, *args):
         gtk.Window.__init__(self, *args)
 
@@ -1169,8 +1200,10 @@ class MapWindow(gtk.Window):
 
         tiles = 5
 
+        self.map_sources = []
         self.map = MapWidget(tiles, tiles)
         self.map.show()
+        self.map.connect("redraw-markers", self.redraw_markers)
 
         box = gtk.VBox(False, 2)
 
@@ -1182,6 +1215,7 @@ class MapWindow(gtk.Window):
         self.sw = gtk.ScrolledWindow()
         self.sw.add_with_viewport(self.map)
         self.sw.show()
+
 
         def pre_scale(sw, event, mw):
             ha = mw.sw.get_hadjustment()
@@ -1276,198 +1310,11 @@ class MapWindow(gtk.Window):
     def add_popup_handler(self, name, handler):
         self._popup_items[name] = handler
 
-    def get_markers(self):
-        return self.markers
-
-    def _set_marker(self, fix, color=None, group=_("Misc"), show=True):
-        if not color:
-            color = self.colors.get(group, "yellow")
-
-        if not self.markers.has_key(group):
-            self.markers[group] = {}
-            print "Adding group %s" % group
-            self.marker_list.add_item(None,
-                                      True,
-                                      group,
-                                      0,
-                                      0,
-                                      0,
-                                      0)
-        if not self.markers[group].has_key(fix.station):
-            self.marker_list.add_item(group,
-                                      show,
-                                      fix.station,
-                                      0,
-                                      0,
-                                      0,
-                                      0)
-
-        icon = utils.get_icon(ICON_MAPS, fix.APRSIcon)
-
-        self.markers[group][fix.station] = (fix, show, color, icon)
-        self.map.set_marker(fix.station, fix.latitude, fix.longitude, icon)
-
-    def set_marker(self, fix, color=None, group=_("Misc"), show=True):
-        self._set_marker(fix, color, group, show)
-
-        self.refresh_marker_list()
-
-        if self.center_mark and fix.station == self.center_mark and \
-                self.tracking_enabled:
-            self.recenter(fix.latitude, fix.longitude)
-
-    def del_marker(self, id, group=_("Misc")):
-        try:
-            print "Deleting marker %s" % id
-            print self.markers.keys()
-            del self.markers[group][id]
-            print self.markers.keys()
-            self.marker_list.del_item(group, id)
-            self.refresh_marker_list()
-        except Exception, e:
-            print "Unable to delete marker `%s': %s" % (id, e)
-            return False
-
-        return True
-
     def set_zoom(self, zoom):
         self.map.set_zoom(zoom)
 
     def set_center(self, lat, lon):
         self.map.set_center(lat, lon)
-
-    def parse_static_line(self, line, group, color="orange", add=True):
-        if line.startswith("//"):
-            return
-            
-        comment = None
-        icon = ''
-        show = True
-
-        vals = line.split(",")
-        if len(vals) == 5:
-            id, icon, lat, lon, alt = vals
-        elif len(vals) == 4:
-            id, lat, lon, alt = vals
-        elif len(vals) == 6:
-            id, icon, lat, lon, alt, comment = vals
-        elif len(vals) == 7:
-            id, icon, lat, lon, alt, comment, _show = vals
-            show = _show.upper() == "TRUE"
-        else:
-            raise Exception("Invalid CSV format: %s" % line)
-
-        if add:
-            pos = GPSPosition(station=id.strip(),
-                              lat=float(lat),
-                              lon=float(lon))
-            pos.APRSIcon = icon
-            pos.comment = comment
-
-            self._set_marker(pos, color, group, show=show)
-        else:
-            self.del_marker(id.strip(), group)
-
-    def load_static_points(self, filename, group=None):
-        if not group:
-            group = os.path.splitext(os.path.basename(filename))[0]
-
-        color = COLORS[self.color_index]
-        self.color_index = (self.color_index + 1) % len(COLORS)
-        self.colors[group] = color
-
-        try:
-            f = file(filename)
-        except Exception, e:
-            print "Failed to open static points `%s': %s" % (filename, e)
-            return False
-
-        lines = f.read().split("\n")
-        for line in lines:
-            try:
-                self.parse_static_line(line, group, color=color)
-            except Exception, e:
-                if line:
-                    print "Failed to parse line `%s': %s" % (line, e)
-
-        f.close()
-
-        return True
-
-    def remove_static_points(self, group):
-        p = platform.get_platform()
-        filename = os.path.join(p.config_dir(),
-                                "static_locations",
-                                group + ".csv")
-
-        try:
-            f = file(filename)
-        except Exception, e:
-            print "Failed to open static points `%s': %s" % (filename, e)
-            return False
-
-        lines = f.read().split("\n")
-        for line in lines:
-            try:
-                self.parse_static_line(line, group, add=False)
-            except Exception, e:
-                print "Failed to parse line `%s': %s" % (line, e)
-
-        f.close()
-        os.remove(filename)
-
-        try:
-            print "Deleting marker group `%s'" % group
-            del self.markers[group]
-            self.marker_list.del_item(None, group)
-        except Exception, e:
-            print "Failed to remove group `%s': %s" % (group, e)
-
-        return True
-
-    def remove_current_static(self):
-        try:
-            items = self.marker_list.get_selected()
-        except Exception, e:
-            return
-        
-        group = items[1]
-
-        if not self.markers.has_key(group):
-            d = gtk.MessageDialog(buttons=gtk.BUTTONS_OK, parent=self)
-            d.set_property("text", _("Please select a top-level overlay group"))
-            d.run()
-            d.destroy()
-            return
-
-        d = miscwidgets.YesNoDialog(title=_("Confirm Delete"),
-                                    parent=self,
-                                    buttons=(gtk.STOCK_YES, gtk.RESPONSE_YES,
-                                             gtk.STOCK_NO, gtk.RESPONSE_NO))
-        d.set_text(_("Really delete overlay %s?") % group)
-        r = d.run()
-        d.destroy()
-        if r == gtk.RESPONSE_NO:
-            return
-
-        print "Removing group %s" % group
-        self.remove_static_points(group)
-
-    def save_static_group(self, group, filename):
-        stations = self.markers[group]
-
-        f = file(filename, "w")
-
-        for (fix, show, _, _) in stations.values():
-            icon = fix.APRSIcon or ''
-            print >>f, "%s,%s,%0.4f,%0.4f,,%s,%s" % (fix.station,
-                                                     icon,
-                                                     fix.latitude,
-                                                     fix.longitude,
-                                                     fix.comment or '',
-                                                     show)
-
-        f.close()
 
 if __name__ == "__main__":
 
