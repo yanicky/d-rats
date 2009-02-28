@@ -25,6 +25,7 @@ import gtk
 
 from d_rats.ui.main_common import MainWindowElement, ask_for_confirmation
 from d_rats import rpcsession
+from d_rats import image
 
 #THROB_IMAGE = "images/Spinning_wheel_throbber.gif"
 THROB_IMAGE = "images/throbber.gif"
@@ -191,6 +192,15 @@ class FilesTab(MainWindowElement):
     def _upload(self, button, lfview):
         fname = self._local.get_selected_filename()
         fn = os.path.join(self._config.get("prefs", "download_dir"), fname)
+
+        fnl = fn.lower()
+        if fnl.endswith(".jpg") or \
+                fnl.endswith(".jpeg") or \
+                fnl.endswith(".png") or \
+                fnl.endswith(".gif"):
+            fn = image.send_image(fn)
+            if not fn:
+                return
 
         if self._remote:
             station = self._remote.get_path()

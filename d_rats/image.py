@@ -52,8 +52,9 @@ def update_image(filename, dlg):
 
     resized = dlg.image.resize((h, w))
 
+    (base, ext) = os.path.splitext(os.path.basename(filename))
     dlg.resized = os.path.join(tempfile.gettempdir(),
-                               "resized_" + os.path.basename(filename) + ".jpg")
+                               "resized_" + base + ".jpg")
     resized.save(dlg.resized, quality=dlg.quality)
     
     print "Saved to %s" % dlg.resized
@@ -110,23 +111,25 @@ def build_image_dialog(filename, image, dlgParent=None):
 
     return d
 
-def send_image(start_dir, dlgParent=None):
-    p = platform.get_platform()
-
-    f = p.gui_open_file(start_dir)
-    if not f:
-        return
+def send_image(fn, dlgParent=None):
+    if not has_image_support():
+        msg = _("No support for resizing images.  Send unaltered?")
+        if main_common.ask_for_confirmation(msg, dlgParent):
+            return fn
+        else:
+            return None
 
     try:
-        img = IMAGE.open(f)
-    except IOError:
+        img = IMAGE.open(fn)
+    except IOError, e:
+        print "%s: %s" % (fn, e)
         d = gtk.MessageDialog(buttons=gtk.BUTTONS_OK, parent=dlgParent)
         d.set_property("text", _("Unknown image type"))
         d.run()
         d.destroy()
         return
 
-    d = build_image_dialog(f, img, dlgParent)
+    d = build_image_dialog(fn, img, dlgParent)
     r = d.run()
     f = d.resized
     d.destroy()
