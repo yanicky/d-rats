@@ -24,7 +24,7 @@ import gtk
 import pango
 
 from d_rats.ui.main_common import MainWindowElement, MainWindowTab
-from d_rats.ui.main_common import ask_for_confirmation
+from d_rats.ui.main_common import ask_for_confirmation, display_error
 from d_rats import inputdialog
 from d_rats import qst
 
@@ -302,6 +302,27 @@ class ChatTab(MainWindowTab):
     def _send_msg(self, qm, msg, raw):
         self.emit("user-sent-message", "CQCQCQ", msg, raw)
 
+    def _bcast_file(self, but):
+        dir = self._config.get("prefs", "download_dir")
+        fn = self._config.platform.gui_open_file(dir)
+        if not fn:
+            return
+
+        try:
+            f = file(fn)
+        except Exception, e:
+            display_error(_("Unable to open file %s: %s") % (fn, e))
+            return
+
+        data = f.read()
+        f.close()
+
+        if len(data) > (2 << 12):
+            display_error(_("File is too large to send (>8KB)"))
+            return
+
+        self.emit("user-sent-message", "CQCQCQ", "\r\n" + data, False)
+
     def __init__(self, wtree, config):
         MainWindowElement.__init__(self, wtree, config, "chat")
 
@@ -323,6 +344,9 @@ class ChatTab(MainWindowTab):
         self._qst.connect("qst-fired", self._send_msg)
 
         self._last_date = 0
+
+        bcast = self._wtree.get_widget("main_menu_bcast")
+        bcast.connect("activate", self._bcast_file)
 
         self.reconfigure()
 
