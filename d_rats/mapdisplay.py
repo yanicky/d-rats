@@ -513,17 +513,26 @@ class MapWindow(gtk.Window):
         return frame
 
     def toggle_show(self, group, *vals):
-        if self.markers.has_key(group):
-            (fix, _, color, img) = self.markers[group][vals[1]]
-            self.markers[group][vals[1]] = (fix, vals[0], color, img)
-            print "Setting %s to %s" % (vals[1], vals[0])
-        elif group == None:
-            id = vals[1]
-            for k,v in self.markers[id].items():
-                nv = (v[0], vals[0], v[2], v[3])
-                self.markers[id][k] = nv
+        if group:
+            station = vals[1]
+        else:
+            group = vals[1]
+            station = None
 
-        self.refresh_marker_list()
+        for src in self.map_sources:
+            if group != src.get_name():
+                continue
+
+            if station:
+                try:
+                    point = src.get_point_by_name(station)
+                except KeyError:
+                    continue
+
+                point.set_visible(vals[0])
+            else:
+                src.set_visible(vals[0])            
+                
         self.map.queue_draw()
 
     def marker_mh(self, _action, id, group):
@@ -1179,6 +1188,9 @@ class MapWindow(gtk.Window):
 
     def redraw_markers(self, map, foo):
         for src in self.map_sources:
+            if not src.get_visible():
+                continue
+
             for point in src.get_points():
                 if not point.get_visible():
                     continue
