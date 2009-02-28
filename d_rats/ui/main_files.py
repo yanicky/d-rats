@@ -23,7 +23,8 @@ from datetime import datetime
 import gobject
 import gtk
 
-from d_rats.ui.main_common import MainWindowElement, ask_for_confirmation
+from d_rats.ui.main_common import MainWindowElement, MainWindowTab
+from d_rats.ui.main_common import ask_for_confirmation
 from d_rats import rpcsession
 from d_rats import image
 

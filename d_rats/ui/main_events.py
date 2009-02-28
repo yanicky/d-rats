@@ -21,7 +21,7 @@ from datetime import datetime
 import gobject
 import gtk
 
-from d_rats.ui.main_common import MainWindowElement
+from d_rats.ui.main_common import MainWindowElement, MainWindowTab
 
 EVENT_INFO       = 0
 EVENT_FILE_XFER  = 1

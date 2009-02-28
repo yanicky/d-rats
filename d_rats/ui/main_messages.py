@@ -26,7 +26,7 @@ import gtk
 from ConfigParser import ConfigParser
 from glob import glob
 
-from d_rats.ui.main_common import MainWindowElement
+from d_rats.ui.main_common import MainWindowElement, MainWindowTab
 from d_rats import inputdialog
 from d_rats import formgui
 

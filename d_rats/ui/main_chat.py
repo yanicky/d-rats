@@ -23,7 +23,8 @@ import gobject
 import gtk
 import pango
 
-from d_rats.ui.main_common import MainWindowElement, ask_for_confirmation
+from d_rats.ui.main_common import MainWindowElement, MainWindowTab
+from d_rats.ui.main_common import ask_for_confirmation
 from d_rats import inputdialog
 from d_rats import qst
 
