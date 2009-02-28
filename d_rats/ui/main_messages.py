@@ -27,6 +27,7 @@ from ConfigParser import ConfigParser
 from glob import glob
 
 from d_rats.ui.main_common import MainWindowElement, MainWindowTab
+from d_rats.ui.main_common import prompt_for_station
 from d_rats import inputdialog
 from d_rats import formgui
 
@@ -540,15 +541,9 @@ class MessagesTab(MainWindowTab):
 
         fn = sel[0]
 
-        d = inputdialog.EditableChoiceDialog([])
-        d.label.set_text(_("Select (or enter) a destination station"))
-        r = d.run()
-        station = d.choice.get_active_text()
-        d.destroy()
-        if r != gtk.RESPONSE_OK:
+        station = prompt_for_station([])
+        if not station:
             return
-
-        station = station[:8].upper()
 
         self.emit("user-send-form", station, fn, "foo")
 

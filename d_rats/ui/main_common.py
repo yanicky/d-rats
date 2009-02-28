@@ -18,6 +18,8 @@
 import gobject
 import gtk
 
+from d_rats import inputdialog
+
 def ask_for_confirmation(question, parent=None):
     d = gtk.MessageDialog(buttons=gtk.BUTTONS_YES_NO,
                           parent=parent,
@@ -35,6 +37,17 @@ def display_error(message, parent=None):
     d.destroy()
 
     return r == gtk.RESPONSE_OK
+
+def prompt_for_station(station_list, parent=None):
+    d = inputdialog.EditableChoiceDialog(station_list)
+    d.label.set_text(_("Select (or enter) a destination station"))
+    r = d.run()
+    station = d.choice.get_active_text()
+    d.destroy()
+    if r != gtk.RESPONSE_OK:
+        return None
+    else:
+        return station[:8].upper()
 
 class MainWindowElement(gobject.GObject):
     def __init__(self, wtree, config, prefix):
