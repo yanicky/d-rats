@@ -130,6 +130,9 @@ class MainWindow(MainWindowElement):
         menu_prefs.connect("activate", do_prefs)
 
         menu_map = self._wtree.get_widget("main_menu_map")
+        img = gtk.Image()
+        img.set_from_file("images/map.png")
+        menu_map.set_image(img)
         menu_map.connect("activate", do_map)
 
         menu_templates = self._wtree.get_widget("main_menu_msgtemplates")
