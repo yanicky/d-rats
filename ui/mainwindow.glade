@@ -29,6 +29,13 @@
                       </widget>
                     </child>
                     <child>
+                      <widget class="GtkMenuItem" id="main_menu_msgtemplates">
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">Message Templates</property>
+                        <property name="use_underline">True</property>
+                      </widget>
+                    </child>
+                    <child>
                       <widget class="GtkSeparatorMenuItem" id="separatormenuitem1">
                         <property name="visible">True</property>
                       </widget>
@@ -554,6 +561,7 @@ KE7FTE</property>
                           <widget class="GtkImage" id="files_remote_throb">
                             <property name="width_request">16</property>
                             <property name="visible">True</property>
+                            <property name="stock">gtk-missing-image</property>
                           </widget>
                           <packing>
                             <property name="expand">False</property>

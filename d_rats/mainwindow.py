@@ -40,6 +40,7 @@ from d_rats.ui.main_events import EventTab
 from d_rats.ui.main_files import FilesTab
 from d_rats.ui.main_common import MainWindowElement
 from d_rats.version import DRATS_VERSION
+from d_rats import formbuilder
 
 class MainWindow(MainWindowElement):
     __gsignals__ = {
@@ -113,6 +114,9 @@ class MainWindow(MainWindowElement):
             call = self._config.get("user", "callsign")
             self.emit("show-map-station", call)
 
+        def do_message_templates(but):
+            d = formbuilder.FormManagerGUI(self._config.form_source_dir())
+
         quit = self._wtree.get_widget("main_menu_quit")
         quit.connect("activate", do_save_and_quit)
 
@@ -127,6 +131,9 @@ class MainWindow(MainWindowElement):
 
         menu_map = self._wtree.get_widget("main_menu_map")
         menu_map.connect("activate", do_map)
+
+        menu_templates = self._wtree.get_widget("main_menu_msgtemplates")
+        menu_templates.connect("activate", do_message_templates)
 
     def __init__(self, config):
         # FIXME
