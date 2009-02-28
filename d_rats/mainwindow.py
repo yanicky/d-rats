@@ -138,11 +138,27 @@ class MainWindow(MainWindowElement):
         menu_templates = self._wtree.get_widget("main_menu_msgtemplates")
         menu_templates.connect("activate", do_message_templates)
 
+    def _page_name(self, index=None):
+        if index is None:
+            index = self._tabs.get_current_page()
+
+        tablabels = ["messages", "chat", "files", "event"]
+        return tablabels[index]
+
+    def _tab_switched(self, tabs, page, page_num):
+        tab = self._page_name(page_num)
+        self.tabs[self._current_tab].deselected()
+        self._current_tab = tab
+        self.tabs[self._current_tab].selected()
+
     def __init__(self, config):
         # FIXME
         wtree = gtk.glade.XML("ui/mainwindow.glade", "mainwindow")
 
         MainWindowElement.__init__(self, wtree, config, "")
+
+        self._tabs = self._wtree.get_widget("main_tabs")
+        self._tabs.connect("switch-page", self._tab_switched)
 
         self.tabs = {}
 
@@ -150,6 +166,8 @@ class MainWindow(MainWindowElement):
         self.tabs["messages"] = MessagesTab(wtree, config)
         self.tabs["event"] = EventTab(wtree, config)
         self.tabs["files"] = FilesTab(wtree, config)
+
+        self._current_tab = "messages"
 
         ic = "incomingcolor"
         self.tabs["chat"]._display_line("D-RATS v%s" % DRATS_VERSION, ic)

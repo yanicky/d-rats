@@ -21,11 +21,14 @@
                 <child>
                   <widget class="GtkMenu" id="menu1">
                     <child>
-                      <widget class="GtkImageMenuItem" id="main_menu_prefs">
-                        <property name="visible">True</property>
-                        <property name="label" translatable="yes">gtk-preferences</property>
+                      <widget class="GtkImageMenuItem" id="main_menu_bcast">
+                        <property name="label" translatable="yes">Broadcast Text File</property>
                         <property name="use_underline">True</property>
-                        <property name="use_stock">True</property>
+                        <child internal-child="image">
+                          <widget class="GtkImage" id="menu-item-image2">
+                            <property name="visible">True</property>
+                          </widget>
+                        </child>
                       </widget>
                     </child>
                     <child>
@@ -33,6 +36,19 @@
                         <property name="visible">True</property>
                         <property name="label" translatable="yes">Message Templates</property>
                         <property name="use_underline">True</property>
+                      </widget>
+                    </child>
+                    <child>
+                      <widget class="GtkImageMenuItem" id="main_menu_prefs">
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">gtk-preferences</property>
+                        <property name="use_underline">True</property>
+                        <property name="use_stock">True</property>
+                        <child>
+                          <widget class="GtkMenu" id="menu5">
+                            <property name="visible">True</property>
+                          </widget>
+                        </child>
                       </widget>
                     </child>
                     <child>
@@ -155,7 +171,7 @@
           </packing>
         </child>
         <child>
-          <widget class="GtkNotebook" id="notebook1">
+          <widget class="GtkNotebook" id="main_tabs">
             <property name="visible">True</property>
             <property name="can_focus">True</property>
             <property name="homogeneous">True</property>
