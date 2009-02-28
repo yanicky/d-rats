@@ -323,6 +323,9 @@ class ChatTab(MainWindowTab):
 
         self.emit("user-sent-message", "CQCQCQ", "\r\n" + data, False)
 
+    def _clear(self, but, buffer):
+        buffer.set_text("")
+
     def __init__(self, wtree, config):
         MainWindowElement.__init__(self, wtree, config, "chat")
 
@@ -347,6 +350,9 @@ class ChatTab(MainWindowTab):
 
         bcast = self._wtree.get_widget("main_menu_bcast")
         bcast.connect("activate", self._bcast_file)
+
+        clear = self._wtree.get_widget("main_menu_clear")
+        clear.connect("activate", self._clear, buffer)
 
         self.reconfigure()
 
@@ -393,10 +399,14 @@ class ChatTab(MainWindowTab):
 
     def selected(self):
         bcast = self._wtree.get_widget("main_menu_bcast")
+        clear = self._wtree.get_widget("main_menu_clear")
 
         bcast.set_property("visible", True)
+        clear.set_property("visible", True)
 
     def deselected(self):
         bcast = self._wtree.get_widget("main_menu_bcast")
+        clear = self._wtree.get_widget("main_menu_clear")
 
         bcast.set_property("visible", False)
+        clear.set_property("visible", False)

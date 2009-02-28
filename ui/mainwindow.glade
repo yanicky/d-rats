@@ -123,6 +123,13 @@
                 <child>
                   <widget class="GtkMenu" id="menu3">
                     <child>
+                      <widget class="GtkImageMenuItem" id="main_menu_clear">
+                        <property name="label" translatable="yes">gtk-clear</property>
+                        <property name="use_underline">True</property>
+                        <property name="use_stock">True</property>
+                      </widget>
+                    </child>
+                    <child>
                       <widget class="GtkImageMenuItem" id="main_menu_map">
                         <property name="visible">True</property>
                         <property name="label" translatable="yes">Map</property>
