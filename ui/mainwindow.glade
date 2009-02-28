@@ -27,15 +27,35 @@
                         <child internal-child="image">
                           <widget class="GtkImage" id="menu-item-image2">
                             <property name="visible">True</property>
+                            <property name="stock">gtk-missing-image</property>
                           </widget>
                         </child>
                       </widget>
                     </child>
                     <child>
-                      <widget class="GtkMenuItem" id="main_menu_msgtemplates">
+                      <widget class="GtkImageMenuItem" id="main_menu_msgtemplates">
                         <property name="visible">True</property>
                         <property name="label" translatable="yes">Message Templates</property>
                         <property name="use_underline">True</property>
+                        <child internal-child="image">
+                          <widget class="GtkImage" id="menu-item-image4">
+                            <property name="visible">True</property>
+                            <property name="stock">gtk-dnd-multiple</property>
+                          </widget>
+                        </child>
+                      </widget>
+                    </child>
+                    <child>
+                      <widget class="GtkImageMenuItem" id="main_menu_ping">
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">Ping Station</property>
+                        <property name="use_underline">True</property>
+                        <child internal-child="image">
+                          <widget class="GtkImage" id="menu-item-image3">
+                            <property name="visible">True</property>
+                            <property name="stock">gtk-missing-image</property>
+                          </widget>
+                        </child>
                       </widget>
                     </child>
                     <child>
@@ -44,11 +64,6 @@
                         <property name="label" translatable="yes">gtk-preferences</property>
                         <property name="use_underline">True</property>
                         <property name="use_stock">True</property>
-                        <child>
-                          <widget class="GtkMenu" id="menu5">
-                            <property name="visible">True</property>
-                          </widget>
-                        </child>
                       </widget>
                     </child>
                     <child>
@@ -137,6 +152,7 @@
                         <child internal-child="image">
                           <widget class="GtkImage" id="menu-item-image1">
                             <property name="visible">True</property>
+                            <property name="stock">gtk-missing-image</property>
                           </widget>
                         </child>
                       </widget>
@@ -153,10 +169,16 @@
                 <child>
                   <widget class="GtkMenu" id="menu4">
                     <child>
-                      <widget class="GtkMenuItem" id="main_menu_debuglog">
+                      <widget class="GtkImageMenuItem" id="main_menu_debuglog">
                         <property name="visible">True</property>
                         <property name="label" translatable="yes">Show debug log</property>
                         <property name="use_underline">True</property>
+                        <child internal-child="image">
+                          <widget class="GtkImage" id="menu-item-image5">
+                            <property name="visible">True</property>
+                            <property name="stock">gtk-info</property>
+                          </widget>
+                        </child>
                       </widget>
                     </child>
                     <child>

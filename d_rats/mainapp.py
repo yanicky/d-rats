@@ -540,6 +540,8 @@ class MainApp:
                                 lambda w: self.refresh_config())
         self.mainwindow.connect("show-map-station",
                                 lambda w, s: self.map.show())
+        self.mainwindow.connect("ping-station",
+                                lambda w, s: self.chat_session.ping_station(s))
         self.refresh_config()
         
         if self.config.getboolean("prefs", "dosignon") and self.chat_session:

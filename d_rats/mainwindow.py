@@ -38,7 +38,7 @@ from d_rats.ui.main_messages import MessagesTab
 from d_rats.ui.main_chat import ChatTab
 from d_rats.ui.main_events import EventTab
 from d_rats.ui.main_files import FilesTab
-from d_rats.ui.main_common import MainWindowElement
+from d_rats.ui.main_common import MainWindowElement, prompt_for_station
 from d_rats.version import DRATS_VERSION
 from d_rats import formbuilder
 
@@ -50,6 +50,9 @@ class MainWindow(MainWindowElement):
         "show-map-station" : (gobject.SIGNAL_RUN_LAST,
                               gobject.TYPE_NONE,
                               (gobject.TYPE_STRING,)),
+        "ping-station" : (gobject.SIGNAL_RUN_LAST,
+                          gobject.TYPE_NONE,
+                          (gobject.TYPE_STRING,)),
         }
 
     def _delete(self, window, event):
@@ -117,6 +120,11 @@ class MainWindow(MainWindowElement):
         def do_message_templates(but):
             d = formbuilder.FormManagerGUI(self._config.form_source_dir())
 
+        def do_ping(but):
+            station = prompt_for_station([])
+            if station:
+                self.emit("ping-station", station)            
+
         quit = self._wtree.get_widget("main_menu_quit")
         quit.connect("activate", do_save_and_quit)
 
@@ -137,6 +145,12 @@ class MainWindow(MainWindowElement):
 
         menu_templates = self._wtree.get_widget("main_menu_msgtemplates")
         menu_templates.connect("activate", do_message_templates)
+
+        ping = self._wtree.get_widget("main_menu_ping")
+        img = gtk.Image()
+        img.set_from_file("images/event_ping.png")
+        ping.set_image(img)
+        ping.connect("activate", do_ping)
 
     def _page_name(self, index=None):
         if index is None:
