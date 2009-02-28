@@ -149,7 +149,7 @@ class MapUSGSRiver(MapPoint):
         self.set_altitude(float(_xdoc_getnodeval(ctx, base + "alt_va")))
 
     def __parse_level(self):
-        url = "http://waterdata.usgs.gov/nwis/uv?format=rdb&period=7&site_no=%i" % self.__site
+        url = "http://waterdata.usgs.gov/nwis/uv?format=rdb&period=1&site_no=%i" % self.__site
 
         fn, headers = urllib.urlretrieve(url)
 
