@@ -367,3 +367,12 @@ class ChatTab(MainWindowTab):
         font = pango.FontDescription(fontname)
         display.modify_font(font)
 
+    def selected(self):
+        bcast = self._wtree.get_widget("main_menu_bcast")
+
+        bcast.set_property("visible", True)
+
+    def deselected(self):
+        bcast = self._wtree.get_widget("main_menu_bcast")
+
+        bcast.set_property("visible", False)
