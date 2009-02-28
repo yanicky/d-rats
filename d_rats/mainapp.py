@@ -51,6 +51,7 @@ import mainwindow
 import config
 import gps
 import mapdisplay
+import map_sources
 import comm
 import sessionmgr
 import sessions
@@ -242,6 +243,13 @@ class MainApp:
                 event = main_events.PosReportEvent(-1, str(fix))
                 event.set_as_final()
                 self.mainwindow.tabs["event"].event(event)
+
+                point = map_sources.MapStation(fix.station,
+                                               fix.latitude,
+                                               fix.longitude,
+                                               fix.altitude,
+                                               fix.comment)
+                self.stations_overlay.add_point(point)
 
             self.chat_session = self.sm.start_session("chat",
                                                       dest="CQCQCQ",
@@ -453,6 +461,34 @@ class MainApp:
             print "Unable to load translation for %s: %s" % (locale, e)
             gettext.install("D-RATS")
 
+    def _refresh_map_overlays(self):
+        dir = os.path.join(self.config.platform.config_dir(),
+                           "static_locations")
+        overlays = glob.glob(os.path.join(dir, "*.csv"))
+
+        self.stations_overlay = None
+
+        self.map.clear_map_sources()
+        for overlay in overlays:
+            name = os.path.basename(overlay).replace(".csv", "")
+            source = map_sources.MapFileSource(name, "Static Overlay", overlay)
+            self.map.add_map_source(source)
+            if name == _("Stations"):
+                self.stations_overlay = source
+
+        if not self.stations_overlay:
+            fn = os.path.join(dir, _("Stations") + ".csv")
+            file(fn, "w")
+            self.stations_overlay = map_sources.MapFileSource(_("Stations"),
+                                                              "Static Overlay",
+                                                              fn)
+
+        rivers = [14299800]
+        for river in rivers:
+            self.map.add_map_source(map_sources.MapUSGSRiverSource("USGS NWIS",
+                                                                   "Rivers",
+                                                                   river))
+            
     def refresh_config(self):
         print "Refreshing config..."
 
@@ -467,6 +503,7 @@ class MainApp:
         self._refresh_comms(port, rate)
         self._refresh_gps()
         self._refresh_mail_threads()
+        self._refresh_map_overlays()
 
     def send_chat(self, chattab, station, msg, raw):
         self.chat_session.write(msg)
@@ -492,6 +529,7 @@ class MainApp:
         pos = self.get_position()
         self.map.set_center(pos.latitude, pos.longitude)
         self.map.set_zoom(14)
+                                                              
         #self.map.add_popup_handler(_("Set as current location"),
         #                           self.set_loc_from_map)
 
