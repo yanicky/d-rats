@@ -27,6 +27,15 @@ def ask_for_confirmation(question, parent=None):
 
     return r == gtk.RESPONSE_YES
 
+def display_error(message, parent=None):
+    d = gtk.MessageDialog(buttons=gtk.BUTTONS_OK,
+                          parent=parent,
+                          message_format=message)
+    r = d.run()
+    d.destroy()
+
+    return r == gtk.RESPONSE_OK
+
 class MainWindowElement(gobject.GObject):
     def __init__(self, wtree, config, prefix):
         self._prefix = prefix
