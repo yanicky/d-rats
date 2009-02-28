@@ -21,6 +21,26 @@ import tempfile
 import urllib
 import popen2
 
+import platform
+
+def open_icon_map(iconfn):
+    if not os.path.exists(iconfn):
+        print "Icon file %s not found" % iconfn
+        return None
+    
+    try:
+        return gtk.gdk.pixbuf_new_from_file(iconfn)
+    except Exception, e:
+        print "Error opening icon map %s: %s" % (iconfn, e)
+        return None
+
+ICON_MAPS = {
+    "/" : open_icon_map(os.path.join(platform.get_platform().source_dir(),
+                                           "images", "aprs_pri.png")),
+    "\\": open_icon_map(os.path.join(platform.get_platform().source_dir(),
+                                           "images", "aprs_sec.png")),
+}
+
 def hexprint(data):
     col = 0
 
@@ -105,7 +125,7 @@ def get_icon_from_map(iconmap, symbol):
 
     return get_sub_image(iconmap, i, j)
 
-def get_icon(sets, key):
+def get_icon(key):
     if not key:
         return None
 
@@ -126,20 +146,9 @@ def get_icon(sets, key):
         return None
 
     try:
-        return get_icon_from_map(sets[set], key)
+        return get_icon_from_map(ICON_MAPS[set], key)
     except Exception, e:
         print "Error cutting icon %s: %s" % (key, e)
-        return None
-
-def open_icon_map(iconfn):
-    if not os.path.exists(iconfn):
-        print "Icon file %s not found" % iconfn
-        return None
-    
-    try:
-        return gtk.gdk.pixbuf_new_from_file(iconfn)
-    except Exception, e:
-        print "Error opening icon map %s: %s" % (iconfn, e)
         return None
 
 class NetFile(file):
