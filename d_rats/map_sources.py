@@ -18,6 +18,7 @@
 import urllib
 import time
 import threading
+import os
 
 import libxml2
 import gobject
@@ -34,7 +35,7 @@ class MapPoint(gobject.GObject):
                      (gobject.TYPE_STRING,)),
         }
 
-    def _retr_hook(self):
+    def _retr_hook(self, method, attribute):
         pass
 
     def __init__(self):
@@ -49,9 +50,9 @@ class MapPoint(gobject.GObject):
         self.__visible = True
 
     def __getattr__(self, name):
-        self._retr_hook()
-
         _get, name = name.split("_", 1)
+
+        self._retr_hook(_get, name)
 
         attrname = "_MapPoint__%s" % name
 
@@ -89,10 +90,15 @@ class MapStation(MapPoint):
         self.set_altitude(alt)
         self.set_name(call)
         self.set_comment(comment)
+        self._aprs_sym = ""
         # FIXME: Set icon from DPRS comment
 
     def set_icon_from_aprs_sym(self, symbol):
         self.set_icon(utils.get_icon(symbol))
+        self._aprs_sym = symbol
+
+    def get_aprs_symbol(self):
+        return self._aprs_sym
 
 def _xdoc_getnodeval(ctx, nodespec):
     items = ctx.xpathEval(nodespec)
@@ -154,7 +160,7 @@ class MapUSGSRiver(MapPoint):
         self.set_comment("River height: %.1f ft" % self._height_ft)
         self.set_timestamp(time.time())
 
-    def _retr_hook(self):
+    def _retr_hook(self, method, attribute):
         if time.time() - self.__ts > 60:
             try:
                 self.__ts = time.time()
@@ -199,6 +205,9 @@ class MapSource(gobject.GObject):
         self._points = {}
         self._color = color
         self._visible = True
+
+    def save(self):
+        pass
 
     def add_point(self, point):
         had = self._points.has_key(point.get_name())
@@ -251,10 +260,27 @@ class MapFileSource(MapSource):
 
         return point
 
+    def save(self):
+        self._need_save = 0
+        f = file(self._fn, "w")
+
+        for point in self.get_points():
+            f.write("%s,%s,%f,%f,%f,%s,%s%s" % (point.get_name(),
+                                                point.get_aprs_symbol(),
+                                                point.get_latitude(),
+                                                point.get_longitude(),
+                                                point.get_altitude(),
+                                                point.get_comment(),
+                                                point.get_visible(),
+                                                os.linesep))
+        f.close()                  
+
     def __init__(self, name, description, fn):
         MapSource.__init__(self, name, description)
 
         self._fn = fn
+
+        self.__need_save = 0
 
         try:
             input = file(fn)

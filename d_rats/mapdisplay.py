@@ -532,6 +532,9 @@ class MapWindow(gtk.Window):
                 point.set_visible(vals[0])
             else:
                 src.set_visible(vals[0])            
+
+            src.save()
+            break
                 
         self.map.queue_draw()
 
@@ -1185,6 +1188,9 @@ class MapWindow(gtk.Window):
 
     def clear_map_sources(self):
         self.map_sources = []
+
+    def get_map_sources(self):
+        return self.map_sources
 
     def redraw_markers(self, map, foo):
         for src in self.map_sources:
