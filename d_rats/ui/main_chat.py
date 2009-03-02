@@ -33,6 +33,9 @@ class LoggedTextBuffer(gtk.TextBuffer):
         gtk.TextBuffer.__init__(self)
         self.__logfile = file(logfile, "a", 0)
 
+    def get_logfile(self):
+        return self.__logfile.name
+
     def insert_with_tags_by_name(self, iter, text, *attrs):
         gtk.TextBuffer.insert_with_tags_by_name(self, iter, text, *attrs)
         self.__logfile.write(text)
@@ -362,8 +365,8 @@ class ChatTab(MainWindowTab):
         self.emit("user-sent-message", "CQCQCQ", "\r\n" + data, False)
 
     def _clear(self, but, buffer):
-        buffer = self._display_selected().get_buffer()
-        buffer.set_text("")
+        num, display = self._display_selected()
+        display.get_buffer().set_text("")
 
     def _tab_selected(self, tabs, page, num):
         self._unhighlight_tab(num)
@@ -392,6 +395,11 @@ class ChatTab(MainWindowTab):
 
         self._config.set("state", "filters", str(self.__filters.keys()))
 
+    def _view_log(self, but):
+        num, display = self._display_selected()
+        fn = display.get_buffer().get_logfile()
+        self._config.platform.open_text_file(fn)
+
     def __init__(self, wtree, config):
         MainWindowElement.__init__(self, wtree, config, "chat")
 
@@ -407,6 +415,9 @@ class ChatTab(MainWindowTab):
 
         delf = self._wtree.get_widget("main_menu_delfilter")
         delf.connect("activate", self._del_filter)
+
+        vlog = self._wtree.get_widget("main_menu_viewlog")
+        vlog.connect("activate", self._view_log)
 
         send.connect("clicked", self._send_button, dest, entry)
         send.set_flags(gtk.CAN_DEFAULT)
@@ -518,7 +529,8 @@ class ChatTab(MainWindowTab):
 
     def selected(self):
         make_visible = ["main_menu_bcast", "main_menu_clear",
-                        "main_menu_addfilter", "main_menu_delfilter"]
+                        "main_menu_addfilter", "main_menu_delfilter",
+                        "main_menu_viewlog"]
         
         for name in make_visible:
             item = self._wtree.get_widget(name)
@@ -526,7 +538,8 @@ class ChatTab(MainWindowTab):
 
     def deselected(self):
         make_invisible = ["main_menu_bcast", "main_menu_clear",
-                        "main_menu_addfilter", "main_menu_delfilter"]
+                          "main_menu_addfilter", "main_menu_delfilter",
+                          "main_menu_viewlog"]
         
         for name in make_invisible:
             item = self._wtree.get_widget(name)
