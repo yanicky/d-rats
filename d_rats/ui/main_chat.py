@@ -265,7 +265,7 @@ class ChatTab(MainWindowTab):
                                 gobject.TYPE_BOOLEAN))
         }
 
-    def display_line(self, text, *attrs):
+    def display_line(self, text, incoming, *attrs):
         """Display a single line of text with datestamp"""
 
         if (time.time() - self._last_date) > 600:
@@ -276,10 +276,36 @@ class ChatTab(MainWindowTab):
         line = "[%s] %s" % (stamp, text)
         self._last_date = time.time()
 
-        self._display_line(line, *attrs)
+        self._display_line(line, incoming, *attrs)
 
-    def _display_line(self, text, *attrs):
-        display, = self._getw("display")
+    def _highlight_tab(self, num):
+        child = self.__filtertabs.get_nth_page(num)
+        label = self.__filtertabs.get_tab_label(child)
+        mkup = "<span color='red'>%s</span>" % label.get_text()
+        label.set_markup(mkup)
+
+    def _unhighlight_tab(self, num):
+        child = self.__filtertabs.get_nth_page(num)
+        label = self.__filtertabs.get_tab_label(child)
+        label.set_markup(label.get_text())
+
+    def _display_matching_filter(self, text):
+        for filter, (tabnum, display) in self.__filters.items():
+            if filter and filter in text:
+                return tabnum, display
+
+        return self.__filters[None]
+
+    def _display_selected(self):
+        cur = self.__filtertabs.get_current_page()
+        return cur, self.__filtertabs.get_nth_page(cur).child
+
+    def _display_line(self, text, apply_filters, *attrs):
+        if apply_filters:
+            tabnum, display = self._display_matching_filter(text)
+        else:
+            tabnum, display = self._display_selected()
+
         buffer = display.get_buffer()
 
         (start, end) = buffer.get_bounds()
@@ -290,7 +316,10 @@ class ChatTab(MainWindowTab):
         endmark = buffer.get_mark("end")
         display.scroll_to_mark(endmark, 0.0, True, 0, 1)
 
-    def _send_button(self, button, dest, entry, buffer):
+        if tabnum != self.__filtertabs.get_current_page():
+            self._highlight_tab(tabnum)
+
+    def _send_button(self, button, dest, entry):
         station = dest.get_active_text()
         text = entry.get_text()
         if not text:
@@ -324,17 +353,53 @@ class ChatTab(MainWindowTab):
         self.emit("user-sent-message", "CQCQCQ", "\r\n" + data, False)
 
     def _clear(self, but, buffer):
+        buffer = self._display_selected().get_buffer()
         buffer.set_text("")
+
+    def _tab_selected(self, tabs, page, num):
+        self._unhighlight_tab(num)
+
+        delf = self._wtree.get_widget("main_menu_delfilter")
+        delf.set_sensitive(num != 0)
+
+    def _add_filter(self, but):
+        d = inputdialog.TextInputDialog(title=_("Create filter"))
+        d.label.set_text(_("Enter a filter search string:"))
+        r = d.run()
+        text = d.text.get_text()
+        d.destroy()
+
+        if r == gtk.RESPONSE_OK:
+            self._build_filter(text)
+            self._config.set("state", "filters", str(self.__filters.keys()))
+
+    def _del_filter(self, but):
+        idx = self.__filtertabs.get_current_page()
+        page = self.__filtertabs.get_nth_page(idx)
+        text = self.__filtertabs.get_tab_label(page).get_text()
+
+        del self.__filters[text]
+        self.__filtertabs.remove_page(idx)
+
+        self._config.set("state", "filters", str(self.__filters.keys()))
 
     def __init__(self, wtree, config):
         MainWindowElement.__init__(self, wtree, config, "chat")
 
-        display, entry, send, dest = self._getw("display", "entry", "send",
-                                                "destination")
-        buffer = display.get_buffer()
-        buffer.create_mark("end", buffer.get_end_iter(), False)
+        entry, send, dest = self._getw("entry", "send", "destination")
+        self.__filtertabs, = self._getw("filtertabs")
+        self.__filters = {}
 
-        send.connect("clicked", self._send_button, dest, entry, buffer)
+        self.__filtertabs.remove_page(0)
+        self.__filtertabs.connect("switch-page", self._tab_selected)
+
+        addf = self._wtree.get_widget("main_menu_addfilter")
+        addf.connect("activate", self._add_filter)
+
+        delf = self._wtree.get_widget("main_menu_delfilter")
+        delf.connect("activate", self._del_filter)
+
+        send.connect("clicked", self._send_button, dest, entry)
         send.set_flags(gtk.CAN_DEFAULT)
         send.connect("expose-event", lambda w, e: w.grab_default())
 
@@ -352,7 +417,7 @@ class ChatTab(MainWindowTab):
         bcast.connect("activate", self._bcast_file)
 
         clear = self._wtree.get_widget("main_menu_clear")
-        clear.connect("activate", self._clear, buffer)
+        clear.connect("activate", self._clear)
 
         self.reconfigure()
 
@@ -388,25 +453,67 @@ class ChatTab(MainWindowTab):
             elif i in reverse:
                 tag.set_property("background", self._config.get("prefs", i))
 
-    def reconfigure(self):
-        display, = self._getw("display")
+    def _build_filter(self, text):
+        buffer = gtk.TextBuffer()
+        buffer.create_mark("end", buffer.get_end_iter(), False)
+        display = gtk.TextView(buffer)
 
-        self._reconfigure_colors(display.get_buffer())
+        sw = gtk.ScrolledWindow()
+        sw.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_NEVER)
+        sw.add(display)
+
+        display.show()
+        sw.show()
+
+        if text:
+            lab = gtk.Label(text)
+        else:
+            lab = gtk.Label(_("Main"))
+
+        lab.show()
+        tabnum = self.__filtertabs.append_page(sw, lab)
+
+        self.__filters[text] = (tabnum, display)
+
+        self._reconfigure_colors(buffer)
+
+    def _reconfigure_filters(self):
+        for filter, (tabnum, display) in self.__filters.items():
+            self.__filtertabs.remove_page(tabnum)
+
+        self.__filters = {}
+
+        filters = eval(self._config.get("state", "filters"))
+        filters.remove(None)
+        filters.insert(0, None) # Main catch-all
+
+        for filter in filters:
+            self._build_filter(filter)
+
+    def reconfigure(self):
+        if not self.__filters.has_key(None):
+            # First time only
+            self._reconfigure_filters()
+
+        for num, display in self.__filters.values():
+            self._reconfigure_colors(display.get_buffer())
 
         fontname = self._config.get("prefs", "font")
         font = pango.FontDescription(fontname)
         display.modify_font(font)
 
     def selected(self):
-        bcast = self._wtree.get_widget("main_menu_bcast")
-        clear = self._wtree.get_widget("main_menu_clear")
-
-        bcast.set_property("visible", True)
-        clear.set_property("visible", True)
+        make_visible = ["main_menu_bcast", "main_menu_clear",
+                        "main_menu_addfilter", "main_menu_delfilter"]
+        
+        for name in make_visible:
+            item = self._wtree.get_widget(name)
+            item.set_property("visible", True)
 
     def deselected(self):
-        bcast = self._wtree.get_widget("main_menu_bcast")
-        clear = self._wtree.get_widget("main_menu_clear")
-
-        bcast.set_property("visible", False)
-        clear.set_property("visible", False)
+        make_invisible = ["main_menu_bcast", "main_menu_clear",
+                        "main_menu_addfilter", "main_menu_delfilter"]
+        
+        for name in make_invisible:
+            item = self._wtree.get_widget(name)
+            item.set_property("visible", False)

@@ -138,6 +138,30 @@
                 <child>
                   <widget class="GtkMenu" id="menu3">
                     <child>
+                      <widget class="GtkImageMenuItem" id="main_menu_addfilter">
+                        <property name="label" translatable="yes">Add filter</property>
+                        <property name="use_underline">True</property>
+                        <child internal-child="image">
+                          <widget class="GtkImage" id="menu-item-image7">
+                            <property name="visible">True</property>
+                            <property name="stock">gtk-add</property>
+                          </widget>
+                        </child>
+                      </widget>
+                    </child>
+                    <child>
+                      <widget class="GtkImageMenuItem" id="main_menu_delfilter">
+                        <property name="label" translatable="yes">Delete Filter</property>
+                        <property name="use_underline">True</property>
+                        <child internal-child="image">
+                          <widget class="GtkImage" id="menu-item-image6">
+                            <property name="visible">True</property>
+                            <property name="stock">gtk-close</property>
+                          </widget>
+                        </child>
+                      </widget>
+                    </child>
+                    <child>
                       <widget class="GtkImageMenuItem" id="main_menu_clear">
                         <property name="label" translatable="yes">gtk-clear</property>
                         <property name="use_underline">True</property>
@@ -273,22 +297,22 @@
               <widget class="GtkVBox" id="vbox2">
                 <property name="visible">True</property>
                 <child>
-                  <widget class="GtkScrolledWindow" id="scrolledwindow3">
+                  <widget class="GtkNotebook" id="chat_filtertabs">
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
-                    <property name="hscrollbar_policy">GTK_POLICY_NEVER</property>
-                    <property name="vscrollbar_policy">GTK_POLICY_AUTOMATIC</property>
-                    <property name="shadow_type">GTK_SHADOW_IN</property>
+                    <property name="tab_pos">GTK_POS_BOTTOM</property>
                     <child>
-                      <widget class="GtkTextView" id="chat_display">
+                      <placeholder/>
+                    </child>
+                    <child>
+                      <widget class="GtkLabel" id="label4">
                         <property name="visible">True</property>
-                        <property name="can_focus">True</property>
-                        <property name="editable">False</property>
-                        <property name="wrap_mode">GTK_WRAP_WORD</property>
-                        <property name="cursor_visible">False</property>
-                        <property name="text" translatable="yes">
-</property>
+                        <property name="label" translatable="yes">Main</property>
                       </widget>
+                      <packing>
+                        <property name="type">tab</property>
+                        <property name="tab_fill">False</property>
+                      </packing>
                     </child>
                   </widget>
                 </child>

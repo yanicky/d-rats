@@ -152,7 +152,8 @@ class MainApp:
             color = "outgoingcolor"
 
         line = "%s%s %s" % (src, to, data)
-        gobject.idle_add(self.mainwindow.tabs["chat"].display_line, line, color)
+        gobject.idle_add(self.mainwindow.tabs["chat"].display_line,
+                         line, incoming, color)
 
     def stop_comms(self):
         if self.sm:

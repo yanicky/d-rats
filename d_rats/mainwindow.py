@@ -184,10 +184,10 @@ class MainWindow(MainWindowElement):
         self._current_tab = "messages"
 
         ic = "incomingcolor"
-        self.tabs["chat"]._display_line("D-RATS v%s" % DRATS_VERSION, ic)
-        self.tabs["chat"]._display_line("Copyright 2009 Dan Smith (KK7DS)", ic)
-        self.tabs["chat"]._display_line("")
-        
+        cpr = "Copyright 2009 Dan Smith (KK7DS)"
+        self.tabs["chat"]._display_line("D-RATS v%s" % DRATS_VERSION, True, ic)
+        self.tabs["chat"]._display_line(cpr, True, ic)
+        self.tabs["chat"]._display_line("", True)        
 
         window = self._wtree.get_widget("mainwindow")
         window.connect("destroy", self._destroy)
