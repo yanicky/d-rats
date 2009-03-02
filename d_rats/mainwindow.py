@@ -125,6 +125,9 @@ class MainWindow(MainWindowElement):
             if station:
                 self.emit("ping-station", station)            
 
+        def do_conninet(but):
+            self._config.set("state", "connected_inet", but.get_active())
+
         quit = self._wtree.get_widget("main_menu_quit")
         quit.connect("activate", do_save_and_quit)
 
@@ -151,6 +154,10 @@ class MainWindow(MainWindowElement):
         img.set_from_file("images/event_ping.png")
         ping.set_image(img)
         ping.connect("activate", do_ping)
+
+        conn = self._wtree.get_widget("main_menu_conninet")
+        conn.set_active(self._config.getboolean("state", "connected_inet"))
+        conn.connect("activate", do_conninet)
 
     def _page_name(self, index=None):
         if index is None:
