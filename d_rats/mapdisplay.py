@@ -329,9 +329,6 @@ class MapWidget(gtk.DrawingArea):
     def load_tiles(self):
         self.map_tiles = []
 
-        prog = miscwidgets.ProgressDialog(_("Loading map"))
-
-        prog.set_text(_("Getting map center"))
         center = MapTile(self.lat, self.lon, self.zoom)
 
         delta_h = self.height / 2
@@ -358,11 +355,12 @@ class MapWidget(gtk.DrawingArea):
             for j in range(0, self.height):
                 tile = center + (i - delta_w, j - delta_h)
                 if not tile.is_local():
-                    prog.set_text(_("Retrieving") + " %i, %i" % (i,j))
-                    prog.show()
+                    message = _("Retrieving")
                 else:
-                    prog.set_text(_("Loading") + " %i, %i" % (i, j))
-                
+                    message = _("Loading")
+                self.status(float(count+1) / float(total),
+                            message + " %i of %i" % (count+1, total))
+               
                 try:
                     if not tile.fetch():
                         pb = self.broken_tile()
@@ -381,12 +379,10 @@ class MapWidget(gtk.DrawingArea):
                 self.map_tiles.append(tile)
 
                 count += 1
-                prog.set_fraction(float(count) / float(total))
 
         self.calculate_bounds()
 
-        prog.set_text(_("Complete"))
-        prog.hide()
+        self.status(1.0, "")
 
     def export_to(self, filename, bounds=None):
         if not bounds:
@@ -406,12 +402,13 @@ class MapWidget(gtk.DrawingArea):
                              x, y, 0, 0, width, height)
         pb.save(filename, "png")
 
-    def __init__(self, width, height, tilesize=256):
+    def __init__(self, width, height, tilesize=256, status=None):
         gtk.DrawingArea.__init__(self)
 
         self.height = height
         self.width = width
         self.tilesize = tilesize
+        self.status = status
 
         self.lat = 0
         self.lon = 0
@@ -886,6 +883,11 @@ class MapWindow(gtk.Window):
         ha.set_value(x - (ha.page_size / 2))
         va.set_value(y - (va.page_size / 2))
 
+    def status(self, frac, message):
+        print "[%.1f] %s" % (frac, message)
+        self.sb_prog.set_text(message)
+        self.sb_prog.set_fraction(frac)
+
     def recenter(self, lat, lon):
         self.map.set_center(lat, lon)
         self.map.load_tiles()
@@ -1219,7 +1221,7 @@ class MapWindow(gtk.Window):
         tiles = 5
 
         self.map_sources = []
-        self.map = MapWidget(tiles, tiles)
+        self.map = MapWidget(tiles, tiles, status=self.status)
         self.map.show()
         self.map.connect("redraw-markers", self.redraw_markers)
 
@@ -1280,8 +1282,13 @@ class MapWindow(gtk.Window):
         self.sb_gps = gtk.Statusbar()
         self.sb_gps.show()
 
+        self.sb_prog = gtk.ProgressBar()
+        self.sb_prog.set_size_request(150, -1)
+        self.sb_prog.show()
+
         hbox.pack_start(self.sb_coords, 1,1,1)
         hbox.pack_start(self.sb_center, 1,1,1)
+        hbox.pack_start(self.sb_prog, 0,0,0)
         hbox.pack_start(self.sb_gps, 1,1,1)
         hbox.show()
 
