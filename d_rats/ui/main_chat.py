@@ -28,6 +28,15 @@ from d_rats.ui.main_common import ask_for_confirmation, display_error
 from d_rats import inputdialog
 from d_rats import qst
 
+class LoggedTextBuffer(gtk.TextBuffer):
+    def __init__(self, logfile):
+        gtk.TextBuffer.__init__(self)
+        self.__logfile = file(logfile, "a", 0)
+
+    def insert_with_tags_by_name(self, iter, text, *attrs):
+        gtk.TextBuffer.insert_with_tags_by_name(self, iter, text, *attrs)
+        self.__logfile.write(text)
+
 class ChatQM(MainWindowElement):
     __gsignals__ = {
         "user-sent-qm" : (gobject.SIGNAL_RUN_LAST,
@@ -454,7 +463,12 @@ class ChatTab(MainWindowTab):
                 tag.set_property("background", self._config.get("prefs", i))
 
     def _build_filter(self, text):
-        buffer = gtk.TextBuffer()
+        if text is not None:
+            ffn = self._config.platform.filter_filename(text)
+        else:
+            ffn = "Main"
+        fn = self._config.platform.log_file(ffn)
+        buffer = LoggedTextBuffer(fn)
         buffer.create_mark("end", buffer.get_end_iter(), False)
         display = gtk.TextView(buffer)
 
