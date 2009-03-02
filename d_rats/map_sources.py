@@ -15,7 +15,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import urllib
 import time
 import threading
 import os
@@ -24,6 +23,7 @@ import libxml2
 import gobject
 
 import utils
+import platform
 
 class MapItem:
     pass
@@ -132,8 +132,14 @@ class MapUSGSRiver(MapPoint):
     def __parse_site(self):
         url = "http://waterdata.usgs.gov/nwis/inventory?search_site_no=%i&format=sitefile_output&sitefile_output_format=xml&column_name=agency_cd&column_name=site_no&column_name=station_nm&column_name=dec_lat_va&column_name=dec_long_va&column_name=alt_va" % self.__site
 
-        fn, headers = urllib.urlretrieve(url)
-        content = file(fn).read()
+        p = platform.get_platform()
+        try:
+            fn, headers = p.retrieve_url(url)
+            content = file(fn).read()
+        except Exception, e:
+            print "[NSGS] Failed to fetch info for %i: %s" % (self.__site, e)
+            self.set_name("NSGS NWIS Site %i" % self.__site)
+            return
 
         doc = libxml2.parseMemory(content, len(content))
 
@@ -151,9 +157,18 @@ class MapUSGSRiver(MapPoint):
     def __parse_level(self):
         url = "http://waterdata.usgs.gov/nwis/uv?format=rdb&period=1&site_no=%i" % self.__site
 
-        fn, headers = urllib.urlretrieve(url)
+        p = platform.get_platform()
+        try:
+            fn, headers = p.retrieve_url(url)
+            line = file(fn).readlines()[-1]
+        except Exception, e:
+            print "[NSGS] Failed to fetch info for site %i: %s" % (self.__site,
+                                                                   e)
+            self.set_comment("No data")
+            self.set_timestamp(time.time())
 
-        line = file(fn).readlines()[-1]
+            return
+
         fields = line.split("\t")
 
         self._height_ft = float(fields[3])

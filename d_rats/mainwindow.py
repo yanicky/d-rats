@@ -157,6 +157,7 @@ class MainWindow(MainWindowElement):
 
         conn = self._wtree.get_widget("main_menu_conninet")
         conn.set_active(self._config.getboolean("state", "connected_inet"))
+        self._config.platform.set_connected(conn.get_active())
         conn.connect("activate", do_conninet)
 
     def _page_name(self, index=None):

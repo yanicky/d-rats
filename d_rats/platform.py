@@ -20,6 +20,7 @@ import sys
 import glob
 import commands
 import subprocess
+import urllib
 
 def find_me():
     return sys.modules["d_rats.platform"].__file__
@@ -29,6 +30,7 @@ class Platform:
 
     def __init__(self, basepath):
         self._base = basepath
+        self._connected = True
 
     def config_dir(self):
         return self._base
@@ -137,6 +139,15 @@ class Platform:
         data = pipe.stdout.read()
 
         return 0, data
+
+    def retrieve_url(self, url):
+        if self._connected:
+            return urllib.urlretrieve(url)
+
+        raise Exception("Not connected")
+
+    def set_connected(self, connected):
+        self._connected = connected
 
 class UnixPlatform(Platform):
     def __init__(self, basepath):
