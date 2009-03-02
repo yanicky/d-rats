@@ -7,6 +7,7 @@ import time
 import random
 import shutil
 import tempfile
+import threading
 
 import gtk
 import gobject
@@ -140,6 +141,20 @@ class MapTile:
         else:
             return True
 
+    def _thread(self, cb, *args):
+        if self.fetch():
+            fname = self._local_path()
+        else:
+            fname = None
+
+        gobject.idle_add(cb, fname, *args)
+        
+    def threaded_fetch(self, cb, *args):
+        _args = (cb,) + args
+        t = threading.Thread(target=self._thread, args=_args)
+        t.setDaemon(True)
+        t.start()
+
     def local_path(self):
         path = self._local_path()
         self.fetch()
@@ -218,8 +233,6 @@ class MapWidget(gtk.DrawingArea):
             size = ''
 
             text = utils.filter_to_ascii(text)
-
-        #print "Drawing %s at %i,%i" % (text, x, y)
 
         pl = self.create_pango_layout("")
         markup = '<span %s background="%s">%s</span>' % (size, color, text)
@@ -301,6 +314,9 @@ class MapWidget(gtk.DrawingArea):
         (_, self.lon_max, self.lat_max, _) = topleft.tile_edges()        
 
     def broken_tile(self):
+        if self.__broken_tile:
+            return self.__broken_tile
+
         broken = [
             "48 16 3 1",
             "       c #FFFFFFFFFFFF",
@@ -324,10 +340,41 @@ class MapWidget(gtk.DrawingArea):
             "xx             xx   XXXX   X    X   X   X    X  "
             ]
 
-        return gtk.gdk.pixbuf_new_from_xpm_data(broken)
+        # return gtk.gdk.pixbuf_new_from_xpm_data(broken)
+        pm = gtk.gdk.pixmap_create_from_xpm_d(self.window, None, broken)[0]
+        pb = gtk.gdk.Pixbuf(gtk.gdk.COLORSPACE_RGB,
+                            False,
+                            8,
+                            self.tilesize, self.tilesize)
+        pb.fill(0xffffffff)
+
+        x = y = (self.tilesize / 2)
+
+        pb.get_from_drawable(pm, pm.get_colormap(), 0, 0, x, y, -1, -1)
+
+        self.__broken_tile = pb
+        
+        return pb
+
+    def draw_tile(self, path, x, y):
+        gc = self.pixmap.new_gc()
+        if path:
+            pb = gtk.gdk.pixbuf_new_from_file(path)
+        else:
+            pb = self.broken_tile()
+
+        # We call this method twice for each tile
+        tot = self.width * self.height * 2
+        me = self.loaded_tiles = self.loaded_tiles + 1
+        frac = float(me) / float(tot)
+        self.status(frac, _("Loaded") + " %.0f%%" % (frac * 100.0))
+
+        self.pixmap.draw_pixbuf(gc, pb, 0, 0, x, y, -1, -1)
+        self.queue_draw()
 
     def load_tiles(self):
         self.map_tiles = []
+        self.loaded_tiles = 0
 
         center = MapTile(self.lat, self.lon, self.zoom)
 
@@ -361,20 +408,10 @@ class MapWidget(gtk.DrawingArea):
                 self.status(float(count+1) / float(total),
                             message + " %i of %i" % (count+1, total))
                
-                try:
-                    if not tile.fetch():
-                        pb = self.broken_tile()
-                    pb = gtk.gdk.pixbuf_new_from_file(tile.local_path())
-                except Exception, e:
-                    print "Broken cached file: %s" % e
-                    pb = self.broken_tile()
- 
-                self.pixmap.draw_pixbuf(gc,
-                                        pb,
-                                        0, 0,
-                                        self.tilesize * i,
-                                        self.tilesize * j,
-                                        -1, -1)
+                self.draw_tile(None, self.tilesize * i, self.tilesize * j)
+                tile.threaded_fetch(self.draw_tile,
+                                    self.tilesize * i,
+                                    self.tilesize * j)
 
                 self.map_tiles.append(tile)
 
@@ -404,6 +441,8 @@ class MapWidget(gtk.DrawingArea):
 
     def __init__(self, width, height, tilesize=256, status=None):
         gtk.DrawingArea.__init__(self)
+
+        self.__broken_tile = None
 
         self.height = height
         self.width = width
@@ -884,7 +923,6 @@ class MapWindow(gtk.Window):
         va.set_value(y - (va.page_size / 2))
 
     def status(self, frac, message):
-        print "[%.1f] %s" % (frac, message)
         self.sb_prog.set_text(message)
         self.sb_prog.set_fraction(frac)
 
