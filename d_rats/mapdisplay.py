@@ -237,7 +237,7 @@ class MapWidget(gtk.DrawingArea):
         pl = self.create_pango_layout("")
         markup = '<span %s background="%s">%s</span>' % (size, color, text)
         pl.set_markup(markup)
-        self.window.draw_layout(gc, int(x), int(y), pl)
+        self.pixmap.draw_layout(gc, int(x), int(y), pl)
 
     def draw_image_at(self, x, y, pb):
         gc = self.get_style().black_gc
@@ -371,6 +371,7 @@ class MapWidget(gtk.DrawingArea):
 
         self.pixmap.draw_pixbuf(gc, pb, 0, 0, x, y, -1, -1)
         self.queue_draw()
+        self.emit("redraw-markers", "")
 
     def load_tiles(self):
         self.map_tiles = []
