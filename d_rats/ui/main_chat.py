@@ -509,7 +509,8 @@ class ChatTab(MainWindowTab):
         self.__filters = {}
 
         filters = eval(self._config.get("state", "filters"))
-        filters.remove(None)
+        if None in filters:
+            filters.remove(None)
         filters.insert(0, None) # Main catch-all
 
         for filter in filters:
