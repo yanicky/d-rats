@@ -4,3 +4,4 @@ include forms/*.xsl
 include images/*
 include locale/*/LC_MESSAGES/D-RATS.mo
 include ui/*.glade
+include d_rats/version.py
