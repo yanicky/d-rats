@@ -481,7 +481,9 @@ class ChatTab(MainWindowTab):
         fn = self._config.platform.log_file(ffn)
         buffer = LoggedTextBuffer(fn)
         buffer.create_mark("end", buffer.get_end_iter(), False)
+
         display = gtk.TextView(buffer)
+        display.set_wrap_mode(gtk.WRAP_WORD)
 
         sw = gtk.ScrolledWindow()
         sw.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_NEVER)
