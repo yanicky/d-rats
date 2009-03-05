@@ -486,7 +486,7 @@ class ChatTab(MainWindowTab):
         display.set_wrap_mode(gtk.WRAP_WORD)
 
         sw = gtk.ScrolledWindow()
-        sw.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_NEVER)
+        sw.set_policy(gtk.POLICY_NEVER, gtk.POLICY_AUTOMATIC)
         sw.add(display)
 
         display.show()
