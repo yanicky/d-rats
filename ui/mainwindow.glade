@@ -637,13 +637,10 @@ KE7FTE</property>
                           </packing>
                         </child>
                         <child>
-                          <widget class="GtkComboBoxEntry" id="files_remote_station">
+                          <widget class="GtkHBox" id="files_remote_station_bin">
                             <property name="visible">True</property>
-                            <child internal-child="entry">
-                              <widget class="GtkEntry" id="comboboxentry-entry2">
-                                <property name="visible">True</property>
-                                <property name="can_focus">True</property>
-                              </widget>
+                            <child>
+                              <placeholder/>
                             </child>
                           </widget>
                           <packing>

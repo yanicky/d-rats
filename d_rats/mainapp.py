@@ -543,6 +543,12 @@ class MainApp:
                                 lambda w, s: self.map.show())
         self.mainwindow.connect("ping-station",
                                 lambda w, s: self.chat_session.ping_station(s))
+        self.mainwindow.connect("get-station-list",
+                                lambda m, f:
+                                    self.sm.get_heard_stations().keys())
+        self.mainwindow.tabs["files"].connect("get-station-list",
+                                              lambda m, f:
+                                                  self.sm.get_heard_stations().keys())
         self.refresh_config()
         
         if self.config.getboolean("prefs", "dosignon") and self.chat_session:

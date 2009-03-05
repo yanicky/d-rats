@@ -123,6 +123,9 @@ class FilesTab(MainWindowTab):
                             (gobject.TYPE_STRING,
                              gobject.TYPE_STRING,
                              gobject.TYPE_STRING)),
+        "get-station-list" : (gobject.SIGNAL_ACTION,
+                              gobject.TYPE_PYOBJECT,
+                              (gobject.TYPE_STRING,)),
         }
 
     def _stop_throb(self):
@@ -147,13 +150,14 @@ class FilesTab(MainWindowTab):
             view.set_sensitive(False)
             view.get_model().clear()
         self._remote = None
-        sel, = self._getw("remote_station")
+        sel = self._get_ssel()
         sel.set_sensitive(True)
         self._stop_throb()
 
     def _connect_remote(self, button, rfview):
 
-        sel, view = self._getw("remote_station", "remote_list")
+        view, = self._getw("remote_list")
+        sel = self._get_ssel()
         sta = sel.get_active_text().upper()
 
         if not sta:
@@ -207,7 +211,7 @@ class FilesTab(MainWindowTab):
             station = self._remote.get_path()
             self._remote.outstanding[fname] = os.stat(fn).st_size
         else:
-            sel, = self._getw("remote_station")
+            sel = self._get_ssel()
             station = sel.get_active_text().upper()
 
         self.emit("user-send-file", station, fn, fname)
@@ -293,12 +297,33 @@ class FilesTab(MainWindowTab):
         col.set_cell_data_func(r, render_date)
         view.append_column(col)
 
+    def _refresh_calls(self, box):
+        stations = self.emit("get-station-list", "foo")
+        if stations:
+            store = box.get_model()
+            store.clear()
+
+            for station in stations:
+                store.append((station,))
+
+        return self.__selected
+
+    def _get_ssel(self):
+        bin, = self._getw("remote_station_bin")
+        return bin.get_children()[0]
+
     def __init__(self, wtree, config):
         MainWindowElement.__init__(self, wtree, config, "files")
 
-        lview, rview = self._getw("local_list", "remote_list")
+        lview, rview, bin = self._getw("local_list",
+                                       "remote_list",
+                                       "remote_station_bin")
         self._setup_file_view(lview)
         self._setup_file_view(rview)
+
+        sel = gtk.combo_box_entry_new_text()
+        sel.show()
+        bin.pack_start(sel, 1, 1, 1)
 
         ddir = self._config.get("prefs", "download_dir")
 
@@ -309,6 +334,8 @@ class FilesTab(MainWindowTab):
 
         self._init_toolbar()
         self._stop_throb()
+
+        self.__selected = False
 
         self.reconfigure()
 
@@ -322,3 +349,12 @@ class FilesTab(MainWindowTab):
     def reconfigure(self):
         self._local.set_path(self._config.get("prefs", "download_dir"))
         self._local.refresh()
+
+    def selected(self):
+        self.__selected = True
+        box = self._get_ssel()
+        self._refresh_calls(box)
+        gobject.timeout_add(1000, self._refresh_calls, box)
+
+    def deselected(self):
+        self.__selected = False

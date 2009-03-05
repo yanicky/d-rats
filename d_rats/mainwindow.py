@@ -53,6 +53,9 @@ class MainWindow(MainWindowElement):
         "ping-station" : (gobject.SIGNAL_RUN_LAST,
                           gobject.TYPE_NONE,
                           (gobject.TYPE_STRING,)),
+        "get-station-list" : (gobject.SIGNAL_ACTION,
+                              gobject.TYPE_PYOBJECT,
+                              (gobject.TYPE_STRING,)),
         }
 
     def _delete(self, window, event):
@@ -121,7 +124,8 @@ class MainWindow(MainWindowElement):
             d = formbuilder.FormManagerGUI(self._config.form_source_dir())
 
         def do_ping(but):
-            station = prompt_for_station([])
+            station_list = self.emit("get-station-list", "foo")
+            station = prompt_for_station(station_list)
             if station:
                 self.emit("ping-station", station)            
 

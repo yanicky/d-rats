@@ -848,6 +848,11 @@ class SessionManager:
         self.control = ControlSession()
         self._register_session(self.control, "CQCQCQ", "new,out")
 
+        self._stations_heard = {}
+
+    def get_heard_stations(self):
+        return self._stations_heard
+
     def fire_session_cb(self, session, reason):
         for f,d in self.session_cb.items():
             try:
@@ -871,6 +876,9 @@ class SessionManager:
 
     def incoming(self, frame):
         self.last_frame = time.time()
+
+        if frame.s_station not in ["!"]:
+            self._stations_heard[frame.s_station] = time.time()
 
         if self.sniff_session is not None:
             self.sessions[self.sniff_session].handler(frame)
