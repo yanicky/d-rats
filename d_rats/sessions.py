@@ -164,12 +164,12 @@ class ChatSession(sessionmgr.StatelessSession, gobject.GObject):
             self.emit("ping-request",
                       frame.s_station, frame.d_station, "Request")
 
-            if frame.d_station != self._sm.station:
-                return # Not for us
-            elif frame.d_station == "CQCQCQ":
+            if frame.d_station == "CQCQCQ":
                 delay = random.randint(0,50) / 10.0
                 print "Broadcast ping, waiting %.1f sec" % delay
                 time.sleep(delay)
+            elif frame.d_station != self._sm.station:
+                return # Not for us
 
             frame.d_station = frame.s_station
             frame.type = self.T_PNG_RSP
