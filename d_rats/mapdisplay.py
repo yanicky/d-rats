@@ -8,6 +8,7 @@ import random
 import shutil
 import tempfile
 import threading
+import copy
 
 import gtk
 import gobject
@@ -18,6 +19,7 @@ import miscwidgets
 import inputdialog
 import utils
 import geocode_ui
+import map_sources
 
 from gps import GPSPosition, distance, value_with_units, DPRS_TO_APRS
 
@@ -48,6 +50,77 @@ def fetch_url(url, local):
         return urllib.urlretrieve(url, local)
     else:
         raise Exception("Not connected")
+
+class MarkerEditDialog(inputdialog.FieldDialog):
+    def __init__(self):
+        inputdialog.FieldDialog.__init__(self, title=_("Add Marker"))
+
+        self.icons = []
+        for sym in sorted(DPRS_TO_APRS.values()):
+            icon = utils.get_icon(sym)
+            if icon:
+                self.icons.append((icon, sym))
+
+        self.add_field(_("Group"), miscwidgets.make_choice([], True))
+        self.add_field(_("Name"), gtk.Entry())
+        self.add_field(_("Latitude"), miscwidgets.LatLonEntry())
+        self.add_field(_("Longitude"), miscwidgets.LatLonEntry())
+        self.add_field(_("Lookup"), gtk.Button("By Address"))
+        self.add_field(_("Comment"), gtk.Entry())
+        self.add_field(_("Icon"), miscwidgets.make_pixbuf_choice(self.icons))
+
+        self._point = None
+
+    def set_groups(self, groups, group=None):
+        grpsel = self.get_field(_("Group"))
+        for grp in groups:
+            grpsel.append_text(grp)
+
+        if group is not None:
+            grpsel.child.set_text(group)
+            grpsel.set_sensitive(False)
+        else:
+            grpsel.child.set_text(_("Misc"))
+
+    def get_group(self):
+        return self.get_field(_("Group")).child.get_text()
+
+    def set_point(self, point):
+        self.get_field(_("Name")).set_text(point.get_name())
+        self.get_field(_("Latitude")).set_text("%.4f" % point.get_latitude())
+        self.get_field(_("Longitude")).set_text("%.4f" % point.get_longitude())
+        self.get_field(_("Comment")).set_text(point.get_comment())
+
+        iconsel = self.get_field(_("Icon"))
+        if isinstance(point, map_sources.MapStation):
+            symlist = [y for x,y in self.icons]
+            iidx = symlist.index(point.get_aprs_symbol())
+            iconsel.set_active(iidx)
+        else:
+            iconsel.set_sensitive(False)
+
+        self._point = point
+                       
+    def get_point(self):
+        name = self.get_field(_("Name")).get_text()
+        lat = self.get_field(_("Latitude")).value()
+        lon = self.get_field(_("Longitude")).value()
+        comment = self.get_field(_("Comment")).get_text()
+        idx = self.get_field(_("Icon")).get_active()
+        
+        point = copy.copy(self._point)
+
+        point.set_name(name)
+        point.set_latitude(lat)
+        point.set_longitude(lon)
+        point.set_comment(comment)
+
+        if isinstance(point, map_sources.MapStation):
+            point.set_icon_from_aprs_sym(self.icons[idx][1])
+        else:
+            point.set_icon(self._point.get_icon)
+
+        return point
 
 class MapTile:
     def path_els(self):
@@ -580,20 +653,29 @@ class MapWindow(gtk.Window):
 
         if action == "delete":
             print "Deleting %s/%s" % (group, id)
-            self.del_marker(id, group)
+            for source in self.map_sources:
+                if source.get_name() == group:
+                    point = source.get_point_by_name(id)
+                    source.del_point(point)
         elif action == "edit":
-            try:
-                fix = self.markers[group][id][0]
-            except Exception, e:
-                print "Can't find marker %s/%s: %s" % (group, id, e)
+            for source in self.map_sources:
+                if source.get_name() == group:
+                    break
+
+            if not source:
                 return
 
-            self.prompt_to_set_marker(_lat=fix.latitude,
-                                      _lon=fix.longitude,
-                                      name=id,
-                                      grp=group,
-                                      _icon=fix.APRSIcon,
-                                      _com=fix.comment)
+            for point in source.get_points():
+                if point.get_name() == id:
+                    break
+
+            if not point:
+                return
+
+            upoint, foo = self.prompt_to_set_marker(point, source.get_name())
+            if upoint:
+                source.del_point(point)
+                source.add_point(upoint)
 
     def _make_marker_menu(self, store, iter):
         menu_xml = """
@@ -838,15 +920,12 @@ class MapWindow(gtk.Window):
             self.printable_map()
         elif action == "printablevis":
             self.printable_map(self.get_visible_bounds())
-        elif action == "addmarker":
-            self.prompt_to_set_marker()
 
     def make_menu(self):
         menu_xml = """
 <ui>
   <menubar name="MenuBar">
     <menu action="map">
-      <menuitem action="addmarker"/>
       <menuitem action="refresh"/>
       <menuitem action="clearcache"/>
       <menuitem action="loadstatic"/>
@@ -863,7 +942,6 @@ class MapWindow(gtk.Window):
 """
 
         actions = [('map', None, "_" + _("Map"), None, None, self.mh),
-                   ('addmarker', None, "_" + _("Set Marker"), None, None, self.mh),
                    ('refresh', None, "_" + _("Refresh"), None, None, self.mh),
                    ('clearcache', None, "_" + _("Clear Cache"), None, None, self.mh),
                    ('loadstatic', None, "_" + _("Load Static Overlay"), None, None, self.mh),
@@ -934,13 +1012,7 @@ class MapWindow(gtk.Window):
         self.center_on(lat, lon)
         self.map.queue_draw()
 
-    def prompt_to_set_marker(self,
-                             _lat=None,
-                             _lon=None,
-                             name=None,
-                             grp=None,
-                             _icon="/#",
-                             _com=""):
+    def prompt_to_set_marker(self, point, group=None):
         def do_address(button, latw, lonw, namew):
             dlg = geocode_ui.AddressAssistant()
             r = dlg.run()
@@ -950,76 +1022,18 @@ class MapWindow(gtk.Window):
                 latw.set_text("%.5f" % dlg.lat)
                 lonw.set_text("%.5f" % dlg.lon)
 
-        d = inputdialog.FieldDialog(title=_("Add Marker"))
+        d = MarkerEditDialog()
+        d.set_groups([s.get_name() for s in self.map_sources], group)
+        d.set_point(point)
+        r = d.run()
+        point = d.get_point()
+        group = d.get_group()
+        d.destroy()
 
-        if grp is None:
-            grp = _("Misc")
-        f_grp = miscwidgets.make_choice(self.markers.keys(), True, grp)
-
-        f_name = gtk.Entry()
-        if name is not None:
-            f_name.set_text(name)
-            f_name.set_sensitive(False)
-            f_grp.set_sensitive(False)
-
-        d.add_field(_("Group"), f_grp)
-        d.add_field(_("Name"), f_name)
-        d.add_field(_("Latitude"), miscwidgets.LatLonEntry())
-        d.add_field(_("Longitude"), miscwidgets.LatLonEntry())
-        addrbtn = gtk.Button("By Address")
-        addrbtn.connect("clicked", do_address,
-                        d.get_field(_("Latitude")),
-                        d.get_field(_("Longitude")),
-                        d.get_field(_("Name")))
-        d.add_field(_("Lookup"), addrbtn)
-        if _lat:
-            d.get_field(_("Latitude")).set_text("%.4f" % _lat)
-        if _lon:
-            d.get_field(_("Longitude")).set_text("%.4f" % _lon)
-
-        icons = []
-        for sym in sorted(DPRS_TO_APRS.values()):
-            icon = utils.get_icon(sym)
-            if icon:
-                icons.append((icon, sym))
-        d.add_field(_("Icon"), miscwidgets.make_pixbuf_choice(icons, _icon))
-
-        comment = gtk.Entry()
-        if _com:
-            comment.set_text(_com)
-        d.add_field(_("Comment"), comment)
-
-        while d.run() == gtk.RESPONSE_OK:
-            try:
-                grp = d.get_field(_("Group")).get_active_text()
-                nme = d.get_field(_("Name")).get_text()
-                lat = d.get_field(_("Latitude")).value()
-                lon = d.get_field(_("Longitude")).value()
-                idx = d.get_field(_("Icon")).get_active()
-                com = d.get_field(_("Comment")).get_text()
-
-                if not grp:
-                    raise Exception(_("Group name required"))
-
-                if not nme:
-                    raise Exception(_("Marker name required"))
-
-            except Exception, e:
-                ed = gtk.MessageDialog(buttons=gtk.BUTTONS_OK,
-                                       parent=d)
-                ed.set_property("text", _("Invalid value") + ": %s" % e)
-                ed.run()
-                ed.destroy()
-                continue
-                
-            fix = GPSPosition(lat=lat, lon=lon, station=nme)
-            if idx:
-                fix.APRSIcon = icons[idx][1]
-            if com:
-                fix.comment = com
-            self.set_marker(fix, None, grp)
-            break
-        d.destroy()                    
+        if r == gtk.RESPONSE_OK:
+            return point, group
+        else:
+            return None, None
 
     def prompt_to_send_loc(self, _lat, _lon):
         d = inputdialog.FieldDialog(title=_("Broadcast Location"))
@@ -1216,6 +1230,11 @@ class MapWindow(gtk.Window):
                                   0, 0)
         self.map.queue_draw()
 
+    def del_point(self, source, point):
+        self.marker_list.del_item(source.get_name(), point.get_name())
+
+        self.map.queue_draw()
+
     def add_map_source(self, source):
         self.map_sources.append(source)
         self.marker_list.add_item(None,
@@ -1226,6 +1245,7 @@ class MapWindow(gtk.Window):
 
         source.connect("point-updated", self.update_point)
         source.connect("point-added", self.add_point)
+        source.connect("point-deleted", self.del_point)
 
     def clear_map_sources(self):
         self.map_sources = []
@@ -1355,10 +1375,22 @@ class MapWindow(gtk.Window):
                                lambda a, vals:
                                    self.recenter(vals["lat"],
                                                  vals["lon"]))
-        self.add_popup_handler(_("New marker here"),
-                               lambda a, vals:
-                                   self.prompt_to_set_marker(vals["lat"],
-                                                             vals["lon"]))
+
+        def set_mark_at(a, vals):
+            p = map_sources.MapStation("STATION", vals["lat"], vals["lon"])
+            point, group = self.prompt_to_set_marker(p)
+            if not point:
+                return
+
+            for source in self.map_sources:
+                print "%s,%s" % (source.get_name(), group)
+                if source.get_name() == group:
+                    print "Adding new point %s to %s" % (point.get_name(),
+                                                         source.get_name())
+                    source.add_point(point)
+                    return
+
+        self.add_popup_handler(_("New marker here"), set_mark_at)
 
         self.add_popup_handler(_("Broadcast this location"),
                                lambda a, vals:
