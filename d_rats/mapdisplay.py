@@ -1156,7 +1156,11 @@ class MapWindow(gtk.Window):
         hit = False
 
         for source in self.map_sources:
+            if not source.get_visible():
+                continue
             for point in source.get_points():
+                if not point.get_visible():
+                    continue
                 try:
                     _x, _y = self.map.latlon2xy(point.get_latitude(),
                                                 point.get_longitude())
