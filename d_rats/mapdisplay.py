@@ -357,7 +357,10 @@ class MapWidget(gtk.DrawingArea):
         #(lat, lon, color, img) = self.markers[id]
         color = "red"
 
-        x, y = self.latlon2xy(lat, lon)
+        try:
+            x, y = self.latlon2xy(lat, lon)
+        except ZeroDivisionError:
+            return
 
         if label == CROSSHAIR:
             self.draw_cross_marker_at(x, y)
