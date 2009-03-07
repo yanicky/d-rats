@@ -462,7 +462,7 @@ class MainApp:
             print "Unable to load translation for %s: %s" % (locale, e)
             gettext.install("D-RATS")
 
-    def _refresh_map_overlays(self):
+    def _load_map_overlays(self):
         dir = os.path.join(self.config.platform.config_dir(),
                            "static_locations")
         overlays = glob.glob(os.path.join(dir, "*.csv"))
@@ -504,7 +504,6 @@ class MainApp:
         self._refresh_comms(port, rate)
         self._refresh_gps()
         self._refresh_mail_threads()
-        self._refresh_map_overlays()
 
     def send_chat(self, chattab, station, msg, raw):
         self.chat_session.write(msg)
@@ -550,6 +549,7 @@ class MainApp:
                                               lambda m, f:
                                                   self.sm.get_heard_stations().keys())
         self.refresh_config()
+        self._load_map_overlays()
         
         if self.config.getboolean("prefs", "dosignon") and self.chat_session:
             msg = self.config.get("prefs", "signon")
