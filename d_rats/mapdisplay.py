@@ -288,6 +288,9 @@ class MapTile:
         if not os.path.isdir(self.dir):
             os.mkdir(self.dir)
 
+class LoadContext:
+    pass
+
 class MapWidget(gtk.DrawingArea):
     __gsignals__ = {
         "redraw-markers" : (gobject.SIGNAL_RUN_LAST,
@@ -432,18 +435,21 @@ class MapWidget(gtk.DrawingArea):
         
         return pb
 
-    def draw_tile(self, path, x, y):
+    def draw_tile(self, path, x, y, ctx=None):
+        if ctx and ctx.zoom != self.zoom:
+            # Zoom level has chnaged, so don't do anything
+            return
+
         gc = self.pixmap.new_gc()
         if path:
             pb = gtk.gdk.pixbuf_new_from_file(path)
         else:
             pb = self.broken_tile()
 
-        # We call this method twice for each tile
-        tot = self.width * self.height * 2
-        me = self.loaded_tiles = self.loaded_tiles + 1
-        frac = float(me) / float(tot)
-        self.status(frac, _("Loaded") + " %.0f%%" % (frac * 100.0))
+        if ctx:
+            ctx.loaded_tiles += 1
+            frac = float(ctx.loaded_tiles) / float(ctx.total_tiles)
+            self.status(frac, _("Loaded") + " %.0f%%" % (frac * 100.0))
 
         self.pixmap.draw_pixbuf(gc, pb, 0, 0, x, y, -1, -1)
         self.queue_draw()
@@ -451,7 +457,10 @@ class MapWidget(gtk.DrawingArea):
 
     def load_tiles(self):
         self.map_tiles = []
-        self.loaded_tiles = 0
+        ctx = LoadContext()
+        ctx.loaded_tiles = 0
+        ctx.total_tiles = self.width * self.height
+        ctx.zoom = self.zoom
 
         center = MapTile(self.lat, self.lon, self.zoom)
 
@@ -488,7 +497,8 @@ class MapWidget(gtk.DrawingArea):
                 self.draw_tile(None, self.tilesize * i, self.tilesize * j)
                 tile.threaded_fetch(self.draw_tile,
                                     self.tilesize * i,
-                                    self.tilesize * j)
+                                    self.tilesize * j,
+                                    ctx)
 
                 self.map_tiles.append(tile)
 
