@@ -479,7 +479,8 @@ class MainApp:
 
         if not self.stations_overlay:
             fn = os.path.join(dir, _("Stations") + ".csv")
-            file(fn, "w")
+            os.makedirs(os.path.dirname(fn))
+            file(fn, "w").close()
             self.stations_overlay = map_sources.MapFileSource(_("Stations"),
                                                               "Static Overlay",
                                                               fn)
