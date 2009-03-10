@@ -142,14 +142,17 @@ class ChatSession(sessionmgr.StatelessSession, gobject.GObject):
         return _("Running") + " D-RATS %s (%s)" % (DRATS_VERSION,
                                                    p.os_version_string())
 
+    def _emit(self, signal, *args):
+        gobject.idle_add(self.emit, signal, *args)
+
     def _incoming_chat(self, frame):
-        self.emit("incoming-chat-message",
-                  frame.s_station,
-                  frame.d_station,
-                  unicode(frame.data, "utf-8"))
+        self._emit("incoming-chat-message",
+                   frame.s_station,
+                   frame.d_station,
+                   unicode(frame.data, "utf-8"))
 
     def _incoming_gps(self, fix):
-        self.emit("incoming-gps-fix", fix)
+        self._emit("incoming-gps-fix", fix)
 
     def incoming_data(self, frame):
         print "Got chat frame: %s" % frame
@@ -161,8 +164,8 @@ class ChatSession(sessionmgr.StatelessSession, gobject.GObject):
                 self._incoming_chat(frame)
 
         elif frame.type == self.T_PNG_REQ:
-            self.emit("ping-request",
-                      frame.s_station, frame.d_station, "Request")
+            self._emit("ping-request",
+                       frame.s_station, frame.d_station, "Request")
 
             if frame.d_station == "CQCQCQ":
                 delay = random.randint(0,50) / 10.0
@@ -182,14 +185,14 @@ class ChatSession(sessionmgr.StatelessSession, gobject.GObject):
 
             self._sm.outgoing(self, frame)
 
-            self.emit("ping-response",
-                      frame.s_station,
-                      frame.d_station,
-                      unicode(frame.data, "utf-8"))
+            self._emit("ping-response",
+                       frame.s_station,
+                       frame.d_station,
+                       unicode(frame.data, "utf-8"))
         elif frame.type == self.T_PNG_RSP:
             print "PING OUT"
-            self.emit("ping-response",
-                      frame.s_station, frame.d_station, frame.data)
+            self._emit("ping-response",
+                       frame.s_station, frame.d_station, frame.data)
 
     def write_raw(self, data):
         f = DDT2RawData()
@@ -201,7 +204,7 @@ class ChatSession(sessionmgr.StatelessSession, gobject.GObject):
         self._sm.outgoing(self, f)
 
     def write(self, data):
-        self.emit("outgoing-chat-message", self._sm.station, self._st, data)
+        self._emit("outgoing-chat-message", self._sm.station, self._st, data)
         sessionmgr.StatelessSession.write(self, data)
 
     def ping_station(self, station):
@@ -210,7 +213,7 @@ class ChatSession(sessionmgr.StatelessSession, gobject.GObject):
         f.type = self.T_PNG_REQ
         self._sm.outgoing(self, f)
 
-        self.emit("ping-request", f.s_station, f.d_station, "Request")
+        self._emit("ping-request", f.s_station, f.d_station, "Request")
 
 class NotifyDict(UserDict.UserDict):
     def __init__(self, cb, data={}):
