@@ -442,7 +442,7 @@ class SessionCoordinator(gobject.GObject):
             sock = self.socket_listeners[port].dsock
             self.sthreads[session._id] = SocketThread(self, session, (sock, to))
 
-    def new_session(self, type, session, direction):
+    def _new_session(self, type, session, direction):
         print "New session (%s) of type: %s" % (direction, session.__class__)
         self.emit("session-started", session._id, type)
 
@@ -455,8 +455,11 @@ class SessionCoordinator(gobject.GObject):
         else:
             print "*** Unknown session type: %s" % session.__class__.__name__
 
+    def new_session(self, type, session, direction):
+        gobject.idle_add(self._new_session, type, session, direction)
+
     def end_session(self, id):
-        self.emit("session-ended", id)
+        self._emit("session-ended", id)
 
         if self.sthreads.has_key(id):
             sthread = self.sthreads[id]
