@@ -496,13 +496,14 @@ class MapWidget(gtk.DrawingArea):
                
                 if tile.is_local():
                     path = tile._local_path()
+                    self.draw_tile(tile._local_path(),
+                                   self.tilesize * i, self.tilesize * j)
                 else:
-                    path = None
-                self.draw_tile(path, self.tilesize * i, self.tilesize * j)
-                tile.threaded_fetch(self.draw_tile,
-                                    self.tilesize * i,
-                                    self.tilesize * j,
-                                    ctx)
+                    self.draw_tile(None, self.tilesize * i, self.tilesize * j)
+                    tile.threaded_fetch(self.draw_tile,
+                                        self.tilesize * i,
+                                        self.tilesize * j,
+                                        ctx)
 
                 self.map_tiles.append(tile)
 
