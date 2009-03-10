@@ -455,6 +455,11 @@ class MapWidget(gtk.DrawingArea):
         self.queue_draw()
         self.emit("redraw-markers", "")
 
+    def draw_tile_locked(self, *args):
+        gtk.gdk.threads_enter()
+        self.draw_tile(*args)
+        gtk.gdk.threads_leave()
+
     def load_tiles(self):
         self.map_tiles = []
         ctx = LoadContext()
@@ -500,7 +505,7 @@ class MapWidget(gtk.DrawingArea):
                                    self.tilesize * i, self.tilesize * j)
                 else:
                     self.draw_tile(None, self.tilesize * i, self.tilesize * j)
-                    tile.threaded_fetch(self.draw_tile,
+                    tile.threaded_fetch(self.draw_tile_locked,
                                         self.tilesize * i,
                                         self.tilesize * j,
                                         ctx)
