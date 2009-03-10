@@ -494,7 +494,11 @@ class MapWidget(gtk.DrawingArea):
                 self.status(float(count+1) / float(total),
                             message + " %i of %i" % (count+1, total))
                
-                self.draw_tile(None, self.tilesize * i, self.tilesize * j)
+                if tile.is_local():
+                    path = tile._local_path()
+                else:
+                    path = None
+                self.draw_tile(path, self.tilesize * i, self.tilesize * j)
                 tile.threaded_fetch(self.draw_tile,
                                     self.tilesize * i,
                                     self.tilesize * j,
