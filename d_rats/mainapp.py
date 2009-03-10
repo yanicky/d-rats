@@ -509,6 +509,18 @@ class MainApp:
     def send_chat(self, chattab, station, msg, raw):
         self.chat_session.write(msg)
             
+    def _refresh_location(self):
+        fix = self.get_position()
+
+        point = map_sources.MapStation(fix.station,
+                                       fix.latitude,
+                                       fix.longitude,
+                                       fix.altitude,
+                                       fix.comment)
+        self.stations_overlay.add_point(point)
+
+        return True
+
     def __init__(self, **args):
         global MAINAPP
         MAINAPP = self
@@ -555,6 +567,8 @@ class MainApp:
         if self.config.getboolean("prefs", "dosignon") and self.chat_session:
             msg = self.config.get("prefs", "signon")
             self.chat_session.write(msg)
+
+        gobject.timeout_add(3000, self._refresh_location)
 
     def get_position(self):
         p = self.gps.get_position()
