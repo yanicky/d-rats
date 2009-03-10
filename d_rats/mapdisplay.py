@@ -1030,6 +1030,9 @@ class MapWindow(gtk.Window):
         self.center_on(lat, lon)
         self.map.queue_draw()
 
+    def refresh(self):
+        self.map.load_tiles()
+
     def prompt_to_set_marker(self, point, group=None):
         def do_address(button, latw, lonw, namew):
             dlg = geocode_ui.AddressAssistant()
@@ -1242,7 +1245,7 @@ class MapWindow(gtk.Window):
                                   point.get_latitude(),
                                   point.get_longitude(),
                                   0, 0)
-        self.map.queue_draw()
+        self.refresh()
 
     def add_point(self, source, point):
         self.marker_list.add_item(source.get_name(),
