@@ -610,3 +610,22 @@ class MessagesTab(MainWindowTab):
             self.refresh_if_folder(_("Sent"))
         else:
             print "Form %s sent but not in outbox" % os.path.basename(fn)
+
+    def get_shared_messages(self, for_station):
+        """Return a list of (title, stamp, filename) forms destined
+        for station @for_station"""
+        shared = _("Inbox")
+        path = os.path.join(self._config.platform.config_dir(), "messages")
+        if not os.path.isdir(path):
+            os.makedirs(path)
+        info = MessageFolderInfo(os.path.join(path, shared))
+
+        ret = []
+        for fn in info.files():
+            stamp = os.stat(fn).st_mtime
+            ffn = "%s/%s" % (shared, os.path.basename(fn))
+            form = formgui.FormFile(_("Form"), fn)
+            ret.append((form.get_subject_string(), stamp, ffn))
+
+        return ret
+
