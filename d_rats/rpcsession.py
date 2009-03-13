@@ -99,6 +99,9 @@ class RPCJob(gobject.GObject):
     def pack(self):
         return encode_dict(self._args)
 
+    def do(self, rpcactions):
+        return {"rc" : "Unsupported Job Type"}
+
 class RPCFileListJob(RPCJob):
     def set_file_list(self, list):
         self._args = {}
@@ -108,9 +111,15 @@ class RPCFileListJob(RPCJob):
     def get_file_list(self):
         return self._args.keys()
 
+    def do(self, rpcactions):
+        return rpcactions.RPC_file_list(self)
+
 class RPCFormListJob(RPCJob):
     def get_form_list(self):
         return []
+
+    def do(self, rpcactions):
+        return rpcactions.RPC_form_list(self)
 
 class RPCPullFileJob(RPCJob):
     def set_file(self, filename):
@@ -119,12 +128,18 @@ class RPCPullFileJob(RPCJob):
     def get_file(self):
         return self._args.get("fn", None)
 
+    def do(self, rpcactions):
+        return rpcactions.RPC_file_pull(self)
+
 class RPCPullFormJob(RPCJob):
     def set_form(self, form):
         self._args = {"fn" : form}
 
     def get_form(self):
         return self._args.get("fn", None)
+
+    def do(self, rpcactions):
+        return rpcactions.RPC_form_pull(self)
 
 class RPCPositionReport(RPCJob):
     def set_station(self, station):
@@ -133,13 +148,10 @@ class RPCPositionReport(RPCJob):
     def get_station(self):
         return self._args.get("st", "ERROR")
 
-class RPCSession(gobject.GObject, sessionmgr.StatelessSession):
-    __gsignals__ = {
-        "exec-job" : (gobject.SIGNAL_RUN_LAST,
-                      gobject.TYPE_NONE,
-                      (RPCJob,)),
-        }
+    def do(self, rpcactions):
+        return rpcactions.RPC_pos_report(self)
 
+class RPCSession(gobject.GObject, sessionmgr.StatelessSession):
     type = sessionmgr.T_RPC
 
     T_RPCREQ = 0
@@ -147,13 +159,18 @@ class RPCSession(gobject.GObject, sessionmgr.StatelessSession):
 
     def __init__(self, *args, **kwargs):
         gobject.GObject.__init__(self)
+
+        try:
+            self.__rpcactions = kwargs["rpcactions"]
+            del kwargs["rpcactions"]
+        except KeyError:
+            raise Exception("RPCSession requires RPCActionSet")
+
         sessionmgr.StatelessSession.__init__(self, *args, **kwargs)
         self.__jobs = {}
         self.__jobq = []
         self.__jobc = 0
-
         self.__t_retry = 30
-
         self.__enabled = True
 
         gobject.timeout_add(1000, self.__worker)
@@ -218,7 +235,8 @@ class RPCSession(gobject.GObject, sessionmgr.StatelessSession):
                 return
 
             job.connect("state-change", self.__job_state, frame.seq)
-            self.emit("exec-job", job)
+            result = job.do(self.__rpcactions)
+            job.set_state("complete", result)
 
         elif frame.type == self.T_RPCACK:
             if self.__jobs.has_key(frame.seq):
@@ -257,91 +275,118 @@ class RPCSession(gobject.GObject, sessionmgr.StatelessSession):
     def stop(self):
         self.__enabled = False
 
-def RPC_pos_report(job, app):
-    result = {}
+class RPCActionSet(gobject.GObject):
+    __gsignals__ = {
+        "rpc-send-file" : (gobject.SIGNAL_RUN_LAST,
+                           gobject.TYPE_NONE,
+                           (gobject.TYPE_STRING,  # Station
+                            gobject.TYPE_STRING,  # Filename
+                            gobject.TYPE_STRING)),# Session name
+        "rpc-send-msg" : (gobject.SIGNAL_RUN_LAST,
+                          gobject.TYPE_NONE,
+                          (gobject.TYPE_STRING,   # Station
+                           gobject.TYPE_STRING,   # Filename
+                           gobject.TYPE_STRING)), # Session name
+        "rpc-get-msgs" : (gobject.SIGNAL_ACTION,
+                          gobject.TYPE_PYOBJECT,
+                          (gobject.TYPE_STRING,)),
+                          
+        }
 
-    mycall = app.config.get("user", "callsign")
-    rqcall = job.get_station()
+    def __init__(self, config):
+        self.__config = config
 
-    print "[RPC] Position request for `%s'" % rqcall
+        gobject.GObject.__init__(self)
 
-    if mycall == rqcall:
-        # Some bug requires me to delay a little.  How broken...
-        gobject.timeout_add(500,
-                            app.chatgui.tx_msg,
-                            app.get_position().to_NMEA_GGA(), True)
-        result["rc"] = "OK"
-        return result
-
-    else:
-        for group in app.chatgui.map.get_markers().values():
-            for call, info in group.items():
-                if call == rqcall:
-                    fix = info[0]
-                    gobject.timeout_add(500,
-                                        app.chatgui.tx_msg,
-                                        fix.to_NMEA_GGA(), True)
-                    result["rc"] = "OK"
-                    return result
-
-    result["rc"] = "Unknown station"
-    return result
-
-def RPC_file_list(job, app):
-    result = {}
-
-    dir = app.config.get("prefs", "download_dir")
-    files = glob.glob(os.path.join(dir, "*.*"))
-    for fn in files:
-        size = os.path.getsize(fn)
-        if size < 1024:
-            units = "B"
-        else:
-            size >>= 10
-            units = "KB"
-
-        ds = datetime.datetime.fromtimestamp(os.path.getmtime(fn))
-
-        fn = os.path.basename(fn)
-        result[fn] = "%i %s (%s)" % (size,
-                                     units,
-                                     ds.strftime("%Y-%m-%d %H:%M:%S"))
-
-    return result
-
-def RPC_form_list(job, app):
-    result = {}
-    forms = app.chatgui.adv_controls["forms"].get_forms()
-    for ident, stamp, filen in forms:
-        result[ident] = "%s" % stamp
-
-    return result
-
-def RPC_file_pull(job, app):
-    result = {}
-
-    dir = app.config.get("prefs", "download_dir")
-    path = os.path.join(dir, job.get_file())
-    print "Remote requested %s" % path
-    if os.path.exists(path):
-        result["rc"] = "OK"
-        app.chatgui.adv_controls["sessions"].send_file(job.get_dest(),
-                                                        path)
-    else:
-        result["rc"] = "File not found"
-
-    return result
-
-def RPC_form_pull(job, app):
-    result = {}
-
-    forms = app.chatgui.adv_controls["forms"].get_forms()
-    result["rc"] = "Form not found"
-    for ident, stamp, filen in forms:
-        if ident == job.get_form():
+    def RPC_pos_report(self, job):
+        # FIXME
+        result = {}
+    
+        mycall = self.__config.get("user", "callsign")
+        rqcall = job.get_station()
+    
+        print "[RPC] Position request for `%s'" % rqcall
+    
+        if mycall == rqcall:
+            # Some bug requires me to delay a little.  How broken...
+            gobject.timeout_add(500,
+                                app.chatgui.tx_msg,
+                                app.get_position().to_NMEA_GGA(), True)
             result["rc"] = "OK"
-            app.chatgui.adv_controls["sessions"].send_form(\
-                job.get_dest(), filen, ident)
-            break
-
-    return result
+            return result
+    
+        else:
+            for group in app.chatgui.map.get_markers().values():
+                for call, info in group.items():
+                    if call == rqcall:
+                        fix = info[0]
+                        gobject.timeout_add(500,
+                                            app.chatgui.tx_msg,
+                                            fix.to_NMEA_GGA(), True)
+                        result["rc"] = "OK"
+                        return result
+    
+        result["rc"] = "Unknown station"
+        return result
+    
+    def RPC_file_list(self, job):
+        result = {}
+    
+        dir = self.__config.get("prefs", "download_dir")
+        files = glob.glob(os.path.join(dir, "*.*"))
+        for fn in files:
+            size = os.path.getsize(fn)
+            if size < 1024:
+                units = "B"
+            else:
+                size >>= 10
+                units = "KB"
+    
+            ds = datetime.datetime.fromtimestamp(os.path.getmtime(fn))
+    
+            fn = os.path.basename(fn)
+            result[fn] = "%i %s (%s)" % (size,
+                                         units,
+                                         ds.strftime("%Y-%m-%d %H:%M:%S"))
+    
+        return result
+    
+    def RPC_form_list(self, job):
+        result = {}
+        forms = self.emit("rpc-get-msgs", "CQCQCQ")
+        for subj, stamp, filen in forms:
+            ts = time.localtime(stamp)
+            result[filen] = "%s/%s" % (subj,
+                                       time.strftime("%b-%d-%Y %H:%M:%S", ts))
+    
+        return result
+    
+    def RPC_file_pull(self, job):
+        result = {}
+    
+        dir = self.__config.get("prefs", "download_dir")
+        path = os.path.join(dir, job.get_file())
+        print "Remote requested %s" % path
+        if os.path.exists(path):
+            result["rc"] = "OK"
+            self.emit("rpc-send-file", job.get_dest(), path, job.get_file())
+        else:
+            result["rc"] = "File not found"
+    
+        return result
+    
+    def RPC_form_pull(self, job):
+        result = {}
+    
+        forms = self.emit("rpc-get-msgs", "CQCQCQ")
+        result["rc"] = "Form not found"
+        for subj, stamp, filen in forms:
+            if filen == job.get_form():
+                fname = os.path.join(self.__config.platform.config_dir(),
+                                     "messages", filen)
+                if os.path.exists(fname):
+                    result["rc"] = "OK"
+                    self.emit("rpc-send-msg", job.get_dest(), fname, subj)
+                break
+    
+        return result

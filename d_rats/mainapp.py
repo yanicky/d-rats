@@ -164,39 +164,6 @@ class MainApp:
         if self.comm:
             self.comm.disconnect()
 
-    def do_rpcjob(self, session, job):
-        print "Got job exec: %s" % job.__class__.__name__
-        
-        result = {"rc" : "Failed: unsupported"}
-
-        allow_forms = self.config.getboolean("prefs", "allow_remote_forms")
-        allow_files = self.config.getboolean("prefs", "allow_remote_files")
-
-        if isinstance(job, rpcsession.RPCPositionReport):
-            result = rpcsession.RPC_pos_report(job, self)
-        elif isinstance(job, rpcsession.RPCFileListJob):
-            if allow_files:
-                result = rpcsession.RPC_file_list(job, self)
-            else:
-                result = {"rc" : "Access denied"}
-        elif isinstance(job, rpcsession.RPCPullFileJob):
-            if allow_files:
-                result = rpcsession.RPC_file_pull(job, self)
-            else:
-                result = {"rc" : "Access denied"}
-        elif isinstance(job, rpcsession.RPCFormListJob):
-            if allow_forms:
-                result = rpcsession.RPC_form_list(job, self)
-            else:
-                result = {"rc" : "Access denied"}
-        elif isinstance(job, rpcsession.RPCPullFormJob):
-            if allow_forms:
-                result = rpcsession.RPC_form_pull(job, self)
-            else:
-                result = {"rc" : "Access denied"}
-
-        job.set_state("complete", result)
-
     def start_comms(self):
         rate = self.config.get("settings", "rate")
         port = self.config.get("settings", "port")
@@ -271,11 +238,21 @@ class MainApp:
                 ss.connect("incoming_frame",
                            lambda o,m: self.mainwindow.tabs["chat"].display_line(m, "italic"))
 
+            def send_file(ft, sta, fn, name):
+                self.sc.send_file(sta, fn, name)
+            def send_form(msgs, sta, fn, name):
+                self.sc.send_form(sta, fn, name)
+            def get_messages(obj, sta):
+                return self.mainwindow.tabs["messages"].get_shared_messages(sta)
+
+            rpcactions = rpcsession.RPCActionSet(self.config)
+            rpcactions.connect("rpc-send-file", send_file)
+            rpcactions.connect("rpc-send-msg", send_form)
+            rpcactions.connect("rpc-get-msgs", get_messages)
             self.rpc_session = self.sm.start_session("rpc",
                                                      dest="CQCQCQ",
-                                                     cls=rpcsession.RPCSession)
-            self.rpc_session.connect("exec-job", self.do_rpcjob)
-
+                                                     cls=rpcsession.RPCSession,
+                                                     rpcactions=rpcactions)
 
             def do_rpc(files, job):
                 self.rpc_session.submit(job)
@@ -351,13 +328,9 @@ class MainApp:
                 self.mainwindow.tabs["event"].event(event)
             self.sc.connect("file-sent", file_sent)
 
-            def send_file(ft, sta, fn, name):
-                self.sc.send_file(sta, fn, name)
             self.mainwindow.tabs["files"].connect("user-send-file",
                                                   send_file)
 
-            def send_form(msgs, sta, fn, name):
-                self.sc.send_form(sta, fn, name)
             self.mainwindow.tabs["messages"].connect("user-send-form",
                                                      send_form)
 
