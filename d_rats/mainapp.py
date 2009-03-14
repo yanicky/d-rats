@@ -208,8 +208,9 @@ class MainApp:
 
             def in_gps(cs, fix):
                 fix.set_relative_to_current(self.get_position())
-                event = main_events.PosReportEvent(-1, str(fix))
-                event.set_as_final()
+                event = main_events.PosReportEvent(fix.station, str(fix))
+                # FIXME: Set as final if last heard was long ago, or something
+                # event.set_as_final()
                 self.mainwindow.tabs["event"].event(event)
 
                 point = map_sources.MapStation(fix.station,
@@ -249,6 +250,9 @@ class MainApp:
             rpcactions.connect("rpc-send-file", send_file)
             rpcactions.connect("rpc-send-msg", send_form)
             rpcactions.connect("rpc-get-msgs", get_messages)
+            rpcactions.connect("rpc-event",
+                               lambda w, e: \
+                                   self.mainwindow.tabs["event"].event(e))
             self.rpc_session = self.sm.start_session("rpc",
                                                      dest="CQCQCQ",
                                                      cls=rpcsession.RPCSession,

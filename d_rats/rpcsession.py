@@ -26,6 +26,9 @@ import sessionmgr
 import sessions
 import ddt2
 
+# This feels wrong
+from ui import main_events
+
 ASCII_FS = "\x1C"
 ASCII_GS = "\x1D"
 ASCII_RS = "\x1E"
@@ -291,6 +294,9 @@ class RPCActionSet(gobject.GObject):
                           gobject.TYPE_PYOBJECT,
                           (gobject.TYPE_STRING,)),
                           
+        "rpc-event" : (gobject.SIGNAL_RUN_LAST,
+                       gobject.TYPE_NONE,
+                       (gobject.TYPE_PYOBJECT,)),
         }
 
     def __init__(self, config):
@@ -349,6 +355,10 @@ class RPCActionSet(gobject.GObject):
                                          units,
                                          ds.strftime("%Y-%m-%d %H:%M:%S"))
     
+        event = main_events.Event(None, job.get_dest() + " " + \
+                                      _("Requested file list"))
+        self.emit("rpc-event", event)
+
         return result
     
     def RPC_form_list(self, job):
@@ -359,6 +369,11 @@ class RPCActionSet(gobject.GObject):
             result[filen] = "%s/%s" % (subj,
                                        time.strftime("%b-%d-%Y %H:%M:%S", ts))
     
+
+        event = main_events.Event(None, job.get_dest() + " " + \
+                                      _("Requested message list"))
+        self.emit("rpc-event", event)
+
         return result
     
     def RPC_file_pull(self, job):
@@ -372,6 +387,10 @@ class RPCActionSet(gobject.GObject):
             self.emit("rpc-send-file", job.get_dest(), path, job.get_file())
         else:
             result["rc"] = "File not found"
+
+        event = main_events.Event(None, job.get_dest() + " " + \
+                                      _("Requested file %s") % job.get_file())
+        self.emit("rpc-event", event)
     
         return result
     
@@ -388,5 +407,9 @@ class RPCActionSet(gobject.GObject):
                     result["rc"] = "OK"
                     self.emit("rpc-send-msg", job.get_dest(), fname, subj)
                 break
+
+        event = main_events.Event(None, job.get_dest() + " " + \
+                                      _("Requested message %s") % subj)
+        self.emit("rpc-event", event)
     
         return result
