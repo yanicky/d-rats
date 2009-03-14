@@ -42,7 +42,7 @@ _EVENT_TYPES = {EVENT_INFO : None,
 
 class Event:
     def __init__(self, group_id, message, evtype=EVENT_INFO):
-        self._group_id = group_id
+        self._group_id = str(group_id)
 
         if evtype not in _EVENT_TYPES.keys():
             raise Exception("Invalid event type %i" % evtype)
@@ -203,7 +203,7 @@ class EventTab(MainWindowTab):
 
         eventlist.connect("button_press_event", self._mouse_cb)
 
-        self.store = gtk.ListStore(gobject.TYPE_INT,    # 0: id
+        self.store = gtk.ListStore(gobject.TYPE_STRING, # 0: id
                                    gobject.TYPE_OBJECT, # 1: icon
                                    gobject.TYPE_INT,    # 2: timestamp
                                    gobject.TYPE_STRING, # 3: message
@@ -244,12 +244,12 @@ class EventTab(MainWindowTab):
 
         self._load_pixbufs()
 
-        event = Event(EVENT_GROUP_NONE, _("D-RATS Started"))
+        event = Event(None, _("D-RATS Started"))
         self.event(event)
 
     def event(self, event):
         iter = None
-        if event._group_id != EVENT_GROUP_NONE:
+        if event._group_id != None:
             iter = self.store.get_iter_first()
             while iter:
                 group, = self.store.get(iter, 0)
@@ -261,9 +261,9 @@ class EventTab(MainWindowTab):
             iter = self.store.append()
 
         if event._isfinal:
-            gid = EVENT_GROUP_NONE
+            gid = None
         else:
-            gid = event._group_id
+            gid = event._group_id or ""
 
         self.store.set(iter,
                        0, gid,
