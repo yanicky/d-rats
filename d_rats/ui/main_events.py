@@ -273,3 +273,24 @@ class EventTab(MainWindowTab):
                        4, event._details,
                        5, self.__ctr)
         self.__ctr += 1
+
+    def finalize_last(self, group):
+        iter = self.store.get_iter_first()
+        while iter:
+            _group, = self.store.get(iter, 0)
+            if _group == group:
+                self.store.set(iter, 0, "")
+                return True
+            iter = self.store.iter_next(iter)
+
+        return False
+
+    def last_event_time(self, group):
+        iter = self.store.get_iter_first()
+        while iter:
+            _group, stamp = self.store.get(iter, 0, 2)
+            if _group == group:
+                return stamp
+            iter = self.store.iter_next(iter)
+
+        return 0
