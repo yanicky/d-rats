@@ -33,6 +33,7 @@ except ImportError:
     from d_rats.miscwidgets import make_choice
     from d_rats import miscwidgets
     from d_rats import platform
+    from d_rats import utils
 
 def call_with_lock(lock, fn, *args):
     lock.acquire()
@@ -105,11 +106,6 @@ class DataPath:
     def stop(self):
         print "Stopping %s" % self.id
         self.enabled = False
-
-        if self.thread:
-            self.thread.join()
-
-        print "Stopped %s" % self.id
 
 class LoopDataPath(DataPath):
     def hasIncoming(self):
@@ -699,7 +695,7 @@ class RepeaterGUI:
         if self.tap:
             traffic = self.tap.peek()
             end = self.traffic_buffer.get_end_iter()
-            self.traffic_buffer.insert(end, traffic)
+            self.traffic_buffer.insert(end, utils.filter_to_ascii(traffic))
 
             count = self.traffic_buffer.get_line_count()
             if count > 200:
