@@ -309,7 +309,7 @@
               </widget>
             </child>
             <child>
-              <widget class="GtkLabel" id="label1">
+              <widget class="GtkLabel" id="tab_label_msg">
                 <property name="visible">True</property>
                 <property name="label" translatable="yes">Messages</property>
               </widget>
@@ -558,7 +558,7 @@ KE7FTE</property>
               </packing>
             </child>
             <child>
-              <widget class="GtkLabel" id="label2">
+              <widget class="GtkLabel" id="tab_label_chat">
                 <property name="visible">True</property>
                 <property name="label" translatable="yes">Chat</property>
               </widget>
@@ -700,7 +700,7 @@ KE7FTE</property>
               </packing>
             </child>
             <child>
-              <widget class="GtkLabel" id="label3">
+              <widget class="GtkLabel" id="tab_label_files">
                 <property name="visible">True</property>
                 <property name="label" translatable="yes">Files</property>
               </widget>
@@ -795,7 +795,7 @@ Pings</property>
               </packing>
             </child>
             <child>
-              <widget class="GtkLabel" id="label5">
+              <widget class="GtkLabel" id="tab_label_event">
                 <property name="visible">True</property>
                 <property name="label" translatable="yes">Event Log</property>
               </widget>

@@ -583,7 +583,7 @@ class MessagesTab(MainWindowTab):
             c += 1
 
     def __init__(self, wtree, config):
-        MainWindowElement.__init__(self, wtree, config, "msg")
+        MainWindowTab.__init__(self, wtree, config, "msg")
 
         self._init_toolbar()
         self._folders = MessageFolders(wtree, config)
@@ -594,6 +594,7 @@ class MessagesTab(MainWindowTab):
         self._folders.select_folder(_("Inbox"))
 
     def refresh_if_folder(self, folder):
+        self._notice()
         if self._messages.current_info.name() == folder:
             self._messages.refresh()
 

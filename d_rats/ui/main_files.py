@@ -313,7 +313,7 @@ class FilesTab(MainWindowTab):
         return bin.get_children()[0]
 
     def __init__(self, wtree, config):
-        MainWindowElement.__init__(self, wtree, config, "files")
+        MainWindowTab.__init__(self, wtree, config, "files")
 
         lview, rview, bin = self._getw("local_list",
                                        "remote_list",

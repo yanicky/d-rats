@@ -195,7 +195,7 @@ class EventTab(MainWindowTab):
             gtk.gdk.pixbuf_new_from_file("images/event_session.png")
 
     def __init__(self, wtree, config):
-        MainWindowElement.__init__(self, wtree, config, "event")
+        MainWindowTab.__init__(self, wtree, config, "event")
 
         self.__ctr = 0
 
@@ -273,6 +273,8 @@ class EventTab(MainWindowTab):
                        4, event._details,
                        5, self.__ctr)
         self.__ctr += 1
+
+        gobject.idle_add(self._notice)
 
     def finalize_last(self, group):
         iter = self.store.get_iter_first()

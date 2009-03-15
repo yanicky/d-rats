@@ -290,6 +290,8 @@ class ChatTab(MainWindowTab):
 
         self._display_line(line, incoming, *attrs)
 
+        self._notice()
+
     def _highlight_tab(self, num):
         child = self.__filtertabs.get_nth_page(num)
         label = self.__filtertabs.get_tab_label(child)
@@ -401,7 +403,7 @@ class ChatTab(MainWindowTab):
         self._config.platform.open_text_file(fn)
 
     def __init__(self, wtree, config):
-        MainWindowElement.__init__(self, wtree, config, "chat")
+        MainWindowTab.__init__(self, wtree, config, "chat")
 
         entry, send, dest = self._getw("entry", "send", "destination")
         self.__filtertabs, = self._getw("filtertabs")
@@ -531,6 +533,8 @@ class ChatTab(MainWindowTab):
         display.modify_font(font)
 
     def selected(self):
+        MainWindowTab.selected(self)
+
         make_visible = ["main_menu_bcast", "main_menu_clear",
                         "main_menu_addfilter", "main_menu_delfilter",
                         "main_menu_viewlog"]
@@ -540,6 +544,8 @@ class ChatTab(MainWindowTab):
             item.set_property("visible", True)
 
     def deselected(self):
+        MainWindowTab.deselected(self)
+
         make_invisible = ["main_menu_bcast", "main_menu_clear",
                           "main_menu_addfilter", "main_menu_delfilter",
                           "main_menu_viewlog"]

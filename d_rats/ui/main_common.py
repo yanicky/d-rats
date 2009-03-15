@@ -70,11 +70,29 @@ class MainWindowElement(gobject.GObject):
         pass
 
 class MainWindowTab(MainWindowElement):
+    def __init__(self, wtree, config, prefix):
+        MainWindowElement.__init__(self, wtree, config, prefix)
+        self._tablabel = wtree.get_widget("tab_label_%s" % prefix)
+        self._selected = False
+
     def reconfigure(self):
         pass
 
     def selected(self):
-        pass
+        self._selected = True
+        self._unnotice()
 
     def deselected(self):
-        pass
+        self._selected = False
+
+    def _notice(self):
+        if self._selected:
+            return
+
+        text = self._tablabel.get_text()
+        self._tablabel.set_markup("<span color='blue'>%s</span>" % text)
+
+    def _unnotice(self):
+        text = self._tablabel.get_text()
+        self._tablabel.set_markup(text)
+
