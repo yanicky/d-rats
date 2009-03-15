@@ -207,10 +207,12 @@ class MainApp:
                 self.mainwindow.tabs["event"].event(event)
 
             def in_gps(cs, fix):
+                ts = self.mainwindow.tabs["event"].last_event_time(fix.station)
+                if (time.time() - ts) > 300:
+                    self.mainwindow.tabs["event"].finalize_last(fix.station)
+
                 fix.set_relative_to_current(self.get_position())
                 event = main_events.PosReportEvent(fix.station, str(fix))
-                # FIXME: Set as final if last heard was long ago, or something
-                # event.set_as_final()
                 self.mainwindow.tabs["event"].event(event)
 
                 point = map_sources.MapStation(fix.station,
