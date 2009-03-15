@@ -24,6 +24,7 @@
                       <widget class="GtkImageMenuItem" id="main_menu_bcast">
                         <property name="label" translatable="yes">Broadcast Text File</property>
                         <property name="use_underline">True</property>
+                        <accelerator key="b" modifiers="GDK_CONTROL_MASK" signal="activate"/>
                         <child internal-child="image">
                           <widget class="GtkImage" id="menu-item-image2">
                             <property name="visible">True</property>
@@ -50,6 +51,7 @@
                         <property name="visible">True</property>
                         <property name="label" translatable="yes">Ping Station</property>
                         <property name="use_underline">True</property>
+                        <accelerator key="p" modifiers="GDK_CONTROL_MASK" signal="activate"/>
                         <child internal-child="image">
                           <widget class="GtkImage" id="menu-item-image3">
                             <property name="visible">True</property>
@@ -64,6 +66,7 @@
                         <property name="label" translatable="yes">gtk-preferences</property>
                         <property name="use_underline">True</property>
                         <property name="use_stock">True</property>
+                        <accelerator key="p" modifiers="GDK_MOD1_MASK" signal="activate"/>
                       </widget>
                     </child>
                     <child>
@@ -85,6 +88,7 @@
                         <property name="use_underline">True</property>
                         <property name="use_stock">True</property>
                         <signal name="activate" handler="on_quit1_activate"/>
+                        <accelerator key="q" modifiers="GDK_CONTROL_MASK" signal="activate"/>
                       </widget>
                     </child>
                   </widget>
@@ -173,6 +177,7 @@
                         <property name="label" translatable="yes">gtk-clear</property>
                         <property name="use_underline">True</property>
                         <property name="use_stock">True</property>
+                        <accelerator key="L" modifiers="GDK_CONTROL_MASK" signal="activate"/>
                       </widget>
                     </child>
                     <child>
@@ -192,6 +197,7 @@
                         <property name="visible">True</property>
                         <property name="label" translatable="yes">Map</property>
                         <property name="use_underline">True</property>
+                        <accelerator key="m" modifiers="GDK_CONTROL_MASK" signal="activate"/>
                         <child internal-child="image">
                           <widget class="GtkImage" id="menu-item-image1">
                             <property name="visible">True</property>
