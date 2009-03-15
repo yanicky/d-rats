@@ -364,7 +364,7 @@ class ChatTab(MainWindowTab):
 
         self.emit("user-sent-message", "CQCQCQ", "\r\n" + data, False)
 
-    def _clear(self, but, buffer):
+    def _clear(self, but):
         num, display = self._display_selected()
         display.get_buffer().set_text("")
 
