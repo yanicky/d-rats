@@ -1175,7 +1175,7 @@ class DratsConfig(ConfigParser.ConfigParser):
         return d
 
     def form_store_dir(self):
-        d = os.path.join(self.platform.config_dir(), "Saved_Forms")
+        d = os.path.join(self.platform.config_dir(), "messages")
         if not os.path.isdir(d):
             os.mkdir(d)
 
