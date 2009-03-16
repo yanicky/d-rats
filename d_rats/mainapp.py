@@ -156,11 +156,6 @@ class MainApp:
                          line, incoming, color)
 
     def stop_comms(self):
-        if self.sm:
-            self.sm.shutdown()
-            self.sm = None
-            self.chat_session = None
-
         if self.comm:
             self.comm.disconnect()
 
