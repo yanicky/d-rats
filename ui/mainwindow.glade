@@ -583,6 +583,8 @@ KE7FTE</property>
                           <widget class="GtkToolbar" id="files_local_toolbar">
                             <property name="visible">True</property>
                             <property name="show_arrow">False</property>
+                            <property name="icon_size">GTK_ICON_SIZE_SMALL_TOOLBAR</property>
+                            <property name="icon_size_set">True</property>
                           </widget>
                           <packing>
                             <property name="expand">False</property>
@@ -637,6 +639,8 @@ KE7FTE</property>
                           <widget class="GtkToolbar" id="files_remote_toolbar">
                             <property name="visible">True</property>
                             <property name="show_arrow">False</property>
+                            <property name="icon_size">GTK_ICON_SIZE_SMALL_TOOLBAR</property>
+                            <property name="icon_size_set">True</property>
                           </widget>
                           <packing>
                             <property name="expand">False</property>
