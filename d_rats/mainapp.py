@@ -197,13 +197,13 @@ class MainApp:
             def in_ping(cs, src, dst, data):
                 msg = "%s pinged %s" % (src, dst)
                 print msg
-                event = main_events.PingEvent(-1, msg)
+                event = main_events.PingEvent(None, msg)
                 self.mainwindow.tabs["event"].event(event)
 
             def out_ping(cs, src, dst, data):
                 msg = "%s replied to ping from %s with: %s" % (src, dst, data)
                 print msg
-                event = main_events.PingEvent(-1, msg)
+                event = main_events.PingEvent(None, msg)
                 self.mainwindow.tabs["event"].event(event)
 
             def in_gps(cs, fix):

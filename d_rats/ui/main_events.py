@@ -42,7 +42,7 @@ _EVENT_TYPES = {EVENT_INFO : None,
 
 class Event:
     def __init__(self, group_id, message, evtype=EVENT_INFO):
-        self._group_id = str(group_id)
+        self._group_id = group_id
 
         if evtype not in _EVENT_TYPES.keys():
             raise Exception("Invalid event type %i" % evtype)
@@ -261,7 +261,7 @@ class EventTab(MainWindowTab):
             iter = self.store.append()
 
         if event._isfinal:
-            gid = None
+            gid = ""
         else:
             gid = event._group_id or ""
 
