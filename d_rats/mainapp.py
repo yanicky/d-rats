@@ -411,10 +411,25 @@ class MainApp:
         for i in self.mail_threads:
             i.stop()
 
+        def send_bcast(mt, staton, text):
+            self.chat_session.write(text)
+
+        def do_event(mt, event):
+            self.mainwindow.tabs["event"].event(event)
+
+        def do_mail_recv(mt, folder):
+            self.mainwindow.tabs["messages"].refresh_if_folder(folder)
+
+        def do_form_send(mt, formfn, station, name):
+            self.sc.send_form(station, formfn, name)
+
         accts = self.config.options("incoming_email")
-        accts = [] # FIXME
         for acct in accts:
-            t = emailgw.MailThread(self.config, acct, self.chatgui)
+            t = emailgw.MailThread(self.config, acct)
+            t.connect("send-chat", send_bcast)
+            t.connect("event", do_event)
+            t.connect("form-received", do_mail_recv)
+            t.connect("send-form", do_form_send)
             t.start()
             self.mail_threads.append(t)
 

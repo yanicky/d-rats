@@ -27,17 +27,38 @@ import gobject
 import re
 
 import formgui
+from ui import main_events
 
-class MailThread(threading.Thread):
-    def __init__(self, config, account, chatgui):
+class MailThread(threading.Thread, gobject.GObject):
+    __gsignals__ = {
+        "send-chat" : (gobject.SIGNAL_RUN_LAST,
+                       gobject.TYPE_NONE,
+                       (gobject.TYPE_STRING, gobject.TYPE_STRING)),
+        "form-received" : (gobject.SIGNAL_RUN_LAST,
+                           gobject.TYPE_NONE,
+                           (gobject.TYPE_STRING,)),
+        "send-form" : (gobject.SIGNAL_RUN_LAST,
+                       gobject.TYPE_NONE,
+                       (gobject.TYPE_STRING,
+                        gobject.TYPE_STRING,
+                        gobject.TYPE_STRING)),
+        "event" : (gobject.SIGNAL_RUN_LAST,
+                   gobject.TYPE_NONE,
+                   (gobject.TYPE_PYOBJECT,)),
+        }
+
+    def emit(self, signal, *args):
+        gobject.idle_add(gobject.GObject.emit, self, signal, *args)
+
+    def __init__(self, config, account):
         threading.Thread.__init__(self)
+        gobject.GObject.__init__(self)
         self.setDaemon(True)
 
         self.event = threading.Event()
 
         self.enabled = True
         self.config = config
-        self.chatgui = chatgui
 
         settings = config.get("incoming_email", account)
 
@@ -108,7 +129,7 @@ class MailThread(threading.Thread):
 
         return messages
 
-    def maybe_send_form(self, formfn, sender, recip):
+    def should_send_form(self, sender, recip):
         for i in ["'", '"']:
             recip = recip.replace(i, "")
         recip = recip.strip()
@@ -116,15 +137,11 @@ class MailThread(threading.Thread):
         if not validate_incoming(self.config, recip, sender):
             print "Not auto-sending %s -> %s (no access rule)" % (sender, recip)
             return False
-
-        print "Auto-sending form %s -> %s" % (sender, recip)
-
-        sessiongui = self.chatgui.adv_controls["sessions"]
-        sessiongui.send_form(recip, formfn, "Email")
+        else:
+            print "Auto-sending form %s -> %s" % (sender, recip)
+            return True
 
     def create_form_from_mail(self, mail):
-        manager = self.chatgui.adv_controls["forms"]
-
         subject = mail.get("Subject", "[no subject]")
         sender = mail.get("From", "Unknown <devnull@nowhere.com>")
         
@@ -150,29 +167,35 @@ class MailThread(threading.Thread):
 
         self.message("%s: %s" % (sender, subject))
 
-        efn = os.path.join(manager.form_source_dir, "email.xml")
+        efn = os.path.join(self.config.form_source_dir(), "email.xml")
         mid = platform.get_platform().filter_filename(messageid)
-        ffn = os.path.join(manager.form_store_dir, "%s.xml" % mid)
+        ffn = os.path.join(self.config.form_store_dir(),
+                           _("Inbox"),
+                           "%s.xml" % mid)
 
         form = formgui.FormFile("", efn)
         form.set_field_value("_auto_sender", sender)
         form.set_field_value("recipient", recip)
-        form.set_field_value("subject", subject)
+        form.set_field_value("subject", "EMAIL: %s" % subject)
         form.set_field_value("message", body)
         form.add_path_element("EMAIL")
         form.add_path_element(self.config.get("user", "callsign"))
         form.save_to(ffn)
 
-        form_name = "EMAIL: %s" % subject
 
-        manager.reg_form(form_name,
-                         ffn,
-                         "Never",
-                         manager.get_stamp())
-        manager.gui.display_line("Email '%s' received from '%s'" % (\
-                subject, sender), "italic")
+        if self.should_send_form(sender, recip):
+            nfn = os.path.join(self.config.form_store_dir(),
+                               _("Outbox"),
+                               os.path.basename(ffn))
+            os.rename(ffn, nfn) # Move to Outbox
+            self.emit("send-form", nfn, recip, subject)
+            msg = "Attempted send of mail from %s to %s" % (sender, recip)
+        else:
+            self.emit("form-received", _("Inbox"))
+            msg = "Mail received from %s" % sender
 
-        self.maybe_send_form(ffn, sender, recip)
+        event = main_events.Event(None, msg)
+        self.emit("event", event)
 
     def do_chat_from_mail(self, mail):
         if mail.is_multipart():
@@ -194,7 +217,12 @@ class MailThread(threading.Thread):
             mail.get("Subject", ""),
             body)
             
-        self.chatgui.tx_msg(text)
+        self.emit("send-chat", "CQCQCQ", text)
+
+        event = main_events.Event(None,
+                                  "Mail received from %s and sent via chat" % \
+                                      mail.get("From", "Unknown Sender"))
+        self.emit("event", event)
 
     def run(self):
         self.message("Thread starting")
