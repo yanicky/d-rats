@@ -278,7 +278,7 @@ class MessageFolders(MainWindowElement):
         col = gtk.TreeViewColumn("", gtk.CellRendererText(), text=0)
         folderlist.append_column(col)
 
-        self.folder_pixbuf = gtk.gdk.pixbuf_new_from_file("images/folder.png")
+        self.folder_pixbuf = self._config.ship_img("folder.png")
 
         self._ensure_default_folders()
         for folder in self.get_folders():
@@ -381,8 +381,8 @@ class MessageList(MainWindowElement):
         msglist.connect("row-activated", self._open_msg)
         self.store.set_sort_column_id(3, gtk.SORT_DESCENDING)
 
-        self.message_pixbuf = gtk.gdk.pixbuf_new_from_file("images/message.png")
-        self.unread_pixbuf = gtk.gdk.pixbuf_new_from_file("images/msg-markunread.png")
+        self.message_pixbuf = self._config.ship_img("message.png")
+        self.unread_pixbuf = self._config.ship_img("msg-markunread.png")
         self.current_info = None
 
     def _update_message_info(self, iter):
@@ -574,7 +574,7 @@ class MessagesTab(MainWindowTab):
         c = 0
         for i, l, f in buttons:
             icon = gtk.Image()
-            icon.set_from_file("images/%s" % i)
+            icon.set_from_pixbuf(self._config.ship_img(i))
             icon.show()
             item = gtk.ToolButton(icon, l)
             item.show()

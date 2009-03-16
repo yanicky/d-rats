@@ -181,18 +181,13 @@ class EventTab(MainWindowTab):
         filtermodel.refilter()
 
     def _load_pixbufs(self):
-        _EVENT_TYPES[EVENT_INFO] = \
-            gtk.gdk.pixbuf_new_from_file("images/event_info.png")
-        _EVENT_TYPES[EVENT_FILE_XFER] = \
-            gtk.gdk.pixbuf_new_from_file("images/folder.png")
-        _EVENT_TYPES[EVENT_FORM_XFER] = \
-            gtk.gdk.pixbuf_new_from_file("images/message.png")
-        _EVENT_TYPES[EVENT_PING] = \
-            gtk.gdk.pixbuf_new_from_file("images/event_ping.png")
+        _EVENT_TYPES[EVENT_INFO] = self._config.ship_img("event_info.png")
+        _EVENT_TYPES[EVENT_FILE_XFER] = self._config.ship_img("folder.png")
+        _EVENT_TYPES[EVENT_FORM_XFER] = self._config.ship_img("message.png")
+        _EVENT_TYPES[EVENT_PING] = self._config.ship_img("event_ping.png")
+        _EVENT_TYPES[EVENT_SESSION] = self._config.ship_img("event_session.png")
         _EVENT_TYPES[EVENT_POS_REPORT] = \
-            gtk.gdk.pixbuf_new_from_file("images/event_posreport.png")
-        _EVENT_TYPES[EVENT_SESSION] = \
-            gtk.gdk.pixbuf_new_from_file("images/event_session.png")
+            self._config.ship_img("event_posreport.png")
 
     def __init__(self, wtree, config):
         MainWindowTab.__init__(self, wtree, config, "event")

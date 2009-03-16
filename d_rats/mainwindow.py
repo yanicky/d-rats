@@ -178,8 +178,8 @@ class MainWindow(MainWindowElement):
         self.tabs[self._current_tab].selected()
 
     def __init__(self, config):
-        # FIXME
-        wtree = gtk.glade.XML("ui/mainwindow.glade", "mainwindow")
+        wtree = gtk.glade.XML(config.ship_obj_fn("ui/mainwindow.glade"),
+                              "mainwindow")
 
         MainWindowElement.__init__(self, wtree, config, "")
 

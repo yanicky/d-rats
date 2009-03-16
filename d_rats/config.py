@@ -1181,6 +1181,13 @@ class DratsConfig(ConfigParser.ConfigParser):
 
         return d
 
+    def ship_obj_fn(self, name):
+        return os.path.join(self.platform.source_dir(), name)
+
+    def ship_img(self, name):
+        path = self.ship_obj_fn(os.path.join("images", name))
+        return gtk.gdk.pixbuf_new_from_file(path)
+
 if __name__ == "__main__":
     fn = "/home/dan/.d-rats/d-rats.config"
 

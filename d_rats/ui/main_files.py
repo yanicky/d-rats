@@ -28,11 +28,10 @@ from d_rats.ui.main_common import ask_for_confirmation
 from d_rats import rpcsession
 from d_rats import image
 
-#THROB_IMAGE = "images/Spinning_wheel_throbber.gif"
-THROB_IMAGE = "images/throbber.gif"
+THROB_IMAGE = "throbber.gif"
 
 class FileView:
-    def __init__(self, view, path):
+    def __init__(self, view, path, config):
         self._view = view
         self._path = path
 
@@ -43,7 +42,7 @@ class FileView:
         self._store.set_sort_column_id(1, gtk.SORT_ASCENDING)
         view.set_model(self._store)
 
-        self._file_icon = gtk.gdk.pixbuf_new_from_file("images/file.png")
+        self._file_icon = config.ship_img("file.png")
 
         self.outstanding = {}
 
@@ -130,7 +129,7 @@ class FilesTab(MainWindowTab):
 
     def _stop_throb(self):
         throbber, = self._getw("remote_throb")
-        pix = gtk.gdk.pixbuf_new_from_file(THROB_IMAGE)
+        pix = self._config.ship_img(THROB_IMAGE)
         throbber.set_from_pixbuf(pix)        
 
     def _end_list_job(self, job, state, *args):
@@ -164,7 +163,7 @@ class FilesTab(MainWindowTab):
             return
 
         if not self._remote or self._remote.get_path() != sta:
-            self._remote = RemoteFileView(view, sta)
+            self._remote = RemoteFileView(view, sta, self._config)
 
         throbber, = self._getw("remote_throb")
         anim = gtk.gdk.PixbufAnimation(THROB_IMAGE)
@@ -231,7 +230,7 @@ class FilesTab(MainWindowTab):
             c = 0
             for i, l, f, d in buttons:
                 icon = gtk.Image()
-                icon.set_from_file("images/%s" % i)
+                icon.set_from_pixbuf(i)
                 icon.show()
                 item = gtk.ToolButton(icon, l)
                 item.connect("clicked", f, d)
@@ -239,12 +238,12 @@ class FilesTab(MainWindowTab):
                 tb.insert(item, c)
                 c += 1
 
-        refresh = "files-refresh.png"
-        connect = "connect.png"
-        disconnect = "disconnect.png"
-        delete = "msg-delete.png"
-        download = "download.png"
-        upload = "upload.png"
+        refresh = self._config.ship_img("files-refresh.png")
+        connect = self._config.ship_img("connect.png")
+        disconnect = self._config.ship_img("disconnect.png")
+        delete = self._config.ship_img("msg-delete.png")
+        download = self._config.ship_img("download.png")
+        upload = self._config.ship_img("upload.png")
 
         ltb, = self._getw("local_toolbar")
         lbuttons = \
@@ -327,7 +326,7 @@ class FilesTab(MainWindowTab):
 
         ddir = self._config.get("prefs", "download_dir")
 
-        self._local = LocalFileView(lview, None)
+        self._local = LocalFileView(lview, None, self._config)
 
         self._remote = None
         rview.set_sensitive(False)
