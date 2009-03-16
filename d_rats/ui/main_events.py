@@ -253,7 +253,7 @@ class EventTab(MainWindowTab):
             iter = self.store.get_iter_first()
             while iter:
                 group, = self.store.get(iter, 0)
-                if group == event._group_id:
+                if group == str(event._group_id):
                     break
                 iter = self.store.iter_next(iter)
 
