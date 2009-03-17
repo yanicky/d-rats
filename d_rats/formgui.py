@@ -756,7 +756,7 @@ class Form(gtk.Dialog):
         self.build_gui(gtk.RESPONSE_CANCEL in self._buttons)
         self.set_size_request(380, 450)
 
-        gtk.Dialog.run(self)
+        return gtk.Dialog.run(self)
 
     def configure(self, config):
         self.xsl_dir = config.form_source_dir()
