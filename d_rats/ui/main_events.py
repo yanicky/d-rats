@@ -97,6 +97,9 @@ class EventTab(MainWindowTab):
                                (gobject.TYPE_INT,)),
         "user-cancel-session" : (gobject.SIGNAL_RUN_LAST, gobject.TYPE_NONE,
                                  (gobject.TYPE_INT,)),
+        "status" : (gobject.SIGNAL_RUN_LAST,
+                    gobject.TYPE_NONE,
+                    (gobject.TYPE_STRING,)),
         }
 
     def _mh_xfer(self, _action, sid):
@@ -270,6 +273,7 @@ class EventTab(MainWindowTab):
         self.__ctr += 1
 
         gobject.idle_add(self._notice)
+        gobject.idle_add(self.emit, "status", event._message)
 
     def finalize_last(self, group):
         iter = self.store.get_iter_first()

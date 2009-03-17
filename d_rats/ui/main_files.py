@@ -125,6 +125,9 @@ class FilesTab(MainWindowTab):
         "get-station-list" : (gobject.SIGNAL_ACTION,
                               gobject.TYPE_PYOBJECT,
                               (gobject.TYPE_STRING,)),
+        "status" : (gobject.SIGNAL_RUN_LAST,
+                    gobject.TYPE_NONE,
+                    (gobject.TYPE_STRING,)),
         }
 
     def _stop_throb(self):
@@ -140,6 +143,7 @@ class FilesTab(MainWindowTab):
 
         if state == "complete" and self._remote:
             self._remote.get_view().set_sensitive(True)
+            self.emit("status", "Connected to %s" % job.get_dest())
         else:
             self._disconnect(None, None)
 
@@ -152,6 +156,7 @@ class FilesTab(MainWindowTab):
         sel = self._get_ssel()
         sel.set_sensitive(True)
         self._stop_throb()
+        self.emit("status", "Disconnected")
 
     def _connect_remote(self, button, rfview):
 
@@ -172,6 +177,7 @@ class FilesTab(MainWindowTab):
 
         job = self._remote.refresh()
         if job:
+            self.emit("status", "Connecting to %s" % job.get_dest())
             sel.set_sensitive(False)
             job.connect("state-change", self._end_list_job)
             self.emit("submit-rpc-job", job)
@@ -224,6 +230,7 @@ class FilesTab(MainWindowTab):
         job.set_file(fn)
 
         self.emit("submit-rpc-job", job)
+        # FIXME: Need an event here
 
     def _init_toolbar(self):
 
