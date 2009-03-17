@@ -497,6 +497,7 @@ class MessagesTab(MainWindowTab):
         if r != gtk.RESPONSE_OK:
             return
 
+        current = self._messages.current_info.name()
         self._folders.select_folder(_("Outbox"))
 
         tstamp = time.strftime("form_%m%d%Y_%H%M%S.xml")
@@ -513,15 +514,7 @@ class MessagesTab(MainWindowTab):
             self._messages.refresh(newfn)
         else:
             self._messages.current_info.delete(newfn)
-
-        return
-
-        r = form.run_auto(newfn)
-        form.destroy()
-        if r != gtk.RESPONSE_CANCEL:
-            subj = form.get_field_value("subject")
-            self._messages.current_info.set_msg_subject(newfn, subj)
-            self._messages.refresh()
+            self._folders.select_folder(current)
 
     def _rpl_msg(self, button):
         save_fields = [
@@ -539,6 +532,7 @@ class MessagesTab(MainWindowTab):
             print "FIXME: Warn about multiple reply"
             return
 
+        current = self._messages.current_info.name()
         self._folders.select_folder(_("Outbox"))
 
         fn = sel[0]
@@ -570,6 +564,7 @@ class MessagesTab(MainWindowTab):
             self._messages.refresh(newfn)
         else:
             self._messages.current_info.delete(newfn)
+            self._folders.select_folder(current)
 
     def _del_msg(self, button):
         if self._messages.current_info.name() == _("Trash"):
