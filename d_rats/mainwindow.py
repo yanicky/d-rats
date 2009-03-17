@@ -28,6 +28,7 @@ if __name__ == "__main__":
     print sys.path
 
 import os
+import time
 
 import libxml2
 import gtk
@@ -187,11 +188,15 @@ class MainWindow(MainWindowElement):
         self._tabs.connect("switch-page", self._tab_switched)
 
         self.tabs = {}
+        self.__last_status = 0
 
         self.tabs["chat"] = ChatTab(wtree, config)
         self.tabs["messages"] = MessagesTab(wtree, config)
         self.tabs["event"] = EventTab(wtree, config)
         self.tabs["files"] = FilesTab(wtree, config)
+
+        self.tabs["files"].connect("status", lambda e, m: self.set_status(m))
+        self.tabs["event"].connect("status", lambda e, m: self.set_status(m))
 
         self._current_tab = "messages"
 
@@ -215,8 +220,20 @@ class MainWindow(MainWindowElement):
         else:
             window.resize(h, w)
 
+        gobject.timeout_add(3000, self.__update_status)
+
+    def __update_status(self):
+        if (time.time() - self.__last_status) > 30:
+            sb = self._wtree.get_widget("statusbar")
+            id = sb.get_context_id("default")
+            sb.pop(id)
+
+        return True
+
     def set_status(self, msg):
         sb = self._wtree.get_widget("statusbar")
+
+        self.__last_status = time.time()
 
         id = sb.get_context_id("default")
         sb.pop(id)
