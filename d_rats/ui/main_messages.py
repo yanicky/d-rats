@@ -523,6 +523,54 @@ class MessagesTab(MainWindowTab):
             self._messages.current_info.set_msg_subject(newfn, subj)
             self._messages.refresh()
 
+    def _rpl_msg(self, button):
+        save_fields = [
+            ("_auto_number", "_auto_number", lambda x: str(int(x)+1)),
+            ("_auto_subject", "_auto_subject", lambda x: "RE: %s" % x),
+            ("_auto_sender", "_auto_recip", None)
+            ]
+
+        try:
+            sel = self._messages.get_selected_messages()
+        except TypeError:
+            return
+
+        if len(sel) > 1:
+            print "FIXME: Warn about multiple reply"
+            return
+
+        self._folders.select_folder(_("Outbox"))
+
+        fn = sel[0]
+        oform = formgui.FormFile("", fn)
+        tmpl = os.path.join(self._config.form_source_dir(), "%s.xml" % oform.id)
+                            
+        nform = formgui.FormFile("", tmpl)
+        nform.add_path_element(self._config.get("user", "callsign"))
+        
+        try:
+            for sf, df, xf in save_fields:
+                oldval = oform.get_field_value(sf)
+                if not oldval:
+                    continue
+
+                if xf:
+                    nform.set_field_value(df, xf(oldval))
+                else:
+                    nform.set_field_value(df, oldval)
+        except Exception, e:
+            print "Failed to do reply: %s" % e
+            return
+
+        tstamp = time.strftime("form_%m%d%Y_%H%M%S.xml")
+        newfn = self._messages.current_info.create_msg(tstamp)
+        nform.save_to(newfn)
+
+        if self._messages.open_msg(newfn) != gtk.RESPONSE_CANCEL:
+            self._messages.refresh(newfn)
+        else:
+            self._messages.current_info.delete(newfn)
+
     def _del_msg(self, button):
         if self._messages.current_info.name() == _("Trash"):
             self._messages.delete_selected_messages()
@@ -566,6 +614,7 @@ class MessagesTab(MainWindowTab):
 
         buttons = [("msg-new.png", _("New"), self._new_msg),
                    ("msg-send.png", _("Send"), self._snd_msg),
+                   ("msg-reply.png", _("Reply"), self._rpl_msg),
                    ("msg-delete.png", _("Delete"), self._del_msg),
                    ("msg-markread.png", _("Mark Read"), read),
                    ("msg-markunread.png", _("Mark Unread"), unread),
