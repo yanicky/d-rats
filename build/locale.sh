@@ -8,9 +8,12 @@ else
     FILES=$(find d_rats -name '*.py')
 fi
 
+FILES="$FILES ui/*.h"
+
 echo "Generating master translation file..."
 mkdir -p $(dirname $MASTER_FILE)
-xgettext -o $MASTER_FILE $FILES
+intltool-extract --type=gettext/glade ui/mainwindow.glade
+xgettext -k_ -kN_ -o $MASTER_FILE $FILES
 sed -i 's/CHARSET/utf-8/' $MASTER_FILE
 
 for l in locale/*; do
