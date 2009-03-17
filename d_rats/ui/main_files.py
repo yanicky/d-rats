@@ -166,7 +166,8 @@ class FilesTab(MainWindowTab):
             self._remote = RemoteFileView(view, sta, self._config)
 
         throbber, = self._getw("remote_throb")
-        anim = gtk.gdk.PixbufAnimation(THROB_IMAGE)
+        img = self._config.ship_obj_fn(os.path.join("images", THROB_IMAGE))
+        anim = gtk.gdk.PixbufAnimation(img)
         throbber.set_from_animation(anim)
 
         job = self._remote.refresh()
