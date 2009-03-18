@@ -501,12 +501,20 @@ class MainApp:
     def _refresh_location(self):
         fix = self.get_position()
 
-        point = map_sources.MapStation(fix.station,
-                                       fix.latitude,
-                                       fix.longitude,
-                                       fix.altitude,
-                                       fix.comment)
-        self.stations_overlay.add_point(point)
+        if not self.__map_point:
+            self.__map_point = map_sources.MapStation(fix.station,
+                                                      fix.latitude,
+                                                      fix.longitude,
+                                                      fix.altitude,
+                                                      fix.comment)
+        else:
+            self.__map_point.set_latitude(fix.latitude)
+            self.__map_point.set_longitude(fix.longitude)
+            self.__map_point.set_altitude(fix.altitude)
+            self.__map_point.set_comment(fix.comment)
+            self.__map_point.set_name(fix.station)
+            
+        self.stations_overlay.add_point(self.__map_point)
 
         return True
 
@@ -531,6 +539,7 @@ class MainApp:
         pos = self.get_position()
         self.map.set_center(pos.latitude, pos.longitude)
         self.map.set_zoom(14)
+        self.__map_point = None
                                                               
         #self.map.add_popup_handler(_("Set as current location"),
         #                           self.set_loc_from_map)
