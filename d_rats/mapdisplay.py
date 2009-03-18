@@ -295,7 +295,10 @@ class MapWidget(gtk.DrawingArea):
     __gsignals__ = {
         "redraw-markers" : (gobject.SIGNAL_RUN_LAST,
                             gobject.TYPE_NONE,
-                            (gobject.TYPE_STRING,)),
+                            ()),
+        "new-tiles-loaded" : (gobject.SIGNAL_ACTION,
+                              gobject.TYPE_NONE,
+                              ()),
         }
 
     def draw_text_marker_at(self, x, y, text, color="yellow"):
@@ -308,12 +311,12 @@ class MapWidget(gtk.DrawingArea):
         else:
             size = ''
 
-            text = utils.filter_to_ascii(text)
+        text = utils.filter_to_ascii(text)
 
         pl = self.create_pango_layout("")
         markup = '<span %s background="%s">%s</span>' % (size, color, text)
         pl.set_markup(markup)
-        self.pixmap.draw_layout(gc, int(x), int(y), pl)
+        self.window.draw_layout(gc, int(x), int(y), pl)
 
     def draw_image_at(self, x, y, pb):
         gc = self.get_style().black_gc
@@ -357,7 +360,6 @@ class MapWidget(gtk.DrawingArea):
         return lat, lon
 
     def draw_marker(self, label, lat, lon, img=None):
-        #(lat, lon, color, img) = self.markers[id]
         color = "red"
 
         try:
@@ -382,8 +384,7 @@ class MapWidget(gtk.DrawingArea):
                                   0, 0,
                                   0, 0,
                                   -1, -1)
-
-        self.emit("redraw-markers", "")
+        self.emit("redraw-markers")
 
     def calculate_bounds(self):
         topleft = self.map_tiles[0]
@@ -453,7 +454,6 @@ class MapWidget(gtk.DrawingArea):
 
         self.pixmap.draw_pixbuf(gc, pb, 0, 0, x, y, -1, -1)
         self.queue_draw()
-        self.emit("redraw-markers", "")
 
     def draw_tile_locked(self, *args):
         gtk.gdk.threads_enter()
@@ -517,6 +517,7 @@ class MapWidget(gtk.DrawingArea):
         self.calculate_bounds()
 
         self.status(1.0, "")
+        self.emit("new-tiles-loaded")
 
     def export_to(self, filename, bounds=None):
         if not bounds:
@@ -605,6 +606,13 @@ class MapWidget(gtk.DrawingArea):
         pl = self.create_pango_layout("")
         pl.set_markup("%s" % dist)
         self.window.draw_layout(gc, x-pixels, y-shift, pl)        
+
+    def point_is_visible(self, lat, lon):
+        for i in self.map_tiles:
+            if (lat, lon) in i:
+                return True
+
+        return False
 
 class MapWindow(gtk.Window):
     def zoom(self, widget, frame):
@@ -1259,6 +1267,17 @@ class MapWindow(gtk.Window):
         self.sb_gps.pop(self.STATUS_GPS)
         self.sb_gps.push(self.STATUS_GPS, string)
 
+    def add_point_visible(self, point):
+        if point in self.points_visible:
+            self.points_visible.remove(point)
+
+        if self.map.point_is_visible(point.get_latitude(),
+                                     point.get_longitude()):
+            self.points_visible.append(point)
+            return True
+        else:
+            return False
+
     def update_point(self, source, point):
         self.marker_list.set_item(source.get_name(),
                                   point.get_visible(),
@@ -1266,7 +1285,8 @@ class MapWindow(gtk.Window):
                                   point.get_latitude(),
                                   point.get_longitude(),
                                   0, 0)
-        self.refresh()
+        self.add_point_visible(point)
+        self.map.queue_draw()
 
     def add_point(self, source, point):
         self.marker_list.add_item(source.get_name(),
@@ -1274,10 +1294,14 @@ class MapWindow(gtk.Window):
                                   point.get_latitude(),
                                   point.get_longitude(),
                                   0, 0)
+        self.add_point_visible(point)
         self.map.queue_draw()
 
     def del_point(self, source, point):
         self.marker_list.del_item(source.get_name(), point.get_name())
+
+        if point in self.points_visible:
+            self.points_visible.remove(point)
 
         self.map.queue_draw()
 
@@ -1293,25 +1317,28 @@ class MapWindow(gtk.Window):
         source.connect("point-added", self.add_point)
         source.connect("point-deleted", self.del_point)
 
+    def update_points_visible(self):
+        for src in self.map_sources:
+            for point in src.get_points():
+                self.update_point(src, point)
+
+        self.map.queue_draw()
+
     def clear_map_sources(self):
         self.map_sources = []
 
     def get_map_sources(self):
         return self.map_sources
 
-    def redraw_markers(self, map, foo):
-        for src in self.map_sources:
-            if not src.get_visible():
+    def redraw_markers(self, map):
+        for point in self.points_visible:
+            if not point.get_visible():
                 continue
 
-            for point in src.get_points():
-                if not point.get_visible():
-                    continue
-
-                map.draw_marker(point.get_name(),
-                                point.get_latitude(),
-                                point.get_longitude(),
-                                point.get_icon())
+            map.draw_marker(point.get_name(),
+                            point.get_latitude(),
+                            point.get_longitude(),
+                            point.get_icon())
 
     def __init__(self, *args):
         gtk.Window.__init__(self, *args)
@@ -1325,10 +1352,13 @@ class MapWindow(gtk.Window):
 
         tiles = 5
 
+        self.points_visible = []
         self.map_sources = []
         self.map = MapWidget(tiles, tiles, status=self.status)
         self.map.show()
         self.map.connect("redraw-markers", self.redraw_markers)
+        self.map.connect("new-tiles-loaded", 
+                         lambda m: self.update_points_visible())
 
         box = gtk.VBox(False, 2)
 
