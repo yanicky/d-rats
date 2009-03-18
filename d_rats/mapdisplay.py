@@ -1171,7 +1171,19 @@ class MapWindow(gtk.Window):
             self.recenter(lat, lon)
 
     def mouse_move_event(self, widget, event):
-        x, y = event.get_coords()
+        if not self.__last_motion:
+            gobject.timeout_add(100, self._mouse_motion_handler)
+        self.__last_motion = (time.time(), event.x, event.y)
+
+    def _mouse_motion_handler(self):
+        if self.__last_motion == None:
+            return False
+
+        t, x, y = self.__last_motion
+        if (time.time() - t) < 0.5:
+            self.info_window.hide()
+            return True
+
         lat, lon = self.map.xy2latlon(x, y)
 
         ha = self.sw.get_hadjustment()
@@ -1230,6 +1242,10 @@ class MapWindow(gtk.Window):
 
         self.sb_coords.pop(self.STATUS_COORD)
         self.sb_coords.push(self.STATUS_COORD, "%.4f, %.4f" % (lat, lon))
+
+        self.__last_motion = None
+
+        return False
 
     def ev_destroy(self, widget, data=None):
         self.hide()
@@ -1351,6 +1367,8 @@ class MapWindow(gtk.Window):
 
         self.sw.connect("expose-event", pre_scale, self)
         self.sw.connect_after("expose-event", scale, self)
+
+        self.__last_motion = None
 
         self.map.add_events(gtk.gdk.POINTER_MOTION_MASK)
         self.map.connect("motion-notify-event", self.mouse_move_event)
