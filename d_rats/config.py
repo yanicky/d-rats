@@ -464,7 +464,7 @@ class DratsPrefsPanel(DratsPanel):
         self.mv(_("Ping reply"), val)
 
         val = DratsConfigWidget(config, "prefs", "language")
-        val.add_combo(["English", "Italiano"])
+        val.add_combo(["English", "Italiano", "Dutch"])
         self.mv(_("Language"), val)
 
         val = DratsConfigWidget(config, "prefs", "form_default_private")

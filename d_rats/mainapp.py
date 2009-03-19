@@ -431,6 +431,7 @@ class MainApp:
     def _refresh_lang(self):
         locales = { "English" : "en",
                     "Italiano" : "it",
+                    "Dutch" : "nl",
                     }
         locale = locales.get(self.config.get("prefs", "language"), "English")
         print "Loading locale `%s'" % locale
