@@ -180,7 +180,7 @@ class MainWindow(MainWindowElement):
 
     def __init__(self, config):
         wtree = gtk.glade.XML(config.ship_obj_fn("ui/mainwindow.glade"),
-                              "mainwindow")
+                              "mainwindow", "D-RATS")
 
         MainWindowElement.__init__(self, wtree, config, "")
 

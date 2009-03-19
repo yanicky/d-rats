@@ -439,11 +439,16 @@ class MainApp:
                                  "locale")
         print "Locale dir is: %s" % localedir
 
+        if not os.environ.has_key("LANGUAGE"):
+            os.environ["LANGUAGE"] = locale
+
         try:
             lang = gettext.translation("D-RATS",
                                        localedir=localedir,
                                        languages=[locale])
             lang.install()
+            gtk.glade.bindtextdomain("D-RATS", localedir)
+            gtk.glade.textdomain("D-RATS")
         except LookupError:
             print "Unable to load language `%s'" % locale
             gettext.install("D-RATS")
@@ -468,7 +473,10 @@ class MainApp:
 
         if not self.stations_overlay:
             fn = os.path.join(dir, _("Stations") + ".csv")
-            os.makedirs(os.path.dirname(fn))
+            try:
+                os.makedirs(os.path.dirname(fn))
+            except:
+                pass
             file(fn, "w").close()
             self.stations_overlay = map_sources.MapFileSource(_("Stations"),
                                                               "Static Overlay",
