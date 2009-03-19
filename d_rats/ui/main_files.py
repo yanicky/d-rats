@@ -93,7 +93,7 @@ class RemoteFileView(FileView):
                 size, units, date, _time = v.split(" ")
                 try:
                     size = int(size)
-                    size >> unit_decoder[units]
+                    size <<= unit_decoder[units]
                     stamp = "%s %s" % (date, _time)
                     ts = time.mktime(time.strptime(stamp,
                                                    "(%Y-%m-%d %H:%M:%S)"))
@@ -102,7 +102,9 @@ class RemoteFileView(FileView):
                     ts = time.time()
                     size = 0
 
-            self._store.append((self._file_icon, k, size, ts))
+                self._store.append((self._file_icon, k, size, ts))
+            else:
+                self._store.append((self._file_icon, k, 0, 0))
 
     def refresh(self):
         self._store.clear()
