@@ -161,7 +161,7 @@ class SerialDataPath(DataPath):
         return "Serial (%s at %s baud)" % (self.port, self.baud)
 
 class SocketDataPath(DataPath):
-    def __init__(self, pathspec, timeout=0.1):
+    def __init__(self, pathspec, timeout=0.25):
         DataPath.__init__(self, pathspec, timeout)
 
         (self.host, self.port) = pathspec
