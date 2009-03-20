@@ -269,16 +269,46 @@ class QSTWeatherWU(QSTThreadedText):
         return str(obs)
 
 class QSTStation(QSTGPSA):
+    def get_source(self, name):
+        import mainapp
+        app = mainapp.get_mainapp() # Hack for this difficult case
+        sources = app.map.get_map_sources()
+
+        for source in sources:
+            if source.get_name() == name:
+                return source
+
+        return None
+
+    def get_station(self, source, station):
+        for point in source.get_points():
+            if point.get_name() == station:
+                return point
+
+        return None
+
     def do_qst(self):
+
         try:
             (group, station) = self.text.split("::", 1)
-            markers = self.gui.map.get_markers()
-            # Ugh, this is sloppy
-            self.fix = copy.copy(markers[group][station][0])
-            self.fix.comment = "VIA %s" % self.config.get("user", "callsign")
         except Exception, e:
             print "QSTStation Error: %s" % e
             return None
+
+        source = self.get_source(group)
+        if source is None:
+            print "Unknown group %s" % group
+            return
+
+        point = self.get_station(source, station)
+        if point is None:
+            print "Unknown station %s in group %s" % (station, group)
+            return
+
+        self.fix = gps.GPSPosition(point.get_latitude(),
+                                   point.get_longitude(),
+                                   point.get_name())
+        self.fix.comment = "VIA %s" % self.config.get("user", "callsign")
 
         print "Sending position for %s/%s: %s" % (group, station, self.fix)
 
@@ -293,7 +323,7 @@ class QSTEditWidget(gtk.VBox):
     def to_qst(self):
         pass
 
-    def from_qst(self):
+    def from_qst(self, content):
         pass
 
     def __str__(self):
@@ -509,13 +539,22 @@ class QSTCAPEditWidget(QSTRSSEditWidget):
 
 class QSTStationEditWidget(QSTEditWidget):
     def ev_group_sel(self, group, station):
-        marks = self.__markers[group.get_active_text()]
+        group = group.get_active_text()
+
+        for src in self.__sources:
+            if src.get_name() == group:
+                break
+
+        if src.get_name() != group:
+            return
+
+        marks = [x.get_name() for x in src.get_points()]
     
         store = station.get_model()
         store.clear()
-        for i in sorted(marks.keys()):
+        for i in sorted(marks):
             station.append_text(i)
-        if len(marks.keys()):
+        if len(marks):
             station.set_active(0)
 
     def __init__(self):
@@ -525,12 +564,12 @@ class QSTStationEditWidget(QSTEditWidget):
         lab.show()
         self.pack_start(lab, 1, 1, 1)
 
-        hbox = gtk.HBox(True, 2)
+        hbox = gtk.HBox(False, 10)
 
         # This is really ugly, but to fix it requires more work
-        self.__markers = mainapp.get_mainapp().chatgui.map.get_markers()
-
-        self.__group = miscwidgets.make_choice(self.__markers.keys(),
+        self.__sources = mainapp.get_mainapp().map.get_map_sources()
+        sources = [x.get_name() for x in self.__sources]
+        self.__group = miscwidgets.make_choice(sources,
                                                False,
                                                _("Stations"))
         self.__group.show()
@@ -636,7 +675,7 @@ class QSTEditDialog(gtk.Dialog):
             _("GPS-A"): QSTGPSAEditWidget(),
             _("RSS")  : QSTRSSEditWidget(),
             _("CAP")  : QSTCAPEditWidget(),
-            #_("Station") : QSTStationEditWidget(),
+            _("Station") : QSTStationEditWidget(),
             _("Weather (WU)") : QSTWUEditWidget(),
             }
 
@@ -649,7 +688,7 @@ class QSTEditDialog(gtk.Dialog):
 
         self.__current = None
 
-        self.set_size_request(300, 150)
+        self.set_size_request(400, 150)
 
         self.vbox.pack_start(self._make_controls(), 0, 0, 0)
 
