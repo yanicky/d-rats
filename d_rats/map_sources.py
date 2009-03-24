@@ -255,6 +255,9 @@ class MapSource(gobject.GObject):
     def get_name(self):
         return self._name
 
+    def set_name(self, name):
+        self._name = name
+
     def get_description(self):
         return self._description
 
@@ -350,18 +353,35 @@ class MapUSGSRiverSource(MapSource):
         if not config.has_option("rivers", name):
             return None
         _sites = config.get("rivers", name).split(",")
+        try:
+            _name = config.get("rivers", "%s.label" % name)
+        except Exception, e:
+            print "No option %s.label" % name
+            print e
+            _name = name
         sites = tuple([int(x) for x in _sites])
 
-        return MapUSGSRiverSource(name, "USGS Rivers", *sites)
+        return MapUSGSRiverSource(_name, "USGS Rivers", *sites)
 
     open_source_by_name = Callable(_open_source_by_name)
 
     def _enumerate(config):
         if not config.has_section("rivers"):
             return []
-        return config.options("rivers")
+        options = config.options("rivers")
+
+        return [x for x in options if not x.endswith(".label")]
 
     enumerate = Callable(_enumerate)
+
+    def packed_name(self):
+        name = []
+        for i in self.get_name():
+            if (ord(i) > ord("A") and ord(i) < ord("Z")) or\
+                    (ord(i) > ord("a") and ord(i) < ord("z")):
+                name.append(i)
+
+        return "".join(name)
 
     def _point_updated(self, point, foo):
         if not self._points.has_key(point.get_name()):
