@@ -18,12 +18,17 @@
 import time
 import threading
 import os
+from glob import glob
 
 import libxml2
 import gobject
 
 import utils
 import platform
+
+class Callable:
+    def __init__(self, target):
+        self.__call__ = target
 
 class MapItem:
     pass
@@ -102,7 +107,9 @@ class MapStation(MapPoint):
 
 def _xdoc_getnodeval(ctx, nodespec):
     items = ctx.xpathEval(nodespec)
-    if len(items) != 1:
+    if len(items) == 0:
+        raise Exception("No data for %s" % nodespec)
+    if len(items) > 1:
         raise Exception("Too many nodes")
 
     return items[0].getContent()
@@ -258,6 +265,25 @@ class MapSource(gobject.GObject):
         self._visible = visible
 
 class MapFileSource(MapSource):
+    def _enumerate(config):
+        dirpath = os.path.join(config.platform.config_dir(),
+                               "static_locations")
+        files = glob(os.path.join(dirpath, "*.*"))
+        
+        return [os.path.splitext(os.path.basename(f))[0] for f in files]
+
+    enumerate = Callable(_enumerate)
+
+    def _open_source_by_name(config, name):
+        dirpath = os.path.join(config.platform.config_dir(),
+                               "static_locations")
+
+        path = os.path.join(dirpath, "%s.csv" % name)
+
+        return MapFileSource(name, "Static file", path)
+
+    open_source_by_name = Callable(_open_source_by_name)
+
     def __parse_line(self, line):
         try:
             id, icon, lat, lon, alt, comment, show = line.split(",", 6)
@@ -314,7 +340,29 @@ class MapFileSource(MapSource):
 
             self._points[point.get_name()] = point
 
+    def get_filename(self):
+        return self._fn
+
 class MapUSGSRiverSource(MapSource):
+    def _open_source_by_name(config, name):
+        if not config.has_section("rivers"):
+            return None
+        if not config.has_option("rivers", name):
+            return None
+        _sites = config.get("rivers", name).split(",")
+        sites = tuple([int(x) for x in _sites])
+
+        return MapUSGSRiverSource(name, "USGS Rivers", *sites)
+
+    open_source_by_name = Callable(_open_source_by_name)
+
+    def _enumerate(config):
+        if not config.has_section("rivers"):
+            return []
+        return config.options("rivers")
+
+    enumerate = Callable(_enumerate)
+
     def _point_updated(self, point, foo):
         if not self._points.has_key(point.get_name()):
             self._points[point.get_name()] = point
@@ -325,7 +373,11 @@ class MapUSGSRiverSource(MapSource):
     def __init__(self, name, description, *sites):
         MapSource.__init__(self, name, description)
 
+        self.__sites = sites
+
         for site in sites:
             point = MapUSGSRiver(site)
             point.connect("updated", self._point_updated)
 
+    def get_sites(self):
+        return self.__sites
