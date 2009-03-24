@@ -424,6 +424,9 @@ class TreeWidget(ListWidget):
         self._store.clear()
         self._set_values(self._store.get_iter_first(), vals)
 
+    def clear(self):
+        self._store.clear()
+
     def del_item(self, parent, key):
         iter = self._iter_of(key,
                              self._store.iter_children(self._iter_of(parent)))
