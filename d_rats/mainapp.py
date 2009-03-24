@@ -458,21 +458,24 @@ class MainApp:
             gettext.install("D-RATS")
 
     def _load_map_overlays(self):
-        dir = os.path.join(self.config.platform.config_dir(),
-                           "static_locations")
-        overlays = glob.glob(os.path.join(dir, "*.csv"))
-
         self.stations_overlay = None
 
         self.map.clear_map_sources()
-        for overlay in overlays:
-            name = os.path.basename(overlay).replace(".csv", "")
-            source = map_sources.MapFileSource(name, "Static Overlay", overlay)
-            self.map.add_map_source(source)
-            if name == _("Stations"):
-                self.stations_overlay = source
+
+        source_types = [map_sources.MapFileSource,
+                        map_sources.MapUSGSRiverSource]
+
+        for stype in source_types:
+            sources = stype.enumerate(self.config)
+            for sname in sources:
+                source = stype.open_source_by_name(self.config, sname)
+                self.map.add_map_source(source)
+
+                if sname == _("Stations"):
+                    self.stations_overlay = source
 
         if not self.stations_overlay:
+            #FIXME
             fn = os.path.join(dir, _("Stations") + ".csv")
             try:
                 os.makedirs(os.path.dirname(fn))
@@ -483,12 +486,6 @@ class MainApp:
                                                               "Static Overlay",
                                                               fn)
 
-        rivers = [14299800]
-        for river in rivers:
-            self.map.add_map_source(map_sources.MapUSGSRiverSource("USGS NWIS",
-                                                                   "Rivers",
-                                                                   river))
-            
     def refresh_config(self):
         print "Refreshing config..."
 
@@ -543,8 +540,9 @@ class MainApp:
 
         self.gps = self._static_gps()
 
-        self.map = mapdisplay.MapWindow()
+        self.map = mapdisplay.MapWindow(self.config)
         self.map.set_title("D-RATS Map Window")
+        self.map.connect("reload-sources", lambda m: self._load_map_overlays())
         pos = self.get_position()
         self.map.set_center(pos.latitude, pos.longitude)
         self.map.set_zoom(14)
