@@ -20,6 +20,9 @@ import threading
 import poplib
 import smtplib
 import email
+import email.mime.multipart
+import email.mime.base
+import email.mime.text
 import rfc822
 import time
 import platform
@@ -145,13 +148,17 @@ class MailThread(threading.Thread, gobject.GObject):
         subject = mail.get("Subject", "[no subject]")
         sender = mail.get("From", "Unknown <devnull@nowhere.com>")
         
+        xml = None
+        body = None
+
         if mail.is_multipart():
-            body = None
             for part in mail.walk():
                 html = None
-                if part.get_content_type() == "text/plain":
+                if part.get_content_type() == "d-rats/form_xml":
+                    xml = str(part.get_payload())
+                    break # A form payload trumps all
+                elif part.get_content_type() == "text/plain":
                     body = str(part)
-                    break
                 elif part.get_content_type() == "text/html":
                     html = str(part)
             if not body:
@@ -159,29 +166,41 @@ class MailThread(threading.Thread, gobject.GObject):
         else:
             body = mail.get_payload()
 
-        if not body:
-            self.message("Unable to find a text/plain part")
+        if not body and not xml:
+            self.message("Unable to find a usable part")
+            return
 
         messageid = mail.get("Message-ID", time.strftime("%m%d%Y%H%M%S"))
-        recip, addr = rfc822.parseaddr(mail.get("To", "UNKNOWN"))
-
-        self.message("%s: %s" % (sender, subject))
-
-        efn = os.path.join(self.config.form_source_dir(), "email.xml")
         mid = platform.get_platform().filter_filename(messageid)
         ffn = os.path.join(self.config.form_store_dir(),
                            _("Inbox"),
                            "%s.xml" % mid)
 
-        form = formgui.FormFile("", efn)
-        form.set_field_value("_auto_sender", sender)
-        form.set_field_value("recipient", recip)
-        form.set_field_value("subject", "EMAIL: %s" % subject)
-        form.set_field_value("message", body)
+        if xml:
+            self.message("Found a D-RATS form payload")
+            f = file(ffn, "w")
+            f.write(xml)
+            f.close()
+            form = formgui.FormFile("", ffn)
+            recip = form.get_recipient_string()
+            if "%" in recip:
+                recip, addr = recip.split("%", 1)
+                recip = recip.upper()
+        else:
+            self.message("Email from %s: %s" % (sender, subject))
+
+            recip, addr = rfc822.parseaddr(mail.get("To", "UNKNOWN"))
+
+            efn = os.path.join(self.config.form_source_dir(), "email.xml")
+            form = formgui.FormFile("", efn)
+            form.set_field_value("_auto_sender", sender)
+            form.set_field_value("recipient", recip)
+            form.set_field_value("subject", "EMAIL: %s" % subject)
+            form.set_field_value("message", body)
+
         form.add_path_element("EMAIL")
         form.add_path_element(self.config.get("user", "callsign"))
         form.save_to(ffn)
-
 
         if self.should_send_form(sender, recip):
             nfn = os.path.join(self.config.form_store_dir(),
@@ -251,7 +270,7 @@ class FormEmailService:
     def __init__(self, config):
         self.config = config
 
-    def _send_email(self, send, recp, subj, mesg):
+    def _send_email(self, send, recp, subj, mesg, xmlpayload):
         server = self.config.get("settings", "smtp_server")
         replyto = self.config.get("settings", "smtp_replyto")
         tls = self.config.getboolean("settings", "smtp_tls")
@@ -266,12 +285,23 @@ class FormEmailService:
             if i in send:
                 send = send.replace(i, "")
 
-        mail = \
-            "From: \"%s\" <%s>\r\n" % (send, replyto) + \
-            "To: %s\r\n" % recp + \
-            "Reply-To: \"%s\" <%s>\r\n" % (send, replyto) + \
-            "Subject: %s\r\n" % subj +\
-            "\r\n%s\r\n" % mesg
+        msg = email.mime.multipart.MIMEMultipart()
+        msg["Subject"] = subj
+        msg["From"] = '"%s" <%s>' % (send, replyto)
+        msg["To"] = recp
+        msg["Reply-To"] = msg["From"]
+
+        if mesg:
+            msg.preamble = mesg
+            message = email.mime.text.MIMEText(mesg)
+            msg.attach(message)
+
+        payload = email.mime.base.MIMEBase("d-rats", "form_xml")
+        payload.set_payload(xmlpayload)
+        payload.add_header("Content-Disposition",
+                           "attachment",
+                           filename="do_not_open_me")
+        msg.attach(payload)
 
         self.message("Connecting to %s:%i" % (server, port))
         mailer = smtplib.SMTP(server, port)
@@ -293,7 +323,7 @@ class FormEmailService:
             self.message("Done")
 
         self.message("Sending mail")
-        mailer.sendmail(replyto, recp, mail)
+        mailer.sendmail(replyto, recp, msg.as_string())
         self.message("Done")
         mailer.quit()
         self.message("Disconnected")
@@ -302,10 +332,17 @@ class FormEmailService:
         if not self.config.getboolean("state", "connected_inet"):
             raise Exception("Unable to send mail: Not connected to internet")
 
-        send = form.get_field_value("_auto_sender")
-        recp = form.get_field_value("recipient")
-        subj = form.get_field_value("subject")
-        mesg = form.get_field_value("message")
+        send = form.get_sender_string()
+        recp = form.get_recipient_string()
+        if form.id == "email":
+            subj = form.get_subject_string()
+            mesg = form.get_field_value("message")
+        else:
+            subj = "D-RATS Form"
+            mesg = None
+
+        if "%" in recp:
+            station, recp = recp.split("%", 1)
 
         self.message("Preparing to send `%s' from %s to %s" % (\
                 subj, send, recp))
@@ -315,7 +352,7 @@ class FormEmailService:
         
         try:
             self.message("Sending mail...")
-            self._send_email(send, recp, subj, mesg)
+            self._send_email(send, recp, subj, mesg, form.get_xml())
             self.message("Successfully sent to %s" % recp)
             return True, "Mail sent ('%s' to '%s')" % (subj, recp)
         except Exception, e:

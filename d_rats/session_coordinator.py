@@ -154,8 +154,6 @@ class FormRecvThread(FileBaseThread):
     progress_key = "recv_size"
 
     def maybe_send_form(self, form, fn):
-        print "Received email form"
-
         def cb(status, msg):
             #self.gui.chatgui.tx_msg("[EMAIL GW] %s" % msg)
             pass
@@ -170,7 +168,7 @@ class FormRecvThread(FileBaseThread):
 
         if not emailgw.validate_outgoing(self.coord.config,
                                          self.session.get_station(),
-                                         form.get_field_value("recipient")):
+                                         form.get_recipient_string()):
             msg = "Remote station %s " % self.session.get_station() + \
                 "not authorized for automatic outbound email service; " + \
                 "Message held for local station operator."
@@ -208,7 +206,9 @@ class FormRecvThread(FileBaseThread):
             form.save_to(fn)
 
             self.completed("form")
-            if form.id == "email":
+            recip = form.get_recipient_string()
+            print "Form recipient: %s" % recip
+            if recip and "@" in recip:
                 fn = self.maybe_send_form(form, fn)
 
             self.coord.session_newform(self.session, fn)
