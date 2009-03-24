@@ -1,0 +1,209 @@
+#!/usr/bin/python
+#
+# Copyright 2009 Dan Smith <dsmith@danplanet.com>
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+import os
+from glob import glob
+
+import gtk
+import gobject
+
+import map_sources
+import miscwidgets
+
+class EditorInitCancel(Exception):
+    pass
+
+class MapSourcesEditor:
+    def _add(self, button, typesel):
+        t = typesel.get_active_text()
+
+        try:
+            e = SOURCE_TYPES[t](self.__config)
+        except EditorInitCancel:
+            return
+
+        r = e.run()
+        if r == gtk.RESPONSE_OK:
+            self.__store.append((t, e.get_source().get_name(), e))
+            e.save()
+        e.destroy()
+
+    def _rem(self, button):
+        (model, iter) = self.__view.get_selection().get_selected()
+
+        e, = self.__store.get(iter, 2)
+        e.delete()
+
+        model.remove(iter)
+
+    def _edit(self, button):
+        (model, iter) = self.__view.get_selection().get_selected()
+
+        e, = self.__store.get(iter, 2)
+        e.run()
+        e.save()
+        e.destroy()
+
+    def _setup_view(self):
+        self.__store = gtk.ListStore(gobject.TYPE_STRING,
+                                     gobject.TYPE_STRING,
+                                     gobject.TYPE_PYOBJECT)
+        self.__view.set_model(self.__store)
+
+        c = gtk.TreeViewColumn(_("Type"), gtk.CellRendererText(), text=0)
+        self.__view.append_column(c)
+
+        c = gtk.TreeViewColumn(_("Name"), gtk.CellRendererText(), text=1)
+        self.__view.append_column(c)
+
+    def _setup_typesel(self, wtree):
+        choice = miscwidgets.make_choice(SOURCE_TYPES.keys(),
+                                         False,
+                                         "Static")
+        choice.show()
+        box = wtree.get_widget("srcs_ctrlbox")
+        box.pack_end(choice, 1, 1, 1)
+
+        return choice
+
+    def __init__(self, config):
+        wtree = gtk.glade.XML(config.ship_obj_fn("ui/mainwindow.glade"),
+                              "srcs_dialog", "D-RATS")
+
+        self.__config = config
+        self.__dialog = wtree.get_widget("srcs_dialog")
+        self.__view = wtree.get_widget("srcs_view")
+        addbtn = wtree.get_widget("srcs_add")
+        editbtn = wtree.get_widget("srcs_edit")
+        delbtn = wtree.get_widget("srcs_delete")
+
+        self._setup_view()
+        typesel = self._setup_typesel(wtree)
+
+        addbtn.connect("clicked", self._add, typesel)
+        editbtn.connect("clicked", self._edit)
+        delbtn.connect("clicked", self._rem)
+
+        for stype, (edclass, srcclass) in SOURCE_TYPES.items():
+            for key in srcclass.enumerate(self.__config):
+                src = srcclass.open_source_by_name(self.__config, key)
+                sed = edclass(self.__config, src)
+                self.__store.append((stype, sed.get_source().get_name(), sed))
+
+    def run(self):
+        return self.__dialog.run()
+
+    def destroy(self):
+        self.__dialog.destroy()
+
+class MapSourceEditor:
+    def __init__(self, config, source):
+        self._config = config
+        self.__source = source
+
+        self._wtree = gtk.glade.XML(config.ship_obj_fn("ui/mainwindow.glade"),
+                                    "src_dialog", "D-RATS")
+
+
+        self.__dialog = self._wtree.get_widget("src_dialog")
+        self._name = self._wtree.get_widget("src_name")
+
+        self._name.set_text(source.get_name())
+
+    def get_source(self):
+        return self.__source
+
+    def name_editable(self, editable):
+        self._name.set_sensitive(editable)
+
+    def run(self):
+        return self.__dialog.run()
+
+    def destroy(self):
+        self.__dialog.hide()
+
+    def delete(self):
+        pass
+
+    def save(self):
+        pass
+
+class StaticMapSourceEditor(MapSourceEditor):
+    def __init__(self, config, source=None):
+        if not source:
+            fn = config.platform.gui_open_file()
+            if not fn:
+                raise EditorInitCancel()
+
+            source = map_sources.MapFileSource(os.path.basename(fn),
+                                               "Static Source",
+                                               fn)
+
+        MapSourceEditor.__init__(self, config, source)
+
+        label = gtk.Label("Nothing to edit here")
+        label.show()
+
+        box = self._wtree.get_widget("src_vbox")
+        box.pack_start(label, 1, 1, 1)
+
+        self.name_editable(False)
+
+    def delete(self):
+        os.remove(self.get_source().get_filename())
+
+    def save(self):
+        self.get_source().save()
+
+class RiverMapSourceEditor(MapSourceEditor):
+    def __init__(self, config, source=None):
+        if not source:
+            source = map_sources.MapUSGSRiverSource("Rivers", "USGS Rivers")
+
+        MapSourceEditor.__init__(self, config, source)
+
+        box = self._wtree.get_widget("src_vbox")
+        
+        hbox = gtk.HBox(False, 2)
+        hbox.show()
+
+        label = gtk.Label(_("Sites (comma separated)"))
+        label.show()
+        hbox.pack_start(label, 0, 0, 0)
+
+        self.__sites = gtk.Entry()
+        self.__sites.show()
+        _sites = [str(x) for x in source.get_sites()]
+        self.__sites.set_text(",".join(_sites))
+        hbox.pack_start(self.__sites, 1, 1, 1)
+
+        box.pack_start(hbox, 1, 1, 1)
+
+    def delete(self):
+        self._config.remove_option("rivers", self.get_source().get_name())
+
+    def save(self):
+        if not self._config.has_section("rivers"):
+            self._config.add_section("rivers")
+        name = self.get_source().get_name()
+        self._config.set("rivers", name, self.__sites.get_text())
+
+SOURCE_TYPES = {
+    "Static" : (StaticMapSourceEditor, map_sources.MapFileSource),
+    "NSGS River" : (RiverMapSourceEditor, map_sources.MapUSGSRiverSource),
+    }
+
