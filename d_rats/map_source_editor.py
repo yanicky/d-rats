@@ -193,6 +193,8 @@ class RiverMapSourceEditor(MapSourceEditor):
 
         box.pack_start(hbox, 1, 1, 1)
 
+        self.name_editable(False)
+
     def delete(self):
         self._config.remove_option("rivers", self.get_source().get_name())
 
