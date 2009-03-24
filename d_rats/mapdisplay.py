@@ -20,6 +20,7 @@ import inputdialog
 import utils
 import geocode_ui
 import map_sources
+import map_source_editor
 
 from gps import GPSPosition, distance, value_with_units, DPRS_TO_APRS
 
@@ -615,6 +616,10 @@ class MapWidget(gtk.DrawingArea):
         return False
 
 class MapWindow(gtk.Window):
+    __gsignals__ = {
+        "reload-sources" : (gobject.SIGNAL_RUN_LAST, gobject.TYPE_NONE, ()),
+        }
+                            
     def zoom(self, widget, frame):
         adj = widget.get_adjustment()
 
@@ -951,6 +956,11 @@ class MapWindow(gtk.Window):
             self.printable_map()
         elif action == "printablevis":
             self.printable_map(self.get_visible_bounds())
+        elif action == "editsources":
+            srced = map_source_editor.MapSourcesEditor(self.config)
+            srced.run()
+            srced.destroy()
+            self.emit("reload-sources")
 
     def make_menu(self):
         menu_xml = """
@@ -959,6 +969,7 @@ class MapWindow(gtk.Window):
     <menu action="map">
       <menuitem action="refresh"/>
       <menuitem action="clearcache"/>
+      <menuitem action="editsources"/>
       <menuitem action="loadstatic"/>
       <menuitem action="remstatic"/>
       <menu action="export">
@@ -975,6 +986,7 @@ class MapWindow(gtk.Window):
         actions = [('map', None, "_" + _("Map"), None, None, self.mh),
                    ('refresh', None, "_" + _("Refresh"), None, None, self.mh),
                    ('clearcache', None, "_" + _("Clear Cache"), None, None, self.mh),
+                   ('editsources', None, _("Edit Sources"), None, None, self.mh),
                    ('loadstatic', None, "_" + _("Load Static Overlay"), None, None, self.mh),
                    ('remstatic', None, "_" + _("Remove Static Overlay"), None, None, self.mh),
                    ('export', None, "_" + _("Export"), None, None, self.mh),
@@ -1325,6 +1337,7 @@ class MapWindow(gtk.Window):
         self.map.queue_draw()
 
     def clear_map_sources(self):
+        self.marker_list.clear()
         self.map_sources = []
 
     def get_map_sources(self):
@@ -1340,8 +1353,10 @@ class MapWindow(gtk.Window):
                             point.get_longitude(),
                             point.get_icon())
 
-    def __init__(self, *args):
+    def __init__(self, config, *args):
         gtk.Window.__init__(self, *args)
+
+        self.config = config
 
         self.STATUS_COORD = 0
         self.STATUS_CENTER = 1
