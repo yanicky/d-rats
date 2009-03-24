@@ -931,23 +931,6 @@ class MapWindow(gtk.Window):
             self.map.queue_draw()
         elif action == "clearcache":
             self.clear_map_cache()
-        elif action == "loadstatic":
-            p = platform.get_platform()
-            f = p.gui_open_file()
-            if not f:
-                return
-
-            if self.load_static_points(f):
-                dir = platform.get_platform().config_dir()
-                shutil.copy(f, os.path.join(dir,
-                                            "static_locations",
-                                            os.path.basename(f)))
-                return
-
-            d = gtk.MessageDialog(buttons=gtk.BUTTONS_OK)
-            d.set_property("text", _("Failed to load overlay file"))
-        elif action == "remstatic":
-            self.remove_current_static()
         elif action == "save":
             self.save_map()
         elif action == "savevis":
@@ -970,8 +953,6 @@ class MapWindow(gtk.Window):
       <menuitem action="refresh"/>
       <menuitem action="clearcache"/>
       <menuitem action="editsources"/>
-      <menuitem action="loadstatic"/>
-      <menuitem action="remstatic"/>
       <menu action="export">
         <menuitem action="printable"/>
         <menuitem action="printablevis"/>
@@ -987,8 +968,6 @@ class MapWindow(gtk.Window):
                    ('refresh', None, "_" + _("Refresh"), None, None, self.mh),
                    ('clearcache', None, "_" + _("Clear Cache"), None, None, self.mh),
                    ('editsources', None, _("Edit Sources"), None, None, self.mh),
-                   ('loadstatic', None, "_" + _("Load Static Overlay"), None, None, self.mh),
-                   ('remstatic', None, "_" + _("Remove Static Overlay"), None, None, self.mh),
                    ('export', None, "_" + _("Export"), None, None, self.mh),
                    ('printable', None, "_" + _("Printable"), "<Control>p", None, self.mh),
                    ('printablevis', None, _("Printable (visible area)"), "<Control><Alt>P", None, self.mh),
@@ -1526,7 +1505,6 @@ if __name__ == "__main__":
         m.set_marker(GPSPosition(station="N7QQU", lat=45.5625, lon=-122.8645))
         m.del_marker("N7QQU")
 
-        m.load_static_points("/home/dan/.d-rats/static_locations/Washington County ARES.csv")
 
     m.show()
 
