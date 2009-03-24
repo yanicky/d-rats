@@ -32,14 +32,15 @@ class MapSourcesEditor:
         t = typesel.get_active_text()
 
         try:
-            e = SOURCE_TYPES[t](self.__config)
+            et, st = SOURCE_TYPES[t]
+            e = et(self.__config)
         except EditorInitCancel:
             return
 
         r = e.run()
         if r == gtk.RESPONSE_OK:
-            self.__store.append((t, e.get_source().get_name(), e))
             e.save()
+            self.__store.append((t, e.get_source().get_name(), e))
         e.destroy()
 
     def _rem(self, button):
@@ -127,6 +128,9 @@ class MapSourceEditor:
     def get_source(self):
         return self.__source
 
+    def get_name(self):
+        return self._name.get_text()
+
     def name_editable(self, editable):
         self._name.set_sensitive(editable)
 
@@ -173,6 +177,9 @@ class RiverMapSourceEditor(MapSourceEditor):
     def __init__(self, config, source=None):
         if not source:
             source = map_sources.MapUSGSRiverSource("Rivers", "USGS Rivers")
+            name_editable = True
+        else:
+            name_editable = False
 
         MapSourceEditor.__init__(self, config, source)
 
@@ -193,16 +200,20 @@ class RiverMapSourceEditor(MapSourceEditor):
 
         box.pack_start(hbox, 1, 1, 1)
 
-        self.name_editable(False)
+        self.name_editable(name_editable)
 
     def delete(self):
-        self._config.remove_option("rivers", self.get_source().get_name())
+        id = self.get_source().packed_name()
+        self._config.remove_option("rivers", id)
 
     def save(self):
         if not self._config.has_section("rivers"):
             self._config.add_section("rivers")
-        name = self.get_source().get_name()
-        self._config.set("rivers", name, self.__sites.get_text())
+        self.get_source().set_name(self.get_name())
+        id = self.get_source().packed_name()
+        self._config.set("rivers", id, self.__sites.get_text())
+        self._config.set("rivers", "%s.label" % id,
+                         self.get_source().get_name())
 
 SOURCE_TYPES = {
     "Static" : (StaticMapSourceEditor, map_sources.MapFileSource),
