@@ -27,9 +27,12 @@ from ConfigParser import ConfigParser
 from glob import glob
 
 from d_rats.ui.main_common import MainWindowElement, MainWindowTab
-from d_rats.ui.main_common import prompt_for_station
+from d_rats.ui.main_common import prompt_for_station, ask_for_confirmation
+from d_rats.ui import main_events
 from d_rats import inputdialog
 from d_rats import formgui
+from d_rats import emailgw
+from d_rats.utils import log_exception
 
 _FOLDER_CACHE = {}
 
@@ -590,6 +593,38 @@ class MessagesTab(MainWindowTab):
 
         self.emit("user-send-form", station, fn, "foo")
 
+    def _email(self, button):
+        try:
+            sel = self._messages.get_selected_messages()
+        except TypeError:
+            return
+
+        if len(sel) > 1:
+            print "FIXME: Warn about multiple send"
+            return
+
+        fn = sel[0]
+
+        if not ask_for_confirmation(_("Send this form via email?")):
+            return
+
+        newfn = os.path.join(self._config.form_store_dir(),
+                             _("Sent"),
+                             os.path.basename(fn))
+        os.rename(fn, newfn)
+
+        srv = emailgw.FormEmailService(self._config)
+        try:
+            form = formgui.FormFile("", fn)
+            srv.send_email_background(form, lambda s, m: True)
+            event = main_events.Event(None, "Sent email")
+        except Exception, e:
+            log_exception()
+            msg = "Failed to send mail: %s" % e
+            event = main_events.Event(None, msg)
+
+        self.emit("event", event)
+
     def _mrk_msg(self, button, read):
         try:
             sel = self._messages.get_selected_messages()
@@ -609,6 +644,7 @@ class MessagesTab(MainWindowTab):
 
         buttons = [("msg-new.png", _("New"), self._new_msg),
                    ("msg-send.png", _("Send"), self._snd_msg),
+                   ("msg-email.png", _("Email"), self._email),
                    ("msg-reply.png", _("Reply"), self._rpl_msg),
                    ("msg-delete.png", _("Delete"), self._del_msg),
                    ("msg-markread.png", _("Mark Read"), read),

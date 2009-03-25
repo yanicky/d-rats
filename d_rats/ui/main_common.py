@@ -70,6 +70,12 @@ class MainWindowElement(gobject.GObject):
         pass
 
 class MainWindowTab(MainWindowElement):
+    __gsignals__ = {
+        "event" : (gobject.SIGNAL_RUN_LAST,
+                   gobject.TYPE_NONE,
+                   (gobject.TYPE_PYOBJECT,)),
+        }
+
     def __init__(self, wtree, config, prefix):
         MainWindowElement.__init__(self, wtree, config, prefix)
         self._tablabel = wtree.get_widget("tab_label_%s" % prefix)
