@@ -96,6 +96,12 @@ class MessageFolderInfo:
     def set_msg_read(self, filename, read):
         self._setprop(filename, "read", str(read == True))
 
+    def get_msg_sender(self, filename):
+        return self._getprop(filename, "sender")
+
+    def set_msg_sender(self, filename, sender):
+        self._setprop(filename, "sender", sender)
+
     def subfolders(self):
         """Return a list of MessageFolderInfo objects representing this
         folder's subfolders"""
@@ -304,14 +310,14 @@ class MessageList(MainWindowElement):
         r = form.run_auto()
         form.destroy()
 
-        self.current_info.set_msg_subject(filename, form.get_subject_string())
+        self.refresh(filename)
 
         return r
 
     def _open_msg(self, view, path, col):
         store = view.get_model()
         iter = store.get_iter(path)
-        path, = store.get(iter, 4)
+        path, = store.get(iter, 5)
 
         self.open_msg(path)
         self.current_info.set_msg_read(path, True)
@@ -339,6 +345,7 @@ class MessageList(MainWindowElement):
         self.store = gtk.ListStore(gobject.TYPE_OBJECT,
                                    gobject.TYPE_STRING,
                                    gobject.TYPE_STRING,
+                                   gobject.TYPE_STRING,
                                    gobject.TYPE_INT,
                                    gobject.TYPE_STRING,
                                    gobject.TYPE_BOOLEAN)
@@ -359,26 +366,33 @@ class MessageList(MainWindowElement):
                 rend.set_property("markup", "<b>%s</b>" % subj)
 
         r = gtk.CellRendererText()
-        col = gtk.TreeViewColumn(_("Subject"), r, text=1)
+        col = gtk.TreeViewColumn(_("Sender"), r, text=1)
         col.set_cell_data_func(r, bold_if_unread)
-        col.set_expand(True)
         col.set_sort_column_id(1)
         col.set_sizing(gtk.TREE_VIEW_COLUMN_AUTOSIZE)
         msglist.append_column(col)
 
-        col = gtk.TreeViewColumn(_("Type"), gtk.CellRendererText(), text=2)
+        r = gtk.CellRendererText()
+        col = gtk.TreeViewColumn(_("Subject"), r, text=2)
+        col.set_cell_data_func(r, bold_if_unread)
+        col.set_expand(True)
         col.set_sort_column_id(2)
+        col.set_sizing(gtk.TREE_VIEW_COLUMN_AUTOSIZE)
+        msglist.append_column(col)
+
+        col = gtk.TreeViewColumn(_("Type"), gtk.CellRendererText(), text=3)
+        col.set_sort_column_id(3)
         msglist.append_column(col)
 
         def render_date(col, rend, model, iter):
-            ts, = model.get(iter, 3)
+            ts, = model.get(iter, 4)
             stamp = datetime.fromtimestamp(ts).strftime("%H:%M:%S %Y-%m-%d")
             rend.set_property("text", stamp)
 
         r = gtk.CellRendererText()
-        col = gtk.TreeViewColumn(_("Date"), r, text=3)
+        col = gtk.TreeViewColumn(_("Date"), r, text=4)
         col.set_cell_data_func(r, render_date)
-        col.set_sort_column_id(3)
+        col.set_sort_column_id(4)
         msglist.append_column(col)
 
         msglist.connect("row-activated", self._open_msg)
@@ -388,16 +402,17 @@ class MessageList(MainWindowElement):
         self.unread_pixbuf = self._config.ship_img("msg-markunread.png")
         self.current_info = None
 
-    def _update_message_info(self, iter):
-        fn, = self.store.get(iter, 4)
+    def _update_message_info(self, iter, force=False):
+        fn, = self.store.get(iter, 5)
 
         subj = self.current_info.get_msg_subject(fn)
-        if subj == _("Unknown"):
+        if subj == _("Unknown") or force:
             # Not registered, so update the registry
             form = formgui.FormFile(_("Form"), fn)
             self.current_info.set_msg_type(fn, form.id)
             self.current_info.set_msg_read(fn, False)
             self.current_info.set_msg_subject(fn, form.get_subject_string())
+            self.current_info.set_msg_sender(fn, form.get_sender_string())
 
         ts = os.stat(fn).st_ctime
         read = self.current_info.get_msg_read(fn)
@@ -407,10 +422,11 @@ class MessageList(MainWindowElement):
             icon = self.unread_pixbuf
         self.store.set(iter,
                        0, icon,
-                       1, self.current_info.get_msg_subject(fn),
-                       2, self.current_info.get_msg_type(fn),
-                       3, ts,
-                       5, read)
+                       1, self.current_info.get_msg_sender(fn),
+                       2, self.current_info.get_msg_subject(fn),
+                       3, self.current_info.get_msg_type(fn),
+                       4, ts,
+                       6, read)
 
     def refresh(self, fn=None):
         """Refresh the current folder"""
@@ -419,12 +435,12 @@ class MessageList(MainWindowElement):
             for msg in self.current_info.files():
                 iter = self.store.append()
                 self.store.set(iter,
-                               4, msg)
+                               5, msg)
                 self._update_message_info(iter)
         else:
             iter = self.store.get_iter_first()
             while iter:
-                _fn = self.store.get(iter, 4)
+                _fn, = self.store.get(iter, 5)
                 if _fn == fn:
                     break
                 iter = self.store.iter_next(iter)
@@ -432,9 +448,9 @@ class MessageList(MainWindowElement):
             if not iter:
                 iter = self.store.append()
                 self.store.set(iter,
-                               4, fn)
+                               5, fn)
 
-            self._update_message_info(iter)
+            self._update_message_info(iter, True)
 
     def open_folder(self, path):
         """Open a folder by path"""
@@ -450,7 +466,7 @@ class MessageList(MainWindowElement):
             iters.append(store.get_iter(path))
 
         for iter in iters:
-            fn, = store.get(iter, 4)
+            fn, = store.get(iter, 5)
             store.remove(iter)
             self.current_info.delete(fn)
 
@@ -470,7 +486,7 @@ class MessageList(MainWindowElement):
         selected = []
         (store, paths) = msglist.get_selection().get_selected_rows()
         for path in paths:
-            selected.append(store[path][4])
+            selected.append(store[path][5])
         
         return selected
 
