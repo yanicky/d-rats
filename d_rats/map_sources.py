@@ -79,10 +79,10 @@ class MapPoint(gobject.GObject):
             pass
 
     def __repr__(self):
-        msg = "MapPoint:%s@%.4f,%.4f" % (self.get_name(),
-                                         self.get_latitude(),
-                                         self.get_longitude())
-        return ""
+        msg = "%s@%.4f,%.4f" % (self.get_name(),
+                                self.get_latitude(),
+                                self.get_longitude())
+        return msg
 
     def __str__(self):
         return self.get_name()
