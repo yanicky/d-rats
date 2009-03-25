@@ -676,8 +676,12 @@ class MapWindow(gtk.Window):
                     continue
 
                 point.set_visible(vals[0])
+                self.add_point_visible(point)
             else:
-                src.set_visible(vals[0])            
+                src.set_visible(vals[0])
+                for point in src.get_points():
+                    point.set_visible(vals[0])
+                    self.update_point(src, point)
 
             src.save()
             break
@@ -1264,8 +1268,11 @@ class MapWindow(gtk.Window):
 
         if self.map.point_is_visible(point.get_latitude(),
                                      point.get_longitude()):
-            self.points_visible.append(point)
-            return True
+            if point.get_visible():
+                self.points_visible.append(point)
+                return True
+            else:
+                return False
         else:
             return False
 
@@ -1324,9 +1331,6 @@ class MapWindow(gtk.Window):
 
     def redraw_markers(self, map):
         for point in self.points_visible:
-            if not point.get_visible():
-                continue
-
             map.draw_marker(point.get_name(),
                             point.get_latitude(),
                             point.get_longitude(),
