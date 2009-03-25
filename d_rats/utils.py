@@ -201,3 +201,11 @@ def combo_select(box, value):
         iter = store.iter_next(iter)
 
     return False
+
+def log_exception():
+        import traceback
+        import sys
+
+        print "-- Exception: --"
+        traceback.print_exc(limit=30, file=sys.stdout)
+        print "------"
