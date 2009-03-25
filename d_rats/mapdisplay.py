@@ -109,19 +109,15 @@ class MarkerEditDialog(inputdialog.FieldDialog):
         comment = self.get_field(_("Comment")).get_text()
         idx = self.get_field(_("Icon")).get_active()
         
-        point = copy.copy(self._point)
+        self._point.set_name(name)
+        self._point.set_latitude(lat)
+        self._point.set_longitude(lon)
+        self._point.set_comment(comment)
 
-        point.set_name(name)
-        point.set_latitude(lat)
-        point.set_longitude(lon)
-        point.set_comment(comment)
+        if isinstance(self._point, map_sources.MapStation):
+            self._point.set_icon_from_aprs_sym(self.icons[idx][1])
 
-        if isinstance(point, map_sources.MapStation):
-            point.set_icon_from_aprs_sym(self.icons[idx][1])
-        else:
-            point.set_icon(self._point.get_icon)
-
-        return point
+        return self._point
 
 class MapTile:
     def path_els(self):
@@ -697,6 +693,7 @@ class MapWindow(gtk.Window):
                 if source.get_name() == group:
                     point = source.get_point_by_name(id)
                     source.del_point(point)
+                    source.save()
         elif action == "edit":
             for source in self.map_sources:
                 if source.get_name() == group:
@@ -714,8 +711,8 @@ class MapWindow(gtk.Window):
 
             upoint, foo = self.prompt_to_set_marker(point, source.get_name())
             if upoint:
-                source.del_point(point)
-                source.add_point(upoint)
+                source.save()
+                self.update_point(source, upoint)
 
     def _make_marker_menu(self, store, iter):
         menu_xml = """
@@ -1055,8 +1052,9 @@ class MapWindow(gtk.Window):
         d.set_groups([s.get_name() for s in self.map_sources], group)
         d.set_point(point)
         r = d.run()
-        point = d.get_point()
-        group = d.get_group()
+        if r == gtk.RESPONSE_OK:
+            point = d.get_point()
+            group = d.get_group()
         d.destroy()
 
         if r == gtk.RESPONSE_OK:
@@ -1454,6 +1452,7 @@ class MapWindow(gtk.Window):
 
         def set_mark_at(a, vals):
             p = map_sources.MapStation("STATION", vals["lat"], vals["lon"])
+            p.set_icon_from_aprs_sym("\\<")
             point, group = self.prompt_to_set_marker(p)
             if not point:
                 return
@@ -1464,6 +1463,7 @@ class MapWindow(gtk.Window):
                     print "Adding new point %s to %s" % (point.get_name(),
                                                          source.get_name())
                     source.add_point(point)
+                    source.save()
                     return
 
         self.add_popup_handler(_("New marker here"), set_mark_at)
