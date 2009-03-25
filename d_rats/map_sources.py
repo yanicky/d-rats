@@ -227,6 +227,7 @@ class MapSource(gobject.GObject):
         self._points = {}
         self._color = color
         self._visible = True
+        self._mutable = True
 
     def save(self):
         pass
@@ -266,6 +267,9 @@ class MapSource(gobject.GObject):
 
     def set_visible(self, visible):
         self._visible = visible
+
+    def get_mutable(self):
+        return self._mutable
 
 class MapFileSource(MapSource):
     def _enumerate(config):
@@ -394,6 +398,7 @@ class MapUSGSRiverSource(MapSource):
         MapSource.__init__(self, name, description)
 
         self.__sites = sites
+        self._mutable = False
 
         for site in sites:
             point = MapUSGSRiver(site)
