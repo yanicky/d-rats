@@ -183,7 +183,7 @@ class FormRecvThread(FileBaseThread):
 
         srv = emailgw.FormEmailService(self.coord.config)
         try:
-            st, msg = srv.send_email_background(form, cb)
+            srv.send_email_background(form, cb)
             self.coord.session_status(self.session, msg)
         except Exception, e:
             msg = "Failed to send mail: %s" % e
