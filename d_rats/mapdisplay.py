@@ -691,6 +691,9 @@ class MapWindow(gtk.Window):
             print "Deleting %s/%s" % (group, id)
             for source in self.map_sources:
                 if source.get_name() == group:
+                    if not source.get_mutable():
+                        return
+
                     point = source.get_point_by_name(id)
                     source.del_point(point)
                     source.save()
@@ -698,6 +701,9 @@ class MapWindow(gtk.Window):
             for source in self.map_sources:
                 if source.get_name() == group:
                     break
+
+            if not source.get_mutable():
+                return
 
             if not source:
                 return
@@ -1049,7 +1055,13 @@ class MapWindow(gtk.Window):
                 lonw.set_text("%.5f" % dlg.lon)
 
         d = MarkerEditDialog()
-        d.set_groups([s.get_name() for s in self.map_sources], group)
+
+        sources = []
+        for src in self.map_sources:
+            if src.get_mutable():
+                sources.append(src.get_name())
+
+        d.set_groups(sources, group)
         d.set_point(point)
         r = d.run()
         if r == gtk.RESPONSE_OK:
