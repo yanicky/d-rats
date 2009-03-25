@@ -105,17 +105,17 @@ class CallList:
         if ts is None:
             ts = time.time()
 
-        (_, p) = self.data.get(call, (0, None))
+        (foo, p) = self.data.get(call, (0, None))
 
         self.data[call] = (ts, p)        
 
     def get_call_pos(self, call):
-        (_, p) = self.data.get(call, (0, None))
+        (foo, p) = self.data.get(call, (0, None))
 
         return p
 
     def get_call_time(self, call):
-        (t, _) = self.data.get(call, (0, None))
+        (t, foo) = self.data.get(call, (0, None))
 
         return t
 
@@ -164,7 +164,7 @@ class MainApp:
         port = self.config.get("settings", "port")
 
         if ":" in port:
-            (_, host, port) = port.split(":")
+            (mode, host, port) = port.split(":")
             self.comm = comm.SocketDataPath((host, int(port)))
         else:
             self.comm = comm.SerialDataPath((port, int(rate)))
@@ -334,6 +334,8 @@ class MainApp:
 
             self.mainwindow.tabs["messages"].connect("user-send-form",
                                                      send_form)
+            self.mainwindow.tabs["messages"].connect("event", \
+                  lambda m, e: self.mainwindow.tabs["event"].event(e))
 
             self.sm.register_session_cb(self.sc.session_cb, None)
 
