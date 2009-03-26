@@ -225,7 +225,7 @@ class RiverMapSourceEditor(MapSourceEditor):
 class BuoyMapSourceEditor(MapSourceEditor):
     def __init__(self, config, source=None):
         if not source:
-            source = map_sources.MapUSGSRiverSource("Buoys", "NBDC Rivers")
+            source = map_sources.MapNBDCBuoySource("Buoys", "NBDC Rivers")
             name_editable = True
         else:
             name_editable = False
