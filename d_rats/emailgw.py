@@ -20,9 +20,16 @@ import threading
 import poplib
 import smtplib
 import email
-import email.mime.multipart
-import email.mime.base
-import email.mime.text
+try:
+    from email.mime.multipart import MIMEMultipart
+    from email.mime.base import MIMEBase
+    from email.mime.text import MIMEText
+except ImportError:
+    # Python 2.4
+    from email import MIMEMultipart
+    from email import MIMEBase
+    from email import MIMEText 
+
 import rfc822
 import time
 import platform
@@ -285,7 +292,7 @@ class FormEmailService:
             if i in send:
                 send = send.replace(i, "")
 
-        msg = email.mime.multipart.MIMEMultipart()
+        msg = MIMEMultipart()
         msg["Subject"] = subj
         msg["From"] = '"%s" <%s>' % (send, replyto)
         msg["To"] = recp
@@ -293,10 +300,10 @@ class FormEmailService:
 
         if mesg:
             msg.preamble = mesg
-            message = email.mime.text.MIMEText(mesg)
+            message = MIMEText(mesg)
             msg.attach(message)
 
-        payload = email.mime.base.MIMEBase("d-rats", "form_xml")
+        payload = MIMEBase("d-rats", "form_xml")
         payload.set_payload(xmlpayload)
         payload.add_header("Content-Disposition",
                            "attachment",
