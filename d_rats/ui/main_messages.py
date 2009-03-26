@@ -652,6 +652,38 @@ class MessagesTab(MainWindowTab):
 
         self._messages.refresh()
 
+    def _importmsg(self, button):
+        dir = self._config.get("prefs", "download_dir")
+        fn = self._config.platform.gui_open_file(dir)
+        if not fn:
+            return
+
+        dst = os.path.join(self._config.form_store_dir(),
+                           _("Inbox"),
+                           time.strftime("form_%m%d%Y_%H%M%S.xml"))
+
+        shutil.copy(fn, dst)
+        self.refresh_if_folder(_("Inbox"))
+    
+    def _exportmsg(self, button):
+        try:
+            sel = self._messages.get_selected_messages()
+        except TypeError:
+            return
+
+        if len(sel) > 1:
+            print "FIXME: Warn about multiple send"
+            return
+
+        fn = sel[0]
+
+        dir = self._config.get("prefs", "download_dir")
+        nfn = self._config.platform.gui_save_file(dir, "msg.xml")
+        if not nfn:
+            return
+
+        shutil.copy(fn, nfn)
+
     def _init_toolbar(self):
         tb, = self._getw("toolbar")
 
@@ -688,6 +720,12 @@ class MessagesTab(MainWindowTab):
         self._folders.connect("user-selected-folder",
                               lambda x, y: self._messages.open_folder(y))
         self._folders.select_folder(_("Inbox"))
+
+        iport = self._wtree.get_widget("main_menu_importmsg")
+        iport.connect("activate", self._importmsg)
+
+        eport = self._wtree.get_widget("main_menu_exportmsg")
+        eport.connect("activate", self._exportmsg);
 
     def refresh_if_folder(self, folder):
         self._notice()
@@ -726,3 +764,20 @@ class MessagesTab(MainWindowTab):
 
         return ret
 
+    def selected(self):
+        MainWindowTab.selected(self)
+
+        make_visible = ["main_menu_importmsg", "main_menu_exportmsg"]
+
+        for name in make_visible:
+            item = self._wtree.get_widget(name)
+            item.set_property("visible", True)
+
+    def deselected(self):
+        MainWindowTab.deselected(self)
+
+        make_invisible = ["main_menu_importmsg", "main_menu_exportmsg"]
+
+        for name in make_invisible:
+            item = self._wtree.get_widget(name)
+            item.set_property("visible", False)

@@ -34,6 +34,32 @@
                       </widget>
                     </child>
                     <child>
+                      <widget class="GtkImageMenuItem" id="main_menu_importmsg">
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">Import Message</property>
+                        <property name="use_underline">True</property>
+                        <child internal-child="image">
+                          <widget class="GtkImage" id="menu-item-image9">
+                            <property name="visible">True</property>
+                            <property name="stock">gtk-open</property>
+                          </widget>
+                        </child>
+                      </widget>
+                    </child>
+                    <child>
+                      <widget class="GtkImageMenuItem" id="main_menu_exportmsg">
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">Export Message</property>
+                        <property name="use_underline">True</property>
+                        <child internal-child="image">
+                          <widget class="GtkImage" id="menu-item-image10">
+                            <property name="visible">True</property>
+                            <property name="stock">gtk-save</property>
+                          </widget>
+                        </child>
+                      </widget>
+                    </child>
+                    <child>
                       <widget class="GtkImageMenuItem" id="main_menu_msgtemplates">
                         <property name="visible">True</property>
                         <property name="label" translatable="yes">Message Templates</property>
@@ -409,7 +435,6 @@ KE7FTE</property>
                               <widget class="GtkTreeView" id="chat_qm_list">
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
-                                <property name="headers_clickable">True</property>
                               </widget>
                             </child>
                           </widget>
@@ -483,7 +508,6 @@ KE7FTE</property>
                                 <property name="height_request">200</property>
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
-                                <property name="headers_clickable">True</property>
                               </widget>
                             </child>
                           </widget>
@@ -615,7 +639,6 @@ KE7FTE</property>
                           <widget class="GtkTreeView" id="files_local_list">
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
-                            <property name="headers_clickable">True</property>
                           </widget>
                         </child>
                       </widget>
@@ -684,7 +707,6 @@ KE7FTE</property>
                           <widget class="GtkTreeView" id="files_remote_list">
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
-                            <property name="headers_clickable">True</property>
                           </widget>
                         </child>
                       </widget>
@@ -784,7 +806,6 @@ Pings</property>
                       <widget class="GtkTreeView" id="event_list">
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
-                        <property name="headers_clickable">True</property>
                         <property name="rules_hint">True</property>
                       </widget>
                     </child>
@@ -843,8 +864,13 @@ Pings</property>
             <child>
               <widget class="GtkTable" id="table1">
                 <property name="visible">True</property>
-                <property name="n_rows">1</property>
                 <property name="n_columns">2</property>
+                <child>
+                  <widget class="GtkLabel" id="label1">
+                    <property name="visible">True</property>
+                    <property name="label" translatable="yes">Name</property>
+                  </widget>
+                </child>
                 <child>
                   <widget class="GtkEntry" id="src_name">
                     <property name="visible">True</property>
@@ -854,12 +880,6 @@ Pings</property>
                     <property name="left_attach">1</property>
                     <property name="right_attach">2</property>
                   </packing>
-                </child>
-                <child>
-                  <widget class="GtkLabel" id="label1">
-                    <property name="visible">True</property>
-                    <property name="label" translatable="yes">Name</property>
-                  </widget>
                 </child>
               </widget>
               <packing>
@@ -928,7 +948,6 @@ Pings</property>
                   <widget class="GtkTreeView" id="srcs_view">
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
-                    <property name="headers_clickable">True</property>
                   </widget>
                 </child>
               </widget>
