@@ -215,8 +215,52 @@ class RiverMapSourceEditor(MapSourceEditor):
         self._config.set("rivers", "%s.label" % id,
                          self.get_source().get_name())
 
+class BuoyMapSourceEditor(MapSourceEditor):
+    def __init__(self, config, source=None):
+        if not source:
+            source = map_sources.MapUSGSRiverSource("Buoys", "NBDC Rivers")
+            name_editable = True
+        else:
+            name_editable = False
+
+        MapSourceEditor.__init__(self, config, source)
+
+        box = self._wtree.get_widget("src_vbox")
+        
+        hbox = gtk.HBox(False, 2)
+        hbox.show()
+
+        label = gtk.Label(_("Buoys (comma separated)"))
+        label.show()
+        hbox.pack_start(label, 0, 0, 0)
+
+        self.__sites = gtk.Entry()
+        self.__sites.show()
+        _sites = [str(x) for x in source.get_buoys()]
+        self.__sites.set_text(",".join(_sites))
+        hbox.pack_start(self.__sites, 1, 1, 1)
+
+        box.pack_start(hbox, 1, 1, 1)
+
+        self.name_editable(name_editable)
+
+    def delete(self):
+        id = self.get_source().packed_name()
+        self._config.remove_option("buoys", id)
+
+    def save(self):
+        if not self._config.has_section("buoys"):
+            self._config.add_section("buoys")
+        self.get_source().set_name(self.get_name())
+        id = self.get_source().packed_name()
+        self._config.set("buoys", id, self.__sites.get_text())
+        self._config.set("buoys", "%s.label" % id,
+                         self.get_source().get_name())
+
+
 SOURCE_TYPES = {
     "Static" : (StaticMapSourceEditor, map_sources.MapFileSource),
     "NSGS River" : (RiverMapSourceEditor, map_sources.MapUSGSRiverSource),
+    "NBDC Buoy" : (BuoyMapSourceEditor, map_sources.MapNBDCBuoySource),
     }
 

@@ -23,6 +23,13 @@ from glob import glob
 import libxml2
 import gobject
 
+try:
+    import feedparser
+    HAVE_FEEDPARSER = True
+except ImportError, e:
+    print "FeedParser not available: %s" % e
+    HAVE_FEEDPARSER = False
+
 import utils
 import platform
 
@@ -114,8 +121,36 @@ def _xdoc_getnodeval(ctx, nodespec):
 
     return items[0].getContent()
 
-class MapUSGSRiver(MapPoint):
-    def _do_update(self):
+class MapPointThreaded(MapPoint):
+    def __init__(self):
+        MapPoint.__init__(self)
+
+        self.__thread = None
+        self.__ts = 0
+
+    def __start_thread(self):
+        if self.__thread and self.__thread.isAlive():
+            print "Threaded Point: Still waiting on a thread"
+            return
+
+        self.__thread = threading.Thread(target=self.__thread_fn)
+        self.__thread.setDaemon(True)
+        self.__thread.start()
+
+    def _retr_hook(self, method, attribute):
+        if time.time() - self.__ts > 60:
+            try:
+                self.__ts = time.time()
+                self.__start_thread()
+            except Exception, e:
+                print "Can't start: %s" % e
+
+    def __thread_fn(self):
+        self.do_update()
+        gobject.idle_add(self.emit, "updated", "FOO")
+
+class MapUSGSRiver(MapPointThreaded):
+    def do_update(self):
         print "[River %i] Doing update..." % self.__site
         if  not self.__have_site:
             self.__parse_site()
@@ -124,17 +159,6 @@ class MapUSGSRiver(MapPoint):
         self.__parse_level()
 
         print "[River %i] Done with update" % self.__site
-
-        gobject.idle_add(self.emit, "updated", "FOO")
-
-    def _do_update_bg(self):
-        if self.__thread and self.__thread.isAlive():
-            print "[River %i] Still waiting on a thread" % self.__site
-            return
-
-        self.__thread = threading.Thread(target=self._do_update)
-        self.__thread.setDaemon(True)
-        self.__thread.start()
 
     def __parse_site(self):
         url = "http://waterdata.usgs.gov/nwis/inventory?search_site_no=%i&format=sitefile_output&sitefile_output_format=xml&column_name=agency_cd&column_name=site_no&column_name=station_nm&column_name=dec_lat_va&column_name=dec_long_va&column_name=alt_va" % self.__site
@@ -182,23 +206,51 @@ class MapUSGSRiver(MapPoint):
         self.set_comment("River height: %.1f ft" % self._height_ft)
         self.set_timestamp(time.time())
 
-    def _retr_hook(self, method, attribute):
-        if time.time() - self.__ts > 60:
-            try:
-                self.__ts = time.time()
-                self._do_update_bg()
-            except Exception, e:
-                print "Can't start: %s" % e
-
     def __init__(self, site):
-        MapPoint.__init__(self)
-        self.__thread = None
+        MapPointThreaded.__init__(self)
         self.__site = site
-        self.__ts = 0
-
         self.__have_site = False
 
         self.set_icon(utils.get_icon("/w"))
+
+class MapNBDCBuoy(MapPointThreaded):
+    def do_update(self):
+        if not HAVE_FEEDPARSER:
+            return
+
+        print "[Buoy %s] Doing update..." % self.__buoy
+
+        rss = feedparser.parse(self.__url)
+        try:
+            entry = rss.entries[0]
+        except IndexError:
+            print "Buoy has no entries!"
+            self.set_name("Unknown Buoy %s" % self.__buoy)
+            return
+
+        s = entry.description
+
+        for i in ["<strong>", "</strong>", "<br />", "&#176;"]:
+            s = s.replace("%s" % i, "")
+
+        self.set_comment(s)
+        self.set_timestamp(time.time())
+
+        slat, slon = entry["georss_point"].split(" ", 1)
+
+        self.set_latitude(float(slat))
+        self.set_longitude(float(slon))
+        self.set_name(entry["title"])
+
+        print "[Buoy %s] Done with update" % self.__buoy
+
+    def __init__(self, buoy):
+        MapPointThreaded.__init__(self)
+
+        self.__buoy = buoy
+        self.__url = "http://www.ndbc.noaa.gov/data/latest_obs/%s.rss" % buoy
+        
+        self.set_icon(utils.get_icon("\\N"))
 
 class MapSourceFailedToConnect(Exception):
     pass
@@ -406,3 +458,61 @@ class MapUSGSRiverSource(MapSource):
 
     def get_sites(self):
         return self.__sites
+
+class MapNBDCBuoySource(MapSource):
+    def _open_source_by_name(config, name):
+        if not config.has_section("buoys"):
+            return None
+        if not config.has_option("buoys", name):
+            return None
+        _sites = config.get("buoys", name).split(",")
+        try:
+            _name = config.get("buoys", "%s.label" % name)
+        except Exception, e:
+            print "No option %s.label" % name
+            print e
+            _name = name
+        sites = tuple([x for x in _sites])
+
+        return MapNBDCBuoySource(_name, "NBDC Buoys", *sites)
+
+    open_source_by_name = Callable(_open_source_by_name)
+
+    def _enumerate(config):
+        if not config.has_section("buoys"):
+            return []
+        options = config.options("buoys")
+
+        return [x for x in options if not x.endswith(".label")]
+
+    enumerate = Callable(_enumerate)
+
+    def packed_name(self):
+        name = []
+        for i in self.get_name():
+            if (ord(i) > ord("A") and ord(i) < ord("Z")) or\
+                    (ord(i) > ord("a") and ord(i) < ord("z")):
+                name.append(i)
+
+        return "".join(name)
+
+    def _point_updated(self, point, foo):
+        if not self._points.has_key(point.get_name()):
+            self._points[point.get_name()] = point
+            self.emit("point-added", point)
+        else:
+            self.emit("point-updated", point)
+
+    def __init__(self, name, description, *buoys):
+        MapSource.__init__(self, name, description)
+
+        self.__buoys = buoys
+        self._mutable = False
+
+        for buoy in buoys:
+            point = MapNBDCBuoy(buoy)
+            point.connect("updated", self._point_updated)
+
+    def get_buoys(self):
+        return self.__buoys
+

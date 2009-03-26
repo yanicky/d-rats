@@ -465,7 +465,8 @@ class MainApp:
         self.map.clear_map_sources()
 
         source_types = [map_sources.MapFileSource,
-                        map_sources.MapUSGSRiverSource]
+                        map_sources.MapUSGSRiverSource,
+                        map_sources.MapNBDCBuoySource]
 
         for stype in source_types:
             sources = stype.enumerate(self.config)
