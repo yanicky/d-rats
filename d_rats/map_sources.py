@@ -415,7 +415,13 @@ class MapUSGSRiverSource(MapSource):
             print "No option %s.label" % name
             print e
             _name = name
-        sites = tuple([int(x) for x in _sites])
+
+        try:
+            sites = tuple([int(x) for x in _sites])
+        except Exception, e:
+            utils.log_exception()
+            print "Error parsing river list %s: %s" % (_sites, e)
+            sites = ()
 
         return MapUSGSRiverSource(_name, "USGS Rivers", *sites)
 
