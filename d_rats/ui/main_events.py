@@ -125,7 +125,7 @@ class EventTab(MainWindowTab):
                    ("cancel", _("Cancel"))]
         for action, label in actions:
             a = gtk.Action(action, label, None, None)
-            a.connect("activate", self._mh_xfer, sid)
+            a.connect("activate", self._mh_xfer, int(sid))
             ag.add_action(a)
 
         uim = gtk.UIManager()
