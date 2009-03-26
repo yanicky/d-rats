@@ -635,7 +635,7 @@ class MapWindow(gtk.Window):
                              lower=2,
                              upper=17,
                              step_incr=1,
-                             page_incr=1)
+                             page_incr=3)
         sb = gtk.HScrollbar(adj)
         sb.show()
         box.pack_start(sb, 1,1,1)
