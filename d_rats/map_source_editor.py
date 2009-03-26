@@ -211,7 +211,12 @@ class RiverMapSourceEditor(MapSourceEditor):
 
     def delete(self):
         id = self.get_source().packed_name()
-        self._config.remove_option("rivers", id)
+        try:
+            self._config.remove_option("rivers", id)
+            self._config.remove_option("rivers", "%s.label" % id)
+        except Exception, e:
+            log_exception()
+            print "Error deleting rivers/%s: %s" % (id, e)
 
     def save(self):
         if not self._config.has_section("rivers"):
@@ -253,7 +258,13 @@ class BuoyMapSourceEditor(MapSourceEditor):
 
     def delete(self):
         id = self.get_source().packed_name()
-        self._config.remove_option("buoys", id)
+        try:
+            self._config.remove_option("buoys", id)
+            self._config.remove_option("buoys", "%s.label" % id)
+        except Exception, e:
+            log_exception()
+            print "Error deleting buoys/%s: %s" % (id, e)
+
 
     def save(self):
         if not self._config.has_section("buoys"):
