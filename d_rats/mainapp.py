@@ -61,7 +61,7 @@ import rpcsession
 
 from ui import main_events
 
-from utils import hexprint,filter_to_ascii,NetFile
+from utils import hexprint,filter_to_ascii,NetFile,log_exception
 
 LOGTF = "%m-%d-%Y_%H:%M:%S"
 
@@ -471,8 +471,13 @@ class MainApp:
         for stype in source_types:
             sources = stype.enumerate(self.config)
             for sname in sources:
-                source = stype.open_source_by_name(self.config, sname)
-                self.map.add_map_source(source)
+                try:
+                    source = stype.open_source_by_name(self.config, sname)
+                    self.map.add_map_source(source)
+                except Exception, e:
+                    log_exception()
+                    print "Failed to load map source %s: %s" % \
+                        (source.get_name(), e)
 
                 if sname == _("Stations"):
                     self.stations_overlay = source

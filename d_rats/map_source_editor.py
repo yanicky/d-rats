@@ -23,6 +23,7 @@ import gobject
 
 import map_sources
 import miscwidgets
+import utils
 
 class EditorInitCancel(Exception):
     pass
@@ -101,9 +102,15 @@ class MapSourcesEditor:
 
         for stype, (edclass, srcclass) in SOURCE_TYPES.items():
             for key in srcclass.enumerate(self.__config):
-                src = srcclass.open_source_by_name(self.__config, key)
-                sed = edclass(self.__config, src)
-                self.__store.append((stype, sed.get_source().get_name(), sed))
+                try:
+                    src = srcclass.open_source_by_name(self.__config, key)
+                    sed = edclass(self.__config, src)
+                    self.__store.append((stype,
+                                         sed.get_source().get_name(),
+                                         sed))
+                except Exception, e:
+                    utils.log_exception()
+                    print "Failed to open source %s:%s" % (stype, key)
 
     def run(self):
         return self.__dialog.run()
