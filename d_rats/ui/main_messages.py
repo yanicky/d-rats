@@ -631,7 +631,7 @@ class MessagesTab(MainWindowTab):
 
         srv = emailgw.FormEmailService(self._config)
         try:
-            form = formgui.FormFile("", fn)
+            form = formgui.FormFile("", newfn)
             srv.send_email_background(form, lambda s, m: True)
             event = main_events.Event(None, "Sent email")
         except Exception, e:
