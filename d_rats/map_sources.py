@@ -153,10 +153,19 @@ class MapUSGSRiver(MapPointThreaded):
     def do_update(self):
         print "[River %i] Doing update..." % self.__site
         if  not self.__have_site:
-            self.__parse_site()
-            self.__have_site = True
+            try:
+                self.__parse_site()
+                self.__have_site = True
+            except Exception, e:
+                utils.log_exception()
+                print "[River %i] Failed to parse site: %s" % (self.__site, e)
+                self.set_name("Invalid river %i" % self.__site)
 
-        self.__parse_level()
+        try:
+            self.__parse_level()
+        except Exception, e:
+            utils.log_exception()
+            print "[River %i] Failed to parse level: %s" % (self.__site, e)
 
         print "[River %i] Done with update" % self.__site
 
@@ -220,15 +229,26 @@ class MapNBDCBuoy(MapPointThreaded):
 
         print "[Buoy %s] Doing update..." % self.__buoy
 
-        rss = feedparser.parse(self.__url)
+        try:
+            rss = feedparser.parse(self.__url)
+        except Exception, e:
+            utils.log_exception()
+            print "[Buoy %s] Unable to fetch/parse buoy url %s: %s" % (self.__buoy, self.__url, e)
+            return
+
         try:
             entry = rss.entries[0]
         except IndexError:
-            print "Buoy has no entries!"
+            print "[Buoy %s]: No entries!" % self.__buoy
             self.set_name("Unknown Buoy %s" % self.__buoy)
             return
 
-        s = entry.description
+        try:
+            s = entry.description
+        except Exception, e:
+            utils.log_exception()
+            print "[Buoy %s]: Unable to capture description" % self.__buoy
+            return
 
         for i in ["<strong>", "</strong>", "<br />", "&#176;"]:
             s = s.replace("%s" % i, "")
@@ -236,7 +256,12 @@ class MapNBDCBuoy(MapPointThreaded):
         self.set_comment(s)
         self.set_timestamp(time.time())
 
-        slat, slon = entry["georss_point"].split(" ", 1)
+        try:
+            slat, slon = entry["georss_point"].split(" ", 1)
+        except Exception, e:
+            utils.log_exception()
+            print "[Buoy %s]: Result has no georss_point:\n%s" % str(entry)
+            return
 
         self.set_latitude(float(slat))
         self.set_longitude(float(slon))
