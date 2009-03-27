@@ -144,34 +144,34 @@ class MapPointThreaded(MapPoint):
 
 class MapUSGSRiver(MapPointThreaded):
     def do_update(self):
-        print "[River %i] Doing update..." % self.__site
+        print "[River %s] Doing update..." % self.__site
         if  not self.__have_site:
             try:
                 self.__parse_site()
                 self.__have_site = True
             except Exception, e:
                 utils.log_exception()
-                print "[River %i] Failed to parse site: %s" % (self.__site, e)
-                self.set_name("Invalid river %i" % self.__site)
+                print "[River %s] Failed to parse site: %s" % (self.__site, e)
+                self.set_name("Invalid river %s" % self.__site)
 
         try:
             self.__parse_level()
         except Exception, e:
             utils.log_exception()
-            print "[River %i] Failed to parse level: %s" % (self.__site, e)
+            print "[River %s] Failed to parse level: %s" % (self.__site, e)
 
-        print "[River %i] Done with update" % self.__site
+        print "[River %s] Done with update" % self.__site
 
     def __parse_site(self):
-        url = "http://waterdata.usgs.gov/nwis/inventory?search_site_no=%i&format=sitefile_output&sitefile_output_format=xml&column_name=agency_cd&column_name=site_no&column_name=station_nm&column_name=dec_lat_va&column_name=dec_long_va&column_name=alt_va" % self.__site
+        url = "http://waterdata.usgs.gov/nwis/inventory?search_site_no=%s&format=sitefile_output&sitefile_output_format=xml&column_name=agency_cd&column_name=site_no&column_name=station_nm&column_name=dec_lat_va&column_name=dec_long_va&column_name=alt_va" % self.__site
 
         p = platform.get_platform()
         try:
             fn, headers = p.retrieve_url(url)
             content = file(fn).read()
         except Exception, e:
-            print "[NSGS] Failed to fetch info for %i: %s" % (self.__site, e)
-            self.set_name("NSGS NWIS Site %i" % self.__site)
+            print "[NSGS] Failed to fetch info for %s: %s" % (self.__site, e)
+            self.set_name("NSGS NWIS Site %s" % self.__site)
             return
 
         doc = libxml2.parseMemory(content, len(content))
@@ -188,14 +188,14 @@ class MapUSGSRiver(MapPointThreaded):
         self.set_altitude(float(_xdoc_getnodeval(ctx, base + "alt_va")))
 
     def __parse_level(self):
-        url = "http://waterdata.usgs.gov/nwis/uv?format=rdb&period=1&site_no=%i" % self.__site
+        url = "http://waterdata.usgs.gov/nwis/uv?format=rdb&period=1&site_no=%s" % self.__site
 
         p = platform.get_platform()
         try:
             fn, headers = p.retrieve_url(url)
             line = file(fn).readlines()[-1]
         except Exception, e:
-            print "[NSGS] Failed to fetch info for site %i: %s" % (self.__site,
+            print "[NSGS] Failed to fetch info for site %s: %s" % (self.__site,
                                                                    e)
             self.set_comment("No data")
             self.set_timestamp(time.time())
@@ -426,20 +426,13 @@ class MapUSGSRiverSource(MapSource):
             return None
         if not config.has_option("rivers", name):
             return None
-        _sites = config.get("rivers", name).split(",")
+        sites = tuple(config.get("rivers", name).split(","))
         try:
             _name = config.get("rivers", "%s.label" % name)
         except Exception, e:
             print "No option %s.label" % name
             print e
             _name = name
-
-        try:
-            sites = tuple([int(x) for x in _sites])
-        except Exception, e:
-            utils.log_exception()
-            print "Error parsing river list %s: %s" % (_sites, e)
-            sites = ()
 
         return MapUSGSRiverSource(_name, "USGS Rivers", *sites)
 
