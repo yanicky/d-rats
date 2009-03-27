@@ -23,13 +23,6 @@ from glob import glob
 import libxml2
 import gobject
 
-try:
-    import feedparser
-    HAVE_FEEDPARSER = True
-except ImportError, e:
-    print "FeedParser not available: %s" % e
-    HAVE_FEEDPARSER = False
-
 import utils
 import platform
 
@@ -224,48 +217,48 @@ class MapUSGSRiver(MapPointThreaded):
 
 class MapNBDCBuoy(MapPointThreaded):
     def do_update(self):
-        if not HAVE_FEEDPARSER:
-            return
-
-        print "[Buoy %s] Doing update..." % self.__buoy
-
+        p = platform.get_platform()
         try:
-            rss = feedparser.parse(self.__url)
+            fn, headers = p.retrieve_url(self.__url)
+            content = file(fn).read()
         except Exception, e:
-            utils.log_exception()
-            print "[Buoy %s] Unable to fetch/parse buoy url %s: %s" % (self.__buoy, self.__url, e)
+            print "[NBDC] Failed to fetch info for %i: %s" % (self.__buoy, e)
+            self.set_name("NBDC %s" % self.__buoy)
             return
 
         try:
-            entry = rss.entries[0]
-        except IndexError:
-            print "[Buoy %s]: No entries!" % self.__buoy
-            self.set_name("Unknown Buoy %s" % self.__buoy)
-            return
-
-        try:
-            s = entry.description
+            doc = libxml2.parseMemory(content, len(content))
         except Exception, e:
-            utils.log_exception()
-            print "[Buoy %s]: Unable to capture description" % self.__buoy
+            print "[NBDC] Failed to parse document %s: %s" % (self.__url, e)
+            self.set_name("NBDC Unknown Buoy %s" % self.__buoy)
+            return
+
+        ctx = doc.xpathNewContext()
+        ctx.xpathRegisterNs("georss", "http://www.georss.org/georss")
+        base = "/rss/channel/item/"
+
+        self.set_name(_xdoc_getnodeval(ctx, base + "title"))
+
+        try:
+            s = _xdoc_getnodeval(ctx, base + "description")
+        except Exception, e:
+            print "[Buoy %s] Unable to get description: %s" % (self.__buoy, e)
             return
 
         for i in ["<strong>", "</strong>", "<br />", "&#176;"]:
             s = s.replace("%s" % i, "")
-
         self.set_comment(s)
         self.set_timestamp(time.time())
 
         try:
-            slat, slon = entry["georss_point"].split(" ", 1)
+            slat, slon = _xdoc_getnodeval(ctx, base + "georss:point").split(" ", 1)
         except Exception, e:
             utils.log_exception()
-            print "[Buoy %s]: Result has no georss_point:\n%s" % str(entry)
+            print "[Buoy %s]: Result has no georss:point" % self.__buoy
             return
 
         self.set_latitude(float(slat))
         self.set_longitude(float(slon))
-        self.set_name(entry["title"])
 
         print "[Buoy %s] Done with update" % self.__buoy
 
