@@ -67,6 +67,10 @@ _DEF_PREFS = {
     "allow_remote_forms" : "False",
     "allow_remote_files" : "False",
     "form_default_private" : "False",
+    "blink_chat" : "True",
+    "blink_messages" : "True",
+    "blink_files" : "True",
+    "blink_event" : "False",
 }
 
 _DEF_SETTINGS = {
@@ -427,6 +431,38 @@ class DratsPanel(gtk.Table):
 
         self.row += 1
 
+    def mg(self, title, *args):
+        if len(args) % 2:
+            raise Exception("Need label,widget pairs")
+
+        table = gtk.Table(len(args)/2, 2)
+
+        row = 0
+
+        k = { "yoptions" : gtk.SHRINK,
+              "xoptions" : gtk.SHRINK,
+              "xpadding" : 10,
+              "ypadding" : 0}
+
+        for i in range(0, len(args), 2):
+            label = gtk.Label(args[i])
+            widget = args[i+1]
+
+            label.show()
+            widget.show()
+
+            table.attach(label, 0, 1, row, row+1, **k)
+            table.attach(widget, 1, 2, row, row+1, **k)
+
+            row += 1
+
+        table.show()
+        frame = gtk.Frame(title)
+        frame.show()
+        frame.add(table)
+
+        self.attach(frame, 1, 2, self.row, self.row+1)
+
 class DratsPrefsPanel(DratsPanel):
     def __init__(self, config):
         DratsPanel.__init__(self, config)
@@ -470,6 +506,24 @@ class DratsPrefsPanel(DratsPanel):
         val = DratsConfigWidget(config, "prefs", "form_default_private")
         val.add_bool()
         self.mv(_("Private default"), val)
+
+        mval = DratsConfigWidget(config, "prefs", "blink_messages")
+        mval.add_bool()
+
+        cval = DratsConfigWidget(config, "prefs", "blink_chat")
+        cval.add_bool()
+
+        fval = DratsConfigWidget(config, "prefs", "blink_files")
+        fval.add_bool()
+
+        eval = DratsConfigWidget(config, "prefs", "blink_event")
+        eval.add_bool()
+
+        self.mg(_("Blink tray on"),
+                "Incoming Messages", mval,
+                "New Chat Messages", cval,
+                "Incoming Files", fval,
+                "Received Events", eval)        
 
 class DratsPathsPanel(DratsPanel):
     def __init__(self, config):
