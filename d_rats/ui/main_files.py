@@ -188,6 +188,7 @@ class FilesTab(MainWindowTab):
         self._local.refresh()
 
     def refresh_local(self):
+        self._notice()
         self._refresh_local()
 
     def _del(self, button, fileview):
@@ -360,10 +361,12 @@ class FilesTab(MainWindowTab):
         self._local.refresh()
 
     def selected(self):
+        MainWindowTab.selected(self)
         self.__selected = True
         box = self._get_ssel()
         self._refresh_calls(box)
         gobject.timeout_add(1000, self._refresh_calls, box)
 
     def deselected(self):
+        MainWindowTab.deselected(self)
         self.__selected = False
