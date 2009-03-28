@@ -180,12 +180,10 @@ class MainWindow(MainWindowElement):
 
     def _maybe_blink(self, tab, key):
         blink = self._config.getboolean("prefs", key)
-        print "Blinking on %s: %s" % (key, blink)
         if not blink:
             return
 
         if not self.__window.is_active():
-            print "Setting urgent"
             self.__window.set_urgency_hint(True)
 
     def _got_focus(self, window, event):
