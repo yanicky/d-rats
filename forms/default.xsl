@@ -10,6 +10,12 @@
    	       border: 1px solid black
 	    }
 
+	    .label {
+	       border: 1px solid black;
+	       background-color: silver;
+	       text-align: center;
+	    }
+
 	    .group {
 	       width: 80%;
 	    }
@@ -26,6 +32,15 @@
 	    .title {
 	       text-align: center;
 	    }
+
+	    .shaded {
+	       background-color: silver;
+	    }
+
+	    .grouping {
+	       border-spacing: 2px;
+	    }
+
 	  </style>
 	</head>
 	<body>
@@ -42,24 +57,67 @@
     </xsl:template>
     
     <xsl:template match="field">
+      <xsl:variable name="span">
+	<xsl:choose>
+	  <xsl:when test="entry[@type='label']">
+	    <xsl:text>2</xsl:text>
+	  </xsl:when>
+	  <xsl:otherwise>
+	    <xsl:text>1</xsl:text>
+	  </xsl:otherwise>
+	</xsl:choose>
+      </xsl:variable>
+      <xsl:variable name="class">
+	<xsl:choose>
+	  <xsl:when test="entry[@type='label']">
+	    <xsl:text>label</xsl:text>
+	  </xsl:when>
+	  <xsl:otherwise>
+	    <xsl:text>field</xsl:text>
+	  </xsl:otherwise>
+	</xsl:choose>
+      </xsl:variable>
       <tr class="field">
-	<td class="field">
+        <td class="{$class}" colspan="{$span}">
 	  <span class="field-caption">
 	    <xsl:value-of select="caption"/>
 	  </span>
 	</td>
-	<td class="field" width="100%">
-	  <span class="field-content">
-	    <xsl:choose>
-	      <xsl:when test="entry/@type = 'choice'">
-		<xsl:value-of select="entry/choice[@set='y']"/>
-	      </xsl:when>
-	      <xsl:otherwise>
-		<xsl:value-of select="entry"/>
-	      </xsl:otherwise>
-	    </xsl:choose>
-	  </span>
-	</td>
+	<xsl:if test="entry[@type!='label']">
+	  <td class="field" width="100%">
+	    <span class="field-content">
+	      <xsl:choose>
+		<xsl:when test="entry/@type = 'choice'">
+		  <xsl:value-of select="entry/choice[@set='y']"/>
+		</xsl:when>
+		<xsl:when test="entry/@type = 'multiselect'">
+		  <table class="grouping"><tr>
+		      <xsl:apply-templates select="entry/choice"/>
+		  </tr></table>
+		</xsl:when>
+		<xsl:otherwise>
+		  <xsl:value-of select="entry"/>
+		</xsl:otherwise>
+	      </xsl:choose>
+	      <xsl:text disable-output-escaping="yes">&amp;nbsp;</xsl:text>
+	    </span>
+	  </td>
+	</xsl:if>
       </tr>
     </xsl:template>
+
+    <xsl:template match="choice">
+      <td class="shaded">
+      <xsl:choose>
+	<xsl:when test="@set='y'">
+	  <input type="checkbox" checked="checked"/>
+	</xsl:when>
+	<xsl:otherwise>
+	  <input type="checkbox"/>
+	</xsl:otherwise>
+      </xsl:choose>
+      <xsl:value-of select="."/>
+      </td>
+    </xsl:template>
+
 </xsl:stylesheet>
