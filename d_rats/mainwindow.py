@@ -178,6 +178,19 @@ class MainWindow(MainWindowElement):
         self._current_tab = tab
         self.tabs[self._current_tab].selected()
 
+    def _maybe_blink(self, tab, key):
+        blink = self._config.getboolean("prefs", key)
+        print "Blinking on %s: %s" % (key, blink)
+        if not blink:
+            return
+
+        if not self.__window.is_active():
+            print "Setting urgent"
+            self.__window.set_urgency_hint(True)
+
+    def _got_focus(self, window, event):
+        self.__window.set_urgency_hint(False)
+
     def __init__(self, config):
         wtree = gtk.glade.XML(config.ship_obj_fn("ui/mainwindow.glade"),
                               "mainwindow", "D-RATS")
@@ -198,6 +211,9 @@ class MainWindow(MainWindowElement):
         self.tabs["files"].connect("status", lambda e, m: self.set_status(m))
         self.tabs["event"].connect("status", lambda e, m: self.set_status(m))
 
+        for label, tab in self.tabs.items():
+            tab.connect("notice", self._maybe_blink, "blink_%s" % label)
+
         self._current_tab = "messages"
 
         ic = "incomingcolor"
@@ -206,19 +222,20 @@ class MainWindow(MainWindowElement):
         self.tabs["chat"]._display_line(cpr, True, ic)
         self.tabs["chat"]._display_line("", True)        
 
-        window = self._wtree.get_widget("mainwindow")
-        window.connect("destroy", self._destroy)
-        window.connect("delete_event", self._delete)
+        self.__window = self._wtree.get_widget("mainwindow")
+        self.__window.connect("destroy", self._destroy)
+        self.__window.connect("delete_event", self._delete)
+        self.__window.connect("focus-in-event", self._got_focus)
 
-        self._connect_menu_items(window)
+        self._connect_menu_items(self.__window)
 
         h = self._config.getint("state", "main_size_x")
         w = self._config.getint("state", "main_size_y")
         if self._config.getboolean("state", "main_maximized"):
-            window.maximize()
-            window.set_default_size(h, w)
+            self.__window.maximize()
+            self.__window.set_default_size(h, w)
         else:
-            window.resize(h, w)
+            self.__window.resize(h, w)
 
         gobject.timeout_add(3000, self.__update_status)
 

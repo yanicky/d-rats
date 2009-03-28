@@ -74,6 +74,9 @@ class MainWindowTab(MainWindowElement):
         "event" : (gobject.SIGNAL_RUN_LAST,
                    gobject.TYPE_NONE,
                    (gobject.TYPE_PYOBJECT,)),
+        "notice" : (gobject.SIGNAL_RUN_LAST,
+                    gobject.TYPE_NONE,
+                    ()),
         }
 
     def __init__(self, wtree, config, prefix):
@@ -92,6 +95,7 @@ class MainWindowTab(MainWindowElement):
         self._selected = False
 
     def _notice(self):
+        self.emit("notice")
         if self._selected:
             return
 
