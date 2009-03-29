@@ -705,6 +705,7 @@ class PipelinedStatefulSession(StatefulSession):
         if self.waiting_for_ack:
             print "Didn't get last ack, asking again"
             self.send_reqack(self.waiting_for_ack)
+            self.ts = time.time()
             return
 
         toack = []
