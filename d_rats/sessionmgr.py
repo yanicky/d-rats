@@ -386,6 +386,7 @@ class StatefulSession(Session):
 
         self.ts = 0
         self.attempts = 0
+        self.ack_timeout = 8
 
         self.event = threading.Event()
         self.thread = threading.Thread(target=self.worker)
@@ -433,7 +434,7 @@ class StatefulSession(Session):
         if (time.time() - self._sm.last_frame) < 3:
             return False
 
-        if (time.time() - self.ts) < 8:
+        if (time.time() - self.ts) < self.ack_timeout:
             return False
 
         return True
@@ -700,12 +701,14 @@ class PipelinedStatefulSession(StatefulSession):
             self.enabled = False
             return
 
-        # Short circuit to just an ack for outstanding blocks, if we're still waiting for
-        # an ack from remote
+        # Short circuit to just an ack for outstanding blocks, if
+        # we're still waiting for an ack from remote.  Increase the timeout
+        # for the ack by four seconds each time to give some backoff
         if self.waiting_for_ack:
             print "Didn't get last ack, asking again"
             self.send_reqack(self.waiting_for_ack)
             self.ts = time.time()
+            self.ack_timeout += 4
             return
 
         toack = []
