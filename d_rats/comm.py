@@ -218,7 +218,9 @@ class SocketDataPath(DataPath):
         self._socket.send("USER %s\r\n" % self.call)
 
         c, l = getline(self._socket)
-        if c != 102:
+        if c == 200:
+            print "Host did not require a password"
+        elif c != 102:
             raise DataPathNotConnectedError("User rejected username")
 
         print "Sending password"
