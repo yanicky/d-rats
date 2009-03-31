@@ -254,6 +254,7 @@ class TcpDataPath(DataPath):
             line = line.strip()
             try:
                 u, p = line.split(" ", 1)
+                u = u.upper()
             except Exception, e:
                 print "Failed to parse line %i in users.txt: %s" % (lno, e)
                 continue
