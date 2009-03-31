@@ -19,6 +19,7 @@ import threading
 import time
 import socket
 import ConfigParser
+import os
 
 import gtk
 import gobject
@@ -243,13 +244,97 @@ class TcpDataPath(DataPath):
 
         self.socket.close()
 
+    def auth_user(self, username, password):
+        auth = file("users.txt")
+        lines = auth.readlines()
+        auth.close()
+
+        lno = 1
+        for line in lines:
+            line = line.strip()
+            try:
+                u, p = line.split(" ", 1)
+            except Exception, e:
+                print "Failed to parse line %i in users.txt: %s" % (lno, e)
+                continue
+
+            if u == username and p == password:
+                print "Authorized user %s" % username
+                return True
+
+        print "User %s not authorized" % username
+        return False
+
+    def auth(self):
+        username = None
+        password = None
+        count = 0
+
+        if not os.path.exists("users.txt"):
+            print "Not requiring authentication for incoming connection"
+            self.socket.send("100 No authorization required\r\n")
+            return True
+
+        self.socket.send("101 Authorization required\r\n")
+
+        def readline(_s):
+            data = ""
+            while "\r\n" not in data:
+                try:
+                    _d = _s.recv(32)
+                except socket.timeout:
+                    continue
+
+                if _d == "":
+                    break
+
+                data += _d
+            return data.strip()
+
+        while (not username or not password) and count < 3:
+            line = readline(self.socket)
+            try:
+                cmd, value = line.split(" ", 1)
+            except Exception, e:
+                print "Unable to read auth command `%s': %s\n" % (line, e)
+                self.socket.send("501 Invalid syntax\r\n")
+                break
+
+            cmd = cmd.upper()
+
+            if cmd == "USER" and not username and not password:
+                username = value
+                self.socket.send("102 User %s okay\r\n" % username)
+            elif cmd == "PASS" and username and not password:
+                password = value
+            else:
+                self.socket.send("100 Goodbye\r\n")
+                break
+
+        if not username or not password:
+            print "Negotiation failed with client"
+            return False
+
+        result = self.auth_user(username, password)
+        if result:
+            self.socket.send("200 Authorized\r\n")
+        else:
+            self.socket.send("500 Not authorized\r\n")
+
+        return result
+
     def __init__(self, id, condition, socket):
         DataPath.__init__(self, id, condition)
 
         self.socket = socket
         #self.socket.setblocking(False)
         self.socket.settimeout(0.1)
+
+        if not self.auth():
+            raise Exception("Failed to authenticate")
+
         self.thread = threading.Thread(target=self.tcp_thread)
+        self.thread.setDaemon(True)
         self.thread.start()
 
 class TcpOutgoingDataPath(TcpDataPath):
@@ -284,9 +369,14 @@ class Repeater:
         except:
             return
 
-        path = TcpDataPath("Network (%s:%s)" % csocket.getpeername(),
-                           self.condition,
-                           csocket)
+        try:
+            path = TcpDataPath("Network (%s:%s)" % csocket.getpeername(),
+                               self.condition,
+                               csocket)
+        except Exception, e:
+            print "Failure while accepting connection: %s" % e
+            return
+
         try:
             path.write(self.id)
             self.paths.append(path)
@@ -319,7 +409,7 @@ class Repeater:
     def _repeat(self):
         while self.enabled:
             self.condition.acquire()
-            self.condition.wait(5)
+            self.condition.wait(0.5)
             self.accept_new()
             self.condition.release()
 
