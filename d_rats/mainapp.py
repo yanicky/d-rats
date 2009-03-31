@@ -162,10 +162,12 @@ class MainApp:
     def start_comms(self):
         rate = self.config.get("settings", "rate")
         port = self.config.get("settings", "port")
+        pswd = self.config.get("settings", "socket_pw")
+        call = self.config.get("user", "callsign")
 
         if ":" in port:
             (mode, host, port) = port.split(":")
-            self.comm = comm.SocketDataPath((host, int(port)))
+            self.comm = comm.SocketDataPath((host, int(port), call, pswd))
         else:
             self.comm = comm.SerialDataPath((port, int(rate)))
                                    
@@ -173,7 +175,9 @@ class MainApp:
             self.comm.connect()
         except comm.DataPathNotConnectedError, e:
             print "COMM did not connect: %s" % e
-            self.mainwindow.set_status("Failed to connect %s: %s" % (port, e))
+            event = main_events.Event(None,
+                                      "Failed to connect (%s)" % e)
+            self.mainwindow.tabs["event"].event(event)
             return False
 
         transport_args = {

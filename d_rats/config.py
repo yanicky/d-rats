@@ -75,6 +75,7 @@ _DEF_PREFS = {
 
 _DEF_SETTINGS = {
     "port" : "",
+    "socket_pw" : "",
     "rate" : "9600",
     "ddt_block_size" : "512",
     "ddt_block_outlimit" : "4",
@@ -628,6 +629,10 @@ class DratsRadioPanel(DratsPanel):
         rate = DratsConfigWidget(config, "settings", "rate")
         rate.add_combo(BAUD_RATES, False)
         self.mv(_("Serial Port"), port, rate)
+
+        pwd = DratsConfigWidget(config, "settings", "socket_pw")
+        pwd.add_text()
+        self.mv(_("Ratflector password"), pwd)
 
         val = DratsConfigWidget(config, "settings", "compatmode")
         val.add_bool()

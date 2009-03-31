@@ -164,8 +164,70 @@ class SocketDataPath(DataPath):
     def __init__(self, pathspec, timeout=0.25):
         DataPath.__init__(self, pathspec, timeout)
 
-        (self.host, self.port) = pathspec
+        if len(pathspec) == 2:
+            (self.host, self.port) = pathspec
+            self.call = self.passwd = "UNKNOWN"
+        else:
+            (self.host, self.port, self.call, self.passwd) = pathspec
         self._socket = None
+
+    def do_auth(self):
+        def readline(_s, to=30):
+            t = time.time()
+
+            line = ""
+            while ("\n" not in line) and ((time.time() - t) < to):
+                try:
+                    _d = _s.recv(32)
+                    if not _d:
+                        break
+                except socket.timeout:
+                    continue
+
+                line += _d
+                
+            return line.strip()
+
+        def getline(_s, to=30):
+            line = readline(_s, to)
+
+            try:
+                code, string = line.split(" ", 1)
+                code = int(code)
+            except Exception, e:
+                print "Error parsing line %s: %s" % (line, e)
+                raise DataPathNotConnectedError("Conversation error")
+
+            return code, string
+
+        print "Doing authentication"
+
+        try:
+            c, l = getline(self._socket)
+        except DataPathNotConnectedError:
+            print "Assuming an old-school ratflector for now"
+            return
+
+        if c == 100:
+            print "Host does not require authentication"
+            return
+        elif c != 101:
+            raise DataPathNotConnectedError("Unknown response code %i" % c)
+
+        print "Sending username"
+        self._socket.send("USER %s\r\n" % self.call)
+
+        c, l = getline(self._socket)
+        if c != 102:
+            raise DataPathNotConnectedError("User rejected username")
+
+        print "Sending password"
+        self._socket.send("PASS %s\r\n" % self.passwd)
+
+        c, l = getline(self._socket)
+        print "Host responded: %i %s" % (c, l)
+        if c != 200:
+            raise DataPathNotConnectedError("Authentication failed: %s" % l)
 
     def connect(self):
         try:
@@ -176,6 +238,8 @@ class SocketDataPath(DataPath):
             print "Socket connect failed: %s" % e
             self._socket = None
             raise DataPathNotConnectedError("Unable to connect (%s)" % e)
+
+        self.do_auth()
 
     def disconnect(self):
         if self._socket:
