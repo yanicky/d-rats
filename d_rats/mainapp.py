@@ -487,8 +487,9 @@ class MainApp:
                     self.stations_overlay = source
 
         if not self.stations_overlay:
-            #FIXME
-            fn = os.path.join(dir, _("Stations") + ".csv")
+            fn = os.path.join(self.config.platform.config_dir(),
+                              "static_locations",
+                              _("Stations") + ".csv")
             try:
                 os.makedirs(os.path.dirname(fn))
             except:
