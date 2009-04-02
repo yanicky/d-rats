@@ -166,7 +166,16 @@ class MainApp:
         call = self.config.get("user", "callsign")
 
         if ":" in port:
-            (mode, host, port) = port.split(":")
+            try:
+                (mode, host, port) = port.split(":")
+            except ValueError:
+                event = main_events.Event(None,
+                                          _("Failed to connect to") + \
+                                              " %s: " % port + \
+                                              _("Invalid port string"))
+                self.mainwindow.tabs["event"].event(event)
+                return False
+
             self.comm = comm.SocketDataPath((host, int(port), call, pswd))
         else:
             self.comm = comm.SerialDataPath((port, int(rate)))
