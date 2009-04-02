@@ -214,7 +214,7 @@ class SocketDataPath(DataPath):
         elif c != 101:
             raise DataPathNotConnectedError("Unknown response code %i" % c)
 
-        print "Sending username"
+        print "Sending username: %s" % self.call
         self._socket.send("USER %s\r\n" % self.call)
 
         c, l = getline(self._socket)
@@ -223,7 +223,7 @@ class SocketDataPath(DataPath):
         elif c != 102:
             raise DataPathNotConnectedError("User rejected username")
 
-        print "Sending password"
+        print "Sending password: %s" % ("*" * len(self.passwd))
         self._socket.send("PASS %s\r\n" % self.passwd)
 
         c, l = getline(self._socket)
