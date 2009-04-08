@@ -24,6 +24,24 @@ import os
 import gtk
 import gobject
 
+from d_rats import platform
+
+if __name__ == "__main__":
+    from optparse import OptionParser
+
+    o = OptionParser()
+    o.add_option("-c", "--config",
+                 dest="config",
+                 help="Use alternate configuration directory")
+    o.add_option("-d", "--debug",
+                 dest="debug",
+                 action="store_true",
+                 help="Show debug messages on stdout")
+    (opts, args) = o.parse_args()
+
+    if opts.config:
+        platform.get_platform(opts.config)
+
 try:
     from comm import SWFSerial
     from miscwidgets import make_choice
@@ -861,7 +879,7 @@ class RepeaterGUI:
 if __name__=="__main__":
     import sys
 
-    if True:
+    if not opts.debug:
         f = file("repeater.log", "w", 0)
         if f:
             sys.stdout = f
@@ -871,22 +889,4 @@ if __name__=="__main__":
 
     g = RepeaterGUI()
     gtk.main()
-    sys.exit(1)
-
-    r = Repeater()
-
-    s = SerialDataPath("USB1", "/dev/ttyUSB0", r.condition, 9600)
-    r.paths.append(s)
-
-    r.listen_on(9000)
-    r.repeat()
-
-    try:
-        while True:
-            time.sleep(1)
-    except:
-        print "Interrupted"
-        pass
-
-    r.stop()
 
