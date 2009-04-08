@@ -376,6 +376,12 @@ class ChatTab(MainWindowTab):
         delf = self._wtree.get_widget("main_menu_delfilter")
         delf.set_sensitive(num != 0)
 
+    def _save_filters(self):
+        f = self.__filters.keys()
+        while None in f:
+            f.remove(None)
+        self._config.set("state", "filters", str(f))
+
     def _add_filter(self, but):
         d = inputdialog.TextInputDialog(title=_("Create filter"))
         d.label.set_text(_("Enter a filter search string:"))
@@ -385,7 +391,7 @@ class ChatTab(MainWindowTab):
 
         if r == gtk.RESPONSE_OK:
             self._build_filter(text)
-            self._config.set("state", "filters", str(self.__filters.keys()))
+            self._save_filters()
 
     def _del_filter(self, but):
         idx = self.__filtertabs.get_current_page()
@@ -395,7 +401,7 @@ class ChatTab(MainWindowTab):
         del self.__filters[text]
         self.__filtertabs.remove_page(idx)
 
-        self._config.set("state", "filters", str(self.__filters.keys()))
+        self._save_filters()
 
     def _view_log(self, but):
         num, display = self._display_selected()
@@ -515,7 +521,7 @@ class ChatTab(MainWindowTab):
         self.__filters = {}
 
         filters = eval(self._config.get("state", "filters"))
-        if None in filters:
+        while None in filters:
             filters.remove(None)
         filters.insert(0, None) # Main catch-all
 
