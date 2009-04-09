@@ -21,9 +21,6 @@ import socket
 import ConfigParser
 import os
 
-import gtk
-import gobject
-
 from d_rats import platform
 
 if __name__ == "__main__":
@@ -37,22 +34,19 @@ if __name__ == "__main__":
                  dest="debug",
                  action="store_true",
                  help="Show debug messages on stdout")
+    o.add_option("-C", "--console",
+                 dest="console",
+                 action="store_true",
+                 help="Run in console mode only")
     (opts, args) = o.parse_args()
 
     if opts.config:
         platform.get_platform(opts.config)
 
-try:
-    from comm import SWFSerial
-    from miscwidgets import make_choice
-    import miscwidgets
-    import platform
-except ImportError:
-    from d_rats.comm import SWFSerial
-    from d_rats.miscwidgets import make_choice
-    from d_rats import miscwidgets
-    from d_rats import platform
-    from d_rats import utils
+from d_rats.comm import SWFSerial
+from d_rats import utils
+from d_rats.miscwidgets import make_choice
+from d_rats import miscwidgets
 
 def call_with_lock(lock, fn, *args):
     lock.acquire()
@@ -444,8 +438,11 @@ class Repeater:
                     self.paths.remove(p)
                     p.stop()
 
+        print "Repeater thread ended"
+
     def repeat(self):
         self.repeat_thread = threading.Thread(target=self._repeat)
+        self.repeat_thread.setDaemon(True)
         self.repeat_thread.start()
 
     def stop(self):
@@ -466,9 +463,35 @@ class Repeater:
         if self.socket:
             self.socket.close()
 
-        print "EXIT"
+class RepeaterUI:
+    def __init__(self):
+        self.repeater = None
+        self.tap = None
+        self.tick = 0
 
-class RepeaterGUI:
+        self.platform = platform.get_platform()
+        self.config = self.load_config()
+
+    def load_config(self):
+        self.config_fn = self.platform.config_file("repeater.config")
+        config = ConfigParser.ConfigParser()
+        config.add_section("settings")
+        config.set("settings", "devices", "[]")
+        config.set("settings", "acceptnet", "True")
+        config.set("settings", "netport", "9000")
+        config.set("settings", "idstr", "D-RATS Repeater Proxy: W1AW")
+        config.set("settings", "idfreq", "30")
+        config.read(self.config_fn)
+
+        return config
+
+    def save_config(self, config):
+        self.sync_config()
+        f = file(self.config_fn, "w")
+        config.write(f)
+        f.close()
+
+class RepeaterGUI(RepeaterUI):
     def add_serial(self, widget, widgets):
         entry, baud = widgets
 
@@ -826,33 +849,8 @@ class RepeaterGUI:
 
         return True
 
-    def load_config(self):
-        self.config_fn = self.platform.config_file("repeater.config")
-        config = ConfigParser.ConfigParser()
-        config.add_section("settings")
-        config.set("settings", "devices", "[]")
-        config.set("settings", "acceptnet", "True")
-        config.set("settings", "netport", "9000")
-        config.set("settings", "idstr", "D-RATS Repeater Proxy: W1AW")
-        config.set("settings", "idfreq", "30")
-        config.read(self.config_fn)
-
-        return config
-
-    def save_config(self, config):
-        self.sync_config()
-        f = file(self.config_fn, "w")
-        config.write(f)
-        f.close()
-
     def __init__(self):
-        self.repeater = None
-        self.tap = None
-        self.tick = 0
-
-        self.platform = platform.get_platform()
-
-        self.config = self.load_config()
+        RepeaterUI.__init__(self)
 
         self.window = gtk.Window(gtk.WINDOW_TOPLEVEL)
         self.window.set_default_size(450, 380)
@@ -876,6 +874,47 @@ class RepeaterGUI:
 
         gobject.timeout_add(1000, self.update)
 
+class RepeaterConsole(RepeaterUI):
+    def main(self):
+        self.repeater = Repeater(self.config.get("settings", "idstr"))
+        devices = eval(self.config.get("settings", "devices"))
+        for dev, baud in devices:
+            if dev.startswith("net:"):
+                p = TcpOutgoingDataPath("Network (%s)" % dev,
+                                        self.repeater.condition,
+                                        dev)
+            else:
+                p = SerialDataPath("Serial (%s)" % dev,
+                                   self.repeater.condition,
+                                   dev,
+                                   baud)
+            self.repeater.paths.append(p)
+
+        try:
+            acceptnet = eval(self.config.get("settings", "acceptnet"))
+            netport = int(self.config.get("settings", "netport"))
+            idfreq = self.config.get("settings", "idfreq")
+            if idfreq == "Never":
+                idfreq = 0
+            else:
+                idfreq = int(idfreq)
+        except Exception, e:
+            print "Failed to parse network info: %s" % e
+            acceptnet = False
+
+        if acceptnet:
+            self.repeater.listen_on(netport)
+
+        self.repeater.repeat()
+
+        while True:
+            try:
+                time.sleep(0.25)
+            except KeyboardInterrupt:
+                self.repeater.stop()
+                break
+       
+
 if __name__=="__main__":
     import sys
 
@@ -887,6 +926,13 @@ if __name__=="__main__":
         else:
             print "Failed to open log"
 
-    g = RepeaterGUI()
-    gtk.main()
+    if opts.console:
+        r = RepeaterConsole()
+        r.main()
+    else:
+        import gtk
+        import gobject
+
+        g = RepeaterGUI()
+        gtk.main()
 
