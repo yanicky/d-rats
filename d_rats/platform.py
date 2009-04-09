@@ -149,6 +149,9 @@ class Platform:
     def set_connected(self, connected):
         self._connected = connected
 
+    def play_sound(self, soundfile):
+        print "Sound is unsupported on this platform!"
+
 class UnixPlatform(Platform):
     def __init__(self, basepath):
         if not basepath:
@@ -208,6 +211,42 @@ class UnixPlatform(Platform):
 
     def run_sync(self, command):
         return commands.getstatusoutput(command)
+
+    def play_sound(self, soundfile):
+        import ossaudiodev
+        import sndhdr
+
+        try:
+            (t, r, c, f, b) = sndhdr.what(soundfile)
+        except Exception, e:
+            print "Unable to determine sound header of %s: %s" % (soundfile, e)
+            return
+
+        if t != "wav":
+            print "Unable to play non-wav file %s" % soundfile
+            return
+
+        if b != 16:
+            print "Unable to support strange non-16-bit audio (%i)" % b
+            return
+
+        dev = None
+        try:
+            dev = ossaudiodev.open("w")
+            dev.setfmt(ossaudiodev.AFMT_S16_LE)
+            dev.channels(c)
+            dev.speed(r)
+
+            f = file(soundfile, "rb")
+            dev.write(f.read())
+            f.close()
+
+            dev.close()
+        except Exception, e:
+            print "Error playing sound %s: %s" % (soundfile, e)
+        
+        if dev:
+            dev.close()
 
 class MacOSXPlatform(UnixPlatform):
     def __init__(self, basepath):
@@ -338,6 +377,11 @@ class Win32Platform(Platform):
         (pform, _, build, _, _) = win32api.GetVersionEx()
 
         return vers.get(pform, "Win32 (Unknown %i:%i)" % (pform, build))
+
+    def play_sound(self, soundfile):
+        import winsound
+
+        winsound.PlaySound(soundfile, winsound.SND_FILENAME)
 
 def _get_platform(basepath):
     if os.name == "nt":
