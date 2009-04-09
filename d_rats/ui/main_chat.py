@@ -288,7 +288,7 @@ class ChatTab(MainWindowTab):
         line = "[%s] %s" % (stamp, text)
         self._last_date = time.time()
 
-        self._display_line(line, incoming, *attrs)
+        self._display_line(line, incoming, "default", *attrs)
 
         self._notice()
 
@@ -314,6 +314,21 @@ class ChatTab(MainWindowTab):
         cur = self.__filtertabs.get_current_page()
         return cur, self.__filtertabs.get_nth_page(cur).child
 
+    def _maybe_highlight_header(self, buffer, mark):
+        start = buffer.get_iter_at_mark(mark)
+        try:
+            s, e = start.forward_search("] ", 0)
+        except:
+            return
+        try:
+            s, end = e.forward_search(": ", 0)
+        except:
+            return
+
+        # If we get here, we saw '] FOO: ' so highlight between
+        # the start and the end
+        buffer.apply_tag_by_name("bold", start, end)
+        
     def _display_line(self, text, apply_filters, *attrs):
         if apply_filters:
             tabnum, display = self._display_matching_filter(text)
@@ -325,6 +340,7 @@ class ChatTab(MainWindowTab):
         (start, end) = buffer.get_bounds()
         mark = buffer.create_mark(None, end, True)
         buffer.insert_with_tags_by_name(end, text + os.linesep, *attrs)
+        self._maybe_highlight_header(buffer, mark)
         buffer.delete_mark(mark)
 
         endmark = buffer.get_mark("end")
@@ -464,6 +480,11 @@ class ChatTab(MainWindowTab):
 
             tag = gtk.TextTag("italic")
             tag.set_property("style", pango.STYLE_ITALIC)
+            tags.add(tag)
+
+            tag = gtk.TextTag("default")
+            tag.set_property("indent", -40)
+            tag.set_property("indent-set", True)
             tags.add(tag)
 
         regular = ["incomingcolor", "outgoingcolor",
