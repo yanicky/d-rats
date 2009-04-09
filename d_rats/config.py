@@ -28,6 +28,8 @@ import platform
 import geocode_ui
 import config_tips
 
+from d_rats.ui.main_common import display_error
+
 BAUD_RATES = ["1200", "2400", "4800", "9600", "19200", "38400", "115200"]
 
 _DEF_USER = {
@@ -116,6 +118,15 @@ _DEF_STATE = {
     "qsts_enabled" : "True",
 }
 
+_DEF_SOUNDS = {
+    "messages" : "",
+    "messages_enabled" : "False",
+    "chat" : "",
+    "chat_recv_enabled" : "False",
+    "files" : "",
+    "files_enabled" : "False",
+}
+
 DEFAULTS = {
     "user" : _DEF_USER,
     "prefs" : _DEF_PREFS,
@@ -125,6 +136,7 @@ DEFAULTS = {
     "tcp_in" : {},
     "tcp_out" : {},
     "incoming_email" : {},
+    "sounds" : _DEF_SOUNDS,
 }
 
 if __name__ == "__main__":
@@ -314,6 +326,35 @@ class DratsConfigWidget(gtk.VBox):
         w.show()
 
         self.pack_start(w, 1, 1, 1)
+
+    def add_sound(self):
+        def filename_changed(box):
+            if not box.get_filename().lower().endswith(".wav"):
+                display_error(_("Only .WAV files may be selected"))
+                return
+
+            self.value = box.get_filename()
+
+        def test_sound(button):
+            print "Testing playback of %s" % self.value
+            p = platform.get_platform()
+            p.play_sound(self.value)
+
+        w = miscwidgets.FilenameBox(find_dir=False)
+        w.set_filename(self.value)
+        w.connect("filename-changed", filename_changed)
+        w.show()
+
+        b = gtk.Button(_("Test"), gtk.STOCK_MEDIA_PLAY)
+        b.connect("clicked", test_sound)
+        b.show()
+        
+        box = gtk.HBox(False, 2)
+        box.show()
+        box.pack_start(w, 1, 1, 1)
+        box.pack_start(b, 0, 0, 0)
+
+        self.pack_start(box, 1, 1, 1)
 
 class DratsListConfigWidget(DratsConfigWidget):
     def __init__(self, config, section):
@@ -617,6 +658,22 @@ class DratsChatPanel(DratsPanel):
         val = DratsConfigWidget(config, "prefs", "scrollback")
         val.add_numeric(0, 9999, 1)
         self.mv(_("Scrollback Lines"), val)
+
+class DratsSoundPanel(DratsPanel):
+    def __init__(self, config):
+        DratsPanel.__init__(self, config)
+
+        def do_snd(k, l):
+            snd = DratsConfigWidget(config, "sounds", k)
+            snd.add_sound()
+            enb = DratsConfigWidget(config, "sounds", "%s_enabled" % k)
+            enb.add_bool()
+            self.mv(l, snd, enb)
+
+        do_snd("chat", _("Chat activity"))
+        do_snd("messages", _("Message activity"))
+        do_snd("files", _("File activity"))
+        
 
 class DratsRadioPanel(DratsPanel):
     def __init__(self, config):
@@ -1145,6 +1202,7 @@ class DratsConfigUI(gtk.Dialog):
         add_panel(DratsGPSPanel, "gps", _("GPS"), prefs)
         add_panel(DratsAppearancePanel, "appearance", _("Appearance"), prefs)
         add_panel(DratsChatPanel, "chat", _("Chat"), prefs)
+        add_panel(DratsSoundPanel, "sounds", _("Sounds"), prefs)
 
         radio = add_panel(DratsRadioPanel, "radio", _("Radio"), None)
         add_panel(DratsTransfersPanel, "transfers", _("Transfers"), radio)
