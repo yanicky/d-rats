@@ -179,12 +179,17 @@ class MainWindow(MainWindowElement):
         self.tabs[self._current_tab].selected()
 
     def _maybe_blink(self, tab, key):
-        blink = self._config.getboolean("prefs", key)
-        if not blink:
-            return
-
-        if not self.__window.is_active():
+        blink = self._config.getboolean("prefs", "blink_%s" % key)
+        if blink and not self.__window.is_active():
             self.__window.set_urgency_hint(True)
+
+        if key == "event":
+            sounde = False
+        else:
+            sounde = self._config.getboolean("sounds", "%s_enabled" % key)
+            soundf = self._config.get("sounds", key)
+        if sounde:
+            self._config.platform.play_sound(soundf)
 
     def _got_focus(self, window, event):
         self.__window.set_urgency_hint(False)
@@ -210,7 +215,7 @@ class MainWindow(MainWindowElement):
         self.tabs["event"].connect("status", lambda e, m: self.set_status(m))
 
         for label, tab in self.tabs.items():
-            tab.connect("notice", self._maybe_blink, "blink_%s" % label)
+            tab.connect("notice", self._maybe_blink, label)
 
         self._current_tab = "messages"
 
