@@ -241,14 +241,6 @@ class MainApp:
             self.chat_session.connect("ping-response", out_ping)
             self.chat_session.connect("incoming-gps-fix", in_gps)
 
-            if self.config.getboolean("settings", "sniff_packets"):
-                ss = self.sm.start_session("Sniffer",
-                                           dest="CQCQCQ",
-                                           cls=sessions.SniffSession)
-                self.sm.set_sniffer_session(ss._id)
-                ss.connect("incoming_frame",
-                           lambda o,m: self.mainwindow.tabs["chat"].display_line(m, "italic"))
-
             def send_file(ft, sta, fn, name):
                 self.sc.send_file(sta, fn, name)
             def send_form(msgs, sta, fn, name):
@@ -287,6 +279,17 @@ class MainApp:
             self.mainwindow.tabs["event"].connect("user-cancel-session",
                                                   do_stop_session,
                                                   True)
+
+            def sniff_event(ss, msg):
+                event = main_events.Event(None, "Sniffer: %s" % msg)
+                self.mainwindow.tabs["event"].event(event)
+
+            if self.config.getboolean("settings", "sniff_packets"):
+                ss = self.sm.start_session("Sniffer",
+                                           dest="CQCQCQ",
+                                           cls=sessions.SniffSession)
+                self.sm.set_sniffer_session(ss._id)
+                ss.connect("incoming_frame", sniff_event)
 
             self.sc = session_coordinator.SessionCoordinator(self.config,
                                                              self.sm)

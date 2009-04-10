@@ -84,7 +84,7 @@ class SniffSession(sessionmgr.StatelessSession, gobject.GObject):
         else:
             msg = "(S:%i L:%i)" % (frame.session, len(frame.data))
 
-        self.emit("incoming_frame", "%s %s\r\n" % (hdr, msg))
+        self.emit("incoming_frame", "%s %s" % (hdr, msg))
 
 class ChatSession(sessionmgr.StatelessSession, gobject.GObject):
     __gsignals__ = {
