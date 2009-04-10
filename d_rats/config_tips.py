@@ -41,10 +41,18 @@ TIPS_SETTINGS = {
     "sniff_packets" : _("Display information about packets seen that are destined for other stations"),
     }
 
+sb = _("Specify a .WAV file to be played")
+TIPS_SOUNDS = {
+    "chat" : sb + _(" when a new chat arrives"),
+    "messages" : sb + _(" when new message activity occurs"),
+    "files" : sb + _(" when new file activity occurs"),
+}
+
 CONFIG_TIPS = {
     "user" : TIPS_USER,
     "prefs" : TIPS_PREFS,
     "settings" : TIPS_SETTINGS,
+    "sounds" : TIPS_SOUNDS,
 }
     
 def get_tip(section, value):
