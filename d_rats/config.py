@@ -329,10 +329,6 @@ class DratsConfigWidget(gtk.VBox):
 
     def add_sound(self):
         def filename_changed(box):
-            if not box.get_filename().lower().endswith(".wav"):
-                display_error(_("Only .WAV files may be selected"))
-                return
-
             self.value = box.get_filename()
 
         def test_sound(button):
