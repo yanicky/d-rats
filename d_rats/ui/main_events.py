@@ -246,6 +246,10 @@ class EventTab(MainWindowTab):
         self.event(event)
 
     def event(self, event):
+        sw, = self._getw("sw")
+        adj = sw.get_vadjustment()
+        top_scrolled = (adj.get_value() == 0.0)
+
         iter = None
         if event._group_id != None:
             iter = self.store.get_iter_first()
@@ -274,6 +278,8 @@ class EventTab(MainWindowTab):
 
         gobject.idle_add(self._notice)
         gobject.idle_add(self.emit, "status", event._message)
+        if top_scrolled:
+            gobject.idle_add(lambda a: a.set_value(0.0), adj)
 
     def finalize_last(self, group):
         iter = self.store.get_iter_first()

@@ -797,7 +797,7 @@ Pings</property>
                   </packing>
                 </child>
                 <child>
-                  <widget class="GtkScrolledWindow" id="scrolledwindow2">
+                  <widget class="GtkScrolledWindow" id="event_sw">
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
                     <property name="hscrollbar_policy">GTK_POLICY_AUTOMATIC</property>
@@ -866,12 +866,6 @@ Pings</property>
                 <property name="visible">True</property>
                 <property name="n_columns">2</property>
                 <child>
-                  <widget class="GtkLabel" id="label1">
-                    <property name="visible">True</property>
-                    <property name="label" translatable="yes">Name</property>
-                  </widget>
-                </child>
-                <child>
                   <widget class="GtkEntry" id="src_name">
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
@@ -880,6 +874,12 @@ Pings</property>
                     <property name="left_attach">1</property>
                     <property name="right_attach">2</property>
                   </packing>
+                </child>
+                <child>
+                  <widget class="GtkLabel" id="label1">
+                    <property name="visible">True</property>
+                    <property name="label" translatable="yes">Name</property>
+                  </widget>
                 </child>
               </widget>
               <packing>
