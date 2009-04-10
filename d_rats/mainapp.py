@@ -58,6 +58,7 @@ import sessions
 import session_coordinator
 import emailgw
 import rpcsession
+import formgui
 
 from ui import main_events
 
@@ -314,7 +315,12 @@ class MainApp:
 
             def new_form(sc, id, fn):
                 print "[NEWFORM %i]: %s" % (id, fn)
-                event = main_events.FormEvent(id, "Form Received")
+                f = formgui.FormFile("", fn)
+                msg = '%s "%s" %s %s' % (_("Message"),
+                                         f.get_subject_string(),
+                                         _("received from"),
+                                         f.get_sender_string())
+                event = main_events.FormEvent(id, msg)
                 event.set_as_final()
                 self.mainwindow.tabs["messages"].refresh_if_folder("Inbox")
                 self.mainwindow.tabs["event"].event(event)
@@ -322,7 +328,8 @@ class MainApp:
 
             def new_file(sc, id, fn):
                 _fn = os.path.basename(fn)
-                event = main_events.FileEvent(id, "File %s Received" % _fn)
+                msg = '%s "%s" %s' % (_("File"), _fn, _("Received"))
+                event = main_events.FileEvent(id, msg)
                 event.set_as_final()
                 self.mainwindow.tabs["files"].refresh_local()
                 self.mainwindow.tabs["event"].event(event)
@@ -330,7 +337,7 @@ class MainApp:
                 
             def form_sent(sc, id, fn):
                 print "[FORMSENT %i]: %s" % (id, fn)
-                event = main_events.FormEvent(id, "Form Sent")
+                event = main_events.FormEvent(id, _("Message Sent"))
                 event.set_as_final()
                 self.mainwindow.tabs["messages"].message_sent(fn)
                 self.mainwindow.tabs["event"].event(event)
@@ -339,7 +346,8 @@ class MainApp:
             def file_sent(sc, id, fn):
                 print "[FILESENT %i]: %s" % (id, fn)
                 _fn = os.path.basename(fn)
-                event = main_events.FileEvent(id, "File %s Sent" % _fn)
+                msg = '%s "%s" %s' % (_("File"), _fn, _("Sent"))
+                event = main_events.FileEvent(id, msg)
                 event.set_as_final()
                 self.mainwindow.tabs["files"].file_sent(fn)
                 self.mainwindow.tabs["event"].event(event)
