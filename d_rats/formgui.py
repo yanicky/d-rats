@@ -412,7 +412,6 @@ class MultiselectWidget(FieldWidget):
 
         try:
             content = xml_unescape(node.children.getContent().strip())
-            print "Got option %s" % content
             self.store.append(row=(node.prop("set") == "y", content))
             self.choices.append((node.prop("set") == "y", content))
         except Exception, e:
