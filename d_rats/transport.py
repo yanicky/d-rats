@@ -19,8 +19,10 @@ import threading
 import re
 import time
 import random
-import utils
+import traceback
+import sys
 
+import utils
 import ddt2
 
 class BlockQueue:
@@ -142,7 +144,8 @@ class Transporter:
                     print "Found a broken block (S:%i E:%i len(buf):%i" % (\
                         s, e, len(self.inbuf))
             except Exception, e:
-                print "Failed to unpack what looked like a block: %s" % e
+                print "Failed to process block:"
+                utils.log_exception()
 
     def _match_gps(self):
         # NMEA-style
