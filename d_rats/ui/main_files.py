@@ -236,6 +236,7 @@ class FilesTab(MainWindowTab):
         # FIXME: Need an event here
 
     def _init_toolbar(self):
+        tips = gtk.Tooltips()
 
         def populate_tb(tb, buttons):
             c = 0
@@ -245,6 +246,7 @@ class FilesTab(MainWindowTab):
                 icon.show()
                 item = gtk.ToolButton(icon, l)
                 item.connect("clicked", f, d)
+                item.set_tooltip(tips, l)
                 item.show()
                 tb.insert(item, c)
                 c += 1
@@ -253,14 +255,14 @@ class FilesTab(MainWindowTab):
         connect = self._config.ship_img("connect.png")
         disconnect = self._config.ship_img("disconnect.png")
         delete = self._config.ship_img("msg-delete.png")
-        download = self._config.ship_img("download.png")
+        dnload = self._config.ship_img("download.png")
         upload = self._config.ship_img("upload.png")
 
         ltb, = self._getw("local_toolbar")
         lbuttons = \
             [(refresh, _("Refresh"), self._refresh_local, self._local),
              (delete, _("Delete"), self._del, self._local),
-             (upload, _("Upload"), self._upload, self._local),
+             (upload, _("Upload to remote"), self._upload, self._local),
              ]
 
         populate_tb(ltb, lbuttons)
@@ -269,7 +271,7 @@ class FilesTab(MainWindowTab):
         rbuttons = \
             [(connect, _("Connect"), self._connect_remote, self._remote),
              (disconnect, _("Disconnect"), self._disconnect, self._remote),
-             (download, _("Download"), self._download, self._remote),
+             (dnload, _("Download from remote"), self._download, self._remote),
              ]
         
         populate_tb(rtb, rbuttons)
