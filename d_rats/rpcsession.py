@@ -51,6 +51,8 @@ def encode_dict(source):
 
 def decode_dict(string):
     result = {}
+    if not string:
+        return result
     elements = string.split(ASCII_RS)
     for element in elements:
         try:
