@@ -196,15 +196,21 @@ class DratsConfigWidget(gtk.VBox):
     def set_value(self, value):
         pass
 
-    def add_text(self, limit=0):
+    def add_text(self, limit=0, hint=None):
         def changed(entry):
-            self.value = entry.get_text()
+            if entry.get_text() == hint:
+                self.value = ""
+            else:
+                self.value = entry.get_text()
 
         w = gtk.Entry(limit)
         w.connect("changed", changed)
         w.set_text(self.value)
         w.set_size_request(50, -1)
         w.show()
+
+        if hint:
+            utils.set_entry_hint(w, hint, bool(self.value))
 
         self.pack_start(w, 1, 1, 1)
 
@@ -534,7 +540,7 @@ class DratsPrefsPanel(DratsPanel):
         self.mv(_("Show time in UTC"), val)
 
         val = DratsConfigWidget(config, "settings", "ping_info")
-        val.add_text()
+        val.add_text(hint=_("Version and OS Info"))
         self.mv(_("Ping reply"), val)
 
         val = DratsConfigWidget(config, "prefs", "language")
@@ -684,7 +690,7 @@ class DratsRadioPanel(DratsPanel):
         self.mv(_("Serial Port"), port, rate)
 
         pwd = DratsConfigWidget(config, "settings", "socket_pw")
-        pwd.add_text()
+        pwd.add_text(hint=_("No password"))
         self.mv(_("Ratflector password"), pwd)
 
         val = DratsConfigWidget(config, "settings", "compatmode")
