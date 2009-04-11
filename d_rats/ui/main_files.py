@@ -27,8 +27,10 @@ from d_rats.ui.main_common import MainWindowElement, MainWindowTab
 from d_rats.ui.main_common import ask_for_confirmation
 from d_rats import rpcsession
 from d_rats import image
+from d_rats import utils
 
 THROB_IMAGE = "throbber.gif"
+REMOTE_HINT = _("Enter remote callsign")
 
 class FileView:
     def __init__(self, view, path, config):
@@ -166,7 +168,7 @@ class FilesTab(MainWindowTab):
         sel = self._get_ssel()
         sta = sel.get_active_text().upper()
 
-        if not sta:
+        if not sta or sta == REMOTE_HINT.upper():
             return
 
         if not self._remote or self._remote.get_path() != sta:
@@ -334,6 +336,7 @@ class FilesTab(MainWindowTab):
         self._setup_file_view(rview)
 
         sel = gtk.combo_box_entry_new_text()
+        utils.set_entry_hint(sel.child, REMOTE_HINT)
         sel.show()
         bin.pack_start(sel, 1, 1, 1)
 
