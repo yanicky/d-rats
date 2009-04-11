@@ -209,3 +209,21 @@ def log_exception():
         print "-- Exception: --"
         traceback.print_exc(limit=30, file=sys.stdout)
         print "------"
+
+def set_entry_hint(entry, hint, default_focused=False):
+    def focus(entry, event, direction):
+        if direction == "out" and not entry.get_text():
+            entry.set_text(hint)
+            c = gtk.gdk.color_parse("grey")
+        elif direction == "in" and entry.get_text() == hint:
+            entry.set_text("")
+            c = gtk.gdk.color_parse("black")
+        else:
+            return
+        entry.modify_text(gtk.STATE_NORMAL, c)
+        
+    entry.connect("focus-in-event", focus, "in")
+    entry.connect("focus-out-event", focus, "out")
+
+    if not default_focused:
+        focus(entry, None, "out")
