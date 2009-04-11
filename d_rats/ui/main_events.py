@@ -22,6 +22,7 @@ import gobject
 import gtk
 
 from d_rats.ui.main_common import MainWindowElement, MainWindowTab
+from d_rats import utils
 
 EVENT_INFO       = 0
 EVENT_FILE_XFER  = 1
@@ -39,6 +40,8 @@ _EVENT_TYPES = {EVENT_INFO : None,
                 EVENT_POS_REPORT : None,
                 EVENT_SESSION : None,
                 }
+
+FILTER_HINT = _("Enter filter text")
 
 class Event:
     def __init__(self, group_id, message, evtype=EVENT_INFO):
@@ -79,12 +82,13 @@ class SessionEvent(Event):
         Event.__init__(self, group_id, message, EVENT_SESSION)
 
 def filter_rows(model, iter, evtab):
-    search = evtab._wtree.get_widget("event_searchtext").get_text().upper()
+    search = evtab._wtree.get_widget("event_searchtext").get_text()
 
     icon, message = model.get(iter, 1, 3)
 
-    if search and search not in message.upper():
-        return False
+    if search != FILTER_HINT:
+        if search and message and search.upper() not in message.upper():
+            return False
 
     if evtab._filter_icon is None:
         return True
@@ -239,6 +243,7 @@ class EventTab(MainWindowTab):
 
         filtertext, = self._getw("searchtext")
         filtertext.connect("changed", self._search_text, filter)
+        utils.set_entry_hint(filtertext, FILTER_HINT)
 
         self._load_pixbufs()
 
