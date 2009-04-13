@@ -855,7 +855,7 @@ class SessionManager:
         self._stations_heard = {}
 
     def get_heard_stations(self):
-        return self._stations_heard
+        return dict(self._stations_heard)
 
     def fire_session_cb(self, session, reason):
         for f,d in self.session_cb.items():
