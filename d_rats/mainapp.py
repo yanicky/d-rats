@@ -281,16 +281,18 @@ class MainApp:
                                                   do_stop_session,
                                                   True)
 
-            def sniff_event(ss, msg):
-                event = main_events.Event(None, "Sniffer: %s" % msg)
-                self.mainwindow.tabs["event"].event(event)
+            def sniff_event(ss, src, dst, msg):
+                if self.config.getboolean("settings", "sniff_packets"):
+                    event = main_events.Event(None, "Sniffer: %s" % msg)
+                    self.mainwindow.tabs["event"].event(event)
 
-            if self.config.getboolean("settings", "sniff_packets"):
-                ss = self.sm.start_session("Sniffer",
-                                           dest="CQCQCQ",
-                                           cls=sessions.SniffSession)
-                self.sm.set_sniffer_session(ss._id)
-                ss.connect("incoming_frame", sniff_event)
+                self.mainwindow.tabs["stations"].saw_station(src)
+
+            ss = self.sm.start_session("Sniffer",
+                                       dest="CQCQCQ",
+                                       cls=sessions.SniffSession)
+            self.sm.set_sniffer_session(ss._id)
+            ss.connect("incoming_frame", sniff_event)
 
             self.sc = session_coordinator.SessionCoordinator(self.config,
                                                              self.sm)
@@ -599,6 +601,9 @@ class MainApp:
         self.mainwindow.tabs["files"].connect("get-station-list",
                                               lambda m, f:
                                                   self.sm.get_heard_stations().keys())
+        self.mainwindow.tabs["stations"].connect("get-station-list",
+                                                 lambda m:
+                                                     self.sm.get_heard_stations())
         self.refresh_config()
         self._load_map_overlays()
         

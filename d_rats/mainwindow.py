@@ -39,6 +39,7 @@ from d_rats.ui.main_messages import MessagesTab
 from d_rats.ui.main_chat import ChatTab
 from d_rats.ui.main_events import EventTab
 from d_rats.ui.main_files import FilesTab
+from d_rats.ui.main_stations import StationsList
 from d_rats.ui.main_common import MainWindowElement, prompt_for_station
 from d_rats.version import DRATS_VERSION
 from d_rats import formbuilder
@@ -133,6 +134,13 @@ class MainWindow(MainWindowElement):
         def do_conninet(but):
             self._config.set("state", "connected_inet", but.get_active())
 
+        def do_showpane(but, pane):
+            self._config.set("state", "sidepane_visible", but.get_active())
+            if but.get_active():
+                pane.show()
+            else:
+                pane.hide()
+
         quit = self._wtree.get_widget("main_menu_quit")
         quit.connect("activate", do_save_and_quit)
 
@@ -164,6 +172,13 @@ class MainWindow(MainWindowElement):
         conn.set_active(self._config.getboolean("state", "connected_inet"))
         self._config.platform.set_connected(conn.get_active())
         conn.connect("activate", do_conninet)
+
+        sspw = self._wtree.get_widget("main_menu_showpane")
+        pane = self._wtree.get_widget("main_stations_frame")
+        sspw.set_active(self._config.getboolean("state", "sidepane_visible"))
+        if not sspw.get_active():
+            pane.hide()
+        sspw.connect("activate", do_showpane, pane)
 
     def _page_name(self, index=None):
         if index is None:
@@ -210,6 +225,7 @@ class MainWindow(MainWindowElement):
         self.tabs["messages"] = MessagesTab(wtree, config)
         self.tabs["event"] = EventTab(wtree, config)
         self.tabs["files"] = FilesTab(wtree, config)
+        self.tabs["stations"] = StationsList(wtree, config)
 
         self.tabs["files"].connect("status", lambda e, m: self.set_status(m))
         self.tabs["event"].connect("status", lambda e, m: self.set_status(m))

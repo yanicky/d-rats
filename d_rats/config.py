@@ -116,6 +116,7 @@ _DEF_STATE = {
     "show_all_filter" : "False",
     "connected_inet" : "True",
     "qsts_enabled" : "True",
+    "sidepane_visible" : "True",
 }
 
 _DEF_SOUNDS = {
