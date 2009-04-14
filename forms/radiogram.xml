@@ -54,10 +54,6 @@
 <caption>Signature</caption>
 <entry type='text'/>
 </field>
-<field id='received'>
-<caption>Received</caption>
-<entry type='text'/>
-</field>
 <field id='received_from'>
 <caption>Received From</caption>
 <entry type='text'/>
@@ -69,10 +65,6 @@
 <field id='recv_d'>
 <caption>Received Date</caption>
 <entry type='date'>08-Mar-2008</entry>
-</field>
-<field id='sent'>
-<caption>Sent</caption>
-<entry type='text'/>
 </field>
 <field id='sent_to'>
 <caption>Sent To</caption>

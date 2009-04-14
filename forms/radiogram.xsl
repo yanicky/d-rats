@@ -6,13 +6,8 @@
       <html>
 	<head>
 	  <style type="text/css">
-	    td.field {
-   	       border: none;
-	       border-spacing: 0px;
-	    }
-
-	    .form {
-	      width: 90%;
+	    .toplevel {
+	      width: 80%;
 	      border-spacing: 0px;
 	      border-collapse: collapse;
 	      padding: 0px;
@@ -40,113 +35,184 @@
 	    .field-caption {
 	       font-size: 60%;
 	       font-weight: bold;
+	       text-align: center;
+	       text-transform: uppercase;
 	    }
 
 	    .field-content {
 	       font-family: Arial, Helvetica, sans-serif;
 	       white-space: pre;
+	       text-align: center;
+	    }
+
+	    .label-text {
+	       font-size: 60%;
+	       font-weight: bold;
+	       white-space: pre;
+	       text-transform: uppercase;
+	    }	    
+
+	    .main-header {
+	       background-color: black;
+	       color: white;
+	    }
+
+	    .banner {
+	       text-align: center;
+	       font-weight: bold;
+	       text-transform: uppercase;
+	    }
+
+	    .pre-banner {
+	       font-size: 70%;
+	    }
+
+	    .post-banner {
+	       font-size: 50%;
+	    }
+
+	    div.banner, span.banner {
+	       font-size: 120%;
+	    }
+
+	    .form, .element {
+	       border: thin black solid;
+	       border-collapse: collapse;
+	       border-spacing: 0px;
+	       padding: 0px;
+	       margin: 0px;
+	    }
+
+	    td, .container {
+ 	       border-collapse: collapse;
+	       border-spacing: 0px;
+	       padding: 0px;
+	    }
+	    
+	    .spacebox {
+	       padding: 2px;
+	    }
+
+	    table {
+	       border-collapse: collapse;
 	    }
 
 	  </style>
 	</head>
 	<body>
-	  
-	  <h1 class="title">
-	    <xsl:value-of select="title"/>
-	  </h1>
 
-	  <table class="form">
-
-	    <table class="line">
-	      <tr>
-		<td class="group">
-		  <xsl:apply-templates select="field[@id='number']"/>
-		</td>
-		<td class="group">
-		  <xsl:apply-templates select="field[@id='precedence']"/>
-		</td>
-		<td class="group">
-		  <xsl:apply-templates select="field[@id='hx']"/>
-		</td>
-		<td class="group">
-		  <xsl:apply-templates select="field[@id='station']"/>
-		</td>
-		<td class="group">
-		  <xsl:apply-templates select="field[@id='_auto_check']"/>
-		</td>
-		<td class="group">
-		  <xsl:apply-templates select="field[@id='place']"/>
-		</td>
-		<td class="group">
-		  <xsl:apply-templates select="field[@id='time']"/>
-		</td>
-		<td class="group">
-		  <xsl:apply-templates select="field[@id='date']"/>
-		</td>
-	      </tr>
-	    </table>
-
-	    <div class="line">
-	      <div class="group">
-		<table>
-		  <tr><td>
-		      <xsl:apply-templates select="field[@id='recip']"/>
-		  </td></tr><tr><td>
-		      <xsl:apply-templates select="field[@id='recip_phone']"/>
-		  </td></tr>
+	  <table class="toplevel">
+	    <tr>
+	      <td class="form">
+		<table width="100%" class="container">
+		  <tr class="main-header">
+		    <td class="logo"></td>
+		    <td class="banner">
+		      <div class="pre-banner">The American Radio Relay League</div>
+		      <div class="banner">Radiogram</div>
+		      <div class="post-banner">via Amateur Radio</div>
+		    </td>
+		    <td class="logo"></td>
+		  </tr>
 		</table>
-	      </div>
-	    </div>
-
-	  <table class="line">
-	    <xsl:apply-templates select="field[@id='_auto_message']"/>
-	  </table>
-
-	  <br/>
-
-	  <table class="line">
-	    <tr class="group">
-	      <td colspan="2">
-		<xsl:apply-templates select="field[@id='sig']"/>
 	      </td>
 	    </tr>
-	    <tr class="group">
-	      <td>
-		<xsl:apply-templates select="field[@id='received']"/>
-	      </td><td>
-		<xsl:apply-templates select="field[@id='received_from']"/>
-	      </td><td>
-		<xsl:call-template name="_field">
-		  <xsl:with-param name="caption">
-		    <xsl:text>Date / Time</xsl:text>
-		  </xsl:with-param>
-		  <xsl:with-param name="value">
-		    <xsl:value-of select="field[@id='recv_t']/entry"/>
-		    <xsl:text> </xsl:text>
-		    <xsl:value-of select="field[@id='recv_d']/entry"/>
-		  </xsl:with-param>
-		</xsl:call-template>
+	    <tr class="container">
+	      <td class="form">
+		<table width="100%" class="container">
+		  <tr>
+		    <td>
+		      <xsl:apply-templates select="field[@id='_auto_number']"/>
+		    </td>
+		    <td>
+		      <xsl:apply-templates select="field[@id='precedence']"/>
+		    </td>
+		    <td>
+		      <xsl:apply-templates select="field[@id='hx']"/>
+		    </td>
+		    <td>
+		      <xsl:apply-templates select="field[@id='station']"/>
+		    </td>
+		    <td>
+		      <xsl:apply-templates select="field[@id='_auto_check']"/>
+		    </td>
+		    <td>
+		      <xsl:apply-templates select="field[@id='place']"/>
+		    </td>
+		    <td>
+		      <xsl:apply-templates select="field[@id='time']"/>
+		    </td>
+		    <td>
+		      <xsl:apply-templates select="field[@id='date']"/>
+		    </td>
+		  </tr>
+		</table>
+	      </td>
+	    </tr> <!-- End of header row -->
+	    <tr>
+	      <td class="form">
+		<table width="100%"> <!-- Body -->
+		  <tr> <!-- Start of body header -->
+		    <td class="spacebox">
+		      <div class="label-text">To</div>
+		      <xsl:apply-templates select="field[@id='recip']/entry"/>
+		      <br/><br/>
+		      <div class="label-text">Telephone Number</div>
+		      <xsl:apply-templates select="field[@id='recip_phone']/entry"/>
+		    </td>
+		    <td width="300">
+		      <div class="form">
+			<div class="spacebox">
+			  <div class="label-text">
+This radio message was received at
+
+Amateur Station
+Name
+Street Address
+City, State, ZIP
+			  </div>
+			</div>
+		      </div>
+		    </td>
+		  </tr>
+		  <tr> <!-- Spacer --> 
+		    <td><br/></td>
+		  </tr>
+		  <tr> <!-- Message -->
+		    <td colspan="2" class="spacebox">
+		      <xsl:apply-templates select="field[@id='_auto_message']/entry"/>
+		      <br/><br/>
+		    </td>
+		  </tr>
+		</table>
+	      </td>
+	    </tr> <!-- End of body row -->
+	    <tr>
+	      <td class="form">
+		<table width="100%"> <!-- Path info -->
+		  <tr>
+		    <td>
+		      <xsl:apply-templates select="field[@id='received_from']"/>
+		    </td>
+		    <td>
+		      <xsl:apply-templates select="field[@id='recv_d']"/>
+		    </td>
+		    <td>
+		      <xsl:apply-templates select="field[@id='recv_t']"/>
+		    </td>
+		    <td>
+		      <xsl:apply-templates select="field[@id='sent_to']"/>
+		    </td>
+		    <td>
+		      <xsl:apply-templates select="field[@id='sent_d']"/>
+		    </td>
+		    <td>
+		      <xsl:apply-templates select="field[@id='sent_t']"/>
+		    </td>
+		  </tr>
+		</table>
 	      </td>
 	    </tr>
-	    <tr class="group">
-	      <td>
-		<xsl:apply-templates select="field[@id='sent']"/>
-	      </td><td>
-		<xsl:apply-templates select="field[@id='sent_to']"/>
-	      </td><td>
-		<xsl:call-template name="_field">
-		  <xsl:with-param name="caption">
-		    <xsl:text>Date / Time</xsl:text>
-		  </xsl:with-param>
-		  <xsl:with-param name="value">
-		    <xsl:value-of select="field[@id='sent_t']/entry"/>
-		    <xsl:text> </xsl:text>
-		    <xsl:value-of select="field[@id='sent_d']/entry"/>
-		  </xsl:with-param>
-		</xsl:call-template>
-	      </td>
-	    </tr>
-	  </table>
 	  </table>
 	</body>
       </html>
@@ -166,18 +232,19 @@
     <xsl:template name="_field">
       <xsl:param name="caption"/>
       <xsl:param name="value"/>
-      <table class="element">
+      <table class="element" width="100%">
 	<tr>
-	  <td class="field">
-	    <span class="field-caption">
+	  <td class="element_comp">
+	    <div class="field-caption">
 	      <xsl:value-of select="$caption"/>
-	    </span>
+	    </div>
 	  </td>
 	</tr><tr>
-	  <td>
-	    <span class="field-content">
+	  <td class="element_comp">
+	    <div class="field-content">
 	      <xsl:value-of select="$value"/>
-	    </span>
+	      <xsl:text disable-output-escaping="yes">&amp;nbsp;</xsl:text>
+	    </div>
 	  </td>
 	</tr>
       </table>
