@@ -99,7 +99,7 @@
 	    </div>
 
 	  <table class="line">
-	    <xsl:apply-templates select="field[@id='message']"/>
+	    <xsl:apply-templates select="field[@id='_auto_message']"/>
 	  </table>
 
 	  <br/>
