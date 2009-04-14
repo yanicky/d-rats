@@ -290,7 +290,8 @@ class ChatTab(MainWindowTab):
 
         self._display_line(line, incoming, "default", *attrs)
 
-        self._notice()
+        if incoming:
+            self._notice()
 
     def _highlight_tab(self, num):
         child = self.__filtertabs.get_nth_page(num)
