@@ -40,6 +40,7 @@ class StationsList(MainWindowTab):
         frame, self.__view, = self._getw("stations_frame", "stations_view")
 
         store = gtk.ListStore(gobject.TYPE_STRING, gobject.TYPE_INT)
+        store.set_sort_column_id(1, gtk.SORT_DESCENDING)
         self.__view.set_model(store)
 
         def render_with_time(col, rend, model, iter):
@@ -47,9 +48,9 @@ class StationsList(MainWindowTab):
             sec = time.time() - ts
 
             if sec < 60:
-                msg = "%s (%is ago)" % (call, sec)
+                msg = call
             elif sec < 3600:
-                msg = "%s (%im %is ago)" % (call, sec / 60, sec % 60)
+                msg = "%s (%im ago)" % (call, sec / 60)
             else:
                 msg = "%s (%ih %im ago)" % (call, sec / 3600, (sec % 3600) / 60)
 
@@ -62,7 +63,7 @@ class StationsList(MainWindowTab):
 
         self.__calls = []
 
-        gobject.timeout_add(2000, self._update)
+        gobject.timeout_add(30000, self._update)
 
     def saw_station(self, station):
         store = self.__view.get_model()
