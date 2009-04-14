@@ -424,6 +424,30 @@ class TreeWidget(ListWidget):
         self._store.clear()
         self._set_values(self._store.get_iter_first(), vals)
 
+    def _get_values(self, iter, onlyone=False):
+
+        l = []
+        while iter:
+            if self._store.iter_has_child(iter):
+                l.append((self._store.get(iter, *tuple(range(self._ncols))),
+                          self._get_values(self._store.iter_children(iter))))
+            else:
+                l.append(self._store.get(iter, *tuple(range(self._ncols))))
+
+            if onlyone:
+                break
+            iter = self._store.iter_next(iter)
+            
+        return l            
+
+    def get_values(self, parent=None):
+        if parent:
+            iter = self._iter_of(parent)
+        else:
+            iter = self._store.get_iter_first()
+
+        return self._get_values(iter, parent is not None)
+
     def clear(self):
         self._store.clear()
 
