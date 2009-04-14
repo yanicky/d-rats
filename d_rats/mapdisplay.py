@@ -836,26 +836,30 @@ class MapWindow(gtk.Window):
 
         return sw
 
-    def refresh_marker_list(self):
-        self.map.markers = {}
-
+    def refresh_marker_list(self, group=None):
         (lat, lon) = self.map.get_center()
         center = GPSPosition(lat=lat, lon=lon)
 
-        for grp, lst in self.markers.items():
-            for id, (fix, show, color, img) in lst.items():
-                self.marker_list.set_item(grp,
-                                          show,
-                                          id,
-                                          fix.latitude,
-                                          fix.longitude,
-                                          center.distance_from(fix),
-                                          center.bearing_to(fix))
-                if show:
-                    self.map.set_marker(fix.station,
-                                        fix.latitude, fix.longitude,
-                                        color, img)
-                    self.map.queue_draw()
+        for item in self.marker_list.get_values(group):
+            try:
+                _parent, children = item
+            except ValueError:
+                # Empty group
+                continue
+
+            parent = _parent[1]
+            for child in children:
+                this = GPSPosition(lat=child[2], lon=child[3])
+                dist = center.distance_from(this)
+                bear = center.bearing_to(this)
+
+                self.marker_list.set_item(parent,
+                                          child[0],
+                                          child[1],
+                                          child[2],
+                                          child[3],
+                                          dist,
+                                          bear)
 
     def make_track(self):
         def toggle(cb, mw):
@@ -1287,21 +1291,31 @@ class MapWindow(gtk.Window):
             return False
 
     def update_point(self, source, point):
+        (lat, lon) = self.map.get_center()
+        center = GPSPosition(*self.map.get_center())
+        this = GPSPosition(point.get_latitude(), point.get_longitude())
+
         self.marker_list.set_item(source.get_name(),
                                   point.get_visible(),
                                   point.get_name(),
                                   point.get_latitude(),
                                   point.get_longitude(),
-                                  0, 0)
+                                  center.distance_from(this),
+                                  center.bearing_to(this))
         self.add_point_visible(point)
         self.map.queue_draw()
 
     def add_point(self, source, point):
+        (lat, lon) = self.map.get_center()
+        center = GPSPosition(*self.map.get_center())
+        this = GPSPosition(point.get_latitude(), point.get_longitude())
+
         self.marker_list.add_item(source.get_name(),
                                   point.get_visible(), point.get_name(),
                                   point.get_latitude(),
                                   point.get_longitude(),
-                                  0, 0)
+                                  center.distance_from(this),
+                                  center.bearing_to(this))
         self.add_point_visible(point)
         self.map.queue_draw()
 
