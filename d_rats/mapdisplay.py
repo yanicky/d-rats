@@ -447,7 +447,10 @@ class MapWidget(gtk.DrawingArea):
         if ctx:
             ctx.loaded_tiles += 1
             frac = float(ctx.loaded_tiles) / float(ctx.total_tiles)
-            self.status(frac, _("Loaded") + " %.0f%%" % (frac * 100.0))
+            if ctx.loaded_tiles == ctx.total_tiles:
+                self.status(0.0, "")
+            else:
+                self.status(frac, _("Loaded") + " %.0f%%" % (frac * 100.0))
 
         self.pixmap.draw_pixbuf(gc, pb, 0, 0, x, y, -1, -1)
         self.queue_draw()
@@ -493,13 +496,12 @@ class MapWidget(gtk.DrawingArea):
                     message = _("Retrieving")
                 else:
                     message = _("Loading")
-                self.status(float(count+1) / float(total),
-                            message + " %i of %i" % (count+1, total))
                
                 if tile.is_local():
                     path = tile._local_path()
                     self.draw_tile(tile._local_path(),
-                                   self.tilesize * i, self.tilesize * j)
+                                   self.tilesize * i, self.tilesize * j,
+                                   ctx)
                 else:
                     self.draw_tile(None, self.tilesize * i, self.tilesize * j)
                     tile.threaded_fetch(self.draw_tile_locked,
@@ -513,7 +515,6 @@ class MapWidget(gtk.DrawingArea):
 
         self.calculate_bounds()
 
-        self.status(1.0, "")
         self.emit("new-tiles-loaded")
 
     def export_to(self, filename, bounds=None):
