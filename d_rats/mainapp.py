@@ -228,6 +228,8 @@ class MainApp:
                 event = main_events.PosReportEvent(fix.station, str(fix))
                 self.mainwindow.tabs["event"].event(event)
 
+                self.mainwindow.tabs["stations"].saw_station(fix.station)
+
                 point = map_sources.MapStation(fix.station,
                                                fix.latitude,
                                                fix.longitude,
