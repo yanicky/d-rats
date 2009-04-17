@@ -334,10 +334,18 @@
                               </packing>
                             </child>
                             <child>
-                              <widget class="GtkTreeView" id="msg_msglist">
+                              <widget class="GtkScrolledWindow" id="scrolledwindow8">
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
-                                <property name="rules_hint">True</property>
+                                <property name="hscrollbar_policy">GTK_POLICY_AUTOMATIC</property>
+                                <property name="vscrollbar_policy">GTK_POLICY_AUTOMATIC</property>
+                                <child>
+                                  <widget class="GtkTreeView" id="msg_msglist">
+                                    <property name="visible">True</property>
+                                    <property name="can_focus">True</property>
+                                    <property name="rules_hint">True</property>
+                                  </widget>
+                                </child>
                               </widget>
                               <packing>
                                 <property name="resize">True</property>
@@ -858,23 +866,35 @@ Pings</property>
                   </packing>
                 </child>
               </widget>
+              <packing>
+                <property name="padding">2</property>
+              </packing>
             </child>
             <child>
               <widget class="GtkFrame" id="main_stations_frame">
                 <property name="visible">True</property>
                 <property name="label_xalign">0</property>
-                <property name="shadow_type">GTK_SHADOW_IN</property>
+                <property name="shadow_type">GTK_SHADOW_NONE</property>
                 <child>
                   <widget class="GtkFrame" id="main_stations_box">
                     <property name="visible">True</property>
                     <property name="label_xalign">0.5</property>
                     <property name="shadow_type">GTK_SHADOW_NONE</property>
                     <child>
-                      <widget class="GtkTreeView" id="main_stations_view">
+                      <widget class="GtkScrolledWindow" id="scrolledwindow2">
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
-                        <property name="headers_visible">False</property>
-                        <property name="rules_hint">True</property>
+                        <property name="hscrollbar_policy">GTK_POLICY_NEVER</property>
+                        <property name="vscrollbar_policy">GTK_POLICY_AUTOMATIC</property>
+                        <child>
+                          <widget class="GtkTreeView" id="main_stations_view">
+                            <property name="width_request">75</property>
+                            <property name="visible">True</property>
+                            <property name="can_focus">True</property>
+                            <property name="headers_visible">False</property>
+                            <property name="rules_hint">True</property>
+                          </widget>
+                        </child>
                       </widget>
                     </child>
                     <child>
@@ -898,6 +918,9 @@ Pings</property>
                 </child>
               </widget>
               <packing>
+                <property name="expand">False</property>
+                <property name="fill">False</property>
+                <property name="padding">2</property>
                 <property name="position">1</property>
               </packing>
             </child>
@@ -937,6 +960,12 @@ Pings</property>
                 <property name="visible">True</property>
                 <property name="n_columns">2</property>
                 <child>
+                  <widget class="GtkLabel" id="label1">
+                    <property name="visible">True</property>
+                    <property name="label" translatable="yes">Name</property>
+                  </widget>
+                </child>
+                <child>
                   <widget class="GtkEntry" id="src_name">
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
@@ -945,12 +974,6 @@ Pings</property>
                     <property name="left_attach">1</property>
                     <property name="right_attach">2</property>
                   </packing>
-                </child>
-                <child>
-                  <widget class="GtkLabel" id="label1">
-                    <property name="visible">True</property>
-                    <property name="label" translatable="yes">Name</property>
-                  </widget>
                 </child>
               </widget>
               <packing>
