@@ -440,7 +440,11 @@ class MapWidget(gtk.DrawingArea):
 
         gc = self.pixmap.new_gc()
         if path:
-            pb = gtk.gdk.pixbuf_new_from_file(path)
+            try:
+                pb = gtk.gdk.pixbuf_new_from_file(path)
+            except Exception, e:
+                utils.log_exception()
+                pb = self.broken_tile()
         else:
             pb = self.broken_tile()
 
