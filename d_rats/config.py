@@ -162,9 +162,9 @@ class AddressLookup(gtk.Button):
             latw.latlon.set_text("%.5f" % aa.lat)
             lonw.latlon.set_text("%.5f" % aa.lon)
 
-class DratsConfigWidget(gtk.VBox):
-    def __init__(self, config, sec, name):
-        gtk.VBox.__init__(self, False, 2)
+class DratsConfigWidget(gtk.HBox):
+    def __init__(self, config, sec, name, have_revert=False):
+        gtk.HBox.__init__(self, False, 2)
 
         self.do_not_expand = False
 
@@ -177,18 +177,43 @@ class DratsConfigWidget(gtk.VBox):
         if not config.has_section(sec):
             config.add_section(sec)
 
-
         if name is not None:
             if not config.has_option(sec, name):
-                try:
-                    self.value = DEFAULTS[sec][name]
-                except KeyError:
-                    print "DEFAULTS has no %s/%s" % (sec, name)
-                    self.value = ""
+                self._revert()
             else:
                 self.value = config.get(sec, name)
         else:
             self.value = None
+
+        if have_revert:
+            rb = gtk.Button(None, gtk.STOCK_REVERT_TO_SAVED)
+            rb.connect("clicked", self._revert)
+            rb.show()
+            self.pack_end(rb, 0, 0, 0)
+
+        self._widget = None
+
+    def _revert(self, button=None):
+        if not self._widget:
+            print "AAACK: No _widget in revert"
+            return
+
+        try:
+            self.value = DEFAULTS[self.vsec][self.vname]
+        except KeyError:
+            print "DEFAULTS has no %s/%s" % (sec, name)
+            self.value = ""
+
+        if isinstance(self._widget, gtk.Entry):
+            self._widget.set_text(str(self.value))
+        elif isinstance(self._widget, gtk.SpinButton):
+            self._widget.set_value(float(self.value))
+        elif isinstance(self._widget, gtk.CheckButton):
+            self._widget.set_active(self.value.upper() == "TRUE")
+        elif isinstance(self._widget, miscwidgets.FilenameBox):
+            self._widget.set_filename(self.value)
+        else:
+            print "AAACK: I don't know how to do a %s" % self._widget.__class__
 
     def save(self):
         #print "Saving %s/%s: %s" % (self.vsec, self.vname, self.value)
@@ -209,6 +234,7 @@ class DratsConfigWidget(gtk.VBox):
         w.set_text(self.value)
         w.set_size_request(50, -1)
         w.show()
+        self._widget = w
 
         if hint:
             utils.set_entry_hint(w, hint, bool(self.value))
@@ -265,6 +291,7 @@ class DratsConfigWidget(gtk.VBox):
         w.connect("toggled", toggled, self)
         w.set_active(self.value == "True")
         w.show()
+        self._widget = w
 
         self.do_not_expand = True
 
@@ -298,6 +325,7 @@ class DratsConfigWidget(gtk.VBox):
         w = gtk.SpinButton(adj, digits)
         w.connect("value-changed", value_changed)
         w.show()
+        self._widget = w
 
         self.pack_start(w, 1, 1, 1)
 
@@ -331,6 +359,7 @@ class DratsConfigWidget(gtk.VBox):
         w.set_filename(self.value)
         w.connect("filename-changed", filename_changed)
         w.show()
+        self._widget = w
 
         self.pack_start(w, 1, 1, 1)
 
@@ -574,11 +603,11 @@ class DratsPathsPanel(DratsPanel):
     def __init__(self, config):
         DratsPanel.__init__(self, config)
 
-        val = DratsConfigWidget(config, "prefs", "download_dir")
+        val = DratsConfigWidget(config, "prefs", "download_dir", True)
         val.add_path()
         self.mv(_("Download Directory"), val)
 
-        val = DratsConfigWidget(config, "settings", "mapdir")
+        val = DratsConfigWidget(config, "settings", "mapdir", True)
         val.add_path()
         self.mv(_("Map Storage Directory"), val)
 
@@ -706,11 +735,11 @@ class DratsTransfersPanel(DratsPanel):
     def __init__(self, config):
         DratsPanel.__init__(self, config)
 
-        val = DratsConfigWidget(config, "settings", "ddt_block_size")
+        val = DratsConfigWidget(config, "settings", "ddt_block_size", True)
         val.add_numeric(128, 4096, 128)
         self.mv(_("Block size"), val)
 
-        val = DratsConfigWidget(config, "settings", "ddt_block_outlimit")
+        val = DratsConfigWidget(config, "settings", "ddt_block_outlimit", True)
         val.add_numeric(1, 32, 1)
         self.mv(_("Pipeline blocks"), val)
 
@@ -730,15 +759,15 @@ class DratsTuningPanel(DratsPanel):
     def __init__(self, config):
         DratsPanel.__init__(self, config)
 
-        val = DratsConfigWidget(config, "settings", "warmup_length")
+        val = DratsConfigWidget(config, "settings", "warmup_length", True)
         val.add_numeric(0, 64, 8)
         self.mv(_("Warmup Length"), val)
 
-        val = DratsConfigWidget(config, "settings", "warmup_timeout")
+        val = DratsConfigWidget(config, "settings", "warmup_timeout", True)
         val.add_numeric(0, 16, 1)
         self.mv(_("Warmup timeout"), val)
 
-        val = DratsConfigWidget(config, "settings", "force_delay")
+        val = DratsConfigWidget(config, "settings", "force_delay", True)
         val.add_numeric(-32, 32, 1)
         self.mv(_("Force transmission delay"), val)
 
