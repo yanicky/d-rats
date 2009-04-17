@@ -283,8 +283,13 @@ class EventTab(MainWindowTab):
 
         gobject.idle_add(self._notice)
         gobject.idle_add(self.emit, "status", event._message)
+
+        @utils.run_gtk_locked
+        def top_scroll(adj):
+            adj.set_value(0.0)
+
         if top_scrolled:
-            gobject.idle_add(lambda a: a.set_value(0.0), adj)
+            gobject.idle_add(top_scroll, adj)
 
     def finalize_last(self, group):
         iter = self.store.get_iter_first()

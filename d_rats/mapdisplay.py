@@ -459,10 +459,9 @@ class MapWidget(gtk.DrawingArea):
         self.pixmap.draw_pixbuf(gc, pb, 0, 0, x, y, -1, -1)
         self.queue_draw()
 
+    @utils.run_gtk_locked
     def draw_tile_locked(self, *args):
-        gtk.gdk.threads_enter()
         self.draw_tile(*args)
-        gtk.gdk.threads_leave()
 
     def load_tiles(self):
         self.map_tiles = []
@@ -1410,6 +1409,7 @@ class MapWindow(gtk.Window):
                                      int(py), int(py))
             mw.map.window.invalidate_rect(rect, True)
 
+        @utils.run_gtk_locked
         def _scale(sw, event, mw):
             ha = mw.sw.get_hadjustment()
             va = mw.sw.get_vadjustment()

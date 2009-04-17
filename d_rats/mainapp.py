@@ -62,7 +62,7 @@ import formgui
 
 from ui import main_events
 
-from utils import hexprint,filter_to_ascii,NetFile,log_exception
+from utils import hexprint,filter_to_ascii,NetFile,log_exception,run_gtk_locked
 
 LOGTF = "%m-%d-%Y_%H:%M:%S"
 
@@ -153,8 +153,12 @@ class MainApp:
             color = "outgoingcolor"
 
         line = "%s%s %s" % (src, to, data)
-        gobject.idle_add(self.mainwindow.tabs["chat"].display_line,
-                         line, incoming, color)
+
+        @run_gtk_locked
+        def do_incoming():
+            self.mainwindow.tabs["chat"].display_line(line, incoming, color)
+
+        gobject.idle_add(do_incoming)
 
     def stop_comms(self):
         if self.comm:

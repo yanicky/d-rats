@@ -104,6 +104,21 @@ def run_safe(f):
 
     return runner
 
+def run_gtk_locked(f):
+    import gtk
+
+    def runner(*args, **kwargs):
+        gtk.gdk.threads_enter()
+        try:
+            f(*args, **kwargs)
+        except Exception, e:
+            gtk.gdk.threads_leave()
+            raise
+
+        gtk.gdk.threads_leave()
+
+    return runner
+
 def get_sub_image(iconmap, i, j, size=20):
     
     # Account for division lines (1px per icon)

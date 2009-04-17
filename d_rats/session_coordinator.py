@@ -25,7 +25,7 @@ import gobject
 import sessions
 import formgui
 import emailgw
-from utils import run_safe
+from utils import run_safe, run_gtk_locked
 
 class SessionThread:
     OUTGOING = False
@@ -449,6 +449,7 @@ class SessionCoordinator(gobject.GObject):
             sock = self.socket_listeners[port].dsock
             self.sthreads[session._id] = SocketThread(self, session, (sock, to))
 
+    @run_gtk_locked
     def _new_session(self, type, session, direction):
         print "New session (%s) of type: %s" % (direction, session.__class__)
         self.emit("session-started", session._id, type)
