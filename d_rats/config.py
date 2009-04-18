@@ -123,7 +123,7 @@ _DEF_SOUNDS = {
     "messages" : "",
     "messages_enabled" : "False",
     "chat" : "",
-    "chat_recv_enabled" : "False",
+    "chat_enabled" : "False",
     "files" : "",
     "files_enabled" : "False",
 }
@@ -171,6 +171,7 @@ class DratsConfigWidget(gtk.HBox):
         self.config = config
         self.vsec = sec
         self.vname = name
+        self._widget = None
 
         self.config.widgets.append(self)
 
@@ -191,18 +192,16 @@ class DratsConfigWidget(gtk.HBox):
             rb.show()
             self.pack_end(rb, 0, 0, 0)
 
-        self._widget = None
-
     def _revert(self, button=None):
-        if not self._widget:
-            print "AAACK: No _widget in revert"
-            return
-
         try:
             self.value = DEFAULTS[self.vsec][self.vname]
         except KeyError:
-            print "DEFAULTS has no %s/%s" % (sec, name)
+            print "DEFAULTS has no %s/%s" % (self.vsec, self.vname)
             self.value = ""
+
+        if not self._widget:
+            print "AAACK: No _widget in revert"
+            return
 
         if isinstance(self._widget, gtk.Entry):
             self._widget.set_text(str(self.value))
