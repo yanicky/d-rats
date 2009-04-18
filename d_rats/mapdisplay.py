@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 import os
-from math import *
+import math
 import urllib
 import time
 import random
@@ -119,70 +119,39 @@ class MarkerEditDialog(inputdialog.FieldDialog):
 
         return self._point
 
+# These functions taken from:
+#   http://wiki.openstreetmap.org/wiki/Slippy_map_tilenames
+def deg2num(lat_deg, lon_deg, zoom):
+  lat_rad = lat_deg * math.pi / 180.0
+  n = 2.0 ** zoom
+  xtile = int((lon_deg + 180.0) / 360.0 * n)
+  ytile = int((1.0 - math.log(math.tan(lat_rad) + (1 / math.cos(lat_rad))) / math.pi) / 2.0 * n)
+  return(xtile, ytile)
+
+def num2deg(xtile, ytile, zoom):
+  n = 2.0 ** zoom
+  lon_deg = xtile / n * 360.0 - 180.0
+  lat_rad = math.atan(math.sinh(math.pi * (1 - 2 * ytile / n)))
+  lat_deg = lat_rad * 180.0 / math.pi
+  return(lat_deg, lon_deg)
+
 class MapTile:
     def path_els(self):
-        # http://svn.openstreetmap.org/applications/routing/pyroute/tilenames.py
-        def numTiles(z):
-            return(pow(2,z))
-        
-        def sec(x):
-            return(1/cos(x))
-
-        def latlon2relativeXY(lat,lon):
-            x = (lon + 180) / 360
-            y = (1 - log(tan(radians(lat)) + sec(radians(lat))) / pi) / 2
-            return(x,y)
-        
-        def latlon2xy(lat,lon,z):
-            n = numTiles(z)
-            x,y = latlon2relativeXY(lat,lon)
-            return(n*x, n*y)
-        
-        def tileXY(lat, lon, zoom):
-            x, y = latlon2xy(lat, lon, zoom)
-            return (int(round(x)), int(round(y)))
-
-        x, y = tileXY(self.lat, self.lon, self.zoom)
-
-        return x, y
+        return deg2num(self.lat, self.lon, self.zoom)
 
     def tile_edges(self):
-        def numTiles(z):
-            return(pow(2,z))
+        n, w = num2deg(self.x, self.y, self.zoom)
+        s, e = num2deg(self.x+1, self.y+1, self.zoom)
 
-        def mercatorToLat(mercatorY):
-            return(degrees(atan(sinh(mercatorY))))
-
-        def latEdges(y,z):
-            n = numTiles(z)
-            unit = 1 / n
-            relY1 = y * unit
-            relY2 = relY1 + unit
-            lat1 = mercatorToLat(pi * (1 - 2 * relY1))
-            lat2 = mercatorToLat(pi * (1 - 2 * relY2))
-            return(lat1,lat2)
-
-        def lonEdges(x,z):
-            n = numTiles(z)
-            unit = 360 / n
-            lon1 = -180 + x * unit
-            lon2 = lon1 + unit
-            return(lon1,lon2)
-  
-        def tileEdges(x,y,z):
-            lat1,lat2 = latEdges(y,z)
-            lon1,lon2 = lonEdges(x,z)
-            return((lat2, lon1, lat1, lon2)) # S,W,N,E
-        
-        return tileEdges(self.x, self.y, self.zoom)
+        return (s, w, n, e)
 
     def lat_range(self):
-        edges = self.tile_edges()
-        return (edges[2], edges[0])
+        s, w, n, e = self.tile_edges()
+        return (n, s)
 
     def lon_range(self):
-        edges = self.tile_edges()
-        return (edges[1], edges[3])
+        s, w, n, e = self.tile_edges()
+        return (w, e)
 
     def path(self):
         return "%d/%d/%d.png" % (self.zoom, self.x, self.y)
@@ -237,20 +206,7 @@ class MapTile:
     def __add__(self, count):
         (x, y) = count
 
-        def mercatorToLat(mercatorY):
-            return(degrees(atan(sinh(mercatorY))))
-
-        def numTiles(z):
-            return(pow(2,z))
-
-        def xy2latlon(x,y,z):
-            n = numTiles(z)
-            relY = y / n
-            lat = mercatorToLat(pi * (1 - 2 * relY))
-            lon = -180.0 + 360.0 * x / n
-            return(lat,lon)
-
-        (lat, lon) = xy2latlon(self.x + x, self.y + y, self.zoom)
+        lat, lon = num2deg(self.x + x, self.y + y, self.zoom)
 
         return MapTile(lat, lon, self.zoom)
 
@@ -345,9 +301,12 @@ class MapWidget(gtk.DrawingArea):
         x *= (self.tilesize * self.width)
         y *= (self.tilesize * self.height)
 
+        y += self.lat_fudge
         return (x, y)
 
     def xy2latlon(self, x, y):
+        y -= self.lat_fudge
+
         lon = 1 - (float(x) / (self.tilesize * self.width))
         lat = 1 - (float(y) / (self.tilesize * self.height))
         
@@ -384,11 +343,39 @@ class MapWidget(gtk.DrawingArea):
         self.emit("redraw-markers")
 
     def calculate_bounds(self):
-        topleft = self.map_tiles[0]
-        botright = self.map_tiles[-1]
-
+        center = MapTile(self.lat, self.lon, self.zoom)
+        topleft = center + (-2, -2)
+        botright = center + (2, 2)
         (self.lat_min, _, _, self.lon_min) = botright.tile_edges()
         (_, self.lon_max, self.lat_max, _) = topleft.tile_edges()        
+
+        # I have no idea why, but for some reason we can calculate the
+        # longitude (x) just fine, but not the latitude (y).  The result
+        # of either latlon2xy() or tile_edges() is bad, which causes the
+        # y calculation of a given latitude to be off by some amount.
+        # The amount grows large at small values of zoom (zoomed out) and
+        # starts to seriously affect the correctness of marker placement.
+        # Until I figure out why that is, we calculate a fudge factor below.
+        #
+        # To do this, we ask the center tile for its NW corner's
+        # coordinates.  We then ask latlon2xy() (with fudge of zero) what
+        # the corresponding x,y is.  Since we know what the correct value
+        # should be, we record the offset and use that to shift the y in
+        # further calculations for this zoom level.
+
+        self.lat_fudge = 0
+        s, w, n, e = center.tile_edges()
+        x, y = self.latlon2xy(n, w)
+        self.lat_fudge = ((self.height / 2) * self.tilesize) - y
+        if False:
+            print "------ Bounds Calculation ------"
+            print "Center tile should be at %i,%i" % (\
+                (self.height/2) * self.tilesize,
+                (self.width/2) * self.tilesize)
+            print "We calculate it based on Lat,Lon to be %i, %i" % (x, y)
+            print "--------------------------------"
+        print "Latitude Fudge Factor: %i (zoom %i)" % (self.lat_fudge,
+                                                       self.zoom)
 
     def broken_tile(self):
         if self.__broken_tile:
