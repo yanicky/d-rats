@@ -39,9 +39,12 @@ class StationsList(MainWindowTab):
 
         frame, self.__view, = self._getw("stations_frame", "stations_view")
 
-        store = gtk.ListStore(gobject.TYPE_STRING, gobject.TYPE_INT)
+        store = gtk.ListStore(gobject.TYPE_STRING,
+                              gobject.TYPE_INT,
+                              gobject.TYPE_STRING)
         store.set_sort_column_id(1, gtk.SORT_DESCENDING)
         self.__view.set_model(store)
+        self.__view.set_tooltip_column(2)
 
         def render_with_time(col, rend, model, iter):
             call, ts = model.get(iter, 0, 1)
@@ -65,16 +68,23 @@ class StationsList(MainWindowTab):
 
     def saw_station(self, station):
         store = self.__view.get_model()
+
+        ts = time.time()
+        msg = "%s %s %s %s" % (_("Station"),
+                               station,
+                               _("last seen at"),
+                               time.asctime(time.localtime(ts)))
+
         if station != "CQCQCQ" and station not in self.__calls:
             self.__calls.append(station)
-            store.append((station, time.time()))
+            store.append((station, ts, msg))
             self.__view.queue_draw()
         else:
             iter = store.get_iter_first()
             while iter:
                 call, = store.get(iter, 0)
                 if call == station:
-                    store.set(iter, 1, time.time())
+                    store.set(iter, 1, ts, 2, msg)
                     break
                 iter = store.iter_next(iter)
             
