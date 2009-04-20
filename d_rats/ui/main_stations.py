@@ -49,10 +49,8 @@ class StationsList(MainWindowTab):
 
             if sec < 60:
                 msg = call
-            elif sec < 3600:
-                msg = "%s (%im ago)" % (call, sec / 60)
             else:
-                msg = "%s (%ih %im ago)" % (call, sec / 3600, (sec % 3600) / 60)
+                msg = "%s (%02i:%02i)" % (call, sec / 3600, (sec % 3600) / 60)
 
             rend.set_property("text", msg)
 
