@@ -214,6 +214,7 @@ class MainWindow(MainWindowElement):
                               "mainwindow", "D-RATS")
 
         MainWindowElement.__init__(self, wtree, config, "")
+        self.__window = self._wtree.get_widget("mainwindow")
 
         self._tabs = self._wtree.get_widget("main_tabs")
         self._tabs.connect("switch-page", self._tab_switched)
@@ -241,7 +242,6 @@ class MainWindow(MainWindowElement):
         self.tabs["chat"]._display_line(cpr, True, ic)
         self.tabs["chat"]._display_line("", True)        
 
-        self.__window = self._wtree.get_widget("mainwindow")
         self.__window.connect("destroy", self._destroy)
         self.__window.connect("delete_event", self._delete)
         self.__window.connect("focus-in-event", self._got_focus)
