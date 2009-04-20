@@ -537,6 +537,8 @@ class MainApp:
         mapdisplay.set_base_dir(self.config.get("settings", "mapdir"))
         mapdisplay.set_connected(self.config.getboolean("state",
                                                         "connected_inet"))
+        mapdisplay.set_tile_lifetime(self.config.getint("settings",
+                                                        "map_tile_ttl") * 3600)
 
         self._refresh_comms(port, rate)
         self._refresh_gps()

@@ -106,6 +106,7 @@ _DEF_SETTINGS = {
     "smtp_port" : "25",
     "smtp_dogw" : "False",
     "sniff_packets" : "False",
+    "map_tile_ttl" : "720",
 }
 
 _DEF_STATE = {
@@ -649,6 +650,10 @@ class DratsGPSPanel(DratsPanel):
                 gtk.Label(_("Table:")), val1,
                 gtk.Label(_("Symbol:")), val2)
            
+        val = DratsConfigWidget(config, "settings", "map_tile_ttl")
+        val.add_numeric(0, 9999999999999, 1)
+        self.mv(_("Freshen map after"), val, gtk.Label(_("hours")))
+
 class DratsAppearancePanel(DratsPanel):
     def __init__(self, config):
         DratsPanel.__init__(self, config)

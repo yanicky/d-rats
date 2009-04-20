@@ -38,11 +38,17 @@ def set_base_dir(basedir):
 CONFIG = None
 
 CONNECTED = True
+MAX_TILE_LIFE = 0
 
 def set_connected(connected):
     global CONNECTED
 
     CONNECTED = connected
+
+def set_tile_lifetime(lifetime):
+    global MAX_TILE_LIFE
+
+    MAX_TILE_LIFE = lifetime
 
 def fetch_url(url, local):
     global CONNECTED
@@ -164,10 +170,17 @@ class MapTile:
         return path
 
     def is_local(self):
-        return os.path.exists(self._local_path())
+        if MAX_TILE_LIFE == 0 or not CONNECTED:
+            return os.path.exists(self._local_path())
+        else:
+            try:
+                ts = os.stat(self._local_path()).st_mtime
+                return (time.time() - ts) < MAX_TILE_LIFE
+            except OSError:
+                return False
 
     def fetch(self):
-        if not os.path.exists(self._local_path()):
+        if not self.is_local():
             for i in range(10):
                 url = self.remote_path()
                 try:
