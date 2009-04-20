@@ -17,6 +17,7 @@
 
 import os
 import time
+import re
 from datetime import datetime
 
 import gobject
@@ -290,9 +291,6 @@ class ChatTab(MainWindowTab):
 
         self._display_line(line, incoming, "default", *attrs)
 
-        if incoming:
-            self._notice()
-
     def _highlight_tab(self, num):
         child = self.__filtertabs.get_nth_page(num)
         label = self.__filtertabs.get_tab_label(child)
@@ -333,6 +331,12 @@ class ChatTab(MainWindowTab):
     def _display_line(self, text, apply_filters, *attrs):
         if apply_filters:
             tabnum, display = self._display_matching_filter(text)
+            noticere = self._config.get("prefs", "noticere")
+            ignorere = self._config.get("prefs", "ignorere")
+            if re.search(noticere, text):
+                attrs += ("noticecolor",)
+            elif re.search(ignorere, text):
+                attrs += ("ignorecolor",)
         else:
             tabnum, display = self._display_selected()
 
@@ -349,6 +353,9 @@ class ChatTab(MainWindowTab):
 
         if tabnum != self.__filtertabs.get_current_page():
             self._highlight_tab(tabnum)
+
+        if apply_filters and "ignorecolor" not in attrs:
+            self._notice()
 
     def _send_button(self, button, dest, entry):
         station = dest.get_active_text()
