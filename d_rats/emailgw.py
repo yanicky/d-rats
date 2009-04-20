@@ -339,7 +339,7 @@ class FormEmailService:
         if not self.config.getboolean("state", "connected_inet"):
             raise Exception("Unable to send mail: Not connected to internet")
 
-        send = form.get_sender_string()
+        send = form.get_sender_string().upper()
         recp = form.get_recipient_string()
         if form.id == "email":
             subj = form.get_subject_string()
