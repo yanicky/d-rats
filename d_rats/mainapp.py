@@ -209,7 +209,9 @@ class MainApp:
 
             def in_ping(cs, src, dst, data):
                 msg = "%s pinged %s" % (src, dst)
-                print msg
+                if data:
+                    msg += " (%s)" % data
+
                 event = main_events.PingEvent(None, msg)
                 self.mainwindow.tabs["event"].event(event)
 
@@ -612,6 +614,19 @@ class MainApp:
         self.mainwindow.tabs["stations"].connect("get-station-list",
                                                  lambda m:
                                                      self.sm.get_heard_stations())
+        self.mainwindow.tabs["stations"].connect("ping-station",
+                                    lambda w, s:
+                                        self.chat_session.ping_station(s))
+        self.mainwindow.tabs["stations"].connect("ping-station-echo",
+                                    lambda w, s, d, cb, cd:
+                                        self.chat_session.ping_echo_station(s,
+                                                                            d,
+                                                                            cb,
+                                                                            cd))
+        self.mainwindow.tabs["stations"].connect("event",
+                                    lambda w, e:
+                                        self.mainwindow.tabs["event"].event(e))
+
         self.refresh_config()
         self._load_map_overlays()
         

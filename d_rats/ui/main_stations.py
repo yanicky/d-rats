@@ -21,18 +21,91 @@ import gobject
 import time
 
 from d_rats.ui.main_common import MainWindowTab
+from d_rats.ui import main_events
 
 class StationsList(MainWindowTab):
     __gsignals__ = {
         "get-station-list" : (gobject.SIGNAL_ACTION,
                               gobject.TYPE_PYOBJECT,
                               ()),
+        "ping-station" : (gobject.SIGNAL_RUN_LAST,
+                          gobject.TYPE_NONE,
+                          (gobject.TYPE_STRING,)),
+        "ping-station-echo" : (gobject.SIGNAL_RUN_LAST,
+                               gobject.TYPE_NONE,
+                               (gobject.TYPE_STRING,    # Station
+                                gobject.TYPE_STRING,    # Data
+                                gobject.TYPE_PYOBJECT,  # Callback
+                                gobject.TYPE_PYOBJECT)),# Callback data
         }
 
     def _update(self):
         self.__view.queue_draw()
 
         return True
+
+    def _mh(self, _action, station):
+        action = _action.get_name()
+
+        def conntest(size):
+            if size >= 2048:
+                return
+
+            size *= 2
+
+            ev = main_events.Event(None,
+                                   "Attempting block of %i with %s" % (size,
+                                                                       station))
+            self.emit("event", ev)
+            self.emit("ping-station-echo", station, "0" * size,
+                      conntest, size)
+
+        if action == "ping":
+            self.emit("ping-station", station)
+        elif action == "conntest":
+            conntest(128)
+
+    def _make_station_menu(self, station):
+        xml = """
+<ui>
+  <popup name="menu">
+    <menuitem action="ping"/>
+    <menuitem action="conntest"/>
+  </popup>
+</ui>
+"""
+        ag = gtk.ActionGroup("menu")
+        actions = [("ping", _("Ping")),
+                   ("conntest", _("Test Connectivity"))]
+
+        for action, label in actions:
+            a = gtk.Action(action, label, None, None)
+            a.connect("activate", self._mh, station)
+            ag.add_action(a)
+
+        uim = gtk.UIManager()
+        uim.insert_action_group(ag, 0)
+        uim.add_ui_from_string(xml)
+
+        return uim.get_widget("/menu")
+
+    def _mouse_cb(self, view, event):
+        if event.button != 3:
+            return
+
+        if event.window == view.get_bin_window():
+            x, y = event.get_coords()
+            pathinfo = view.get_path_at_pos(int(x), int(y))
+            if pathinfo is None:
+                return
+            else:
+                view.set_cursor_on_cell(pathinfo[0])
+
+        (model, iter) = view.get_selection().get_selected()
+        station, = model.get(iter, 0)
+
+        menu = self._make_station_menu(station)
+        menu.popup(None, None, None, event.button, event.time)
 
     def __init__(self, wtree, config):
         MainWindowTab.__init__(self, wtree, config, "main")
@@ -45,6 +118,7 @@ class StationsList(MainWindowTab):
         store.set_sort_column_id(1, gtk.SORT_DESCENDING)
         self.__view.set_model(store)
         self.__view.set_tooltip_column(2)
+        self.__view.connect("button_press_event", self._mouse_cb)
 
         def render_with_time(col, rend, model, iter):
             call, ts = model.get(iter, 0, 1)
