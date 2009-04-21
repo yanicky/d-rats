@@ -351,7 +351,8 @@ class ChatTab(MainWindowTab):
         endmark = buffer.get_mark("end")
         display.scroll_to_mark(endmark, 0.0, True, 0, 1)
 
-        if tabnum != self.__filtertabs.get_current_page():
+        if tabnum != self.__filtertabs.get_current_page() and \
+                "ignorecolor" not in attrs:
             self._highlight_tab(tabnum)
 
         if apply_filters and "ignorecolor" not in attrs:
