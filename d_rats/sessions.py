@@ -30,6 +30,7 @@ from ddt2 import DDT2RawData, DDT2EncodedFrame
 from version import DRATS_VERSION
 import platform
 import gps
+import utils
 
 session_types = {
     4 : "General",
@@ -126,6 +127,8 @@ class ChatSession(sessionmgr.StatelessSession, gobject.GObject):
     T_DEF = 0
     T_PNG_REQ = 1
     T_PNG_RSP = 2
+    T_PNG_ERQ = 3
+    T_PNG_ERS = 4
 
     compress = False
 
@@ -135,6 +138,8 @@ class ChatSession(sessionmgr.StatelessSession, gobject.GObject):
 
         self.set_ping_function()
         self.handler = self.incoming_data
+
+        self.__ping_handlers = {}
 
     def set_ping_function(self, func=None):
         if func is not None:
@@ -198,6 +203,40 @@ class ChatSession(sessionmgr.StatelessSession, gobject.GObject):
             print "PING OUT"
             self._emit("ping-response",
                        frame.s_station, frame.d_station, frame.data)
+        elif frame.type == self.T_PNG_ERQ:
+            self._emit("ping-request", frame.s_station, frame.d_station,
+                       "%s %i %s" % (_("Echo request of"),
+                                     len(frame.data),
+                                     _("bytes")))
+
+            if frame.d_station == "CQCQCQ":
+                delay = random.randint(0, 100) / 10.0
+                print "Broadcast ping echo, waiting %.1f sec" % delay
+                time.sleep(delay)
+            elif frame.d_station != self._sm.station:
+                return # Not for us
+
+            frame.d_station = frame.s_station
+            frame.type = self.T_PNG_ERS
+
+            self._sm.outgoing(self, frame)
+
+            self._emit("ping-response", frame.s_station, frame.d_station,
+                       "%s %i %s" % (_("Echo of"),
+                                    len(frame.data),
+                                    _("bytes")))
+        elif frame.type == self.T_PNG_ERS:
+            self._emit("ping-response", frame.s_station, frame.d_station,
+                       "%s %i %s" % (_("Echo of"),
+                                     len(frame.data),
+                                     _("bytes")))
+            if self.__ping_handlers.has_key(frame.s_station):
+                cb, data = self.__ping_handlers[frame.s_station]
+                try:
+                    cb(*data)
+                except Exception:
+                    print "Exception while running ping callback"
+                    utils.log_exception()
 
     def write_raw(self, data):
         f = DDT2RawData()
@@ -216,9 +255,26 @@ class ChatSession(sessionmgr.StatelessSession, gobject.GObject):
         f = DDT2EncodedFrame()
         f.d_station = station
         f.type = self.T_PNG_REQ
+        f.data = "Ping Request"
+        f.set_compress(False)
         self._sm.outgoing(self, f)
 
         self._emit("ping-request", f.s_station, f.d_station, "Request")
+
+    def ping_echo_station(self, station, data, cb=None, *cbdata):
+        if cb:
+            self.__ping_handlers[station] = (cb, cbdata)
+
+        f = DDT2EncodedFrame()
+        f.d_station = station
+        f.type = self.T_PNG_ERQ
+        f.data = data
+        f.set_compress(False)
+        self._sm.outgoing(self, f)
+        self._emit("ping-request", f.s_station, f.d_station,
+                   "%s %i %s" % (_("Echo of"),
+                                 len(data),
+                                 _("bytes")))
 
 class NotifyDict(UserDict.UserDict):
     def __init__(self, cb, data={}):
