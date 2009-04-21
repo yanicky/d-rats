@@ -250,7 +250,8 @@ class EventTab(MainWindowTab):
         event = Event(None, _("D-RATS Started"))
         self.event(event)
 
-    def event(self, event):
+    @utils.run_gtk_locked
+    def _event(self, event):
         sw, = self._getw("sw")
         adj = sw.get_vadjustment()
         top_scrolled = (adj.get_value() == 0.0)
@@ -281,8 +282,8 @@ class EventTab(MainWindowTab):
                        5, self.__ctr)
         self.__ctr += 1
 
-        gobject.idle_add(self._notice)
-        gobject.idle_add(self.emit, "status", event._message)
+        self._notice()
+        self.emit("status", event._message)
 
         @utils.run_gtk_locked
         def top_scroll(adj):
@@ -290,6 +291,9 @@ class EventTab(MainWindowTab):
 
         if top_scrolled:
             gobject.idle_add(top_scroll, adj)
+
+    def event(self, event):
+        gtk.idle_add(self._event, event)
 
     def finalize_last(self, group):
         iter = self.store.get_iter_first()
