@@ -60,10 +60,25 @@ class StationsList(MainWindowTab):
             self.emit("ping-station-echo", station, "0" * size,
                       conntest, size)
 
+        model = self.__view.get_model()
+        iter = model.get_iter_first()
+        while iter:
+            _station, = model.get(iter, 0)
+            if _station == station:
+                break
+            iter = model.iter_next(iter)
+
         if action == "ping":
             self.emit("ping-station", station)
         elif action == "conntest":
             conntest(128)
+        elif action == "remove":
+            self.__calls.remove(station)
+            model.remove(iter)
+        elif action == "reset":
+            model.set(iter, 1, time.time())
+        elif action == "clearall":
+            model.clear()
 
     def _make_station_menu(self, station):
         xml = """
@@ -71,15 +86,28 @@ class StationsList(MainWindowTab):
   <popup name="menu">
     <menuitem action="ping"/>
     <menuitem action="conntest"/>
+    <menuitem action="remove"/>
+    <menuitem action="reset"/>
+    <separator/>
+    <menuitem action="clearall"/>
   </popup>
 </ui>
 """
         ag = gtk.ActionGroup("menu")
-        actions = [("ping", _("Ping")),
-                   ("conntest", _("Test Connectivity"))]
+        actions = [("ping", _("Ping"), None),
+                   ("conntest", _("Test Connectivity"), None),
+                   ("remove", _("Remove"), gtk.STOCK_DELETE),
+                   ("reset", _("Reset"), gtk.STOCK_JUMP_TO)]
 
-        for action, label in actions:
-            a = gtk.Action(action, label, None, None)
+        for action, label, stock in actions:
+            a = gtk.Action(action, label, None, stock)
+            a.connect("activate", self._mh, station)
+            a.set_sensitive(station is not None)
+            ag.add_action(a)
+
+        actions = [("clearall", _("Clear All"), gtk.STOCK_CLEAR)]
+        for action, label, stock in actions:
+            a = gtk.Action(action, label, None, stock)
             a.connect("activate", self._mh, station)
             ag.add_action(a)
 
@@ -97,12 +125,11 @@ class StationsList(MainWindowTab):
             x, y = event.get_coords()
             pathinfo = view.get_path_at_pos(int(x), int(y))
             if pathinfo is None:
-                return
+                station = None
             else:
                 view.set_cursor_on_cell(pathinfo[0])
-
-        (model, iter) = view.get_selection().get_selected()
-        station, = model.get(iter, 0)
+                (model, iter) = view.get_selection().get_selected()
+                station, = model.get(iter, 0)
 
         menu = self._make_station_menu(station)
         menu.popup(None, None, None, event.button, event.time)
