@@ -174,7 +174,7 @@ class StationsList(MainWindowTab):
         msg = "%s %s %s %s" % (_("Station"),
                                station,
                                _("last seen at"),
-                               time.asctime(time.localtime(ts)))
+                               time.strftime("%X %x", time.localtime(ts)))
 
         if station != "CQCQCQ" and station not in self.__calls:
             self.__calls.append(station)
