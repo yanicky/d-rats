@@ -201,14 +201,15 @@ class StationsList(MainWindowTab):
         store = self.__view.get_model()
 
         ts = time.time()
-        msg = "%s %s %s %s" % (_("Station"),
-                               station,
-                               _("last seen at"),
-                               time.strftime("%X %x", time.localtime(ts)))
+        msg = "%s <b>%s</b> %s <i>%s</i>" % (_("Station"),
+                                             station,
+                                             _("last seen at"),
+                                             time.strftime("%X %x",
+                                                           time.localtime(ts)))
 
         if station != "CQCQCQ" and station not in self.__calls:
             if smsg:
-                msg += "\r\nStatus: %s (%s)" % (\
+                msg += "\r\nStatus: <b>%s</b> (<i>%s</i>)" % (\
                     station_status.STATUS_MSGS.get(status, "Unknown"),
                     smsg)
             self.__calls.append(station)
@@ -224,7 +225,7 @@ class StationsList(MainWindowTab):
                     if not smsg:
                         smsg = _smsg
 
-                    msg += "\r\nStatus: %s (%s)" % (\
+                    msg += "\r\nStatus: <b>%s</b> (<i>%s</i>)" % (\
                         station_status.STATUS_MSGS.get(status,
                                                        "Unknown"),
                         smsg)
