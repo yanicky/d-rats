@@ -666,6 +666,11 @@ class MainApp:
 
         print "Saving config..."
         self.config.save()
+
+        if self.config.getboolean("prefs", "dosignoff") and self.sm:
+            self.chat_session.write(self.config.get("prefs", "signoff"))
+            time.sleep(0.5) # HACK
+
         #self.chatgui.save_static_locations()
 
         #if self.sm:
