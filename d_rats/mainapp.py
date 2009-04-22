@@ -59,6 +59,7 @@ import session_coordinator
 import emailgw
 import rpcsession
 import formgui
+import station_status
 
 from ui import main_events
 
@@ -239,6 +240,9 @@ class MainApp:
                                                fix.comment)
                 self.stations_overlay.add_point(point)
 
+            def sta_status(cs, sta, stat, msg):
+                self.mainwindow.tabs["stations"].saw_station(sta, stat, msg)
+
             self.chat_session = self.sm.start_session("chat",
                                                       dest="CQCQCQ",
                                                       cls=sessions.ChatSession)
@@ -249,6 +253,7 @@ class MainApp:
             self.chat_session.connect("ping-request", in_ping)
             self.chat_session.connect("ping-response", out_ping)
             self.chat_session.connect("incoming-gps-fix", in_gps)
+            self.chat_session.connect("station-status", sta_status)
 
             def send_file(ft, sta, fn, name):
                 self.sc.send_file(sta, fn, name)
@@ -632,7 +637,9 @@ class MainApp:
         
         if self.config.getboolean("prefs", "dosignon") and self.chat_session:
             msg = self.config.get("prefs", "signon")
-            self.chat_session.write(msg)
+            self.chat_session.write(msg) # REMOVE ME
+            self.chat_session.advertise_status(station_status.STATUS_ONLINE,
+                                               msg)
 
         gobject.timeout_add(3000, self._refresh_location)
 
@@ -668,7 +675,10 @@ class MainApp:
         self.config.save()
 
         if self.config.getboolean("prefs", "dosignoff") and self.sm:
-            self.chat_session.write(self.config.get("prefs", "signoff"))
+            msg = self.config.get("prefs", "signoff")
+            self.chat_session.write(msg) # REMOVE ME
+            self.chat_session.advertise_status(station_status.STATUS_OFFLINE,
+                                               msg)
             time.sleep(0.5) # HACK
 
         #self.chatgui.save_static_locations()

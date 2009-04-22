@@ -32,6 +32,8 @@ import platform
 import gps
 import utils
 
+import station_status
+
 session_types = {
     4 : "General",
     5 : "File",
@@ -117,6 +119,11 @@ class ChatSession(sessionmgr.StatelessSession, gobject.GObject):
         "incoming-gps-fix" : (gobject.SIGNAL_RUN_LAST,
                               gobject.TYPE_NONE,
                               (gobject.TYPE_PYOBJECT,)),
+        "station-status" : (gobject.SIGNAL_RUN_LAST,
+                            gobject.TYPE_NONE,
+                            (gobject.TYPE_STRING,  # Station
+                             gobject.TYPE_INT,     # Status type
+                             gobject.TYPE_STRING)),# Status message
         }
 
     __cb = None
@@ -129,6 +136,7 @@ class ChatSession(sessionmgr.StatelessSession, gobject.GObject):
     T_PNG_RSP = 2
     T_PNG_ERQ = 3
     T_PNG_ERS = 4
+    T_STATUS  = 5
 
     compress = False
 
@@ -195,6 +203,9 @@ class ChatSession(sessionmgr.StatelessSession, gobject.GObject):
 
             self._sm.outgoing(self, frame)
 
+            # FIXME: This needs to be dynamic
+            self.advertise_status(station_status.STATUS_ONLINE, "Available")
+
             self._emit("ping-response",
                        frame.s_station,
                        frame.d_station,
@@ -237,6 +248,15 @@ class ChatSession(sessionmgr.StatelessSession, gobject.GObject):
                 except Exception:
                     print "Exception while running ping callback"
                     utils.log_exception()
+        elif frame.type == self.T_STATUS:
+            try:
+                s = int(frame.data[0])
+            except Exception:
+                print "Unable to parse station status: %s" % {frame.s_station :
+                                                                  frame.data}
+                s = 0
+
+            self._emit("station-status", frame.s_station, s, frame.data[1:])
 
     def write_raw(self, data):
         f = DDT2RawData()
@@ -275,6 +295,15 @@ class ChatSession(sessionmgr.StatelessSession, gobject.GObject):
                    "%s %i %s" % (_("Echo of"),
                                  len(data),
                                  _("bytes")))
+
+    def advertise_status(self, stat, msg):
+        if stat > station_status.STATUS_MAX or stat < station_status.STATUS_MIN:
+            raise Exception("Status integer %i out of range" % stat)
+        f = DDT2EncodedFrame()
+        f.d_station = "CQCQCQ"
+        f.type = self.T_STATUS
+        f.data = "%i%s" % (stat, msg)
+        self._sm.outgoing(self, f)
 
 class NotifyDict(UserDict.UserDict):
     def __init__(self, cb, data={}):

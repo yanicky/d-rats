@@ -22,6 +22,7 @@ import time
 
 from d_rats.ui.main_common import MainWindowTab
 from d_rats.ui import main_events
+from d_rats import station_status
 
 class StationsList(MainWindowTab):
     __gsignals__ = {
@@ -139,16 +140,18 @@ class StationsList(MainWindowTab):
 
         frame, self.__view, = self._getw("stations_frame", "stations_view")
 
-        store = gtk.ListStore(gobject.TYPE_STRING,
-                              gobject.TYPE_INT,
-                              gobject.TYPE_STRING)
+        store = gtk.ListStore(gobject.TYPE_STRING,  # Station
+                              gobject.TYPE_INT,     # Timestamp
+                              gobject.TYPE_STRING,  # Message
+                              gobject.TYPE_INT,     # Status
+                              gobject.TYPE_STRING)  # Status message
         store.set_sort_column_id(1, gtk.SORT_DESCENDING)
         self.__view.set_model(store)
         self.__view.set_tooltip_column(2)
         self.__view.connect("button_press_event", self._mouse_cb)
 
-        def render_with_time(col, rend, model, iter):
-            call, ts = model.get(iter, 0, 1)
+        def render_call(col, rend, model, iter):
+            call, ts, status = model.get(iter, 0, 1, 3)
             sec = time.time() - ts
 
             if sec < 60:
@@ -156,18 +159,26 @@ class StationsList(MainWindowTab):
             else:
                 msg = "%s (%02i:%02i)" % (call, sec / 3600, (sec % 3600) / 60)
 
-            rend.set_property("text", msg)
+            if status == station_status.STATUS_ONLINE:
+                color = "blue"
+            elif status == station_status.STATUS_OFFLINE:
+                color = "grey"
+            else:
+                color = "black"
+
+            rend.set_property("markup", "<span color='%s'>%s</span>" % (color,
+                                                                        msg))
 
         r = gtk.CellRendererText()
         col = gtk.TreeViewColumn(_("Stations"), r, text=0)
-        col.set_cell_data_func(r, render_with_time)
+        col.set_cell_data_func(r, render_call)
         self.__view.append_column(col)
 
         self.__calls = []
 
         gobject.timeout_add(30000, self._update)
 
-    def saw_station(self, station):
+    def saw_station(self, station, status=0, smsg=""):
         store = self.__view.get_model()
 
         ts = time.time()
@@ -177,15 +188,28 @@ class StationsList(MainWindowTab):
                                time.strftime("%X %x", time.localtime(ts)))
 
         if station != "CQCQCQ" and station not in self.__calls:
+            if smsg:
+                msg += "\r\nStatus: %s (%s)" % (\
+                    station_status.STATUS_MSGS.get(status, "Unknown"),
+                    smsg)
             self.__calls.append(station)
-            store.append((station, ts, msg))
+            store.append((station, ts, msg, status, smsg))
             self.__view.queue_draw()
         else:
             iter = store.get_iter_first()
             while iter:
-                call, = store.get(iter, 0)
+                call, _status, _smsg = store.get(iter, 0, 3, 4)
                 if call == station:
-                    store.set(iter, 1, ts, 2, msg)
+                    if _status > 0 and status == 0:
+                        status = _status
+                    if not smsg:
+                        smsg = _smsg
+
+                    msg += "\r\nStatus: %s (%s)" % (\
+                        station_status.STATUS_MSGS.get(status,
+                                                       "Unknown"),
+                        smsg)
+                    store.set(iter, 1, ts, 2, msg, 3, status, 4, smsg)
                     break
                 iter = store.iter_next(iter)
             
