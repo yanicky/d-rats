@@ -161,6 +161,8 @@ class StationsList(MainWindowTab):
 
             if status == station_status.STATUS_ONLINE:
                 color = "blue"
+            elif status == station_status.STATUS_UNATTENDED:
+                color = "#CC9900"
             elif status == station_status.STATUS_OFFLINE:
                 color = "grey"
             else:
