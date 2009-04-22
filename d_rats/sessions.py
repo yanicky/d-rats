@@ -124,6 +124,9 @@ class ChatSession(sessionmgr.StatelessSession, gobject.GObject):
                             (gobject.TYPE_STRING,  # Station
                              gobject.TYPE_INT,     # Status type
                              gobject.TYPE_STRING)),# Status message
+        "get-status" : (gobject.SIGNAL_ACTION,
+                        gobject.TYPE_PYOBJECT,
+                        ()),
         }
 
     __cb = None
@@ -203,8 +206,12 @@ class ChatSession(sessionmgr.StatelessSession, gobject.GObject):
 
             self._sm.outgoing(self, frame)
 
-            # FIXME: This needs to be dynamic
-            self.advertise_status(station_status.STATUS_ONLINE, "Available")
+            try:
+                s, m = self.emit("get-status")
+                self.advertise_status(s, m)
+            except Exception, e:
+                print "Exception while getting status for ping reply:"
+                utils.log_exception()
 
             self._emit("ping-response",
                        frame.s_station,

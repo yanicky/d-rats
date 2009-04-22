@@ -29,3 +29,7 @@ STATUS_MSGS = {
     STATUS_UNATTENDED : _("Unattended"),
     STATUS_OFFLINE    : _("Offline"),
 }
+
+STATUS_VALS = {}
+for k, v in STATUS_MSGS.items():
+    STATUS_VALS[v] = k

@@ -254,6 +254,9 @@ class MainApp:
             self.chat_session.connect("ping-response", out_ping)
             self.chat_session.connect("incoming-gps-fix", in_gps)
             self.chat_session.connect("station-status", sta_status)
+            self.chat_session.connect("get-status",
+                                      lambda cs: \
+                         self.mainwindow.tabs["stations"].get_status())
 
             def send_file(ft, sta, fn, name):
                 self.sc.send_file(sta, fn, name)

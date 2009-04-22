@@ -176,6 +176,23 @@ class StationsList(MainWindowTab):
 
         self.__calls = []
 
+        status, msg = self._getw("stations_status", "stations_smsg")
+
+        def set_status(cb):
+            self.__status = cb.get_active_text()
+
+        def set_smsg(e):
+            self.__smsg = e.get_text()
+            self._config.set("state", "status_msg", self.__smsg)
+
+        status.connect("changed", set_status)
+        msg.connect("changed", set_smsg)
+
+        status.set_active(0)
+        msg.set_text(self._config.get("state", "status_msg"))
+        set_status(status)
+        set_smsg(msg)
+
         gobject.timeout_add(30000, self._update)
 
     def saw_station(self, station, status=0, smsg=""):
@@ -213,3 +230,7 @@ class StationsList(MainWindowTab):
                     break
                 iter = store.iter_next(iter)
             
+    def get_status(self):
+        sval = station_status.STATUS_VALS[self.__status]
+
+        return sval, self.__smsg

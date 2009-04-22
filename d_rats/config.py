@@ -118,6 +118,7 @@ _DEF_STATE = {
     "connected_inet" : "True",
     "qsts_enabled" : "True",
     "sidepane_visible" : "True",
+    "status_msg" : "Online (D-RATS)",
 }
 
 _DEF_SOUNDS = {
