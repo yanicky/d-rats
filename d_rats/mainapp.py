@@ -242,6 +242,14 @@ class MainApp:
 
             def sta_status(cs, sta, stat, msg):
                 self.mainwindow.tabs["stations"].saw_station(sta, stat, msg)
+                status = station_status.STATUS_MSGS[stat]
+                event = main_events.Event(None, 
+                                          "%s %s %s %s: %s" % (_("Station"),
+                                                               sta,
+                                                               _("is now"),
+                                                               status,
+                                                               msg))
+                self.mainwindow.tabs["event"].event(event)
 
             self.chat_session = self.sm.start_session("chat",
                                                       dest="CQCQCQ",
@@ -634,13 +642,18 @@ class MainApp:
         self.mainwindow.tabs["stations"].connect("event",
                                     lambda w, e:
                                         self.mainwindow.tabs["event"].event(e))
+        self.mainwindow.tabs["stations"].connect("display-incoming-chat",
+                                    lambda w, s, t:
+                                        self.incoming_chat(None,
+                                                           s, "CQCQCQ",
+                                                           t,
+                                                           True))
 
         self.refresh_config()
         self._load_map_overlays()
         
         if self.config.getboolean("prefs", "dosignon") and self.chat_session:
             msg = self.config.get("prefs", "signon")
-            self.chat_session.write(msg) # REMOVE ME
             self.chat_session.advertise_status(station_status.STATUS_ONLINE,
                                                msg)
 
@@ -679,7 +692,6 @@ class MainApp:
 
         if self.config.getboolean("prefs", "dosignoff") and self.sm:
             msg = self.config.get("prefs", "signoff")
-            self.chat_session.write(msg) # REMOVE ME
             self.chat_session.advertise_status(station_status.STATUS_OFFLINE,
                                                msg)
             time.sleep(0.5) # HACK

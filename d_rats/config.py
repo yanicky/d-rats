@@ -73,6 +73,7 @@ _DEF_PREFS = {
     "blink_messages" : "True",
     "blink_files" : "True",
     "blink_event" : "False",
+    "chat_showstatus" : "True",
 }
 
 _DEF_SETTINGS = {
@@ -695,6 +696,10 @@ class DratsChatPanel(DratsPanel):
         val = DratsConfigWidget(config, "prefs", "scrollback")
         val.add_numeric(0, 9999, 1)
         self.mv(_("Scrollback Lines"), val)
+
+        val = DratsConfigWidget(config, "prefs", "chat_showstatus")
+        val.add_bool()
+        self.mv(_("Show status updates in chat"), val)
 
 class DratsSoundPanel(DratsPanel):
     def __init__(self, config):

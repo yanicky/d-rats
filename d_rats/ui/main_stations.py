@@ -39,6 +39,10 @@ class StationsList(MainWindowTab):
                                 gobject.TYPE_STRING,    # Data
                                 gobject.TYPE_PYOBJECT,  # Callback
                                 gobject.TYPE_PYOBJECT)),# Callback data
+        "display-incoming-chat" : (gobject.SIGNAL_RUN_LAST,
+                                   gobject.TYPE_NONE,
+                                   (gobject.TYPE_STRING,  # Station
+                                    gobject.TYPE_STRING)),# Text
         }
 
     def _update(self):
@@ -194,6 +198,11 @@ class StationsList(MainWindowTab):
         gobject.timeout_add(30000, self._update)
 
     def saw_station(self, station, status=0, smsg=""):
+        status_changed = False
+
+        if station == "CQCQCQ":
+            return
+
         store = self.__view.get_model()
 
         ts = time.time()
@@ -203,7 +212,7 @@ class StationsList(MainWindowTab):
                                              time.strftime("%X %x",
                                                            time.localtime(ts)))
 
-        if station != "CQCQCQ" and station not in self.__calls:
+        if station not in self.__calls:
             if smsg:
                 msg += "\r\nStatus: <b>%s</b> (<i>%s</i>)" % (\
                     station_status.STATUS_MSGS.get(status, "Unknown"),
@@ -211,11 +220,14 @@ class StationsList(MainWindowTab):
             self.__calls.append(station)
             store.append((station, ts, msg, status, smsg))
             self.__view.queue_draw()
+            status_changed = True
         else:
             iter = store.get_iter_first()
             while iter:
                 call, _status, _smsg = store.get(iter, 0, 3, 4)
                 if call == station:
+                    status_changed = (_status != status or _smsg != smgs)
+
                     if _status > 0 and status == 0:
                         status = _status
                     if not smsg:
@@ -228,6 +240,13 @@ class StationsList(MainWindowTab):
                     store.set(iter, 1, ts, 2, msg, 3, status, 4, smsg)
                     break
                 iter = store.iter_next(iter)
+
+        if status_changed and status > 0 and \
+                self._config.getboolean("prefs", "chat_showstatus"):
+            status_msg = station_status.STATUS_MSGS.get(status, "Unknown")
+            self.emit("display-incoming-chat",
+                      station,
+                      "%s %s: %s" % (_("Now"), status_msg, smsg))
             
     def get_status(self):
         sval = station_status.STATUS_VALS[self.__status]
