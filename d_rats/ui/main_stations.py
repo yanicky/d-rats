@@ -22,6 +22,7 @@ import time
 
 from d_rats.ui.main_common import MainWindowTab
 from d_rats.ui import main_events
+from d_rats.ui import conntest
 from d_rats import station_status
 
 class StationsList(MainWindowTab):
@@ -48,19 +49,6 @@ class StationsList(MainWindowTab):
     def _mh(self, _action, station):
         action = _action.get_name()
 
-        def conntest(size):
-            if size >= 2048:
-                return
-
-            size *= 2
-
-            ev = main_events.Event(None,
-                                   "Attempting block of %i with %s" % (size,
-                                                                       station))
-            self.emit("event", ev)
-            self.emit("ping-station-echo", station, "0" * size,
-                      conntest, size)
-
         model = self.__view.get_model()
         iter = model.get_iter_first()
         while iter:
@@ -72,7 +60,10 @@ class StationsList(MainWindowTab):
         if action == "ping":
             self.emit("ping-station", station)
         elif action == "conntest":
-            conntest(128)
+            ct = conntest.ConnTestAssistant(station)
+            ct.connect("ping-echo-station",
+                       lambda a, *v: self.emit("ping-station-echo", *v))
+            ct.run()
         elif action == "remove":
             self.__calls.remove(station)
             model.remove(iter)
