@@ -871,10 +871,10 @@ Pings</property>
               </packing>
             </child>
             <child>
-              <widget class="GtkVBox" id="vbox8">
+              <widget class="GtkVBox" id="main_stations_frame">
                 <property name="visible">True</property>
                 <child>
-                  <widget class="GtkFrame" id="main_stations_frame">
+                  <widget class="GtkFrame" id="main_stations_subframe">
                     <property name="visible">True</property>
                     <property name="label_xalign">0.5</property>
                     <property name="shadow_type">GTK_SHADOW_NONE</property>
@@ -995,6 +995,12 @@ Unattended</property>
                 <property name="visible">True</property>
                 <property name="n_columns">2</property>
                 <child>
+                  <widget class="GtkLabel" id="label1">
+                    <property name="visible">True</property>
+                    <property name="label" translatable="yes">Name</property>
+                  </widget>
+                </child>
+                <child>
                   <widget class="GtkEntry" id="src_name">
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
@@ -1003,12 +1009,6 @@ Unattended</property>
                     <property name="left_attach">1</property>
                     <property name="right_attach">2</property>
                   </packing>
-                </child>
-                <child>
-                  <widget class="GtkLabel" id="label1">
-                    <property name="visible">True</property>
-                    <property name="label" translatable="yes">Name</property>
-                  </widget>
                 </child>
               </widget>
               <packing>
