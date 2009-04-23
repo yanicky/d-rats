@@ -138,7 +138,12 @@ class StationsList(MainWindowTab):
                               gobject.TYPE_STRING)  # Status message
         store.set_sort_column_id(1, gtk.SORT_DESCENDING)
         self.__view.set_model(store)
-        self.__view.set_tooltip_column(2)
+
+        try:
+            self.__view.set_tooltip_column(2)
+        except AttributeError:
+            print "This version of GTK is old; disabling station tooltips"
+
         self.__view.connect("button_press_event", self._mouse_cb)
 
         def render_call(col, rend, model, iter):
