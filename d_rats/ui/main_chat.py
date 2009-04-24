@@ -333,9 +333,9 @@ class ChatTab(MainWindowTab):
             tabnum, display = self._display_matching_filter(text)
             noticere = self._config.get("prefs", "noticere")
             ignorere = self._config.get("prefs", "ignorere")
-            if re.search(noticere, text):
+            if noticere and re.search(noticere, text):
                 attrs += ("noticecolor",)
-            elif re.search(ignorere, text):
+            elif ignorere and re.search(ignorere, text):
                 attrs += ("ignorecolor",)
         else:
             tabnum, display = self._display_selected()
