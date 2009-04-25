@@ -140,6 +140,9 @@ class FilesTab(MainWindowTab):
         throbber.set_from_pixbuf(pix)        
 
     def _end_list_job(self, job, state, *args):
+        if not self._remote:
+            return
+
         if self._remote.get_path() != job.get_dest():
             return
 
