@@ -226,7 +226,7 @@ class StationsList(MainWindowTab):
             while iter:
                 call, _status, _smsg = store.get(iter, 0, 3, 4)
                 if call == station:
-                    status_changed = (_status != status or _smsg != smgs)
+                    status_changed = (_status != status or _smsg != smsg)
 
                     if _status > 0 and status == 0:
                         status = _status
