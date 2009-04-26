@@ -164,6 +164,9 @@ class MainApp:
     def stop_comms(self):
         if self.comm:
             self.comm.disconnect()
+            return True
+        else:
+            return False
 
     def start_comms(self):
         rate = self.config.get("settings", "rate")
@@ -412,7 +415,9 @@ class MainApp:
         return True
 
     def _refresh_comms(self, port, rate):
-        self.stop_comms()
+        if self.stop_comms():
+            if sys.platform == "win32":
+                time.sleep(0.25) # Wait for windows to let go of the serial port
         return self.start_comms()
 
     def _static_gps(self):
