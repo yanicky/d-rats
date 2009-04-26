@@ -24,6 +24,7 @@ import sys
 
 import utils
 import ddt2
+import comm
 
 class BlockQueue:
     def __init__(self):
@@ -102,9 +103,40 @@ class Transporter:
 
         self.last_xmit = 0
 
+    def __send(self, data):
+        for i in range(0, 10):
+            try:
+                return self.pipe.write(data)
+            except comm.DataPathIOError, e:
+                print "Data path IO error: %s" % e
+                try:
+                    time.sleep(i)
+                    print "Attempting reconnect..."
+                    self.pipe.reconnect()
+                except comm.DataPathNotConnectedError:
+                    pass
+
+        raise comm.DataPathIOError("Unable to reconnect after 10 retries")
+
+    def __recv(self, size):
+        data = ""
+        for i in range(0, 10):
+            try:
+                return self.pipe.read(size - len(data))
+            except comm.DataPathIOError, e:
+                print "Data path IO error: %s" % e
+                try:
+                    time.sleep(i) 
+                    print "Attempting reconnect..."
+                    self.pipe.reconnect()
+                except comm.DataPathNotConnectedError:
+                    pass
+
+        raise comm.DataPathIOError("Unable to reconnect after 10 retries")
+
     def get_input(self):
         while True:
-            chunk = self.pipe.read(64)
+            chunk = self.__recv(64)
             if not chunk:
                 break
             else:
@@ -208,10 +240,10 @@ class Transporter:
                 warmup_f.data = ("\x01" * self.warmup_length)
                 warmup_f.set_compress(False)
                 print "Sending warm-up: %s" % warmup_f
-                self.pipe.write(warmup_f.get_packed())
+                self.__send(warmup_f.get_packed())
 
             print "Sending block: %s" % f
-            self.pipe.write(f.get_packed())
+            self.__send(f.get_packed())
             f.sent_event.set()
             self.last_xmit = time.time()
 

@@ -33,6 +33,11 @@ class SWFSerial(serial.Serial):
         self.state = True
         self.xoff_limit = 15
 
+    def reconnect(self):
+        self.close()
+        time.sleep(0.5)
+        self.open()
+
     def is_xon(self):
         char = serial.Serial.read(self, 1)
         if char == ASCII_XOFF:
@@ -171,6 +176,11 @@ class SocketDataPath(DataPath):
             (self.host, self.port, self.call, self.passwd) = pathspec
         self._socket = None
 
+    def reconnect(self):
+        self.disconnect()
+        time.sleep(0.5)
+        self.connect()
+
     def do_auth(self):
         def readline(_s, to=30):
             t = time.time()
@@ -252,6 +262,9 @@ class SocketDataPath(DataPath):
         data = ""
         end = time.time() + self.timeout
 
+        if not self._socket:
+            raise DataPathIOError("Socket closed")
+
         while len(data) < count:
 
             try:
@@ -264,7 +277,7 @@ class SocketDataPath(DataPath):
                     continue
 
             if inp == "":
-                raise DataPathNotConnectedError("Socket closed")
+                raise DataPathIOError("Socket closed")
 
             end = time.time() + self.timeout
             data += inp
