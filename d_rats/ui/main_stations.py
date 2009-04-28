@@ -84,6 +84,8 @@ class StationsList(MainWindowTab):
             self.emit("submit-rpc-job", job)
         elif action == "clearall":
             model.clear()
+        elif action == "pingall":
+            self.emit("ping-station", "CQCQCQ")
 
     def _make_station_menu(self, station):
         xml = """
@@ -96,6 +98,7 @@ class StationsList(MainWindowTab):
     <menuitem action="reset"/>
     <separator/>
     <menuitem action="clearall"/>
+    <menuitem action="pingall"/>
   </popup>
 </ui>
 """
@@ -112,7 +115,8 @@ class StationsList(MainWindowTab):
             a.set_sensitive(station is not None)
             ag.add_action(a)
 
-        actions = [("clearall", _("Clear All"), gtk.STOCK_CLEAR)]
+        actions = [("clearall", _("Clear All"), gtk.STOCK_CLEAR),
+                   ("pingall", _("Ping All Stations"), None)]
         for action, label, stock in actions:
             a = gtk.Action(action, label, None, stock)
             a.connect("activate", self._mh, station)
