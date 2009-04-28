@@ -466,8 +466,8 @@ class MainApp:
     def __submit_rpc_job(self, object, job):
         self.rpc_session.submit(job)
 
-    def __event(self, event):
-        self.mainwindow.tabs["event"].event(e),        
+    def __event(self, object, event):
+        self.mainwindow.tabs["event"].event(event)
 
     def __config_changed(self, object):
         self.refresh_config()
@@ -526,6 +526,21 @@ class MainApp:
 
     def __get_current_status(self, object):
         return self.mainwindow.tabs["stations"].get_status()
+
+    def __get_current_position(self, object, station):
+        if station is None:
+            return self.get_position()
+        else:
+            sources = self.map.get_map_sources()
+            for source in sources:
+                if source.get_name() == _("Stations"):
+                    for point in source.get_points():
+                        if point.get_name() == station:
+                            fix = gps.GPSPosition(point.get_latitude(),
+                                                  point.get_longitude())
+                            return fix
+                    break
+            raise Exception("Station not found")
 
     def __session_started(self, object, id, msg=None):
         if msg is None:
@@ -590,8 +605,12 @@ class MainApp:
             if handler is None:
                 raise Exception("Object signal `%s' of object %s not known" % \
                                     (signal, object))
-            elif self.handlers.has_key(signal):
-                object.connect(signal, handler)
+            elif self.handlers[signal]:
+                try:
+                    object.connect(signal, handler)
+                except Exception:
+                    print "Failed to attach signal %s" % signal
+                    raise
 
     def __init__(self, **args):
         self.handlers = {
@@ -619,6 +638,7 @@ class MainApp:
             "incoming-gps-fix" : self.__incoming_gps_fix,
             "station-status" : self.__station_status,
             "get-current-status" : self.__get_current_status,
+            "get-current-position" : self.__get_current_position,
             "session-status-update" : self.__session_status_update,
             "session-started" : self.__session_started,
             "session-ended" : self.__session_ended,

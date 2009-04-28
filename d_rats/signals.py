@@ -56,7 +56,6 @@ INCOMING_CHAT_MESSAGE = \
       gobject.TYPE_STRING))     # Text
 OUTGOING_CHAT_MESSAGE = INCOMING_CHAT_MESSAGE
 
-
 GET_STATION_LIST = \
     (gobject.SIGNAL_ACTION, gobject.TYPE_PYOBJECT,
      ())
@@ -116,6 +115,10 @@ STATION_STATUS = \
 GET_CURRENT_STATUS = \
     (gobject.SIGNAL_ACTION, gobject.TYPE_PYOBJECT,
      ())
+
+GET_CURRENT_POSITION = \
+    (gobject.SIGNAL_ACTION, gobject.TYPE_PYOBJECT,
+     (gobject.TYPE_STRING,))     # Station (None for self)
 
 SESSION_STARTED = \
     (gobject.SIGNAL_RUN_LAST, gobject.TYPE_NONE,
