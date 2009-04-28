@@ -287,6 +287,8 @@ class RPCActionSet(gobject.GObject):
         "rpc-send-file" : signals.RPC_SEND_FILE,
         "rpc-send-form" : signals.RPC_SEND_FORM,
         "get-message-list" : signals.GET_MESSAGE_LIST,
+        "get-current-position" : signals.GET_CURRENT_POSITION,
+        "user-send-chat" : signals.USER_SEND_CHAT,
         "event" : signals.EVENT,
         }
 
@@ -298,34 +300,28 @@ class RPCActionSet(gobject.GObject):
         gobject.GObject.__init__(self)
 
     def RPC_pos_report(self, job):
-        # FIXME
         result = {}
-    
+
         mycall = self.__config.get("user", "callsign")
         rqcall = job.get_station()
+
+        if rqcall == mycall:
+            rqcall = None
     
-        print "[RPC] Position request for `%s'" % rqcall
-    
-        if mycall == rqcall:
-            # Some bug requires me to delay a little.  How broken...
-            gobject.timeout_add(500,
-                                app.chatgui.tx_msg,
-                                app.get_position().to_NMEA_GGA(), True)
+        try:
+            fix = self.emit("get-current-position", rqcall)
             result["rc"] = "OK"
-            return result
+        except Exception, e:
+            print "Exception while getting position of %s: " % rqcall
+            log_exception()
+            fix = None
+            result["rc"] = "No data for station '%s'" % job.get_station()
+
+        if fix:
+            self.emit("user-send-chat", "CQCQCQ", fix.to_NMEA_GGA(), True)
+            
+        print "[RPC] Position request for `%s'" % job.get_station()
     
-        else:
-            for group in app.chatgui.map.get_markers().values():
-                for call, info in group.items():
-                    if call == rqcall:
-                        fix = info[0]
-                        gobject.timeout_add(500,
-                                            app.chatgui.tx_msg,
-                                            fix.to_NMEA_GGA(), True)
-                        result["rc"] = "OK"
-                        return result
-    
-        result["rc"] = "Unknown station"
         return result
     
     def RPC_file_list(self, job):
