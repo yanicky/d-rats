@@ -493,6 +493,8 @@ class MessageList(MainWindowElement):
 
 class MessagesTab(MainWindowTab):
     __gsignals__ = {
+        "event" : signals.EVENT,
+        "notice" : signals.NOTICE,
         "user-send-form" : signals.USER_SEND_FORM,
         }
 

@@ -98,6 +98,8 @@ def filter_rows(model, iter, evtab):
 
 class EventTab(MainWindowTab):
     __gsignals__ = {
+        "event" : signals.EVENT,
+        "notice" : signals.NOTICE,
         "user-stop-session" : signals.USER_STOP_SESSION,
         "user-cancel-session" : signals.USER_CANCEL_SESSION,
         "status" : signals.STATUS,

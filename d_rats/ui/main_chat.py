@@ -272,6 +272,8 @@ class ChatQST(MainWindowElement):
 
 class ChatTab(MainWindowTab):
     __gsignals__ = {
+        "event" : signals.EVENT,
+        "notice" : signals.NOTICE,
         "user-send-chat" : signals.USER_SEND_CHAT,
         }
 

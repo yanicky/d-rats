@@ -119,6 +119,8 @@ class RemoteFileView(FileView):
 
 class FilesTab(MainWindowTab):
     __gsignals__ = {
+        "event" : signals.EVENT,
+        "notice" : signals.NOTICE,
         "submit-rpc-job" : signals.SUBMIT_RPC_JOB,
         "user-send-file" : signals.USER_SEND_FILE,
         "get-station-list" : signals.GET_STATION_LIST,

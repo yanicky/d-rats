@@ -25,14 +25,19 @@ from d_rats.ui import main_events
 from d_rats.ui import conntest
 from d_rats import station_status
 from d_rats import signals
+from d_rats import rpcsession
 
 class StationsList(MainWindowTab):
     __gsignals__ = {
+        "event" : signals.EVENT,
+        "notice" : signals.NOTICE,
         "get-station-list" : signals.GET_STATION_LIST,
         "ping-station" : signals.PING_STATION,
         "ping-station-echo" : signals.PING_STATION_ECHO,
         "incoming-chat-message" : signals.INCOMING_CHAT_MESSAGE,
+        "submit-rpc-job" : signals.SUBMIT_RPC_JOB,
         }
+
     _signals = __gsignals__
 
     def _update(self):
@@ -63,6 +68,20 @@ class StationsList(MainWindowTab):
             model.remove(iter)
         elif action == "reset":
             model.set(iter, 1, time.time())
+        elif action == "reqpos":
+            job = rpcsession.RPCPositionReport(station, "Position Request")
+            def log_result(job, state, result):
+                msg = result.get("rc", "(Error)")
+                if msg != "OK":
+                    event = main_events.Event(None,
+                                              "%s %s: %s" % (station,
+                                                             _("says"),
+                                                             msg))
+                    self.emit("event", event)
+                print "Result: %s" % str(result)
+            job.set_station(station)
+            job.connect("state-change", log_result)
+            self.emit("submit-rpc-job", job)
         elif action == "clearall":
             model.clear()
 
@@ -72,6 +91,7 @@ class StationsList(MainWindowTab):
   <popup name="menu">
     <menuitem action="ping"/>
     <menuitem action="conntest"/>
+    <menuitem action="reqpos"/>
     <menuitem action="remove"/>
     <menuitem action="reset"/>
     <separator/>
@@ -82,6 +102,7 @@ class StationsList(MainWindowTab):
         ag = gtk.ActionGroup("menu")
         actions = [("ping", _("Ping"), None),
                    ("conntest", _("Test Connectivity"), None),
+                   ("reqpos", _("Request Position"), None),
                    ("remove", _("Remove"), gtk.STOCK_DELETE),
                    ("reset", _("Reset"), gtk.STOCK_JUMP_TO)]
 
