@@ -512,6 +512,7 @@ class MainApp:
                                        fix.altitude,
                                        fix.comment)
         self.stations_overlay.add_point(point)
+        self.stations_overlay.save()
 
     def __station_status(self, object, sta, stat, msg):
         self.mainwindow.tabs["stations"].saw_station(sta, stat, msg)
