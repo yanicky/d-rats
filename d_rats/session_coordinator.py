@@ -25,6 +25,7 @@ import gobject
 import sessions
 import formgui
 import emailgw
+import signals
 from utils import run_safe, run_gtk_locked
 
 class SessionThread:
@@ -312,31 +313,17 @@ class SocketThread(SessionThread):
 
 class SessionCoordinator(gobject.GObject):
     __gsignals__ = {
-        "session-status-update" : (gobject.SIGNAL_RUN_LAST,
-                                   gobject.TYPE_NONE,
-                                   (gobject.TYPE_INT, gobject.TYPE_STRING)),
-        "session-started" : (gobject.SIGNAL_RUN_LAST,
-                             gobject.TYPE_NONE,
-                             (gobject.TYPE_INT, gobject.TYPE_STRING)),
-        "session-ended" : (gobject.SIGNAL_RUN_LAST,
-                           gobject.TYPE_NONE,
-                           (gobject.TYPE_INT,)),
-        "file-received" : (gobject.SIGNAL_RUN_LAST,
-                           gobject.TYPE_NONE,
-                           (gobject.TYPE_INT, gobject.TYPE_STRING)),
-        "form-received" : (gobject.SIGNAL_RUN_LAST,
-                           gobject.TYPE_NONE,
-                           (gobject.TYPE_INT, gobject.TYPE_STRING)),
-        "file-sent" : (gobject.SIGNAL_RUN_LAST,
-                       gobject.TYPE_NONE,
-                       (gobject.TYPE_INT, gobject.TYPE_STRING)),
-        "form-sent" : (gobject.SIGNAL_RUN_LAST,
-                       gobject.TYPE_NONE,
-                       (gobject.TYPE_INT, gobject.TYPE_STRING)),
-        "session-failed" : (gobject.SIGNAL_RUN_LAST,
-                            gobject.TYPE_NONE,
-                            (gobject.TYPE_INT, gobject.TYPE_STRING)),
+        "session-status-update" : signals.SESSION_STATUS_UPDATE,
+        "session-started" : signals.SESSION_STARTED,
+        "session-ended" : signals.SESSION_ENDED,
+        "session-failed" : signals.SESSION_FAILED,
+        "file-received" : signals.FILE_RECEIVED,
+        "form-received" : signals.FORM_RECEIVED,
+        "file-sent" : signals.FILE_SENT,
+        "form-sent" : signals.FORM_SENT,
         }
+
+    _signals = __gsignals__
 
     def _emit(self, signal, *args):
         gobject.idle_add(self.emit, signal, *args)

@@ -19,6 +19,7 @@ import gobject
 import gtk
 
 from d_rats import inputdialog
+from d_rats import signals
 
 def ask_for_confirmation(question, parent=None):
     d = gtk.MessageDialog(buttons=gtk.BUTTONS_YES_NO,
@@ -71,12 +72,8 @@ class MainWindowElement(gobject.GObject):
 
 class MainWindowTab(MainWindowElement):
     __gsignals__ = {
-        "event" : (gobject.SIGNAL_RUN_LAST,
-                   gobject.TYPE_NONE,
-                   (gobject.TYPE_PYOBJECT,)),
-        "notice" : (gobject.SIGNAL_RUN_LAST,
-                    gobject.TYPE_NONE,
-                    ()),
+        "event" : signals.EVENT,
+        "notice" : signals.NOTICE,
         }
 
     def __init__(self, wtree, config, prefix):

@@ -137,30 +137,6 @@ class MainApp:
     def setup_autoid(self):
         idtext = "(ID)"
 
-    def incoming_chat(self, cs, src, dst, data, incoming):
-        if src != "CQCQCQ":
-            self.seen_callsigns.set_call_time(src, time.time())
-
-        if dst != "CQCQCQ":
-            to = " -> %s:" % dst
-        else:
-            to = ":"
-
-        if src == "CQCQCQ":
-            color = "brokencolor"
-        elif incoming:
-            color = "incomingcolor"
-        else:
-            color = "outgoingcolor"
-
-        line = "%s%s %s" % (src, to, data)
-
-        @run_gtk_locked
-        def do_incoming():
-            self.mainwindow.tabs["chat"].display_line(line, incoming, color)
-
-        gobject.idle_add(do_incoming)
-
     def stop_comms(self):
         if self.comm:
             self.comm.disconnect()
@@ -211,102 +187,19 @@ class MainApp:
                                                 callsign,
                                                 **transport_args)
 
-            def in_ping(cs, src, dst, data):
-                msg = "%s pinged %s" % (src, dst)
-                if data:
-                    msg += " (%s)" % data
-
-                event = main_events.PingEvent(None, msg)
-                self.mainwindow.tabs["event"].event(event)
-
-            def out_ping(cs, src, dst, data):
-                msg = "%s replied to ping from %s with: %s" % (src, dst, data)
-                print msg
-                event = main_events.PingEvent(None, msg)
-                self.mainwindow.tabs["event"].event(event)
-
-            def in_gps(cs, fix):
-                ts = self.mainwindow.tabs["event"].last_event_time(fix.station)
-                if (time.time() - ts) > 300:
-                    self.mainwindow.tabs["event"].finalize_last(fix.station)
-
-                fix.set_relative_to_current(self.get_position())
-                event = main_events.PosReportEvent(fix.station, str(fix))
-                self.mainwindow.tabs["event"].event(event)
-
-                self.mainwindow.tabs["stations"].saw_station(fix.station)
-
-                point = map_sources.MapStation(fix.station,
-                                               fix.latitude,
-                                               fix.longitude,
-                                               fix.altitude,
-                                               fix.comment)
-                self.stations_overlay.add_point(point)
-
-            def sta_status(cs, sta, stat, msg):
-                self.mainwindow.tabs["stations"].saw_station(sta, stat, msg)
-                status = station_status.STATUS_MSGS[stat]
-                event = main_events.Event(None, 
-                                          "%s %s %s %s: %s" % (_("Station"),
-                                                               sta,
-                                                               _("is now"),
-                                                               status,
-                                                               msg))
-                self.mainwindow.tabs["event"].event(event)
 
             self.chat_session = self.sm.start_session("chat",
                                                       dest="CQCQCQ",
                                                       cls=sessions.ChatSession)
-            self.chat_session.connect("incoming-chat-message",
-                                      self.incoming_chat, True)
-            self.chat_session.connect("outgoing-chat-message",
-                                      self.incoming_chat, False)
-            self.chat_session.connect("ping-request", in_ping)
-            self.chat_session.connect("ping-response", out_ping)
-            self.chat_session.connect("incoming-gps-fix", in_gps)
-            self.chat_session.connect("station-status", sta_status)
-            self.chat_session.connect("get-status",
-                                      lambda cs: \
-                         self.mainwindow.tabs["stations"].get_status())
-
-            def send_file(ft, sta, fn, name):
-                self.sc.send_file(sta, fn, name)
-            def send_form(msgs, sta, fn, name):
-                self.sc.send_form(sta, fn, name)
-            def get_messages(obj, sta):
-                return self.mainwindow.tabs["messages"].get_shared_messages(sta)
+            self.__connect_object(self.chat_session)
 
             rpcactions = rpcsession.RPCActionSet(self.config)
-            rpcactions.connect("rpc-send-file", send_file)
-            rpcactions.connect("rpc-send-msg", send_form)
-            rpcactions.connect("rpc-get-msgs", get_messages)
-            rpcactions.connect("rpc-event",
-                               lambda w, e: \
-                                   self.mainwindow.tabs["event"].event(e))
+            self.__connect_object(rpcactions)
+
             self.rpc_session = self.sm.start_session("rpc",
                                                      dest="CQCQCQ",
                                                      cls=rpcsession.RPCSession,
                                                      rpcactions=rpcactions)
-
-            def do_rpc(files, job):
-                self.rpc_session.submit(job)
-
-            self.mainwindow.tabs["files"].connect("submit-rpc-job", do_rpc)
-
-            def do_stop_session(events, sid, force):
-                print "User did stop session %i (force=%s)" % (sid, force)
-                try:
-                    session = self.sm.sessions[sid]
-                    session.close(force)
-                except Exception, e:
-                    print "Session `%i' not found: %s" % (sid, e)
-
-            self.mainwindow.tabs["event"].connect("user-stop-session",
-                                                  do_stop_session,
-                                                  False)
-            self.mainwindow.tabs["event"].connect("user-cancel-session",
-                                                  do_stop_session,
-                                                  True)
 
             def sniff_event(ss, src, dst, msg):
                 if self.config.getboolean("settings", "sniff_packets"):
@@ -323,72 +216,7 @@ class MainApp:
 
             self.sc = session_coordinator.SessionCoordinator(self.config,
                                                              self.sm)
-
-            def log_session_info(sc, id, msg=None):
-                if msg is None:
-                    msg = "Ended"
-
-                print "[SESSION %i]: %s" % (id, msg)
-
-                event = main_events.SessionEvent(id, msg)
-                self.mainwindow.tabs["event"].event(event)
-
-            def failed_session(sc, id, msg):
-                event = main_events.Event(id, msg)
-                self.mainwindow.tabs["event"].event(event)
-
-            self.sc.connect("session-started", log_session_info)
-            self.sc.connect("session-status-update", log_session_info)
-            self.sc.connect("session-ended", log_session_info)
-            self.sc.connect("session-failed", failed_session)
-
-            def new_form(sc, id, fn):
-                print "[NEWFORM %i]: %s" % (id, fn)
-                f = formgui.FormFile("", fn)
-                msg = '%s "%s" %s %s' % (_("Message"),
-                                         f.get_subject_string(),
-                                         _("received from"),
-                                         f.get_sender_string())
-                event = main_events.FormEvent(id, msg)
-                event.set_as_final()
-                self.mainwindow.tabs["messages"].refresh_if_folder("Inbox")
-                self.mainwindow.tabs["event"].event(event)
-            self.sc.connect("form-received", new_form)
-
-            def new_file(sc, id, fn):
-                _fn = os.path.basename(fn)
-                msg = '%s "%s" %s' % (_("File"), _fn, _("Received"))
-                event = main_events.FileEvent(id, msg)
-                event.set_as_final()
-                self.mainwindow.tabs["files"].refresh_local()
-                self.mainwindow.tabs["event"].event(event)
-            self.sc.connect("file-received", new_file)
-                
-            def form_sent(sc, id, fn):
-                print "[FORMSENT %i]: %s" % (id, fn)
-                event = main_events.FormEvent(id, _("Message Sent"))
-                event.set_as_final()
-                self.mainwindow.tabs["messages"].message_sent(fn)
-                self.mainwindow.tabs["event"].event(event)
-            self.sc.connect("form-sent", form_sent)
-
-            def file_sent(sc, id, fn):
-                print "[FILESENT %i]: %s" % (id, fn)
-                _fn = os.path.basename(fn)
-                msg = '%s "%s" %s' % (_("File"), _fn, _("Sent"))
-                event = main_events.FileEvent(id, msg)
-                event.set_as_final()
-                self.mainwindow.tabs["files"].file_sent(fn)
-                self.mainwindow.tabs["event"].event(event)
-            self.sc.connect("file-sent", file_sent)
-
-            self.mainwindow.tabs["files"].connect("user-send-file",
-                                                  send_file)
-
-            self.mainwindow.tabs["messages"].connect("user-send-form",
-                                                     send_form)
-            self.mainwindow.tabs["messages"].connect("event", \
-                  lambda m, e: self.mainwindow.tabs["event"].event(e))
+            self.__connect_object(self.sc)
 
             self.sm.register_session_cb(self.sc.session_cb, None)
 
@@ -463,25 +291,11 @@ class MainApp:
         for i in self.mail_threads:
             i.stop()
 
-        def send_bcast(mt, staton, text):
-            self.chat_session.write(text)
-
-        def do_event(mt, event):
-            self.mainwindow.tabs["event"].event(event)
-
-        def do_mail_recv(mt, folder):
-            self.mainwindow.tabs["messages"].refresh_if_folder(folder)
-
-        def do_form_send(mt, formfn, station, name):
-            self.sc.send_form(station, formfn, name)
 
         accts = self.config.options("incoming_email")
         for acct in accts:
             t = emailgw.MailThread(self.config, acct)
-            t.connect("send-chat", send_bcast)
-            t.connect("event", do_event)
-            t.connect("form-received", do_mail_recv)
-            t.connect("send-form", do_form_send)
+            self.__connect_object(t)
             t.start()
             self.mail_threads.append(t)
 
@@ -567,8 +381,6 @@ class MainApp:
         self._refresh_gps()
         self._refresh_mail_threads()
 
-    def send_chat(self, chattab, station, msg, raw):
-        self.chat_session.write(msg)
             
     def _refresh_location(self):
         fix = self.get_position()
@@ -590,7 +402,233 @@ class MainApp:
 
         return True
 
+    def __chat(self, src, dst, data, incoming):
+        if src != "CQCQCQ":
+            self.seen_callsigns.set_call_time(src, time.time())
+
+        if dst != "CQCQCQ":
+            to = " -> %s:" % dst
+        else:
+            to = ":"
+
+        if src == "CQCQCQ":
+            color = "brokencolor"
+        elif incoming:
+            color = "incomingcolor"
+        else:
+            color = "outgoingcolor"
+
+        line = "%s%s %s" % (src, to, data)
+
+        @run_gtk_locked
+        def do_incoming():
+            self.mainwindow.tabs["chat"].display_line(line, incoming, color)
+
+        gobject.idle_add(do_incoming)
+
+# ---------- STANDARD SIGNAL HANDLERS --------------------
+
+    def __status(self, object, status):
+        self.mainwindow.set_status(status)
+
+    def __user_stop_session(self, object, sid, force=False):
+        print "User did stop session %i (force=%s)" % (sid, force)
+        try:
+            session = self.sm.sessions[sid]
+            session.close(force)
+        except Exception, e:
+            print "Session `%i' not found: %s" % (sid, e)
+    
+    def __user_cancel_session(self):
+        self.__user_stop_session(object.sid, True)
+
+    def __user_send_form(self, object, station, fname, sname):
+        self.sc.send_form(station, fname, sname)
+
+    def __user_send_file(self, object, station, fname, sname):
+        self.sc.send_file(station, fname, sname)
+
+    def __user_send_chat(self, object, station, msg, raw):
+        self.chat_session.write(msg)
+
+    def __incoming_chat_message(self, object, src, dst, data):
+        self.__chat(src, dst, data, True)
+
+    def __outgoing_chat_message(self, object, src, dst, data):
+        self.__chat(src, dst, data, False)
+
+    def __get_station_list(self, object):
+        return self.sm.get_heard_stations().keys()
+
+    def __get_message_list(self, object, station):
+        return self.mainwindow.tabs["messages"].get_shared_messages(station)
+
+    def __submit_rpc_job(self, object, job):
+        self.rpc_session.submit(job)
+
+    def __event(self, event):
+        self.mainwindow.tabs["event"].event(e),        
+
+    def __config_changed(self, object):
+        self.refresh_config()
+
+    def __show_map_station(self, object, station):
+        print "Showing map"
+        self.map.show()
+
+    def __ping_station(self, object, station):
+        self.chat_session.ping_station(station)
+
+    def __ping_station_echo(self, object, station, data, callback, cb_data):
+        self.chat_session.ping_echo_station(station, data, callback, cb_data)
+
+    def __ping_request(self, object, src, dst, data):
+        msg = "%s pinged %s" % (src, dst)
+        if data:
+            msg += " (%s)" % data
+
+        event = main_events.PingEvent(None, msg)
+        self.mainwindow.tabs["event"].event(event)
+
+    def __ping_response(self, object, src, dst, data):
+        msg = "%s replied to ping from %s with: %s" % (src, dst, data)
+        event = main_events.PingEvent(None, msg)
+        self.mainwindow.tabs["event"].event(event)
+
+    def __incoming_gps_fix(self, object, fix):
+        ts = self.mainwindow.tabs["event"].last_event_time(fix.station)
+        if (time.time() - ts) > 300:
+            self.mainwindow.tabs["event"].finalize_last(fix.station)
+
+        fix.set_relative_to_current(self.get_position())
+        event = main_events.PosReportEvent(fix.station, str(fix))
+        self.mainwindow.tabs["event"].event(event)
+
+        self.mainwindow.tabs["stations"].saw_station(fix.station)
+
+        point = map_sources.MapStation(fix.station,
+                                       fix.latitude,
+                                       fix.longitude,
+                                       fix.altitude,
+                                       fix.comment)
+        self.stations_overlay.add_point(point)
+
+    def __station_status(self, object, sta, stat, msg):
+        self.mainwindow.tabs["stations"].saw_station(sta, stat, msg)
+        status = station_status.STATUS_MSGS[stat]
+        event = main_events.Event(None, 
+                                  "%s %s %s %s: %s" % (_("Station"),
+                                                       sta,
+                                                       _("is now"),
+                                                       status,
+                                                       msg))
+        self.mainwindow.tabs["event"].event(event)
+
+    def __get_current_status(self, object):
+        return self.mainwindow.tabs["stations"].get_status()
+
+    def __session_started(self, object, id, msg=None):
+        if msg is None:
+            msg = "Ended"
+
+        print "[SESSION %i]: %s" % (id, msg)
+
+        event = main_events.SessionEvent(id, msg)
+        self.mainwindow.tabs["event"].event(event)
+
+    def __session_status_update(self, object, *args):
+        self.__session_started(object, *args)
+
+    def __session_ended(self, object, *args):
+        self.__session_started(object, *args)
+
+    def __session_failed(self, object, id, msg):
+        event = main_events.Event(id, msg)
+        self.mainwindow.tabs["event"].event(event)
+
+    def __form_received(self, object, id, fn):
+        print "[NEWFORM %i]: %s" % (id, fn)
+        f = formgui.FormFile("", fn)
+        msg = '%s "%s" %s %s' % (_("Message"),
+                                 f.get_subject_string(),
+                                 _("received from"),
+                                 f.get_sender_string())
+        event = main_events.FormEvent(id, msg)
+        event.set_as_final()
+        self.mainwindow.tabs["messages"].refresh_if_folder("Inbox")
+        self.mainwindow.tabs["event"].event(event)
+
+    def __file_received(self, object, id, fn):
+        _fn = os.path.basename(fn)
+        msg = '%s "%s" %s' % (_("File"), _fn, _("Received"))
+        event = main_events.FileEvent(id, msg)
+        event.set_as_final()
+        self.mainwindow.tabs["files"].refresh_local()
+        self.mainwindow.tabs["event"].event(event)
+                
+    def __form_sent(self, object, id, fn):
+        print "[FORMSENT %i]: %s" % (id, fn)
+        event = main_events.FormEvent(id, _("Message Sent"))
+        event.set_as_final()
+        self.mainwindow.tabs["messages"].message_sent(fn)
+        self.mainwindow.tabs["event"].event(event)
+
+    def __file_sent(self, object, id, fn):
+        print "[FILESENT %i]: %s" % (id, fn)
+        _fn = os.path.basename(fn)
+        msg = '%s "%s" %s' % (_("File"), _fn, _("Sent"))
+        event = main_events.FileEvent(id, msg)
+        event.set_as_final()
+        self.mainwindow.tabs["files"].file_sent(fn)
+        self.mainwindow.tabs["event"].event(event)
+
+# ------------ END SIGNAL HANDLERS ----------------
+
+    def __connect_object(self, object):
+        for signal in object._signals.keys():
+            handler = self.handlers.get(signal, None)
+            if handler is None:
+                raise Exception("Object signal `%s' of object %s not known" % \
+                                    (signal, object))
+            elif self.handlers.has_key(signal):
+                object.connect(signal, handler)
+
     def __init__(self, **args):
+        self.handlers = {
+            "status" : self.__status,
+            "user-stop-session" : self.__user_stop_session,
+            "user-cancel-session" : self.__user_cancel_session,
+            "user-send-form" : self.__user_send_form,
+            "user-send-file" : self.__user_send_file,
+            "rpc-send-form" : self.__user_send_form,
+            "rpc-send-file" : self.__user_send_file,
+            "user-send-chat" : self.__user_send_chat,
+            "incoming-chat-message" : self.__incoming_chat_message,
+            "outgoing-chat-message" : self.__outgoing_chat_message,
+            "get-station-list" : self.__get_station_list,
+            "get-message-list" : self.__get_message_list,
+            "submit-rpc-job" : self.__submit_rpc_job,
+            "event" : self.__event,
+            "notice" : False,
+            "config-changed" : self.__config_changed,
+            "show-map-station" : self.__show_map_station,
+            "ping-station" : self.__ping_station,
+            "ping-station-echo" : self.__ping_station_echo,
+            "ping-request" : self.__ping_request,
+            "ping-response" : self.__ping_response,
+            "incoming-gps-fix" : self.__incoming_gps_fix,
+            "station-status" : self.__station_status,
+            "get-current-status" : self.__get_current_status,
+            "session-status-update" : self.__session_status_update,
+            "session-started" : self.__session_started,
+            "session-ended" : self.__session_ended,
+            "session-failed" : self.__session_failed,
+            "file-received" : self.__file_received,
+            "form-received" : self.__form_received,
+            "file-sent" : self.__file_sent,
+            "form-sent" : self.__form_sent,
+            }
+
         global MAINAPP
         MAINAPP = self
 
@@ -614,45 +652,11 @@ class MainApp:
         self.map.set_zoom(14)
         self.__map_point = None
                                                               
-        #self.map.add_popup_handler(_("Set as current location"),
-        #                           self.set_loc_from_map)
-
         self.mainwindow = mainwindow.MainWindow(self.config)
-        self.mainwindow.tabs["chat"].connect("user-sent-message",
-                                             self.send_chat)
-        self.mainwindow.connect("config-changed",
-                                lambda w: self.refresh_config())
-        self.mainwindow.connect("show-map-station",
-                                lambda w, s: self.map.show())
-        self.mainwindow.connect("ping-station",
-                                lambda w, s: self.chat_session.ping_station(s))
-        self.mainwindow.connect("get-station-list",
-                                lambda m, f:
-                                    self.sm.get_heard_stations().keys())
-        self.mainwindow.tabs["files"].connect("get-station-list",
-                                              lambda m, f:
-                                                  self.sm.get_heard_stations().keys())
-        self.mainwindow.tabs["stations"].connect("get-station-list",
-                                                 lambda m:
-                                                     self.sm.get_heard_stations())
-        self.mainwindow.tabs["stations"].connect("ping-station",
-                                    lambda w, s:
-                                        self.chat_session.ping_station(s))
-        self.mainwindow.tabs["stations"].connect("ping-station-echo",
-                                    lambda w, s, d, cb, cd:
-                                        self.chat_session.ping_echo_station(s,
-                                                                            d,
-                                                                            cb,
-                                                                            cd))
-        self.mainwindow.tabs["stations"].connect("event",
-                                    lambda w, e:
-                                        self.mainwindow.tabs["event"].event(e))
-        self.mainwindow.tabs["stations"].connect("display-incoming-chat",
-                                    lambda w, s, t:
-                                        self.incoming_chat(None,
-                                                           s, "CQCQCQ",
-                                                           t,
-                                                           True))
+        self.__connect_object(self.mainwindow)
+
+        for tab in self.mainwindow.tabs.values():
+            self.__connect_object(tab)
 
         self.refresh_config()
         self._load_map_overlays()

@@ -38,24 +38,17 @@ import re
 
 import formgui
 from ui import main_events
+import signals
 
 class MailThread(threading.Thread, gobject.GObject):
     __gsignals__ = {
-        "send-chat" : (gobject.SIGNAL_RUN_LAST,
-                       gobject.TYPE_NONE,
-                       (gobject.TYPE_STRING, gobject.TYPE_STRING)),
-        "form-received" : (gobject.SIGNAL_RUN_LAST,
-                           gobject.TYPE_NONE,
-                           (gobject.TYPE_STRING,)),
-        "send-form" : (gobject.SIGNAL_RUN_LAST,
-                       gobject.TYPE_NONE,
-                       (gobject.TYPE_STRING,
-                        gobject.TYPE_STRING,
-                        gobject.TYPE_STRING)),
-        "event" : (gobject.SIGNAL_RUN_LAST,
-                   gobject.TYPE_NONE,
-                   (gobject.TYPE_PYOBJECT,)),
+        "user-send-chat" : signals.USER_SEND_CHAT,
+        "user-send-form" : signals.USER_SEND_FORM,
+        "form-received" : signals.FORM_RECEIVED,
+        "event" : signals.EVENT,
         }
+
+    _signals = __gsignals__
 
     def emit(self, signal, *args):
         gobject.idle_add(gobject.GObject.emit, self, signal, *args)
@@ -214,10 +207,10 @@ class MailThread(threading.Thread, gobject.GObject):
                                _("Outbox"),
                                os.path.basename(ffn))
             os.rename(ffn, nfn) # Move to Outbox
-            self.emit("send-form", nfn, recip, subject)
+            self.emit("user-send-form", recip, nfn, subject)
             msg = "Attempted send of mail from %s to %s" % (sender, recip)
         else:
-            self.emit("form-received", _("Inbox"))
+            self.emit("form-received", None, nfn)
             msg = "Mail received from %s" % sender
 
         event = main_events.Event(None, msg)
@@ -243,7 +236,7 @@ class MailThread(threading.Thread, gobject.GObject):
             mail.get("Subject", ""),
             body)
             
-        self.emit("send-chat", "CQCQCQ", text)
+        self.emit("user-send-chat", "CQCQCQ", text, False)
 
         event = main_events.Event(None,
                                   "Mail received from %s and sent via chat" % \

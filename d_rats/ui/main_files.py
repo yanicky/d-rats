@@ -28,6 +28,7 @@ from d_rats.ui.main_common import ask_for_confirmation
 from d_rats import rpcsession
 from d_rats import image
 from d_rats import utils
+from d_rats import signals
 
 THROB_IMAGE = "throbber.gif"
 REMOTE_HINT = _("Enter remote callsign")
@@ -118,21 +119,13 @@ class RemoteFileView(FileView):
 
 class FilesTab(MainWindowTab):
     __gsignals__ = {
-        "submit-rpc-job" : (gobject.SIGNAL_RUN_LAST,
-                            gobject.TYPE_NONE,
-                            (gobject.TYPE_PYOBJECT,)),
-        "user-send-file" : (gobject.SIGNAL_RUN_LAST,
-                            gobject.TYPE_NONE,
-                            (gobject.TYPE_STRING,
-                             gobject.TYPE_STRING,
-                             gobject.TYPE_STRING)),
-        "get-station-list" : (gobject.SIGNAL_ACTION,
-                              gobject.TYPE_PYOBJECT,
-                              (gobject.TYPE_STRING,)),
-        "status" : (gobject.SIGNAL_RUN_LAST,
-                    gobject.TYPE_NONE,
-                    (gobject.TYPE_STRING,)),
+        "submit-rpc-job" : signals.SUBMIT_RPC_JOB,
+        "user-send-file" : signals.USER_SEND_FILE,
+        "get-station-list" : signals.GET_STATION_LIST,
+        "status" : signals.STATUS,
         }
+
+    _signals = __gsignals__
 
     def _stop_throb(self):
         throbber, = self._getw("remote_throb")
@@ -315,7 +308,7 @@ class FilesTab(MainWindowTab):
         view.append_column(col)
 
     def _refresh_calls(self, box):
-        stations = self.emit("get-station-list", "foo")
+        stations = self.emit("get-station-list")
         if stations:
             store = box.get_model()
             store.clear()

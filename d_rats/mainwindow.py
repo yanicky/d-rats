@@ -43,22 +43,16 @@ from d_rats.ui.main_stations import StationsList
 from d_rats.ui.main_common import MainWindowElement, prompt_for_station
 from d_rats.version import DRATS_VERSION
 from d_rats import formbuilder
+from d_rats import signals
 
 class MainWindow(MainWindowElement):
     __gsignals__ = {
-        "config-changed" : (gobject.SIGNAL_RUN_LAST,
-                            gobject.TYPE_NONE,
-                            ()),
-        "show-map-station" : (gobject.SIGNAL_RUN_LAST,
-                              gobject.TYPE_NONE,
-                              (gobject.TYPE_STRING,)),
-        "ping-station" : (gobject.SIGNAL_RUN_LAST,
-                          gobject.TYPE_NONE,
-                          (gobject.TYPE_STRING,)),
-        "get-station-list" : (gobject.SIGNAL_ACTION,
-                              gobject.TYPE_PYOBJECT,
-                              (gobject.TYPE_STRING,)),
+        "config-changed" : signals.CONFIG_CHANGED,
+        "show-map-station" : signals.SHOW_MAP_STATION,
+        "ping-station" : signals.PING_STATION,
+        "get-station-list" : signals.GET_STATION_LIST,
         }
+    _signals = __gsignals__
 
     def _delete(self, window, event):
         window.set_default_size(*window.get_size())
@@ -126,7 +120,7 @@ class MainWindow(MainWindowElement):
             d = formbuilder.FormManagerGUI(self._config.form_source_dir())
 
         def do_ping(but):
-            station_list = self.emit("get-station-list", "foo")
+            station_list = self.emit("get-station-list")
             station = prompt_for_station(station_list)
             if station:
                 self.emit("ping-station", station)            
@@ -227,9 +221,6 @@ class MainWindow(MainWindowElement):
         self.tabs["event"] = EventTab(wtree, config)
         self.tabs["files"] = FilesTab(wtree, config)
         self.tabs["stations"] = StationsList(wtree, config)
-
-        self.tabs["files"].connect("status", lambda e, m: self.set_status(m))
-        self.tabs["event"].connect("status", lambda e, m: self.set_status(m))
 
         for label, tab in self.tabs.items():
             tab.connect("notice", self._maybe_blink, label)

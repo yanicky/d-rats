@@ -33,6 +33,7 @@ from d_rats import inputdialog
 from d_rats import formgui
 from d_rats import emailgw
 from d_rats.utils import log_exception
+from d_rats import signals
 
 _FOLDER_CACHE = {}
 
@@ -492,12 +493,10 @@ class MessageList(MainWindowElement):
 
 class MessagesTab(MainWindowTab):
     __gsignals__ = {
-        "user-send-form" : (gobject.SIGNAL_RUN_LAST,
-                            gobject.TYPE_NONE,
-                            (gobject.TYPE_STRING,
-                             gobject.TYPE_STRING,
-                             gobject.TYPE_STRING)),
+        "user-send-form" : signals.USER_SEND_FORM,
         }
+
+    _signals = __gsignals__
 
     def _new_msg(self, button):
         types = glob(os.path.join(self._config.form_source_dir(), "*.xml"))

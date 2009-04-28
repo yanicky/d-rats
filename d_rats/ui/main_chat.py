@@ -28,6 +28,7 @@ from d_rats.ui.main_common import MainWindowElement, MainWindowTab
 from d_rats.ui.main_common import ask_for_confirmation, display_error
 from d_rats import inputdialog
 from d_rats import qst
+from d_rats import signals
 
 class LoggedTextBuffer(gtk.TextBuffer):
     def __init__(self, logfile):
@@ -271,12 +272,10 @@ class ChatQST(MainWindowElement):
 
 class ChatTab(MainWindowTab):
     __gsignals__ = {
-        "user-sent-message" : (gobject.SIGNAL_RUN_LAST,
-                               gobject.TYPE_NONE,
-                               (gobject.TYPE_STRING,
-                                gobject.TYPE_STRING,
-                                gobject.TYPE_BOOLEAN))
+        "user-send-chat" : signals.USER_SEND_CHAT,
         }
+
+    _signals = __gsignals__
 
     def display_line(self, text, incoming, *attrs):
         """Display a single line of text with datestamp"""
@@ -365,10 +364,10 @@ class ChatTab(MainWindowTab):
             return
         entry.set_text("")
 
-        self.emit("user-sent-message", station, text, False)
+        self.emit("user-send-chat", station, text, False)
 
     def _send_msg(self, qm, msg, raw):
-        self.emit("user-sent-message", "CQCQCQ", msg, raw)
+        self.emit("user-send-chat", "CQCQCQ", msg, raw)
 
     def _bcast_file(self, but):
         dir = self._config.get("prefs", "download_dir")
@@ -389,7 +388,7 @@ class ChatTab(MainWindowTab):
             display_error(_("File is too large to send (>8KB)"))
             return
 
-        self.emit("user-sent-message", "CQCQCQ", "\r\n" + data, False)
+        self.emit("user-send-chat", "CQCQCQ", "\r\n" + data, False)
 
     def _clear(self, but):
         num, display = self._display_selected()

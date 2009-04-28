@@ -31,7 +31,7 @@ from version import DRATS_VERSION
 import platform
 import gps
 import utils
-
+import signals
 import station_status
 
 session_types = {
@@ -96,38 +96,16 @@ class SniffSession(sessionmgr.StatelessSession, gobject.GObject):
 
 class ChatSession(sessionmgr.StatelessSession, gobject.GObject):
     __gsignals__ = {
-        "incoming-chat-message" : (gobject.SIGNAL_RUN_LAST,
-                                   gobject.TYPE_NONE,
-                                   (gobject.TYPE_STRING,  # Src Station
-                                    gobject.TYPE_STRING,  # Dst Station
-                                    gobject.TYPE_STRING)),# Message
-        "outgoing-chat-message" : (gobject.SIGNAL_RUN_LAST,
-                                   gobject.TYPE_NONE,
-                                   (gobject.TYPE_STRING,  # Src Station
-                                    gobject.TYPE_STRING,  # Dst Station
-                                    gobject.TYPE_STRING)),# Message
-        "ping-request" : (gobject.SIGNAL_RUN_LAST,
-                          gobject.TYPE_NONE,
-                          (gobject.TYPE_STRING,  # Src Station
-                           gobject.TYPE_STRING,  # Dst Station
-                           gobject.TYPE_STRING)),# Content
-        "ping-response" : (gobject.SIGNAL_RUN_LAST,
-                           gobject.TYPE_NONE,
-                           (gobject.TYPE_STRING,  # Src Station
-                            gobject.TYPE_STRING,  # Dst Station
-                            gobject.TYPE_STRING)),# Content
-        "incoming-gps-fix" : (gobject.SIGNAL_RUN_LAST,
-                              gobject.TYPE_NONE,
-                              (gobject.TYPE_PYOBJECT,)),
-        "station-status" : (gobject.SIGNAL_RUN_LAST,
-                            gobject.TYPE_NONE,
-                            (gobject.TYPE_STRING,  # Station
-                             gobject.TYPE_INT,     # Status type
-                             gobject.TYPE_STRING)),# Status message
-        "get-status" : (gobject.SIGNAL_ACTION,
-                        gobject.TYPE_PYOBJECT,
-                        ()),
+        "incoming-chat-message" : signals.INCOMING_CHAT_MESSAGE,
+        "outgoing-chat-message" : signals.OUTGOING_CHAT_MESSAGE,
+        "ping-request" : signals.PING_REQUEST,
+        "ping-response" : signals.PING_RESPONSE,
+        "incoming-gps-fix" : signals.INCOMING_GPS_FIX,
+        "station-status" : signals.STATION_STATUS,
+        "get-current-status" : signals.GET_CURRENT_STATUS,
         }
+
+    _signals = __gsignals__
 
     __cb = None
     __cb_data = None
@@ -207,7 +185,7 @@ class ChatSession(sessionmgr.StatelessSession, gobject.GObject):
             self._sm.outgoing(self, frame)
 
             try:
-                s, m = self.emit("get-status")
+                s, m = self.emit("get-current-status")
                 self.advertise_status(s, m)
             except Exception, e:
                 print "Exception while getting status for ping reply:"

@@ -23,6 +23,7 @@ import gtk
 
 from d_rats.ui.main_common import MainWindowElement, MainWindowTab
 from d_rats import utils
+from d_rats import signals
 
 EVENT_INFO       = 0
 EVENT_FILE_XFER  = 1
@@ -97,14 +98,12 @@ def filter_rows(model, iter, evtab):
 
 class EventTab(MainWindowTab):
     __gsignals__ = {
-        "user-stop-session" : (gobject.SIGNAL_RUN_LAST, gobject.TYPE_NONE,
-                               (gobject.TYPE_INT,)),
-        "user-cancel-session" : (gobject.SIGNAL_RUN_LAST, gobject.TYPE_NONE,
-                                 (gobject.TYPE_INT,)),
-        "status" : (gobject.SIGNAL_RUN_LAST,
-                    gobject.TYPE_NONE,
-                    (gobject.TYPE_STRING,)),
+        "user-stop-session" : signals.USER_STOP_SESSION,
+        "user-cancel-session" : signals.USER_CANCEL_SESSION,
+        "status" : signals.STATUS,
         }
+
+    _signals = __gsignals__
 
     def _mh_xfer(self, _action, sid):
         action = _action.get_name()

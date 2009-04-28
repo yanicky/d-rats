@@ -26,6 +26,8 @@ import sessionmgr
 import sessions
 import ddt2
 
+import signals
+
 # This feels wrong
 from ui import main_events
 
@@ -282,24 +284,13 @@ class RPCSession(gobject.GObject, sessionmgr.StatelessSession):
 
 class RPCActionSet(gobject.GObject):
     __gsignals__ = {
-        "rpc-send-file" : (gobject.SIGNAL_RUN_LAST,
-                           gobject.TYPE_NONE,
-                           (gobject.TYPE_STRING,  # Station
-                            gobject.TYPE_STRING,  # Filename
-                            gobject.TYPE_STRING)),# Session name
-        "rpc-send-msg" : (gobject.SIGNAL_RUN_LAST,
-                          gobject.TYPE_NONE,
-                          (gobject.TYPE_STRING,   # Station
-                           gobject.TYPE_STRING,   # Filename
-                           gobject.TYPE_STRING)), # Session name
-        "rpc-get-msgs" : (gobject.SIGNAL_ACTION,
-                          gobject.TYPE_PYOBJECT,
-                          (gobject.TYPE_STRING,)),
-                          
-        "rpc-event" : (gobject.SIGNAL_RUN_LAST,
-                       gobject.TYPE_NONE,
-                       (gobject.TYPE_PYOBJECT,)),
+        "rpc-send-file" : signals.RPC_SEND_FILE,
+        "rpc-send-form" : signals.RPC_SEND_FORM,
+        "get-message-list" : signals.GET_MESSAGE_LIST,
+        "event" : signals.EVENT,
         }
+
+    _signals = __gsignals__
 
     def __init__(self, config):
         self.__config = config
@@ -359,13 +350,13 @@ class RPCActionSet(gobject.GObject):
     
         event = main_events.Event(None, job.get_dest() + " " + \
                                       _("Requested file list"))
-        self.emit("rpc-event", event)
+        self.emit("event", event)
 
         return result
     
     def RPC_form_list(self, job):
         result = {}
-        forms = self.emit("rpc-get-msgs", "CQCQCQ")
+        forms = self.emit("get-message-list", "CQCQCQ")
         for subj, stamp, filen in forms:
             ts = time.localtime(stamp)
             result[filen] = "%s/%s" % (subj,
@@ -374,7 +365,7 @@ class RPCActionSet(gobject.GObject):
 
         event = main_events.Event(None, job.get_dest() + " " + \
                                       _("Requested message list"))
-        self.emit("rpc-event", event)
+        self.emit("event", event)
 
         return result
     
@@ -392,14 +383,14 @@ class RPCActionSet(gobject.GObject):
 
         event = main_events.Event(None, job.get_dest() + " " + \
                                       _("Requested file %s") % job.get_file())
-        self.emit("rpc-event", event)
+        self.emit("event", event)
     
         return result
     
     def RPC_form_pull(self, job):
         result = {}
     
-        forms = self.emit("rpc-get-msgs", "CQCQCQ")
+        forms = self.emit("get-message-list", "CQCQCQ")
         result["rc"] = "Form not found"
         for subj, stamp, filen in forms:
             if filen == job.get_form():
@@ -407,11 +398,11 @@ class RPCActionSet(gobject.GObject):
                                      "messages", filen)
                 if os.path.exists(fname):
                     result["rc"] = "OK"
-                    self.emit("rpc-send-msg", job.get_dest(), fname, subj)
+                    self.emit("rpc-send-form", job.get_dest(), fname, subj)
                 break
 
         event = main_events.Event(None, job.get_dest() + " " + \
                                       _("Requested message %s") % subj)
-        self.emit("rpc-event", event)
+        self.emit("event", event)
     
         return result

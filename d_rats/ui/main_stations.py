@@ -24,26 +24,16 @@ from d_rats.ui.main_common import MainWindowTab
 from d_rats.ui import main_events
 from d_rats.ui import conntest
 from d_rats import station_status
+from d_rats import signals
 
 class StationsList(MainWindowTab):
     __gsignals__ = {
-        "get-station-list" : (gobject.SIGNAL_ACTION,
-                              gobject.TYPE_PYOBJECT,
-                              ()),
-        "ping-station" : (gobject.SIGNAL_RUN_LAST,
-                          gobject.TYPE_NONE,
-                          (gobject.TYPE_STRING,)),
-        "ping-station-echo" : (gobject.SIGNAL_RUN_LAST,
-                               gobject.TYPE_NONE,
-                               (gobject.TYPE_STRING,    # Station
-                                gobject.TYPE_STRING,    # Data
-                                gobject.TYPE_PYOBJECT,  # Callback
-                                gobject.TYPE_PYOBJECT)),# Callback data
-        "display-incoming-chat" : (gobject.SIGNAL_RUN_LAST,
-                                   gobject.TYPE_NONE,
-                                   (gobject.TYPE_STRING,  # Station
-                                    gobject.TYPE_STRING)),# Text
+        "get-station-list" : signals.GET_STATION_LIST,
+        "ping-station" : signals.PING_STATION,
+        "ping-station-echo" : signals.PING_STATION_ECHO,
+        "incoming-chat-message" : signals.INCOMING_CHAT_MESSAGE,
         }
+    _signals = __gsignals__
 
     def _update(self):
         self.__view.queue_draw()
@@ -245,8 +235,9 @@ class StationsList(MainWindowTab):
         if status_changed and status > 0 and \
                 self._config.getboolean("prefs", "chat_showstatus"):
             status_msg = station_status.STATUS_MSGS.get(status, "Unknown")
-            self.emit("display-incoming-chat",
+            self.emit("incoming-chat-message",
                       station,
+                      "CQCQCQ",
                       "%s %s: %s" % (_("Now"), status_msg, smsg))
             
     def get_status(self):
