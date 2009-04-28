@@ -434,7 +434,7 @@ class MapUSGSRiverSource(MapSource):
             print e
             _name = name
 
-        return MapUSGSRiverSource(_name, "USGS Rivers", *sites)
+        return MapUSGSRiverSource(_name, "NWIS Rivers", *sites)
 
     open_source_by_name = Callable(_open_source_by_name)
 

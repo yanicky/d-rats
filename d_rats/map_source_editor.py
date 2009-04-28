@@ -183,7 +183,7 @@ class StaticMapSourceEditor(MapSourceEditor):
 class RiverMapSourceEditor(MapSourceEditor):
     def __init__(self, config, source=None):
         if not source:
-            source = map_sources.MapUSGSRiverSource("Rivers", "USGS Rivers")
+            source = map_sources.MapUSGSRiverSource("Rivers", "NWIS Rivers")
             name_editable = True
         else:
             name_editable = False
@@ -278,7 +278,7 @@ class BuoyMapSourceEditor(MapSourceEditor):
 
 SOURCE_TYPES = {
     "Static" : (StaticMapSourceEditor, map_sources.MapFileSource),
-    "NSGS River" : (RiverMapSourceEditor, map_sources.MapUSGSRiverSource),
+    "NWIS River" : (RiverMapSourceEditor, map_sources.MapUSGSRiverSource),
     "NBDC Buoy" : (BuoyMapSourceEditor, map_sources.MapNBDCBuoySource),
     }
 
