@@ -154,12 +154,13 @@ def color_string(color):
         return "#%04x%04x%04x" % (color.red, color.green, color.blue)
 
 class AddressLookup(gtk.Button):
-    def __init__(self, caption, latw, lonw):
+    def __init__(self, caption, latw, lonw, window=None):
         gtk.Button.__init__(self, caption)
-        self.connect("clicked", self.clicked, latw, lonw)
+        self.connect("clicked", self.clicked, latw, lonw, window)
 
-    def clicked(self, me, latw, lonw):
+    def clicked(self, me, latw, lonw, window):
         aa = geocode_ui.AddressAssistant()
+        aa.set_transient_for(window)
         r = aa.run()
         if r == gtk.RESPONSE_OK:
             latw.latlon.set_text("%.5f" % aa.lat)
@@ -614,7 +615,7 @@ class DratsPathsPanel(DratsPanel):
         self.mv(_("Map Storage Directory"), val)
 
 class DratsGPSPanel(DratsPanel):
-    def __init__(self, config):
+    def __init__(self, config, window):
         DratsPanel.__init__(self, config)
 
         lat = DratsConfigWidget(config, "user", "latitude")
@@ -625,7 +626,7 @@ class DratsGPSPanel(DratsPanel):
         lon.add_coords()
         self.mv(_("Longitude"), lon)
 
-        geo = AddressLookup("Lookup", lat, lon)
+        geo = AddressLookup("Lookup", lat, lon, window)
         self.mv(_("Lookup by address"), geo)
 
         alt = DratsConfigWidget(config, "user", "altitude")
@@ -1223,8 +1224,8 @@ class DratsConfigUI(gtk.Dialog):
         self.__tree.show()
         self.__tree.connect("button_press_event", self.mouse_event)
 
-        def add_panel(c, s, l, par):
-            p = c(self.config)
+        def add_panel(c, s, l, par, *args):
+            p = c(self.config, *args)
             p.show()
             sw = gtk.ScrolledWindow()
             sw.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
@@ -1241,7 +1242,7 @@ class DratsConfigUI(gtk.Dialog):
             
         prefs = add_panel(DratsPrefsPanel, "prefs", _("Preferences"), None)
         add_panel(DratsPathsPanel, "paths", _("Paths"), prefs)
-        add_panel(DratsGPSPanel, "gps", _("GPS"), prefs)
+        add_panel(DratsGPSPanel, "gps", _("GPS"), prefs, self)
         add_panel(DratsAppearancePanel, "appearance", _("Appearance"), prefs)
         add_panel(DratsChatPanel, "chat", _("Chat"), prefs)
         add_panel(DratsSoundPanel, "sounds", _("Sounds"), prefs)
