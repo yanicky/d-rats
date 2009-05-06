@@ -294,7 +294,7 @@ class EventTab(MainWindowTab):
             gobject.idle_add(top_scroll, adj)
 
     def event(self, event):
-        gtk.idle_add(self._event, event)
+        gobject.idle_add(self._event, event)
 
     def finalize_last(self, group):
         iter = self.store.get_iter_first()
