@@ -148,10 +148,20 @@ class MainApp:
         spec = self.config.get("ports", portid)
         try:
             enb, port, rate, sniff, raw, name = spec.split(",")
+            enb = (enb == "True")
+            sniff = (sniff == "True")
+            raw = (raw == "True")                   
         except Exception, e:
             print "Failed to parse portspec %s:" % spec
             log_exception()
             return
+
+        if not enb:
+            if self.sm.has_key(name):
+                del self.sm[name]
+            return
+
+        print "Starting port %s (%s)" % (portid, name)
 
         call = self.config.get("user", "callsign")
 
@@ -180,7 +190,7 @@ class MainApp:
             return False
 
         transport_args = {
-            "compat" : raw.upper() == "TRUE",
+            "compat" : raw,
             "warmup_length" : self.config.getint("settings", "warmup_length"),
             "warmup_timeout" : self.config.getint("settings", "warmup_timeout"),
             "force_delay" : self.config.getint("settings", "force_delay"),
@@ -188,14 +198,13 @@ class MainApp:
 
         if not self.sm.has_key(name):
             sm = sessionmgr.SessionManager(path, call, **transport_args)
-            self.sm[name] = sm
 
             chat_session = sm.start_session("chat",
                                             dest="CQCQCQ",
                                             cls=sessions.ChatSession)
-            self.__connect_object(chat_session)
+            self.__connect_object(chat_session, name)
 
-            rpcactions = rpcsession.RPCActionSet(self.config)
+            rpcactions = rpcsession.RPCActionSet(self.config, name)
             self.__connect_object(rpcactions)
 
             rpc_session = sm.start_session("rpc",
@@ -203,51 +212,58 @@ class MainApp:
                                            cls=rpcsession.RPCSession,
                                            rpcactions=rpcactions)
 
-            def sniff_event(ss, src, dst, msg):
+            def sniff_event(ss, src, dst, msg, port):
                 if sniff:
                     event = main_events.Event(None, "Sniffer: %s" % msg)
                     self.mainwindow.tabs["event"].event(event)
 
-                self.mainwindow.tabs["stations"].saw_station(src)
+                self.mainwindow.tabs["stations"].saw_station(src, port)
 
             ss = sm.start_session("Sniffer",
                                   dest="CQCQCQ",
                                   cls=sessions.SniffSession)
             sm.set_sniffer_session(ss._id)
-            ss.connect("incoming_frame", sniff_event)
+            ss.connect("incoming_frame", sniff_event, name)
 
             sc = session_coordinator.SessionCoordinator(self.config, sm)
-            self.__connect_object(sc)
+            self.__connect_object(sc, name)
 
             sm.register_session_cb(sc.session_cb, None)
+
+            self.sm[name] = sm, sc
+
+            pingdata = self.config.get("settings", "ping_info")
+            if pingdata.startswith("!"):
+                def pingfn():
+                    return ping_exec(pingdata[1:])
+            elif pingdata.startswith(">"):
+                def pingfn():
+                    return ping_file(pingdata[1:])
+            elif pingdata:
+                def pingfn():
+                    return pingdata
+            else:
+                pingfn = None
+            chat_session.set_ping_function(pingfn)
+
         else:
-            sm = self.sm[name]
+            sm, sc = self.sm[name]
 
             sm.set_comm(path, **transport_args)
-            sm.set_call(callsign)
+            sm.set_call(call)
 
-        pingdata = self.config.get("settings", "ping_info")
-        if pingdata.startswith("!"):
-            def pingfn():
-                return ping_exec(pingdata[1:])
-        elif pingdata.startswith(">"):
-            def pingfn():
-                return ping_file(pingdata[1:])
-        elif pingdata:
-            def pingfn():
-                return pingdata
-        else:
-            pingfn = None
 
-        chat_session.set_ping_function(pingfn)
 
         return True
 
     def chat_session(self, portname):
-        return self.sm[portname].get_session(lid=1)
+        return self.sm[portname][0].get_session(lid=1)
 
     def rpc_session(self, portname):
-        return self.sm[portname].get_session(lid=2)
+        return self.sm[portname][0].get_session(lid=2)
+
+    def sc(self, portname):
+        return self.sm[portname][1]
 
     def _refresh_comms(self, port, rate):
         if self.stop_comms():
@@ -411,7 +427,7 @@ class MainApp:
 
         return True
 
-    def __chat(self, src, dst, data, incoming):
+    def __chat(self, src, dst, data, incoming, port):
         if src != "CQCQCQ":
             self.seen_callsigns.set_call_time(src, time.time())
 
@@ -427,7 +443,12 @@ class MainApp:
         else:
             color = "outgoingcolor"
 
-        line = "%s%s %s" % (src, to, data)
+        if port:
+            portstr = "[%s] " % port
+        else:
+            portstr = ""
+
+        line = "%s%s%s %s" % (portstr, src, to, data)
 
         @run_gtk_locked
         def do_incoming():
@@ -440,7 +461,7 @@ class MainApp:
     def __status(self, object, status):
         self.mainwindow.set_status(status)
 
-    def __user_stop_session(self, object, sid, force=False):
+    def __user_stop_session(self, object, sid, port, force=False):
         print "User did stop session %i (force=%s)" % (sid, force)
         try:
             session = self.sm.sessions[sid]
@@ -448,32 +469,36 @@ class MainApp:
         except Exception, e:
             print "Session `%i' not found: %s" % (sid, e)
     
-    def __user_cancel_session(self):
-        self.__user_stop_session(object.sid, True)
+    def __user_cancel_session(self, object, sid, port):
+        self.__user_stop_session(object, sid, port, True)
 
-    def __user_send_form(self, object, station, fname, sname):
-        self.sc.send_form(station, fname, sname)
+    def __user_send_form(self, object, station, port, fname, sname):
+        self.sc(port).send_form(station, fname, sname)
 
-    def __user_send_file(self, object, station, fname, sname):
-        self.sc.send_file(station, fname, sname)
+    def __user_send_file(self, object, station, port, fname, sname):
+        self.sc(port).send_file(station, fname, sname)
 
-    def __user_send_chat(self, object, station, msg, raw):
-        self.chat_session.write(msg)
+    def __user_send_chat(self, object, station, port, msg, raw):
+        self.chat_session(port).write(msg)
 
-    def __incoming_chat_message(self, object, src, dst, data):
-        self.__chat(src, dst, data, True)
+    def __incoming_chat_message(self, object, src, dst, data, port=None):
+        self.__chat(src, dst, data, True, port)
 
-    def __outgoing_chat_message(self, object, src, dst, data):
-        self.__chat(src, dst, data, False)
+    def __outgoing_chat_message(self, object, src, dst, data, port=None):
+        self.__chat(src, dst, data, False, port)
 
     def __get_station_list(self, object):
-        return self.sm.get_heard_stations().keys()
+        stations = {}
+        for port, (sm, sc) in self.sm.items():
+            stations[port] = sm.get_heard_stations().keys()
+
+        return stations
 
     def __get_message_list(self, object, station):
         return self.mainwindow.tabs["messages"].get_shared_messages(station)
 
-    def __submit_rpc_job(self, object, job):
-        self.rpc_session.submit(job)
+    def __submit_rpc_job(self, object, job, port):
+        self.rpc_session(port).submit(job)
 
     def __event(self, object, event):
         self.mainwindow.tabs["event"].event(event)
@@ -485,26 +510,27 @@ class MainApp:
         print "Showing map"
         self.map.show()
 
-    def __ping_station(self, object, station):
-        self.chat_session.ping_station(station)
+    def __ping_station(self, object, station, port):
+        self.chat_session(port).ping_station(station)
 
     def __ping_station_echo(self, object, station, data, callback, cb_data):
         self.chat_session.ping_echo_station(station, data, callback, cb_data)
 
-    def __ping_request(self, object, src, dst, data):
-        msg = "%s pinged %s" % (src, dst)
+    def __ping_request(self, object, src, dst, data, port):
+        msg = "%s pinged %s [%s]" % (src, dst, port)
         if data:
             msg += " (%s)" % data
 
         event = main_events.PingEvent(None, msg)
         self.mainwindow.tabs["event"].event(event)
 
-    def __ping_response(self, object, src, dst, data):
-        msg = "%s replied to ping from %s with: %s" % (src, dst, data)
+    def __ping_response(self, object, src, dst, data, port):
+        msg = "%s replied to ping from %s with: %s [%s]" % (src, dst,
+                                                            data, port)
         event = main_events.PingEvent(None, msg)
         self.mainwindow.tabs["event"].event(event)
 
-    def __incoming_gps_fix(self, object, fix):
+    def __incoming_gps_fix(self, object, fix, port):
         ts = self.mainwindow.tabs["event"].last_event_time(fix.station)
         if (time.time() - ts) > 300:
             self.mainwindow.tabs["event"].finalize_last(fix.station)
@@ -513,7 +539,7 @@ class MainApp:
         event = main_events.PosReportEvent(fix.station, str(fix))
         self.mainwindow.tabs["event"].event(event)
 
-        self.mainwindow.tabs["stations"].saw_station(fix.station)
+        self.mainwindow.tabs["stations"].saw_station(fix.station, port)
 
         point = map_sources.MapStation(fix.station,
                                        fix.latitude,
@@ -523,8 +549,8 @@ class MainApp:
         self.stations_overlay.add_point(point)
         self.stations_overlay.save()
 
-    def __station_status(self, object, sta, stat, msg):
-        self.mainwindow.tabs["stations"].saw_station(sta, stat, msg)
+    def __station_status(self, object, sta, stat, msg, port):
+        self.mainwindow.tabs["stations"].saw_station(sta, port, stat, msg)
         status = station_status.STATUS_MSGS[stat]
         event = main_events.Event(None, 
                                   "%s %s %s %s: %s" % (_("Station"),
@@ -534,7 +560,7 @@ class MainApp:
                                                        msg))
         self.mainwindow.tabs["event"].event(event)
 
-    def __get_current_status(self, object):
+    def __get_current_status(self, object, port):
         return self.mainwindow.tabs["stations"].get_status()
 
     def __get_current_position(self, object, station):
@@ -552,26 +578,26 @@ class MainApp:
                     break
             raise Exception("Station not found")
 
-    def __session_started(self, object, id, msg=None):
+    def __session_started(self, object, id, msg, port):
         if msg is None:
             msg = "Ended"
 
         print "[SESSION %i]: %s" % (id, msg)
 
-        event = main_events.SessionEvent(id, msg)
+        event = main_events.SessionEvent(id, port, msg)
         self.mainwindow.tabs["event"].event(event)
 
-    def __session_status_update(self, object, *args):
-        self.__session_started(object, *args)
+    def __session_status_update(self, object, id, msg, port):
+        self.__session_started(object, id, msg, port)
 
-    def __session_ended(self, object, *args):
-        self.__session_started(object, *args)
+    def __session_ended(self, object, id, port):
+        self.__session_started(object, id, None, port)
 
-    def __session_failed(self, object, id, msg):
+    def __session_failed(self, object, id, msg, port):
         event = main_events.Event(id, msg)
         self.mainwindow.tabs["event"].event(event)
 
-    def __form_received(self, object, id, fn):
+    def __form_received(self, object, id, fn, port):
         print "[NEWFORM %i]: %s" % (id, fn)
         f = formgui.FormFile("", fn)
         msg = '%s "%s" %s %s' % (_("Message"),
@@ -583,7 +609,7 @@ class MainApp:
         self.mainwindow.tabs["messages"].refresh_if_folder("Inbox")
         self.mainwindow.tabs["event"].event(event)
 
-    def __file_received(self, object, id, fn):
+    def __file_received(self, object, id, fn, port):
         _fn = os.path.basename(fn)
         msg = '%s "%s" %s' % (_("File"), _fn, _("Received"))
         event = main_events.FileEvent(id, msg)
@@ -591,14 +617,14 @@ class MainApp:
         self.mainwindow.tabs["files"].refresh_local()
         self.mainwindow.tabs["event"].event(event)
                 
-    def __form_sent(self, object, id, fn):
+    def __form_sent(self, object, id, fn, port):
         print "[FORMSENT %i]: %s" % (id, fn)
         event = main_events.FormEvent(id, _("Message Sent"))
         event.set_as_final()
         self.mainwindow.tabs["messages"].message_sent(fn)
         self.mainwindow.tabs["event"].event(event)
 
-    def __file_sent(self, object, id, fn):
+    def __file_sent(self, object, id, fn, port):
         print "[FILESENT %i]: %s" % (id, fn)
         _fn = os.path.basename(fn)
         msg = '%s "%s" %s' % (_("File"), _fn, _("Sent"))
@@ -609,7 +635,7 @@ class MainApp:
 
 # ------------ END SIGNAL HANDLERS ----------------
 
-    def __connect_object(self, object):
+    def __connect_object(self, object, *args):
         for signal in object._signals.keys():
             handler = self.handlers.get(signal, None)
             if handler is None:
@@ -617,7 +643,7 @@ class MainApp:
                                     (signal, object))
             elif self.handlers[signal]:
                 try:
-                    object.connect(signal, handler)
+                    object.connect(signal, handler, *args)
                 except Exception:
                     print "Failed to attach signal %s" % signal
                     raise
@@ -692,9 +718,9 @@ class MainApp:
         
         if self.config.getboolean("prefs", "dosignon") and self.chat_session:
             msg = self.config.get("prefs", "signon")
-            # Do this for each port?
-            #self.chat_session.advertise_status(station_status.STATUS_ONLINE,
-            #                                   msg)
+            status = station_status.STATUS_ONLINE
+            for port in self.sm.keys():
+                self.chat_session(port).advertise_status(status, msg)
 
         gobject.timeout_add(3000, self._refresh_location)
 
@@ -731,8 +757,10 @@ class MainApp:
 
         if self.config.getboolean("prefs", "dosignoff") and self.sm:
             msg = self.config.get("prefs", "signoff")
-            self.chat_session.advertise_status(station_status.STATUS_OFFLINE,
-                                               msg)
+            status = station_status.STATUS_OFFLINE
+            for port in self.sm.keys():
+                self.chat_session(port).advertise_status(status, msg)
+
             time.sleep(0.5) # HACK
 
         #self.chatgui.save_static_locations()

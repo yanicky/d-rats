@@ -18,7 +18,7 @@
 import gobject
 import gtk
 
-from d_rats import inputdialog
+from d_rats import inputdialog, miscwidgets
 from d_rats import signals
 
 def ask_for_confirmation(question, parent=None):
@@ -39,16 +39,33 @@ def display_error(message, parent=None):
 
     return r == gtk.RESPONSE_OK
 
-def prompt_for_station(station_list, parent=None):
-    d = inputdialog.EditableChoiceDialog(station_list)
-    d.label.set_text(_("Select (or enter) a destination station"))
-    r = d.run()
-    station = d.choice.get_active_text()
-    d.destroy()
-    if r != gtk.RESPONSE_OK:
-        return None
+def prompt_for_station(station_list, config, parent=None):
+    port_list = []
+    for i in config.options("ports"):
+        enb, port, rate, sniff, raw, name = config.get("ports", i).split(",")
+        if enb == "True":
+            port_list.append(name)
+
+    if len(station_list) > 0:
+        default = station_list[0]
     else:
-        return station[:8].upper()
+        default = ""
+
+    station = miscwidgets.make_choice(station_list, True, default)
+    port = miscwidgets.make_choice(port_list, False, port_list[0])
+
+    d = inputdialog.FieldDialog(title=_("Enter destination"), parent=parent)
+    d.add_field(_("Station"), station)
+    d.add_field(_("Port"), port)
+
+    res = d.run()
+    s = station.get_active_text().upper()
+    p = port.get_active_text()
+    d.destroy()
+    if res == gtk.RESPONSE_OK:
+        return s, p
+    else:
+        return None, None
 
 class MainWindowElement(gobject.GObject):
     def __init__(self, wtree, config, prefix):

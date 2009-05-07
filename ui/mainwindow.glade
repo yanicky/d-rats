@@ -396,17 +396,12 @@
                           <widget class="GtkHBox" id="hbox2">
                             <property name="visible">True</property>
                             <child>
-                              <widget class="GtkComboBoxEntry" id="chat_destination">
-                                <property name="width_request">100</property>
+                              <widget class="GtkComboBox" id="chat_destination">
                                 <property name="visible">True</property>
-                                <property name="items" translatable="yes">CQCQCQ
-KK7DS
-KE7FTE</property>
-                                <child internal-child="entry">
-                                  <widget class="GtkEntry" id="comboboxentry-entry1">
-                                    <property name="text" translatable="yes">CQCQCQ</property>
-                                  </widget>
-                                </child>
+                                <property name="active">0</property>
+                                <property name="items" translatable="yes">A
+B
+C</property>
                               </widget>
                               <packing>
                                 <property name="expand">False</property>
@@ -631,9 +626,8 @@ KE7FTE</property>
                                 <child>
                                   <widget class="GtkToolbar" id="files_local_toolbar">
                                     <property name="visible">True</property>
-                                    <property name="toolbar_style">GTK_TOOLBAR_BOTH_HORIZ</property>
+                                    <property name="toolbar_style">GTK_TOOLBAR_BOTH</property>
                                     <property name="show_arrow">False</property>
-                                    <property name="icon_size">GTK_ICON_SIZE_SMALL_TOOLBAR</property>
                                     <property name="icon_size_set">True</property>
                                   </widget>
                                   <packing>
@@ -687,9 +681,8 @@ KE7FTE</property>
                                 <child>
                                   <widget class="GtkToolbar" id="files_remote_toolbar">
                                     <property name="visible">True</property>
-                                    <property name="toolbar_style">GTK_TOOLBAR_BOTH_HORIZ</property>
+                                    <property name="toolbar_style">GTK_TOOLBAR_BOTH</property>
                                     <property name="show_arrow">False</property>
-                                    <property name="icon_size">GTK_ICON_SIZE_SMALL_TOOLBAR</property>
                                     <property name="icon_size_set">True</property>
                                   </widget>
                                   <packing>
@@ -697,11 +690,8 @@ KE7FTE</property>
                                   </packing>
                                 </child>
                                 <child>
-                                  <widget class="GtkHBox" id="files_remote_station_bin">
+                                  <widget class="GtkLabel" id="label11">
                                     <property name="visible">True</property>
-                                    <child>
-                                      <placeholder/>
-                                    </child>
                                   </widget>
                                   <packing>
                                     <property name="position">1</property>
@@ -725,6 +715,56 @@ KE7FTE</property>
                               </packing>
                             </child>
                             <child>
+                              <widget class="GtkHBox" id="hbox8">
+                                <property name="visible">True</property>
+                                <child>
+                                  <widget class="GtkLabel" id="label5">
+                                    <property name="visible">True</property>
+                                    <property name="label" translatable="yes">Station:</property>
+                                  </widget>
+                                  <packing>
+                                    <property name="expand">False</property>
+                                    <property name="padding">4</property>
+                                  </packing>
+                                </child>
+                                <child>
+                                  <widget class="GtkComboBoxEntry" id="files_sel_station">
+                                    <property name="visible">True</property>
+                                    <property name="items" translatable="yes">a
+b
+c</property>
+                                    <child internal-child="entry">
+                                      <widget class="GtkEntry" id="comboboxentry-entry1">
+                                        <property name="width_request">62</property>
+                                        <property name="visible">True</property>
+                                        <property name="can_focus">True</property>
+                                      </widget>
+                                    </child>
+                                  </widget>
+                                  <packing>
+                                    <property name="position">1</property>
+                                  </packing>
+                                </child>
+                                <child>
+                                  <widget class="GtkComboBox" id="files_sel_port">
+                                    <property name="visible">True</property>
+                                    <property name="items" translatable="yes">a
+b
+c
+</property>
+                                  </widget>
+                                  <packing>
+                                    <property name="expand">False</property>
+                                    <property name="position">2</property>
+                                  </packing>
+                                </child>
+                              </widget>
+                              <packing>
+                                <property name="expand">False</property>
+                                <property name="position">1</property>
+                              </packing>
+                            </child>
+                            <child>
                               <widget class="GtkScrolledWindow" id="scrolledwindow7">
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
@@ -738,7 +778,7 @@ KE7FTE</property>
                                 </child>
                               </widget>
                               <packing>
-                                <property name="position">1</property>
+                                <property name="position">2</property>
                               </packing>
                             </child>
                           </widget>

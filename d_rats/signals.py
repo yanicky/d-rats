@@ -23,15 +23,18 @@ STATUS = \
 
 USER_STOP_SESSION = \
     (gobject.SIGNAL_RUN_LAST, gobject.TYPE_NONE,
-     (gobject.TYPE_INT,))
+     (gobject.TYPE_INT,         # Session ID
+      gobject.TYPE_STRING))     # Port Name
 
 USER_CANCEL_SESSION = \
     (gobject.SIGNAL_RUN_LAST, gobject.TYPE_NONE,
-     (gobject.TYPE_INT,))
+     (gobject.TYPE_INT,         # Session ID
+      gobject.TYPE_STRING))     # Port Name
 
 USER_SEND_FORM = \
     (gobject.SIGNAL_RUN_LAST, gobject.TYPE_NONE,
      (gobject.TYPE_STRING,      # Station
+      gobject.TYPE_STRING,      # Port Name
       gobject.TYPE_STRING,      # Filename
       gobject.TYPE_STRING))     # Session name
 RPC_SEND_FORM = USER_SEND_FORM
@@ -39,6 +42,7 @@ RPC_SEND_FORM = USER_SEND_FORM
 USER_SEND_FILE = \
     (gobject.SIGNAL_RUN_LAST, gobject.TYPE_NONE,
      (gobject.TYPE_STRING,      # Station
+      gobject.TYPE_STRING,      # Port Name
       gobject.TYPE_STRING,      # Filename
       gobject.TYPE_STRING))     # Session name
 RPC_SEND_FILE = USER_SEND_FILE
@@ -46,6 +50,7 @@ RPC_SEND_FILE = USER_SEND_FILE
 USER_SEND_CHAT = \
     (gobject.SIGNAL_RUN_LAST, gobject.TYPE_NONE,
      (gobject.TYPE_STRING,      # Station
+      gobject.TYPE_STRING,      # Port Name
       gobject.TYPE_STRING,      # Text
       gobject.TYPE_BOOLEAN))    # Raw
 
@@ -66,7 +71,8 @@ GET_MESSAGE_LIST = \
 
 SUBMIT_RPC_JOB = \
     (gobject.SIGNAL_RUN_LAST, gobject.TYPE_NONE,
-     (gobject.TYPE_PYOBJECT,))  # Job
+     (gobject.TYPE_PYOBJECT,    # Job
+      gobject.TYPE_STRING))     # Port Name
 
 EVENT = \
     (gobject.SIGNAL_RUN_LAST, gobject.TYPE_NONE,
@@ -86,11 +92,13 @@ SHOW_MAP_STATION = \
 
 PING_STATION = \
     (gobject.SIGNAL_RUN_LAST, gobject.TYPE_NONE,
-     (gobject.TYPE_STRING,))     # Station
+     (gobject.TYPE_STRING,       # Station
+      gobject.TYPE_STRING))      # Port Name
 
 PING_STATION_ECHO = \
     (gobject.SIGNAL_RUN_LAST, gobject.TYPE_NONE,
      (gobject.TYPE_STRING,       # Station
+      gobject.TYPE_STRING,       # Port Name
       gobject.TYPE_STRING,       # Data
       gobject.TYPE_PYOBJECT,     # Callback
       gobject.TYPE_PYOBJECT))    # Callback data

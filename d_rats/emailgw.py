@@ -207,7 +207,7 @@ class MailThread(threading.Thread, gobject.GObject):
                                _("Outbox"),
                                os.path.basename(ffn))
             os.rename(ffn, nfn) # Move to Outbox
-            self.emit("user-send-form", recip, nfn, subject)
+            self.emit("user-send-form", recip, None, nfn, subject)
             msg = "Attempted send of mail from %s to %s" % (sender, recip)
         else:
             self.emit("form-received", None, nfn)
@@ -236,7 +236,7 @@ class MailThread(threading.Thread, gobject.GObject):
             mail.get("Subject", ""),
             body)
             
-        self.emit("user-send-chat", "CQCQCQ", text, False)
+        self.emit("user-send-chat", "CQCQCQ", None, text, False)
 
         event = main_events.Event(None,
                                   "Mail received from %s and sent via chat" % \

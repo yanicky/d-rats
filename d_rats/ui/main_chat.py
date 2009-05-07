@@ -26,7 +26,7 @@ import pango
 
 from d_rats.ui.main_common import MainWindowElement, MainWindowTab
 from d_rats.ui.main_common import ask_for_confirmation, display_error
-from d_rats import inputdialog
+from d_rats import inputdialog, utils
 from d_rats import qst
 from d_rats import signals
 
@@ -360,13 +360,13 @@ class ChatTab(MainWindowTab):
             self._notice()
 
     def _send_button(self, button, dest, entry):
-        station = dest.get_active_text()
+        port = dest.get_active_text()
         text = entry.get_text()
         if not text:
             return
         entry.set_text("")
 
-        self.emit("user-send-chat", station, text, False)
+        self.emit("user-send-chat", "CQCQCQ", port, text, False)
 
     def _send_msg(self, qm, msg, raw):
         self.emit("user-send-chat", "CQCQCQ", msg, raw)
@@ -570,6 +570,26 @@ class ChatTab(MainWindowTab):
         fontname = self._config.get("prefs", "font")
         font = pango.FontDescription(fontname)
         display.modify_font(font)
+
+        dest, = self._getw("destination")
+
+        ports = []
+        for p in self._config.options("ports"):
+            spec = self._config.get("ports", p)
+            e, p, r, s, raw, name = spec.split(",")
+            if e == "True":
+                ports.append(name)
+
+        model = dest.get_model()
+        if model:
+            model.clear()
+        else:
+            model = gtk.ListStore(gobject.TYPE_STRING)
+            dest.set_model(model)
+        for port in ports:
+            print "Appending %s" % port
+            model.append((port,))
+        utils.combo_select(dest, ports[0])
 
     def selected(self):
         MainWindowTab.selected(self)

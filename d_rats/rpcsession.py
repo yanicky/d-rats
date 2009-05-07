@@ -294,8 +294,9 @@ class RPCActionSet(gobject.GObject):
 
     _signals = __gsignals__
 
-    def __init__(self, config):
+    def __init__(self, config, port):
         self.__config = config
+        self.__port = port
 
         gobject.GObject.__init__(self)
 
@@ -318,7 +319,8 @@ class RPCActionSet(gobject.GObject):
             result["rc"] = "No data for station '%s'" % job.get_station()
 
         if fix:
-            self.emit("user-send-chat", "CQCQCQ", fix.to_NMEA_GGA(), True)
+            self.emit("user-send-chat",
+                      "CQCQCQ", self.__port, fix.to_NMEA_GGA(), True)
             
         print "[RPC] Position request for `%s'" % job.get_station()
     
@@ -373,7 +375,8 @@ class RPCActionSet(gobject.GObject):
         print "Remote requested %s" % path
         if os.path.exists(path):
             result["rc"] = "OK"
-            self.emit("rpc-send-file", job.get_dest(), path, job.get_file())
+            self.emit("rpc-send-file",
+                      job.get_dest(), self.__port, path, job.get_file())
         else:
             result["rc"] = "File not found"
 
@@ -394,7 +397,8 @@ class RPCActionSet(gobject.GObject):
                                      "messages", filen)
                 if os.path.exists(fname):
                     result["rc"] = "OK"
-                    self.emit("rpc-send-form", job.get_dest(), fname, subj)
+                    self.emit("rpc-send-form",
+                              job.get_dest(), self.__port, fname, subj)
                 break
 
         event = main_events.Event(None, job.get_dest() + " " + \

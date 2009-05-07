@@ -121,9 +121,12 @@ class MainWindow(MainWindowElement):
 
         def do_ping(but):
             station_list = self.emit("get-station-list")
-            station = prompt_for_station(station_list)
+            stations = []
+            for portlist in station_list.values():
+                stations += portlist
+            station, port = prompt_for_station(stations, self._config)
             if station:
-                self.emit("ping-station", station)            
+                self.emit("ping-station", station, port)
 
         def do_conninet(but):
             self._config.set("state", "connected_inet", but.get_active())

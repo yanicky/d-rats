@@ -45,7 +45,7 @@ class StationsList(MainWindowTab):
 
         return True
 
-    def _mh(self, _action, station):
+    def _mh(self, _action, station, port):
         action = _action.get_name()
 
         model = self.__view.get_model()
@@ -57,7 +57,8 @@ class StationsList(MainWindowTab):
             iter = model.iter_next(iter)
 
         if action == "ping":
-            self.emit("ping-station", station)
+            # FIXME: Use the port we saw the user on
+            self.emit("ping-station", station, port)
         elif action == "conntest":
             ct = conntest.ConnTestAssistant(station)
             ct.connect("ping-echo-station",
@@ -81,13 +82,18 @@ class StationsList(MainWindowTab):
                 print "Result: %s" % str(result)
             job.set_station(station)
             job.connect("state-change", log_result)
-            self.emit("submit-rpc-job", job)
+
+            # FIXME: Send on the port where we saw this user
+            self.emit("submit-rpc-job", job, port)
         elif action == "clearall":
             model.clear()
         elif action == "pingall":
-            self.emit("ping-station", "CQCQCQ")
+            stationlist = self.emit("get-station-list")
+            for port in stationlist.keys():
+                print "Doing CQCQCQ ping on port %s" % port
+                self.emit("ping-station", "CQCQCQ", port)
 
-    def _make_station_menu(self, station):
+    def _make_station_menu(self, station, port):
         xml = """
 <ui>
   <popup name="menu">
@@ -111,7 +117,7 @@ class StationsList(MainWindowTab):
 
         for action, label, stock in actions:
             a = gtk.Action(action, label, None, stock)
-            a.connect("activate", self._mh, station)
+            a.connect("activate", self._mh, station, port)
             a.set_sensitive(station is not None)
             ag.add_action(a)
 
@@ -119,7 +125,7 @@ class StationsList(MainWindowTab):
                    ("pingall", _("Ping All Stations"), None)]
         for action, label, stock in actions:
             a = gtk.Action(action, label, None, stock)
-            a.connect("activate", self._mh, station)
+            a.connect("activate", self._mh, station, port)
             ag.add_action(a)
 
         uim = gtk.UIManager()
@@ -137,12 +143,13 @@ class StationsList(MainWindowTab):
             pathinfo = view.get_path_at_pos(int(x), int(y))
             if pathinfo is None:
                 station = None
+                port = None
             else:
                 view.set_cursor_on_cell(pathinfo[0])
                 (model, iter) = view.get_selection().get_selected()
-                station, = model.get(iter, 0)
+                station, port = model.get(iter, 0, 5)
 
-        menu = self._make_station_menu(station)
+        menu = self._make_station_menu(station, port)
         menu.popup(None, None, None, event.button, event.time)
 
     def __init__(self, wtree, config):
@@ -154,7 +161,8 @@ class StationsList(MainWindowTab):
                               gobject.TYPE_INT,     # Timestamp
                               gobject.TYPE_STRING,  # Message
                               gobject.TYPE_INT,     # Status
-                              gobject.TYPE_STRING)  # Status message
+                              gobject.TYPE_STRING,  # Status message
+                              gobject.TYPE_STRING)  # Port
         store.set_sort_column_id(1, gtk.SORT_DESCENDING)
         self.__view.set_model(store)
 
@@ -212,7 +220,7 @@ class StationsList(MainWindowTab):
 
         gobject.timeout_add(30000, self._update)
 
-    def saw_station(self, station, status=0, smsg=""):
+    def saw_station(self, station, port, status=0, smsg=""):
         status_changed = False
 
         if station == "CQCQCQ":
@@ -221,11 +229,14 @@ class StationsList(MainWindowTab):
         store = self.__view.get_model()
 
         ts = time.time()
-        msg = "%s <b>%s</b> %s <i>%s</i>" % (_("Station"),
-                                             station,
-                                             _("last seen at"),
-                                             time.strftime("%X %x",
-                                                           time.localtime(ts)))
+        msg = "%s <b>%s</b> %s <i>%s</i>\r\n%s: <b>%s</b>" % \
+            (_("Station"),
+             station,
+             _("last seen at"),
+             time.strftime("%X %x",
+                           time.localtime(ts)),
+             _("Port"),
+             port)
 
         if station not in self.__calls:
             if smsg:
@@ -233,7 +244,7 @@ class StationsList(MainWindowTab):
                     station_status.STATUS_MSGS.get(status, "Unknown"),
                     smsg)
             self.__calls.append(station)
-            store.append((station, ts, msg, status, smsg))
+            store.append((station, ts, msg, status, smsg, port))
             self.__view.queue_draw()
             status_changed = True
         else:
@@ -253,7 +264,7 @@ class StationsList(MainWindowTab):
                         station_status.STATUS_MSGS.get(status,
                                                        "Unknown"),
                         smsg)
-                    store.set(iter, 1, ts, 2, msg, 3, status, 4, smsg)
+                    store.set(iter, 1, ts, 2, msg, 3, status, 4, smsg, 5, port)
                     break
                 iter = store.iter_next(iter)
 

@@ -604,11 +604,11 @@ class MessagesTab(MainWindowTab):
 
         fn = sel[0]
 
-        station = prompt_for_station([])
+        station, port = prompt_for_station([], self._config)
         if not station:
             return
 
-        self.emit("user-send-form", station, fn, "foo")
+        self.emit("user-send-form", station, port, fn, "foo")
 
     def _email(self, button):
         try:
