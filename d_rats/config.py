@@ -428,6 +428,10 @@ class DratsListConfigWidget(DratsConfigWidget):
 
         w = miscwidgets.KeyedListWidget(cols)
 
+        def foo(*args):
+            return
+        w.connect("item-toggled", foo)
+
         options = self.config.options(self.vsec)
         for option in options:
             vals = self.config.get(self.vsec, option).split(",", len(cols))
@@ -719,28 +723,128 @@ class DratsSoundPanel(DratsPanel):
         
 
 class DratsRadioPanel(DratsPanel):
+    INITIAL_ROWS = 3
+
+    def mv(self, title, *widgets):
+        self.attach(widgets[0], 0, 2, 0, 1)
+        widgets[0].show()
+
+        if len(widgets) > 1:
+            box = gtk.HBox(True, 2)
+
+            for i in widgets[1:]:
+                box.pack_start(i, 0, 0, 0)
+                i.show()
+
+            box.show()
+            self.attach(box, 0, 2, 1, 2, yoptions=gtk.SHRINK)
+
+    def _do_edit(self, lw, _port="", _name="", _rate="9600"):
+        _ports = platform.get_platform().list_serial_ports()
+
+        port = miscwidgets.make_choice(_ports, default=_ports[0])
+        rate = miscwidgets.make_choice(BAUD_RATES, False, "9600")        
+        name = gtk.Entry()
+
+        if _port:
+            port.child.set_text(_port)
+            utils.combo_select(rate, _rate)
+            name.set_text(_name)
+            port.set_sensitive(False)
+            _foo, en, _foo, _foo, sniff, raw, _foo = lw.get_item(_port)
+        else:
+            en = True
+            sniff = raw = False
+
+        values = self.prompt_for([(_("Port"), port),
+                                  (_("Rate"), rate),
+                                  (_("Name"), name)])
+        if values is None:
+            return
+
+        lw.set_item(str(values[_("Port")]),
+                    en,
+                    str(values[_("Port")]),
+                    str(values[_("Rate")]),
+                    sniff,
+                    raw,
+                    str(values[_("Name")]))
+
+    def but_add(self, button, lw):
+        self._do_edit(lw)
+
+    def but_mod(self, button, lw):
+        values = lw.get_item(lw.get_selected())
+        print "Values: %s" % str(values)
+        self._do_edit(lw, values[0], values[6], values[3])
+
+    def but_rem(self, button, lw):
+        lw.del_item(lw.get_selected())
+
+    def prompt_for(self, fields):
+        d = inputdialog.FieldDialog()
+        for n, w in fields:
+            d.add_field(n, w)
+
+        ret = {}
+
+        done = False
+        while not done and d.run() == gtk.RESPONSE_OK:
+            done = True
+            for n, w in fields:
+                try:
+                    if isinstance(w, gtk.ComboBox):
+                        ret[n] = w.get_active_text()
+                    elif isinstance(w, gtk.ComboBoxEntry):
+                        ret[n] = w.get_active_text()
+                    else:
+                        ret[n] = w.get_text()
+                    if not [n]:
+                        raise ValueError("empty")
+                except ValueError, e:
+                    ed = gtk.MessageDialog(buttons=gtk.BUTTONS_OK)
+                    ed.set_property("text",
+                                    _("Invalid value for") + " %s: %s" % (n, e))
+                    ed.run()
+                    ed.destroy()
+                    done = False
+                    break
+        d.destroy()
+
+        if done:
+            return ret
+        else:
+            return None
+
     def __init__(self, config):
         DratsPanel.__init__(self, config)
 
-        ports = platform.get_platform().list_serial_ports()
+        cols = [(gobject.TYPE_STRING, "ID"),
+                (gobject.TYPE_BOOLEAN, _("Enabled")),
+                (gobject.TYPE_STRING, _("Port")),
+                (gobject.TYPE_STRING, _("Settings")),
+                (gobject.TYPE_BOOLEAN, _("Sniff")),
+                (gobject.TYPE_BOOLEAN, _("Raw Text")),
+                (gobject.TYPE_STRING, _("Name"))]
 
-        port = DratsConfigWidget(config, "settings", "port")
-        port.add_combo(ports, True, 120)
-        rate = DratsConfigWidget(config, "settings", "rate")
-        rate.add_combo(BAUD_RATES, False)
-        self.mv(_("Serial Port"), port, rate)
+        lab = gtk.Label(_("Configure data paths below.  This may include any number of serial-attached radios and network-attached proxies."))
 
-        pwd = DratsConfigWidget(config, "settings", "socket_pw")
-        pwd.add_text(hint=_("No password"))
-        self.mv(_("Ratflector password"), pwd)
+        val = DratsListConfigWidget(config, "ports")
 
-        val = DratsConfigWidget(config, "settings", "compatmode")
-        val.add_bool()
-        self.mv(_("Receive raw text"), val)
+        def make_key(vals):
+            return vals[1]
 
-        val = DratsConfigWidget(config, "settings", "sniff_packets")
-        val.add_bool()
-        self.mv(_("Sniff packets"), val)
+        lw = val.add_list(cols, make_key)
+        add = gtk.Button(_("Add"), gtk.STOCK_ADD)
+        add.connect("clicked", self.but_add, lw)
+        mod = gtk.Button(_("Edit"), gtk.STOCK_EDIT)
+        mod.connect("clicked", self.but_mod, lw)
+        rem = gtk.Button(_("Remove"), gtk.STOCK_DELETE)
+        rem.connect("clicked", self.but_rem, lw)
+
+        self.mv(_("Paths"), val, add, mod, rem)
+
+        lw.set_resizable(1, False)
 
 class DratsTransfersPanel(DratsPanel):
     def __init__(self, config):

@@ -144,10 +144,15 @@ class MainApp:
         else:
             return False
 
-    def start_comms(self):
-        rate = self.config.get("settings", "rate")
-        port = self.config.get("settings", "port")
-        pswd = self.config.get("settings", "socket_pw")
+    def start_comms(self, portid):
+        spec = self.config.get("ports", portid)
+        try:
+            enb, port, rate, sniff, raw, name = spec.split(",")
+        except Exception, e:
+            print "Failed to parse portspec %s:" % spec
+            log_exception()
+            return
+
         call = self.config.get("user", "callsign")
 
         if ":" in port:
@@ -161,12 +166,12 @@ class MainApp:
                 self.mainwindow.tabs["event"].event(event)
                 return False
 
-            self.comm = comm.SocketDataPath((host, int(port), call, pswd))
+            path = comm.SocketDataPath((host, int(port), call, rate))
         else:
-            self.comm = comm.SerialDataPath((port, int(rate)))
+            path = comm.SerialDataPath((port, int(rate)))
                                    
         try:
-            self.comm.connect()
+            path.connect()
         except comm.DataPathNotConnectedError, e:
             print "COMM did not connect: %s" % e
             event = main_events.Event(None,
@@ -175,55 +180,51 @@ class MainApp:
             return False
 
         transport_args = {
-            "compat" : self.config.getboolean("settings", "compatmode"),
+            "compat" : raw.upper() == "TRUE",
             "warmup_length" : self.config.getint("settings", "warmup_length"),
             "warmup_timeout" : self.config.getint("settings", "warmup_timeout"),
             "force_delay" : self.config.getint("settings", "force_delay"),
             }
 
-        callsign = self.config.get("user", "callsign")
-        if not self.sm:
-            self.sm = sessionmgr.SessionManager(self.comm,
-                                                callsign,
-                                                **transport_args)
+        if not self.sm.has_key(name):
+            sm = sessionmgr.SessionManager(path, call, **transport_args)
+            self.sm[name] = sm
 
-
-            self.chat_session = self.sm.start_session("chat",
-                                                      dest="CQCQCQ",
-                                                      cls=sessions.ChatSession)
-            self.__connect_object(self.chat_session)
+            chat_session = sm.start_session("chat",
+                                            dest="CQCQCQ",
+                                            cls=sessions.ChatSession)
+            self.__connect_object(chat_session)
 
             rpcactions = rpcsession.RPCActionSet(self.config)
             self.__connect_object(rpcactions)
 
-            self.rpc_session = self.sm.start_session("rpc",
-                                                     dest="CQCQCQ",
-                                                     cls=rpcsession.RPCSession,
-                                                     rpcactions=rpcactions)
+            rpc_session = sm.start_session("rpc",
+                                           dest="CQCQCQ",
+                                           cls=rpcsession.RPCSession,
+                                           rpcactions=rpcactions)
 
             def sniff_event(ss, src, dst, msg):
-                if self.config.getboolean("settings", "sniff_packets"):
+                if sniff:
                     event = main_events.Event(None, "Sniffer: %s" % msg)
                     self.mainwindow.tabs["event"].event(event)
 
                 self.mainwindow.tabs["stations"].saw_station(src)
 
-            ss = self.sm.start_session("Sniffer",
-                                       dest="CQCQCQ",
-                                       cls=sessions.SniffSession)
-            self.sm.set_sniffer_session(ss._id)
+            ss = sm.start_session("Sniffer",
+                                  dest="CQCQCQ",
+                                  cls=sessions.SniffSession)
+            sm.set_sniffer_session(ss._id)
             ss.connect("incoming_frame", sniff_event)
 
-            self.sc = session_coordinator.SessionCoordinator(self.config,
-                                                             self.sm)
-            self.__connect_object(self.sc)
+            sc = session_coordinator.SessionCoordinator(self.config, sm)
+            self.__connect_object(sc)
 
-            self.sm.register_session_cb(self.sc.session_cb, None)
-
-
+            sm.register_session_cb(sc.session_cb, None)
         else:
-            self.sm.set_comm(self.comm, **transport_args)
-            self.sm.set_call(callsign)
+            sm = self.sm[name]
+
+            sm.set_comm(path, **transport_args)
+            sm.set_call(callsign)
 
         pingdata = self.config.get("settings", "ping_info")
         if pingdata.startswith("!"):
@@ -238,15 +239,23 @@ class MainApp:
         else:
             pingfn = None
 
-        self.chat_session.set_ping_function(pingfn)
+        chat_session.set_ping_function(pingfn)
 
         return True
+
+    def chat_session(self, portname):
+        return self.sm[portname].get_session(lid=1)
+
+    def rpc_session(self, portname):
+        return self.sm[portname].get_session(lid=2)
 
     def _refresh_comms(self, port, rate):
         if self.stop_comms():
             if sys.platform == "win32":
                 time.sleep(0.25) # Wait for windows to let go of the serial port
-        return self.start_comms()
+
+        for portid in self.config.options("ports"):
+            self.start_comms(portid)
 
     def _static_gps(self):
         lat = 0.0
@@ -654,8 +663,7 @@ class MainApp:
         MAINAPP = self
 
         self.comm = None
-        self.sm = None
-        self.chat_session = None
+        self.sm = {}
         self.seen_callsigns = CallList()
         self.position = None
         self.mail_threads = []
@@ -684,8 +692,9 @@ class MainApp:
         
         if self.config.getboolean("prefs", "dosignon") and self.chat_session:
             msg = self.config.get("prefs", "signon")
-            self.chat_session.advertise_status(station_status.STATUS_ONLINE,
-                                               msg)
+            # Do this for each port?
+            #self.chat_session.advertise_status(station_status.STATUS_ONLINE,
+            #                                   msg)
 
         gobject.timeout_add(3000, self._refresh_location)
 
