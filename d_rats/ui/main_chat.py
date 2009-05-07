@@ -579,6 +579,7 @@ class ChatTab(MainWindowTab):
             e, p, r, s, raw, name = spec.split(",")
             if e == "True":
                 ports.append(name)
+        ports.sort()
 
         model = dest.get_model()
         if model:

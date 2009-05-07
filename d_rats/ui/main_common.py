@@ -51,6 +51,9 @@ def prompt_for_station(station_list, config, parent=None):
     else:
         default = ""
 
+    port_list.sort()
+    station_list.sort()
+
     station = miscwidgets.make_choice(station_list, True, default)
     port = miscwidgets.make_choice(port_list, False, port_list[0])
 
