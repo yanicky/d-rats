@@ -166,6 +166,8 @@ class UnixPlatform(Platform):
     def source_dir(self):
         if "site-packages" in find_me():
             return "/usr/share/d-rats"
+        elif "dist-packages" in find_me():
+            return "/usr/share/d-rats"
         else:
             return "."
 
