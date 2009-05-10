@@ -141,6 +141,7 @@ DEFAULTS = {
     "tcp_out" : {},
     "incoming_email" : {},
     "sounds" : _DEF_SOUNDS,
+    "ports" : {},
 }
 
 if __name__ == "__main__":
