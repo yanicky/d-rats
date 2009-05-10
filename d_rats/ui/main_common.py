@@ -46,16 +46,17 @@ def prompt_for_station(station_list, config, parent=None):
         if enb == "True":
             port_list.append(name)
 
-    if len(station_list) > 0:
-        default = station_list[0]
-    else:
-        default = ""
+    defsta = defprt = ""
+    if station_list:
+        defsta = station_list[0]
+    if port_list:
+        defprt = port_list[0]
 
     port_list.sort()
     station_list.sort()
 
-    station = miscwidgets.make_choice(station_list, True, default)
-    port = miscwidgets.make_choice(port_list, False, port_list[0])
+    station = miscwidgets.make_choice(station_list, True, defsta)
+    port = miscwidgets.make_choice(port_list, False, defprt)
 
     d = inputdialog.FieldDialog(title=_("Enter destination"), parent=parent)
     d.add_field(_("Station"), station)

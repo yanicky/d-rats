@@ -590,7 +590,8 @@ class ChatTab(MainWindowTab):
         for port in ports:
             print "Appending %s" % port
             model.append((port,))
-        utils.combo_select(dest, ports[0])
+        if ports:
+            utils.combo_select(dest, ports[0])
 
     def selected(self):
         MainWindowTab.selected(self)

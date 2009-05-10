@@ -322,18 +322,18 @@ class FilesTab(MainWindowTab):
         stationlist = self.emit("get-station-list")
         _ports = []
         _stations = []
+
+        sstore = stations.get_model()
+        sstore.clear()
+
+        pstore = ports.get_model()
+        pstore.clear()
+
         if stationlist:
-            sstore = stations.get_model()
-            sstore.clear()
-
-            pstore = ports.get_model()
-            pstore.clear()
-
             for port, stations in stationlist.items():
                 _ports.append(port)
                 for station in stations:
                     _stations.append(station)
-
 
             for station in sorted(_stations):
                 sstore.append((station,))
