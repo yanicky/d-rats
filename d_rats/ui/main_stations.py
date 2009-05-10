@@ -19,6 +19,7 @@ import gtk
 import gobject
 
 import time
+import os
 
 from d_rats.ui.main_common import MainWindowTab
 from d_rats.ui import main_events
@@ -36,6 +37,7 @@ class StationsList(MainWindowTab):
         "ping-station-echo" : signals.PING_STATION_ECHO,
         "incoming-chat-message" : signals.INCOMING_CHAT_MESSAGE,
         "submit-rpc-job" : signals.SUBMIT_RPC_JOB,
+        "user-send-file" : signals.USER_SEND_FILE,
         }
 
     _signals = __gsignals__
@@ -92,6 +94,13 @@ class StationsList(MainWindowTab):
             for port in stationlist.keys():
                 print "Doing CQCQCQ ping on port %s" % port
                 self.emit("ping-station", "CQCQCQ", port)
+        elif action == "sendfile":
+            fn = self._config.platform.gui_open_file()
+            if not fn:
+                return
+
+            name = os.path.basename(fn)
+            self.emit("user-send-file", station, port, fn, name)
 
     def _make_station_menu(self, station, port):
         xml = """
@@ -100,6 +109,8 @@ class StationsList(MainWindowTab):
     <menuitem action="ping"/>
     <menuitem action="conntest"/>
     <menuitem action="reqpos"/>
+    <menuitem action="sendfile"/>
+    <separator/>
     <menuitem action="remove"/>
     <menuitem action="reset"/>
     <separator/>
@@ -112,6 +123,7 @@ class StationsList(MainWindowTab):
         actions = [("ping", _("Ping"), None),
                    ("conntest", _("Test Connectivity"), None),
                    ("reqpos", _("Request Position"), None),
+                   ("sendfile", _("Send file"), None),
                    ("remove", _("Remove"), gtk.STOCK_DELETE),
                    ("reset", _("Reset"), gtk.STOCK_JUMP_TO)]
 
