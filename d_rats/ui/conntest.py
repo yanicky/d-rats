@@ -45,12 +45,13 @@ class ConnTestAssistant(baseclass):
         "ping-echo-station" : (gobject.SIGNAL_ACTION,
                                gobject.TYPE_NONE,
                                (gobject.TYPE_STRING,    # Station
+                                gobject.TYPE_STRING,    # Port
                                 gobject.TYPE_STRING,    # Data
                                 gobject.TYPE_PYOBJECT,  # Callback
                                 gobject.TYPE_PYOBJECT)),# Callback data
         }
 
-    def make_start_page(self, station):
+    def make_start_page(self, station, port):
         vbox = gtk.VBox(False, 0)
 
         def set_station(entry):
@@ -64,15 +65,24 @@ class ConnTestAssistant(baseclass):
                 v.hide()
             self.__tests[type].show()
 
-        box = gtk.HBox(True, 0)
-        lab = gtk.Label(_("Remote station:"))
-        lab.show()
+        box = gtk.HBox(False, 0)
+        slb = gtk.Label(_("Remote station:"))
+        slb.show()
         sta = gtk.Entry(8)
         sta.set_text(station)
+        sta.set_sensitive(False)
         sta.connect("changed", set_station)
         sta.show()
-        box.pack_start(lab, 0, 0, 0)
+        plb = gtk.Label(_("Port:"))
+        plb.show()
+        prt = gtk.Entry()
+        prt.set_text(port)
+        prt.set_sensitive(False)
+        prt.show()
+        box.pack_start(slb, 0, 0, 0)
         box.pack_start(sta, 0, 0, 0)
+        box.pack_start(plb, 0, 0, 0)
+        box.pack_start(prt, 0, 0, 0)
         box.show()
         vbox.pack_start(box, 0, 0, 0)
 
@@ -250,7 +260,7 @@ class ConnTestAssistant(baseclass):
     def set_test_complete(self):
         self.set_page_complete(self.__test_page, True)
 
-    def test_fixedmulti(self, station, size, packets):
+    def test_fixedmulti(self, station, port, size, packets):
         self.set_test_val("pt", packets, "bt", packets * size)
 
         class TestContext:
@@ -280,7 +290,7 @@ class ConnTestAssistant(baseclass):
                 data = "0" * int(size)
                 gobject.timeout_add(calc_watchdog(size), ctx.timecb, ctx.ps)
                 self.emit("ping-echo-station",
-                          station, data, ctx.recvcb, ctx.ps)
+                          station, port, data, ctx.recvcb, ctx.ps)
 
             def recvcb(ctx, number):
                 if ctx.ps != number:
@@ -307,7 +317,7 @@ class ConnTestAssistant(baseclass):
         ctx.sendping()   
         ctx.update()
 
-    def test_gradmulti(self, station, att, inc, start, end):
+    def test_gradmulti(self, station, port, att, inc, start, end):
         ptotal = btotal = 0
         sz = start
         while sz <= end:
@@ -385,10 +395,12 @@ class ConnTestAssistant(baseclass):
 
         if self.__type == TEST_TYPE_FIXEDMULTI:
             self.test_fixedmulti(self.__station,
+                                 self.__port,
                                  self.__values[_("Packet size")],
                                  self.__values[_("Number of packets")])
         elif self.__type == TEST_TYPE_GRADMULTI:
             self.test_gradmulti(self.__station,
+                                self.__port,
                                 self.__values[_("Attempts per size")],
                                 self.__values[_("Increment size")],
                                 self.__values[_("Starting size")],
@@ -399,7 +411,7 @@ class ConnTestAssistant(baseclass):
         self.enabled = False
         gtk.main_quit()
 
-    def __init__(self, station=""):
+    def __init__(self, station="", port="DEFAULT"):
         baseclass.__init__(self)
 
         self.set_title("Connectivity Test")
@@ -407,12 +419,13 @@ class ConnTestAssistant(baseclass):
         self.enabled = True
 
         self.__station = station
+        self.__port = port
         self.__type = TEST_TYPE_FIXEDMULTI
 
         self.__tests = {}
         self.__values = {}
 
-        self.__start_page = self.make_start_page(station)
+        self.__start_page = self.make_start_page(station, port)
         self.append_page(self.__start_page)
         self.set_page_title(self.__start_page, _("Test Type"))
         self.set_page_type(self.__start_page, gtk.ASSISTANT_PAGE_CONTENT)

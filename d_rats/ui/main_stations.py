@@ -62,7 +62,7 @@ class StationsList(MainWindowTab):
             # FIXME: Use the port we saw the user on
             self.emit("ping-station", station, port)
         elif action == "conntest":
-            ct = conntest.ConnTestAssistant(station)
+            ct = conntest.ConnTestAssistant(station, port)
             ct.connect("ping-echo-station",
                        lambda a, *v: self.emit("ping-station-echo", *v))
             ct.run()
