@@ -77,9 +77,7 @@ _DEF_PREFS = {
 }
 
 _DEF_SETTINGS = {
-    "port" : "",
     "socket_pw" : "",
-    "rate" : "9600",
     "ddt_block_size" : "512",
     "ddt_block_outlimit" : "4",
     "encoding" : "yenc",

@@ -268,7 +268,7 @@ class MainApp:
     def sc(self, portname):
         return self.sm[portname][1]
 
-    def _refresh_comms(self, port, rate):
+    def _refresh_comms(self):
         delay = False
 
         for portid in self.sm.keys():
@@ -403,8 +403,6 @@ class MainApp:
     def refresh_config(self):
         print "Refreshing config..."
 
-        rate = self.config.getint("settings", "rate")
-        port = self.config.get("settings", "port")
         call = self.config.get("user", "callsign")
         gps.set_units(self.config.get("user", "units"))
         mapdisplay.set_base_dir(self.config.get("settings", "mapdir"))
@@ -413,7 +411,7 @@ class MainApp:
         mapdisplay.set_tile_lifetime(self.config.getint("settings",
                                                         "map_tile_ttl") * 3600)
 
-        self._refresh_comms(port, rate)
+        self._refresh_comms()
         self._refresh_gps()
         self._refresh_mail_threads()
 
@@ -756,6 +754,27 @@ class MainApp:
                     shutil.copyfile(form, user_fname)
                 except Exception, e:
                     print "FAILED: %s" % e
+
+        if len(self.config.options("ports")) == 0 and \
+                self.config.has_option("settings", "port"):
+            print "Migrating single-port config to multi-port"
+
+            port = self.config.get("settings", "port")
+            rate = self.config.get("settings", "rate")
+            snif = self.config.getboolean("settings", "sniff_packets")
+            comp = self.config.getboolean("settings", "compatmode")
+
+            self.config.set("ports",
+                            "port_0",
+                            "%s,%s,%s,%s,%s,%s" % (True,
+                                                   port,
+                                                   rate,
+                                                   snif,
+                                                   comp,
+                                                   "DEFAULT"))
+            for i in ["port", "rate", "sniff_packets", "compatmode"]:
+                self.config.remove_option("settings", i)
+
         try:
             gtk.main()
         except KeyboardInterrupt:
