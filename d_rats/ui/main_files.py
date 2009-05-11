@@ -220,13 +220,14 @@ class FilesTab(MainWindowTab):
             if not fn:
                 return
 
+        ssel, psel = self._get_ssel()
+        port = psel.get_active_text()
+
         if self._remote:
             station = self._remote.get_path()
             self._remote.outstanding[fname] = os.stat(fn).st_size
         else:
-            ssel, psel = self._get_ssel()
             station = ssel.get_active_text().upper()
-            port = psel.get_active_text()
 
         self.emit("user-send-file", station, port, fn, fname)
 
@@ -234,10 +235,13 @@ class FilesTab(MainWindowTab):
         station = self._remote.get_path()
         fn = self._remote.get_selected_filename()
 
+        ssel, psel = self._get_ssel()
+        port = psel.get_active_text()
+
         job = rpcsession.RPCPullFileJob(station, "Request file %s" % fn)
         job.set_file(fn)
 
-        self.emit("submit-rpc-job", job)
+        self.emit("submit-rpc-job", job, port)
         # FIXME: Need an event here
 
     def _init_toolbar(self):
