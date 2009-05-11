@@ -262,6 +262,7 @@ class Transporter:
             self.send_frames()
 
     def disable(self):
+        self.inhandler = None
         self.enabled = False
         self.thread.join()
         
