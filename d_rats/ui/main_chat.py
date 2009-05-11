@@ -368,8 +368,9 @@ class ChatTab(MainWindowTab):
 
         self.emit("user-send-chat", "CQCQCQ", port, text, False)
 
-    def _send_msg(self, qm, msg, raw):
-        self.emit("user-send-chat", "CQCQCQ", msg, raw)
+    def _send_msg(self, qm, msg, raw, dest):
+        port = dest.get_active_text()
+        self.emit("user-send-chat", "CQCQCQ", port, msg, raw)
 
     def _bcast_file(self, but):
         dir = self._config.get("prefs", "download_dir")
@@ -462,8 +463,8 @@ class ChatTab(MainWindowTab):
 
         self._qm = ChatQM(wtree, config)
         self._qst = ChatQST(wtree, config)
-        self._qm.connect("user-sent-qm", self._send_msg, False)
-        self._qst.connect("qst-fired", self._send_msg)
+        self._qm.connect("user-sent-qm", self._send_msg, False, dest)
+        self._qst.connect("qst-fired", self._send_msg, dest)
 
         self._last_date = 0
 
