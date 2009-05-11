@@ -871,12 +871,18 @@ class SessionManager:
             self.fire_session_cb(s, "new,existing")
 
     def shutdown(self, force=False):
-        del self.sessions[self.control._id]
+        if force:
+            self.tport.disable()
+
+        if self.sessions.has_key(self.control._id):
+            del self.sessions[self.control._id]
+
         for s in self.sessions.values():
             print "Stopping session `%s'" % s.name
             s.close(force)
 
-        self.tport.disable()
+        if not force:
+            self.tport.disable()
 
     def incoming(self, frame):
         self.last_frame = time.time()
@@ -885,6 +891,7 @@ class SessionManager:
             self._stations_heard[frame.s_station] = time.time()
 
         if self.sniff_session is not None:
+            print self.portname
             self.sessions[self.sniff_session].handler(frame)
 
         if frame.d_station != "CQCQCQ" and \
