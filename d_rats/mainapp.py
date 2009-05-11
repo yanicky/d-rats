@@ -522,8 +522,10 @@ class MainApp:
     def __ping_station(self, object, station, port):
         self.chat_session(port).ping_station(station)
 
-    def __ping_station_echo(self, object, station, data, callback, cb_data):
-        self.chat_session.ping_echo_station(station, data, callback, cb_data)
+    def __ping_station_echo(self, object, station, port,
+                            data, callback, cb_data):
+        self.chat_session(port).ping_echo_station(station, data,
+                                                  callback, cb_data)
 
     def __ping_request(self, object, src, dst, data, port):
         msg = "%s pinged %s [%s]" % (src, dst, port)
