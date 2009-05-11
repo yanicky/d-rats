@@ -613,11 +613,11 @@ class DratsPathsPanel(DratsPanel):
 
         val = DratsConfigWidget(config, "prefs", "download_dir", True)
         val.add_path()
-        self.mv(_("Download Directory"), val)
+        self.mv(_("File Transfer Path"), val)
 
         val = DratsConfigWidget(config, "settings", "mapdir", True)
         val.add_path()
-        self.mv(_("Map Storage Directory"), val)
+        self.mv(_("Map Storage Path"), val)
 
 class DratsGPSPanel(DratsPanel):
     def __init__(self, config, window):
