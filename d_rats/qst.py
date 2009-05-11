@@ -481,7 +481,8 @@ class QSTGPSEditWidget(QSTEditWidget):
         hbox.pack_start(self.__msg, 1, 1, 1)
 
         dprs = gtk.Button("DPRS")
-        dprs.show()
+        if not isinstance(self, QSTGPSAEditWidget):
+            dprs.show()
         dprs.connect("clicked", self.prompt_for_DPRS)
         hbox.pack_start(dprs, 0, 0, 0)
         
