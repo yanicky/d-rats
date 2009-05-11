@@ -891,7 +891,6 @@ class SessionManager:
             self._stations_heard[frame.s_station] = time.time()
 
         if self.sniff_session is not None:
-            print self.portname
             self.sessions[self.sniff_session].handler(frame)
 
         if frame.d_station != "CQCQCQ" and \

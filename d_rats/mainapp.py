@@ -137,9 +137,12 @@ class MainApp:
     def setup_autoid(self):
         idtext = "(ID)"
 
-    def stop_comms(self):
-        if self.comm:
-            self.comm.disconnect()
+    def stop_comms(self, portid):
+        if self.sm.has_key(portid):
+            sm, sc = self.sm[portid]
+            sm.shutdown(True)
+            sm.pipe.disconnect()
+            del self.sm[portid]
             return True
         else:
             return False
@@ -266,9 +269,17 @@ class MainApp:
         return self.sm[portname][1]
 
     def _refresh_comms(self, port, rate):
-        if self.stop_comms():
-            if sys.platform == "win32":
-                time.sleep(0.25) # Wait for windows to let go of the serial port
+        delay = False
+
+        for portid in self.sm.keys():
+            print "Stopping %s" % portid
+            if self.stop_comms(portid):
+                if sys.platform == "win32":
+                    # Wait for windows to let go of the serial port
+                    delay = True
+
+        if delay:
+            time.sleep(0.25)
 
         for portid in self.config.options("ports"):
             self.start_comms(portid)
