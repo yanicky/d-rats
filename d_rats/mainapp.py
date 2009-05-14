@@ -557,6 +557,7 @@ class MainApp:
                                        fix.longitude,
                                        fix.altitude,
                                        fix.comment)
+        point.set_icon_from_aprs_sym(fix.APRSIcon)
         self.stations_overlay.add_point(point)
         self.stations_overlay.save()
 
