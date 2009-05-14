@@ -87,6 +87,9 @@ class MapPoint(gobject.GObject):
     def __str__(self):
         return self.get_name()
 
+    def __eq__(self, point):
+        return self.get_name() == point.get_name()
+
 class MapStation(MapPoint):
     def __init__(self, call, lat, lon, alt=0.0, comment=""):
         MapPoint.__init__(self)
