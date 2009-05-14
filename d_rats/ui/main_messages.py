@@ -496,6 +496,7 @@ class MessagesTab(MainWindowTab):
         "event" : signals.EVENT,
         "notice" : signals.NOTICE,
         "user-send-form" : signals.USER_SEND_FORM,
+        "get-station-list" : signals.GET_STATION_LIST,
         }
 
     _signals = __gsignals__
@@ -604,7 +605,12 @@ class MessagesTab(MainWindowTab):
 
         fn = sel[0]
 
-        station, port = prompt_for_station([], self._config)
+        stations = []
+        ports = self.emit("get-station-list")
+        for slist in ports.values():
+            stations += slist
+
+        station, port = prompt_for_station(stations, self._config)
         if not station:
             return
 
