@@ -242,3 +242,9 @@ def set_entry_hint(entry, hint, default_focused=False):
 
     if not default_focused:
         focus(entry, None, "out")
+
+def port_for_station(ports, station):
+    for port, stations in ports.items():
+        if station in stations:
+            return port
+    return None

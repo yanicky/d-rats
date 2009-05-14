@@ -39,12 +39,14 @@ import re
 import formgui
 from ui import main_events
 import signals
+import utils
 
 class MailThread(threading.Thread, gobject.GObject):
     __gsignals__ = {
         "user-send-chat" : signals.USER_SEND_CHAT,
         "user-send-form" : signals.USER_SEND_FORM,
         "form-received" : signals.FORM_RECEIVED,
+        "get-station-list" : signals.GET_STATION_LIST,
         "event" : signals.EVENT,
         }
 
@@ -207,8 +209,14 @@ class MailThread(threading.Thread, gobject.GObject):
                                _("Outbox"),
                                os.path.basename(ffn))
             os.rename(ffn, nfn) # Move to Outbox
-            self.emit("user-send-form", recip, None, nfn, subject)
-            msg = "Attempted send of mail from %s to %s" % (sender, recip)
+            ports = self.emit("get-station-list")
+            port = utils.port_for_station(ports, recip)
+            if port:
+                self.emit("user-send-form", recip, None, nfn, subject)
+                msg = "Attempted send of mail from %s to %s on port %s" % \
+                    (sender, recip, port)
+            else:
+                msg = "Unable to determine port for station %s" % recip
         else:
             self.emit("form-received", None, nfn)
             msg = "Mail received from %s" % sender
@@ -236,7 +244,8 @@ class MailThread(threading.Thread, gobject.GObject):
             mail.get("Subject", ""),
             body)
             
-        self.emit("user-send-chat", "CQCQCQ", None, text, False)
+        for port in self.emit("get-station-list").keys():
+            self.emit("user-send-chat", "CQCQCQ", port, text, False)
 
         event = main_events.Event(None,
                                   "Mail received from %s and sent via chat" % \
