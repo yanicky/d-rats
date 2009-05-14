@@ -628,7 +628,12 @@ class MessagesTab(MainWindowTab):
         newfn = os.path.join(self._config.form_store_dir(),
                              _("Sent"),
                              os.path.basename(fn))
-        os.rename(fn, newfn)
+        try:
+            os.rename(fn, newfn)
+        except OSError, e:
+            print "Failed to rename %s -> %s" % (fn, newfn)
+            print e
+            return
 
         srv = emailgw.FormEmailService(self._config)
         try:
