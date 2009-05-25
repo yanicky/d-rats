@@ -741,7 +741,9 @@ class DratsRadioPanel(DratsPanel):
     def _do_edit(self, lw, _port="", _name="", _rate="9600"):
         _ports = platform.get_platform().list_serial_ports()
 
-        port = miscwidgets.make_choice(_ports, default=_ports[0])
+        defport = len(_ports) > 0 and _ports[0] or ""
+
+        port = miscwidgets.make_choice(_ports, default=defport)
         rate = miscwidgets.make_choice(BAUD_RATES, False, "9600")        
         name = gtk.Entry()
 
