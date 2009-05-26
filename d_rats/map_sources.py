@@ -408,7 +408,7 @@ class MapFileSource(MapSource):
         except Exception, e:
             msg = "Failed to open %s: %s" % (fn, e)
             print msg
-            raise MapsourceFailedToConnect(msg)
+            raise MapSourceFailedToConnect(msg)
 
         lines = input.readlines()
         for line in lines:
