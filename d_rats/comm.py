@@ -1,7 +1,10 @@
 import serial
 import socket
 import time
+import struct
+
 import mainapp
+import utils
 
 class DataPathError(Exception):
     pass
@@ -14,6 +17,101 @@ class DataPathIOError(DataPathError):
 
 ASCII_XON = chr(17)
 ASCII_XOFF = chr(19)
+
+FEND  = 0xC0
+FESC  = 0xDB
+TFEND = 0xDC
+TFESC = 0xDD
+
+TNC_DEBUG = True
+
+def kiss_escape_frame(frame):
+    escaped = ""
+
+    for char in frame:
+        if ord(char) == FEND:
+            escaped += chr(FESC)
+            escaped += chr(TFEND)
+        elif ord(char) == FESC:
+            escaped += chr(FESC)
+            escaped += chr(TFESC)
+        else:
+            escaped += char
+
+    return escaped
+
+def kiss_send_frame(frame, port=0):
+    cmd = (port & 0x0F) << 4
+
+    frame = kiss_escape_frame(frame)
+    buf = struct.pack("BB", FEND, cmd) + frame + struct.pack("B", FEND)
+
+    if TNC_DEBUG:
+        print "[TNC] Sending %s" % str([buf])
+
+    return buf
+
+def kiss_recv_frame(buf):
+    if not buf:
+        return ""
+    elif buf.count(chr(FEND)) < 2:
+        print "[TNC] Broken frame:"
+        utils.hexprint(buf)
+        return ""
+
+    data = ""
+    inframe = False
+
+    _buf = ""
+    _lst = ""
+    for char in buf:
+        if ord(char) == FEND:
+            if not inframe:
+                inframe = True
+            else:
+                data += _buf[1:]
+                _buf = ""
+                inframe = False
+        elif ord(char) == FESC:
+            pass # Ignore this and wait for the next character
+        elif ord(_lst) == FESC:
+            if ord(char) == TFEND:
+                _buf += chr(FEND)
+            elif ord(char) == TFESC:
+                _buf += chr(FESC)
+            else:
+                print "[TNC] Bad escape of 0x%x" % ord(char)
+                break
+        elif inframe:
+            _buf += char
+        else:
+            print "[TNC] Out-of-frame garbage: 0x%x" % ord(char)
+        _lst = char
+
+    if TNC_DEBUG:
+        print "[TNC] Data: %s" % str([data])
+
+    return data
+
+class TNCSerial(serial.Serial):
+    def __init__(self, **kwargs):
+        serial.Serial.__init__(self, **kwargs)
+        if "tncport" in kwargs.keys():
+            self.__tncport = kwargs["tncport"]
+            del kwargs["tncport"]
+        else:
+            self.__tncport = 0
+
+    def reconnect(self):
+        pass
+
+    def write(self, data):
+        serial.Serial.write(self, kiss_send_frame(data, self.__tncport))
+
+    def read(self, len):
+        buf = serial.Serial.read(self, 1024)
+        return kiss_recv_frame(buf)
+
 
 class SWFSerial(serial.Serial):
     __swf_debug = False
@@ -140,11 +238,15 @@ class SerialDataPath(DataPath):
             self._serial.close()
         self._serial = None
 
+    def reconnect(self):
+        return
+
     def read(self, count):
         try:
             data = self._serial.read(count)
         except Exception, e:
             print "Serial read exception: %s" % e
+            utils.log_exception()
             raise DataPathIOError("Failed to read from serial port")
 
         return data
@@ -154,6 +256,7 @@ class SerialDataPath(DataPath):
             self._serial.write(buf)
         except Exception ,e:
             print "Serial write exception: %s" % e
+            utils.log_exception()
             raise DataPathIOError("Failed to write to serial port")
 
     def is_connected(self):
@@ -164,6 +267,19 @@ class SerialDataPath(DataPath):
 
     def __str__(self):
         return "Serial (%s at %s baud)" % (self.port, self.baud)
+
+class TNCDataPath(SerialDataPath):
+    def connect(self):
+        try:
+            self._serial = TNCSerial(port=self.port,
+                                     baudrate=self.baud,
+                                     timeout=self.timeout,
+                                     writeTimeout=self.timeout,
+                                     xonxoff=0)
+        except Exception, e:
+            print "TNC exception on connect: %s" % e
+            utils.log_exception()
+            raise DataPathNotConnectedError("Unable to open serial port")
 
 class SocketDataPath(DataPath):
     def __init__(self, pathspec, timeout=0.25):
