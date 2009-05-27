@@ -152,6 +152,100 @@ def color_string(color):
     except:
         return "#%04x%04x%04x" % (color.red, color.green, color.blue)
 
+def load_portspec(wtree, portspec, info, name):
+    namewidget = wtree.get_widget("name")
+    namewidget.set_text(name)
+    namewidget.set_sensitive(False)
+    
+    tsel = wtree.get_widget("type")
+    if portspec.startswith("net:"):
+        tsel.set_active(1)
+        net, host, port = portspec.split(":")
+        wtree.get_widget("net_host").set_text(host)
+        wtree.get_widget("net_port").set_value(int(port))
+        wtree.get_widget("net_pass").set_text(info)
+    elif portspec.startswith("tnc:"):
+        tsel.set_active(2)
+        tnc, port, tncport = portspec.split(":")
+        wtree.get_widget("tnc_port").set_text(port)
+        wtree.get_widget("tnc_tncport").set_value(int(tncport))
+        utils.combo_select(wtree.get_widget("tnc_rate"), info)
+    else:
+        tsel.set_active(0)
+        wtree.get_widget("serial_port").child.set_text(portspec)
+        utils.combo_select(wtree.get_widget("serial_rate"), info)
+        
+def prompt_for_port(config, portspec=None, info=None, pname=None):
+    wtree = gtk.glade.XML(config.ship_obj_fn("ui/addport.glade"),
+                          "addport", "D-RATS")
+
+    ports = platform.get_platform().list_serial_ports()
+    
+    sportsel = wtree.get_widget("serial_port")
+    tportsel = wtree.get_widget("tnc_port")
+    sportlst = sportsel.get_model()
+    tportlst = tportsel.get_model()
+    sportlst.clear()
+    tportlst.clear()
+
+    for port in ports:
+        sportlst.append((port,))
+        tportlst.append((port,))
+
+    if ports:
+        sportsel.set_active(0)
+        tportsel.set_active(0)
+
+    sratesel = wtree.get_widget("serial_rate")
+    tratesel = wtree.get_widget("tnc_rate")
+
+    sratesel.set_active(3)
+    tratesel.set_active(3)
+
+    netaddr = wtree.get_widget("net_host")
+    netport = wtree.get_widget("net_port")
+    netpass = wtree.get_widget("net_pass")
+
+    def chg_type(tsel, tabs):
+        print "Changed"
+        tablist = [_("Serial"), _("Network"), _("TNC")]
+        tabs.set_current_page(tablist.index(tsel.get_active_text()))
+    
+    ttncport = wtree.get_widget("tnc_tncport")
+    tabs = wtree.get_widget("editors")
+    tabs.set_show_tabs(False)
+    tsel = wtree.get_widget("type")
+    tsel.set_active(0)
+    tsel.connect("changed", chg_type, tabs)
+    name = wtree.get_widget("name")
+
+    if portspec:
+        load_portspec(wtree, portspec, info, pname)
+
+    d = wtree.get_widget("addport")
+
+    r = d.run()
+
+    t = tsel.get_active_text()
+    if t == _("Serial"):
+        portspec = sportsel.get_active_text(), sratesel.get_active_text()
+    elif t == _("Network"):
+        portspec = "net:%s:%i" % (netaddr.get_text(), netport.get_value()), \
+            netpass.get_text()
+    elif t == _("TNC"):
+        portspec = "tnc:%s:%i" % (tportsel.get_active_text(),
+                                  ttncport.get_value()), \
+                                  tratesel.get_active_text()
+
+    d.destroy()
+
+    portspec = (name.get_text(),) + portspec
+
+    if r:
+        return portspec
+    else:
+        return None, None, None
+
 class AddressLookup(gtk.Button):
     def __init__(self, caption, latw, lonw, window=None):
         gtk.Button.__init__(self, caption)
@@ -738,84 +832,21 @@ class DratsRadioPanel(DratsPanel):
             box.show()
             self.attach(box, 0, 2, 1, 2, yoptions=gtk.SHRINK)
 
-    def _do_edit(self, lw, _port="", _name="", _rate="9600"):
-        _ports = platform.get_platform().list_serial_ports()
-
-        defport = len(_ports) > 0 and _ports[0] or ""
-
-        port = miscwidgets.make_choice(_ports, default=defport)
-        rate = miscwidgets.make_choice(BAUD_RATES, False, "9600")        
-        name = gtk.Entry()
-
-        if _port:
-            port.child.set_text(_port)
-            utils.combo_select(rate, _rate)
-            name.set_text(_name)
-            port.set_sensitive(False)
-            _foo, en, _foo, _foo, sniff, raw, _foo = lw.get_item(_port)
-        else:
-            en = True
-            sniff = raw = False
-
-        values = self.prompt_for([(_("Port"), port),
-                                  (_("Rate"), rate),
-                                  (_("Name"), name)])
-        if values is None:
-            return
-
-        lw.set_item(str(values[_("Port")]),
-                    en,
-                    str(values[_("Port")]),
-                    str(values[_("Rate")]),
-                    sniff,
-                    raw,
-                    str(values[_("Name")]))
-
     def but_add(self, button, lw):
-        self._do_edit(lw)
+        name, port, info = prompt_for_port(self.config)
+        if name:
+            lw.set_item(name, True, port, info, False, False, name)
 
     def but_mod(self, button, lw):
         values = lw.get_item(lw.get_selected())
         print "Values: %s" % str(values)
-        self._do_edit(lw, values[0], values[6], values[3])
+        name, port, info = prompt_for_port(self.config,
+                                           values[2], values[3], values[6])
+        if name:
+            lw.set_item(values[6], values[1], port, info, values[4], values[5], values[6])
 
     def but_rem(self, button, lw):
         lw.del_item(lw.get_selected())
-
-    def prompt_for(self, fields):
-        d = inputdialog.FieldDialog()
-        for n, w in fields:
-            d.add_field(n, w)
-
-        ret = {}
-
-        done = False
-        while not done and d.run() == gtk.RESPONSE_OK:
-            done = True
-            for n, w in fields:
-                try:
-                    if isinstance(w, gtk.ComboBox):
-                        ret[n] = w.get_active_text()
-                    elif isinstance(w, gtk.ComboBoxEntry):
-                        ret[n] = w.get_active_text()
-                    else:
-                        ret[n] = w.get_text()
-                    if not [n]:
-                        raise ValueError("empty")
-                except ValueError, e:
-                    ed = gtk.MessageDialog(buttons=gtk.BUTTONS_OK)
-                    ed.set_property("text",
-                                    _("Invalid value for") + " %s: %s" % (n, e))
-                    ed.run()
-                    ed.destroy()
-                    done = False
-                    break
-        d.destroy()
-
-        if done:
-            return ret
-        else:
-            return None
 
     def __init__(self, config):
         DratsPanel.__init__(self, config)
@@ -833,7 +864,7 @@ class DratsRadioPanel(DratsPanel):
         val = DratsListConfigWidget(config, "ports")
 
         def make_key(vals):
-            return vals[1]
+            return vals[5]
 
         lw = val.add_list(cols, make_key)
         add = gtk.Button(_("Add"), gtk.STOCK_ADD)
