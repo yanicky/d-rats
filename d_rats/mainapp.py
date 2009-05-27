@@ -168,7 +168,10 @@ class MainApp:
 
         call = self.config.get("user", "callsign")
 
-        if ":" in port:
+        if port.startswith("tnc:"):
+            _port = port.replace("tnc:", "")
+            path = comm.TNCDataPath((_port, int(rate)))
+        elif ":" in port:
             try:
                 (mode, host, port) = port.split(":")
             except ValueError:
