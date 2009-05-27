@@ -926,7 +926,7 @@ Pings</property>
                         <property name="vscrollbar_policy">GTK_POLICY_AUTOMATIC</property>
                         <child>
                           <widget class="GtkTreeView" id="main_stations_view">
-                            <property name="width_request">75</property>
+                            <property name="width_request">85</property>
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="headers_visible">False</property>
@@ -997,7 +997,6 @@ Unattended</property>
               </widget>
               <packing>
                 <property name="expand">False</property>
-                <property name="fill">False</property>
                 <property name="position">1</property>
               </packing>
             </child>
@@ -1037,12 +1036,6 @@ Unattended</property>
                 <property name="visible">True</property>
                 <property name="n_columns">2</property>
                 <child>
-                  <widget class="GtkLabel" id="label1">
-                    <property name="visible">True</property>
-                    <property name="label" translatable="yes">Name</property>
-                  </widget>
-                </child>
-                <child>
                   <widget class="GtkEntry" id="src_name">
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
@@ -1051,6 +1044,12 @@ Unattended</property>
                     <property name="left_attach">1</property>
                     <property name="right_attach">2</property>
                   </packing>
+                </child>
+                <child>
+                  <widget class="GtkLabel" id="label1">
+                    <property name="visible">True</property>
+                    <property name="label" translatable="yes">Name</property>
+                  </widget>
                 </child>
               </widget>
               <packing>
