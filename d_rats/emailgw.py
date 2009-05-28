@@ -218,7 +218,7 @@ class MailThread(threading.Thread, gobject.GObject):
             else:
                 msg = "Unable to determine port for station %s" % recip
         else:
-            self.emit("form-received", None, nfn)
+            self.emit("form-received", -999, ffn)
             msg = "Mail received from %s" % sender
 
         event = main_events.Event(None, msg)
