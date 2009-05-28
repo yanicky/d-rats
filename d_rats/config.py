@@ -206,24 +206,34 @@ def prompt_for_port(config, portspec=None, info=None, pname=None):
     netport = wtree.get_widget("net_port")
     netpass = wtree.get_widget("net_pass")
 
-    def chg_type(tsel, tabs):
+    descriptions = {
+        _("Serial") : "A D-STAR radio connected to a serial port",
+        _("Network") : "A network link to a ratflector instance",
+        _("TNC") : "A KISS-mode TNC connected to a serial port",
+        }
+
+    def chg_type(tsel, tabs, desc):
         print "Changed"
         tablist = [_("Serial"), _("Network"), _("TNC")]
         tabs.set_current_page(tablist.index(tsel.get_active_text()))
+
+        desc.set_text(descriptions[tsel.get_active_text()])
     
+    name = wtree.get_widget("name")
+    desc = wtree.get_widget("typedesc")
     ttncport = wtree.get_widget("tnc_tncport")
     tabs = wtree.get_widget("editors")
     tabs.set_show_tabs(False)
     tsel = wtree.get_widget("type")
     tsel.set_active(0)
-    tsel.connect("changed", chg_type, tabs)
-    name = wtree.get_widget("name")
+    tsel.connect("changed", chg_type, tabs, desc)
 
     if portspec:
         load_portspec(wtree, portspec, info, pname)
 
     d = wtree.get_widget("addport")
 
+    chg_type(tsel, tabs, desc)
     r = d.run()
 
     t = tsel.get_active_text()
