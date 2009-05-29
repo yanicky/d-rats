@@ -306,7 +306,7 @@ class RPCActionSet(gobject.GObject):
         mycall = self.__config.get("user", "callsign")
         rqcall = job.get_station()
 
-        if rqcall == mycall:
+        if rqcall == mycall or rqcall == ".":
             rqcall = None
     
         try:
