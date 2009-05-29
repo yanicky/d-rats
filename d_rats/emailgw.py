@@ -337,12 +337,13 @@ class FormEmailService:
         mailer.quit()
         self.message("Disconnected")
 
-    def send_email(self, form):
+    def send_email(self, form, recp=None):
         if not self.config.getboolean("state", "connected_inet"):
             raise Exception("Unable to send mail: Not connected to internet")
 
         send = form.get_sender_string().upper()
-        recp = form.get_recipient_string()
+        if not recp:
+            recp = form.get_recipient_string()
         if form.id == "email":
             subj = form.get_subject_string()
             mesg = form.get_field_value("message")
@@ -368,16 +369,16 @@ class FormEmailService:
             self.message("Error sending mail: %s" % e)
             return False, "Error sending mail: %s" % e
 
-    def thread_fn(self, form, cb):
-        status, msg = self.send_email(form)
+    def thread_fn(self, form, recip, cb):
+        status, msg = self.send_email(form, recip)
         gobject.idle_add(cb, status, msg)
 
-    def send_email_background(self, form, cb):
+    def send_email_background(self, form, cb, recip=None):
         if not self.config.getboolean("state", "connected_inet"):
             raise Exception("Unable to send mail: Not connected to internet")
 
         thread = threading.Thread(target=self.thread_fn,
-                                  args=(form,cb))
+                                  args=(form,recip,cb))
         thread.start()
 
 def __validate_access(config, callsign, emailaddr, types):
