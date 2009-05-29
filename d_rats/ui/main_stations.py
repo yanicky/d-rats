@@ -107,6 +107,24 @@ class StationsList(MainWindowTab):
 
             name = os.path.basename(fn)
             self.emit("user-send-file", station, port, fn, name)
+        elif action == "version":
+            def log_result(job, state, result):
+                if state == "complete":
+                    msg = "Station %s running D-RATS %s on %s" % (\
+                        job.get_dest(),
+                        result.get("version", "Unknown"),
+                        result.get("os", "Unknown"))
+                    print "Station %s reports version info: %s" % (\
+                        job.get_dest(), result)
+
+                else:
+                    msg = "No version response from %s" % job.get_dest()
+                event = main_events.Event(None, msg)
+                self.emit("event", event)
+
+            job = rpcsession.RPCGetVersion(station, "Version Request")
+            job.connect("state-change", log_result)
+            self.emit("submit-rpc-job", job, port)
 
     def _make_station_menu(self, station, port):
         xml = """
@@ -116,6 +134,7 @@ class StationsList(MainWindowTab):
     <menuitem action="conntest"/>
     <menuitem action="reqpos"/>
     <menuitem action="sendfile"/>
+    <menuitem action="version"/>
     <separator/>
     <menuitem action="remove"/>
     <menuitem action="reset"/>
@@ -132,7 +151,8 @@ class StationsList(MainWindowTab):
                    ("reqpos", _("Request Position"), None),
                    ("sendfile", _("Send file"), None),
                    ("remove", _("Remove"), gtk.STOCK_DELETE),
-                   ("reset", _("Reset"), gtk.STOCK_JUMP_TO)]
+                   ("reset", _("Reset"), gtk.STOCK_JUMP_TO),
+                   ("version", _("Get version"), gtk.STOCK_ABOUT)]
 
         for action, label, stock in actions:
             a = gtk.Action(action, label, None, stock)
