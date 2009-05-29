@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE glade-interface SYSTEM "glade-2.0.dtd">
-<!--Generated with glade3 3.4.5 on Wed May 27 13:52:51 2009 -->
+<!--Generated with glade3 3.4.5 on Thu May 28 17:50:54 2009 -->
 <glade-interface>
   <widget class="GtkDialog" id="addport">
     <property name="border_width">5</property>
+    <property name="title" translatable="yes">Add a port</property>
     <property name="window_position">GTK_WIN_POS_CENTER_ON_PARENT</property>
     <property name="type_hint">GDK_WINDOW_TYPE_HINT_DIALOG</property>
     <property name="has_separator">False</property>
@@ -20,20 +21,16 @@
                 <property name="n_rows">2</property>
                 <property name="n_columns">2</property>
                 <child>
-                  <widget class="GtkLabel" id="label1">
+                  <widget class="GtkComboBox" id="type">
                     <property name="visible">True</property>
-                    <property name="label" translatable="yes">Name</property>
+                    <property name="active">0</property>
+                    <property name="items" translatable="yes">Serial
+Network
+TNC</property>
                   </widget>
                   <packing>
-                    <property name="y_options">GTK_FILL</property>
-                  </packing>
-                </child>
-                <child>
-                  <widget class="GtkLabel" id="label2">
-                    <property name="visible">True</property>
-                    <property name="label" translatable="yes">Type</property>
-                  </widget>
-                  <packing>
+                    <property name="left_attach">1</property>
+                    <property name="right_attach">2</property>
                     <property name="top_attach">1</property>
                     <property name="bottom_attach">2</property>
                     <property name="y_options">GTK_FILL</property>
@@ -51,24 +48,39 @@
                   </packing>
                 </child>
                 <child>
-                  <widget class="GtkComboBox" id="type">
+                  <widget class="GtkLabel" id="label2">
                     <property name="visible">True</property>
-                    <property name="active">0</property>
-                    <property name="items" translatable="yes">Serial
-Network
-TNC</property>
+                    <property name="label" translatable="yes">Type</property>
                   </widget>
                   <packing>
-                    <property name="left_attach">1</property>
-                    <property name="right_attach">2</property>
                     <property name="top_attach">1</property>
                     <property name="bottom_attach">2</property>
+                    <property name="y_options">GTK_FILL</property>
+                  </packing>
+                </child>
+                <child>
+                  <widget class="GtkLabel" id="label1">
+                    <property name="visible">True</property>
+                    <property name="label" translatable="yes">Name</property>
+                  </widget>
+                  <packing>
                     <property name="y_options">GTK_FILL</property>
                   </packing>
                 </child>
               </widget>
               <packing>
                 <property name="expand">False</property>
+              </packing>
+            </child>
+            <child>
+              <widget class="GtkLabel" id="typedesc">
+                <property name="visible">True</property>
+                <property name="xpad">2</property>
+                <property name="ypad">4</property>
+                <property name="use_markup">True</property>
+              </widget>
+              <packing>
+                <property name="position">1</property>
               </packing>
             </child>
             <child>
@@ -92,6 +104,8 @@ TNC</property>
                             <property name="visible">True</property>
                             <property name="n_rows">2</property>
                             <property name="n_columns">2</property>
+                            <property name="column_spacing">4</property>
+                            <property name="row_spacing">4</property>
                             <child>
                               <widget class="GtkComboBox" id="serial_rate">
                                 <property name="visible">True</property>
@@ -169,6 +183,8 @@ b
                             <property name="visible">True</property>
                             <property name="n_rows">3</property>
                             <property name="n_columns">2</property>
+                            <property name="column_spacing">4</property>
+                            <property name="row_spacing">4</property>
                             <child>
                               <widget class="GtkEntry" id="net_pass">
                                 <property name="visible">True</property>
@@ -259,6 +275,8 @@ b
                             <property name="visible">True</property>
                             <property name="n_rows">3</property>
                             <property name="n_columns">2</property>
+                            <property name="column_spacing">4</property>
+                            <property name="row_spacing">4</property>
                             <child>
                               <widget class="GtkComboBox" id="tnc_rate">
                                 <property name="visible">True</property>
@@ -323,7 +341,7 @@ b
 b
 </property>
                                 <child internal-child="entry">
-                                  <widget class="GtkEntry" id="entry0">
+                                  <widget class="GtkEntry" id="comboboxentry-entry3">
                                     <property name="visible">True</property>
                                     <property name="can_focus">True</property>
                                   </widget>
@@ -375,14 +393,6 @@ b
                     <property name="type">label_item</property>
                   </packing>
                 </child>
-              </widget>
-              <packing>
-                <property name="position">1</property>
-              </packing>
-            </child>
-            <child>
-              <widget class="GtkLabel" id="typedesc">
-                <property name="visible">True</property>
               </widget>
               <packing>
                 <property name="position">2</property>
