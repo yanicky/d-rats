@@ -71,6 +71,22 @@ def prompt_for_station(station_list, config, parent=None):
     else:
         return None, None
 
+def prompt_for_string(message, parent=None):
+    d = gtk.MessageDialog(buttons=gtk.BUTTONS_OK_CANCEL,
+                          parent=parent,
+                          message_format=message)
+    e = gtk.Entry()
+    e.show()
+    d.vbox.pack_start(e, 1, 1, 1)
+
+    r = d.run()
+    d.destroy()
+
+    if r == gtk.RESPONSE_OK:
+        return e.get_text()
+    else:
+        return None
+
 class MainWindowElement(gobject.GObject):
     def __init__(self, wtree, config, prefix):
         self._prefix = prefix
