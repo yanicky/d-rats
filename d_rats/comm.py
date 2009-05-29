@@ -95,12 +95,12 @@ def kiss_recv_frame(buf):
 
 class TNCSerial(serial.Serial):
     def __init__(self, **kwargs):
-        serial.Serial.__init__(self, **kwargs)
         if "tncport" in kwargs.keys():
             self.__tncport = kwargs["tncport"]
             del kwargs["tncport"]
         else:
             self.__tncport = 0
+        serial.Serial.__init__(self, **kwargs)
 
     def reconnect(self):
         pass
@@ -270,8 +270,15 @@ class SerialDataPath(DataPath):
 
 class TNCDataPath(SerialDataPath):
     def connect(self):
+        if ":" in self.port:
+            self.port, tncport = self.port.split(":", 1)
+            tncport = int(tncport)
+        else:
+            tncport = 0
+
         try:
             self._serial = TNCSerial(port=self.port,
+                                     tncport=tncport,
                                      baudrate=self.baud,
                                      timeout=self.timeout,
                                      writeTimeout=self.timeout,
