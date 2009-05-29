@@ -94,6 +94,12 @@ class StationsList(MainWindowTab):
             for port in stationlist.keys():
                 print "Doing CQCQCQ ping on port %s" % port
                 self.emit("ping-station", "CQCQCQ", port)
+        elif action == "reqposall":
+            job = rpcsession.RPCPositionReport("CQCQCQ", "Position Request")
+            job.set_station(".")
+            stationlist = self.emit("get-station-list")
+            for port in stationlist.keys():
+                self.emit("submit-rpc-job", job, port)
         elif action == "sendfile":
             fn = self._config.platform.gui_open_file()
             if not fn:
@@ -116,6 +122,7 @@ class StationsList(MainWindowTab):
     <separator/>
     <menuitem action="clearall"/>
     <menuitem action="pingall"/>
+    <menuitem action="reqposall"/>
   </popup>
 </ui>
 """
@@ -134,7 +141,8 @@ class StationsList(MainWindowTab):
             ag.add_action(a)
 
         actions = [("clearall", _("Clear All"), gtk.STOCK_CLEAR),
-                   ("pingall", _("Ping All Stations"), None)]
+                   ("pingall", _("Ping All Stations"), None),
+                   ("reqposall", _("Request all positions"), None)]
         for action, label, stock in actions:
             a = gtk.Action(action, label, None, stock)
             a.connect("activate", self._mh, station, port)
