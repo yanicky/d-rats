@@ -19,6 +19,7 @@ import time
 import datetime
 import os
 import glob
+import sys
 
 import gobject
 
@@ -30,6 +31,8 @@ import signals
 
 # This feels wrong
 from ui import main_events
+
+from version import DRATS_VERSION
 
 ASCII_FS = "\x1C"
 ASCII_GS = "\x1D"
@@ -157,6 +160,10 @@ class RPCPositionReport(RPCJob):
 
     def do(self, rpcactions):
         return rpcactions.RPC_pos_report(self)
+
+class RPCGetVersion(RPCJob):
+    def do(self, rpcactions):
+        return rpcactions.RPC_get_version(self)
 
 class RPCSession(gobject.GObject, sessionmgr.StatelessSession):
     type = sessionmgr.T_RPC
@@ -405,4 +412,19 @@ class RPCActionSet(gobject.GObject):
                                       _("Requested message %s") % subj)
         self.emit("event", event)
     
+        return result
+
+    def RPC_get_version(self, job):
+        result = {}
+
+        result["version"] = DRATS_VERSION
+        result["os"] = self.__config.platform.os_version_string()
+        result["pyver"] = ".".join([str(x) for x in sys.version_info[:3]])
+        try:
+            import gtk
+            result["pygtkver"] = ".".join([str(x) for x in gtk.pygtk_version])
+            result["gtkver"] = ".".join([str(x) for x in gtk.gtk_version])
+        except ImportError:
+            result["pygtkver"] = result["gtkver"] = "Unknown"
+
         return result
