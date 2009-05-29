@@ -27,7 +27,8 @@ from ConfigParser import ConfigParser
 from glob import glob
 
 from d_rats.ui.main_common import MainWindowElement, MainWindowTab
-from d_rats.ui.main_common import prompt_for_station, ask_for_confirmation
+from d_rats.ui.main_common import prompt_for_station, ask_for_confirmation, \
+    display_error, prompt_for_string
 from d_rats.ui import main_events
 from d_rats import inputdialog
 from d_rats import formgui
@@ -627,8 +628,24 @@ class MessagesTab(MainWindowTab):
             return
 
         fn = sel[0]
+        try:
+            form = formgui.FormFile("", fn)
+        except Exception, e:
+            log_exception()
+            display_error(_("Unable to email this form:") + " %s" % e)
+            return
 
-        if not ask_for_confirmation(_("Send this form via email?")):
+        addr = form.get_recipient_string()
+
+        if "@" not in addr:
+            addr = prompt_for_string(_("Enter destination address:"))
+            if not addr:
+                return
+            elif "@" not in addr:
+                display_error(_("Invalid address"))
+                return
+        elif not ask_for_confirmation(_("Send this form via email to") + \
+                                          " %s?" % addr):
             return
 
         newfn = os.path.join(self._config.form_store_dir(),
@@ -643,8 +660,7 @@ class MessagesTab(MainWindowTab):
 
         srv = emailgw.FormEmailService(self._config)
         try:
-            form = formgui.FormFile("", newfn)
-            srv.send_email_background(form, lambda s, m: True)
+            srv.send_email_background(form, lambda s, m: True, addr)
             event = main_events.Event(None, "Sent email")
         except Exception, e:
             log_exception()
