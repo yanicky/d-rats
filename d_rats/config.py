@@ -217,7 +217,8 @@ def prompt_for_port(config, portspec=None, info=None, pname=None):
         tablist = [_("Serial"), _("Network"), _("TNC")]
         tabs.set_current_page(tablist.index(tsel.get_active_text()))
 
-        desc.set_text(descriptions[tsel.get_active_text()])
+        desc.set_markup("<span fgcolor='blue'>%s</span>" % \
+                            descriptions[tsel.get_active_text()])
     
     name = wtree.get_widget("name")
     desc = wtree.get_widget("typedesc")
