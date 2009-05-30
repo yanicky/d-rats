@@ -53,11 +53,11 @@ def kiss_send_frame(frame, port=0):
 
 def kiss_recv_frame(buf):
     if not buf:
-        return ""
+        return "", ""
     elif buf.count(chr(FEND)) < 2:
         print "[TNC] Broken frame:"
         utils.hexprint(buf)
-        return ""
+        return "", buf
 
     data = ""
     inframe = False
@@ -91,7 +91,11 @@ def kiss_recv_frame(buf):
     if TNC_DEBUG:
         print "[TNC] Data: %s" % str([data])
 
-    return data
+    if not inframe:
+        # There was not a partial frame started at the end of the data
+        _buf = ""
+
+    return data, _buf
 
 class TNCSerial(serial.Serial):
     def __init__(self, **kwargs):
@@ -102,15 +106,21 @@ class TNCSerial(serial.Serial):
             self.__tncport = 0
         serial.Serial.__init__(self, **kwargs)
 
+        self.__buffer = ""
+
     def reconnect(self):
         pass
 
     def write(self, data):
         serial.Serial.write(self, kiss_send_frame(data, self.__tncport))
 
-    def read(self, len):
-        buf = serial.Serial.read(self, 1024)
-        return kiss_recv_frame(buf)
+    def read(self, size):
+        if self.__buffer:
+            print "Buffer is %i before read" % len(self.__buffer)
+        self.__buffer += serial.Serial.read(self, 1024)
+        data, self.__buffer = kiss_recv_frame(self.__buffer)
+
+        return data
 
 
 class SWFSerial(serial.Serial):
@@ -281,7 +291,7 @@ class TNCDataPath(SerialDataPath):
                                      tncport=tncport,
                                      baudrate=self.baud,
                                      timeout=self.timeout,
-                                     writeTimeout=self.timeout,
+                                     writeTimeout=self.timeout*10,
                                      xonxoff=0)
         except Exception, e:
             print "TNC exception on connect: %s" % e
