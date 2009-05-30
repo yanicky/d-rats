@@ -476,7 +476,8 @@ class MainApp:
     def __user_stop_session(self, object, sid, port, force=False):
         print "User did stop session %i (force=%s)" % (sid, force)
         try:
-            session = self.sm.sessions[sid]
+            sm, sc = self.sm[port]
+            session = sm.sessions[sid]
             session.close(force)
         except Exception, e:
             print "Session `%i' not found: %s" % (sid, e)
