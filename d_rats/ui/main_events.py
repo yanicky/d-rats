@@ -84,9 +84,13 @@ class SessionEvent(Event):
         message = "[%s] %s" % (port_id, message)
         Event.__init__(self, group_id, message, EVENT_SESSION)
         self.__portid = port_id
+        self.__sessionid = session_id
 
     def get_portid(self):
         return self.__portid
+
+    def get_sessionid(self):
+        return self.__sessionid
 
 def filter_rows(model, iter, evtab):
     search = evtab._wtree.get_widget("event_searchtext").get_text()
@@ -136,7 +140,8 @@ class EventTab(MainWindowTab):
                    ("cancel", _("Cancel"))]
         for action, label in actions:
             a = gtk.Action(action, label, None, None)
-            a.connect("activate", self._mh_xfer, int(sid), event.get_portid())
+            a.connect("activate", self._mh_xfer,
+                      event.get_sessionid(), event.get_portid())
             ag.add_action(a)
 
         uim = gtk.UIManager()
@@ -145,12 +150,12 @@ class EventTab(MainWindowTab):
 
         return uim.get_widget("/menu")
 
-    def _mouse_cb(self, view, event):
-        if event.button != 3:
+    def _mouse_cb(self, view, uievent):
+        if uievent.button != 3:
             return
 
-        if event.window == view.get_bin_window():
-            x, y = event.get_coords()
+        if uievent.window == view.get_bin_window():
+            x, y = uievent.get_coords()
             pathinfo = view.get_path_at_pos(int(x), int(y))
             if pathinfo is None:
                 return
@@ -167,7 +172,7 @@ class EventTab(MainWindowTab):
         menufn = menus.get(type, None)
         if menufn:
             menu = menufn(id, event)
-            menu.popup(None, None, None, event.button, event.time)
+            menu.popup(None, None, None, uievent.button, uievent.time)
 
     def _type_selected(self, typesel, filtermodel):
         filter = typesel.get_active_text()
