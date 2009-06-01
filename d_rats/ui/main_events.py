@@ -16,6 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import time
+import os
 from datetime import datetime
 
 import gobject
@@ -59,6 +60,9 @@ class Event:
         "This event ends a series of events in the given group"
         self._isfinal = True
 
+    def is_final(self):
+        return self._isfinal
+
     def set_details(self, details):
         self._details = details
 
@@ -85,12 +89,19 @@ class SessionEvent(Event):
         Event.__init__(self, group_id, message, EVENT_SESSION)
         self.__portid = port_id
         self.__sessionid = session_id
+        self.__restart_info = None
 
     def get_portid(self):
         return self.__portid
 
     def get_sessionid(self):
         return self.__sessionid
+
+    def set_restart_info(self, restart_info):
+        self.__restart_info = restart_info
+
+    def get_restart_info(self):
+        return self.__restart_info
 
 def filter_rows(model, iter, evtab):
     search = evtab._wtree.get_widget("event_searchtext").get_text()
@@ -112,18 +123,27 @@ class EventTab(MainWindowTab):
         "notice" : signals.NOTICE,
         "user-stop-session" : signals.USER_STOP_SESSION,
         "user-cancel-session" : signals.USER_CANCEL_SESSION,
+        "user-send-file" : signals.USER_SEND_FILE,
         "status" : signals.STATUS,
         }
 
     _signals = __gsignals__
 
-    def _mh_xfer(self, _action, sid, portid):
+    def _mh_xfer(self, _action, event):
         action = _action.get_name()
+
+        sid = event.get_sessionid()
+        portid = event.get_portid()
 
         if action == "stop":
             self.emit("user-stop-session", sid, portid)
         elif action == "cancel":
             self.emit("user-cancel-session", sid, portid)
+        elif action == "restart":
+            station, filename = event.get_restart_info()
+            sname = os.path.basename(filename)
+            self.emit("user-send-file", station, portid, filename, sname)
+            event.set_restart_info(None)
 
     def _make_session_menu(self, sid, event):
         xml = """
@@ -131,17 +151,19 @@ class EventTab(MainWindowTab):
   <popup name="menu">
     <menuitem action="stop"/>
     <menuitem action="cancel"/>
+    <menuitem action="restart"/>
   </popup>
 </ui>
 """
         ag = gtk.ActionGroup("menu")
 
-        actions = [("stop", _("Stop")),
-                   ("cancel", _("Cancel"))]
-        for action, label in actions:
+        actions = [("stop", _("Stop"), not event.is_final()),
+                   ("cancel", _("Cancel"), not event.is_final()),
+                   ("restart", _("Restart"), event.get_restart_info())]
+        for action, label, sensitive in actions:
             a = gtk.Action(action, label, None, None)
-            a.connect("activate", self._mh_xfer,
-                      event.get_sessionid(), event.get_portid())
+            a.connect("activate", self._mh_xfer, event)
+            a.set_sensitive(bool(sensitive))
             ag.add_action(a)
 
         uim = gtk.UIManager()

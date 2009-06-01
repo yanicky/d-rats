@@ -135,14 +135,11 @@ SESSION_STARTED = \
 
 SESSION_ENDED = \
     (gobject.SIGNAL_RUN_LAST, gobject.TYPE_NONE,
-     (gobject.TYPE_INT,))        # Session ID
+     (gobject.TYPE_INT,          # Session ID
+      gobject.TYPE_STRING,       # Message,
+      gobject.TYPE_PYOBJECT))    # Restart info
 
 SESSION_STATUS_UPDATE = \
-    (gobject.SIGNAL_RUN_LAST, gobject.TYPE_NONE,
-     (gobject.TYPE_INT,          # Session ID
-      gobject.TYPE_STRING))      # Message
-
-SESSION_FAILED = \
     (gobject.SIGNAL_RUN_LAST, gobject.TYPE_NONE,
      (gobject.TYPE_INT,          # Session ID
       gobject.TYPE_STRING))      # Message

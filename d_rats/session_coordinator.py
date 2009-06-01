@@ -113,14 +113,11 @@ class FileBaseThread(SessionThread):
         else:
             exmsg = ""
 
-    def failed(self, reason=None):
+    def failed(self, restart_info=None):
         s = _("Transfer Interrupted") + \
             " (%.0f%% complete)" % self.pct_complete
-        if reason:
-            s += " " + reason
 
-        self.coord.session_status(self.session, s)
-        self.coord.session_failed(self.session, s)
+        self.coord.session_failed(self.session, s, restart_info)
 
     def __init__(self, *args):
         SessionThread.__init__(self, *args)
@@ -149,7 +146,7 @@ class FileSendThread(FileBaseThread):
             self.completed("file %s" % os.path.basename(path))
             self.coord.session_file_sent(self.session, path)
         else:
-            self.failed()
+            self.failed((self.session.get_station(), path))
 
 class FormRecvThread(FileBaseThread):
     progress_key = "recv_size"
@@ -316,7 +313,6 @@ class SessionCoordinator(gobject.GObject):
         "session-status-update" : signals.SESSION_STATUS_UPDATE,
         "session-started" : signals.SESSION_STARTED,
         "session-ended" : signals.SESSION_ENDED,
-        "session-failed" : signals.SESSION_FAILED,
         "file-received" : signals.FILE_RECEIVED,
         "form-received" : signals.FORM_RECEIVED,
         "file-sent" : signals.FILE_SENT,
@@ -343,8 +339,8 @@ class SessionCoordinator(gobject.GObject):
     def session_file_sent(self, session, path):
         self._emit("file-sent", session._id, path)
 
-    def session_failed(self, session, msg):
-        self._emit("session-failed", session._id, msg)
+    def session_failed(self, session, msg, restart_info=None):
+        self._emit("session-ended", session._id, msg, restart_info)
 
     def cancel_session(self, id, force=False):
         if id < 2:
@@ -454,12 +450,11 @@ class SessionCoordinator(gobject.GObject):
         gobject.idle_add(self._new_session, type, session, direction)
 
     def end_session(self, id):
-        self._emit("session-ended", id)
-
-        if self.sthreads.has_key(id):
-            sthread = self.sthreads[id]
-            session = sthread.session
+        thread = self.sthreads.get(id, None)
+        if isinstance(thread, SessionThread):
             del self.sthreads[id]
+        else:
+            self._emit("session-ended", id, "Ended", None) 
 
     def session_cb(self, data, reason, session):
         t = str(session.__class__.__name__).replace("Session", "")

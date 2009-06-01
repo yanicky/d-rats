@@ -595,26 +595,24 @@ class MainApp:
             raise Exception("Station not found")
 
     def __session_started(self, object, id, msg, port):
-        if msg is None:
-            msg = "Ended"
-
         print "[SESSION %i]: %s" % (id, msg)
 
         event = main_events.SessionEvent(id, port, msg)
         self.mainwindow.tabs["event"].event(event)
+        return event
 
     def __session_status_update(self, object, id, msg, port):
         self.__session_started(object, id, msg, port)
 
-    def __session_ended(self, object, id, port):
-        self.__session_started(object, id, None, port)
-
-    def __session_failed(self, object, id, msg, port):
-        event = main_events.Event(id, msg)
-        self.mainwindow.tabs["event"].event(event)
+    def __session_ended(self, object, id, msg, restart_info, port):
+        event = self.__session_started(object, id, msg, port)
+        event.set_restart_info(restart_info)
+        event.set_as_final()
 
     def __form_received(self, object, id, fn, port=None):
-        print "[NEWFORM %i]: %s" % (id, fn)
+        if port:
+            id = "%s_%s" % (id, port)
+        print "[NEWFORM %s]: %s" % (id, fn)
         f = formgui.FormFile("", fn)
         msg = '%s "%s" %s %s' % (_("Message"),
                                  f.get_subject_string(),
@@ -626,6 +624,8 @@ class MainApp:
         self.mainwindow.tabs["event"].event(event)
 
     def __file_received(self, object, id, fn, port=None):
+        if port:
+            id = "%s_%s" % (id, port)
         _fn = os.path.basename(fn)
         msg = '%s "%s" %s' % (_("File"), _fn, _("Received"))
         event = main_events.FileEvent(id, msg)
@@ -634,14 +634,18 @@ class MainApp:
         self.mainwindow.tabs["event"].event(event)
                 
     def __form_sent(self, object, id, fn, port=None):
-        print "[FORMSENT %i]: %s" % (id, fn)
+        if port:
+            id = "%s_%s" % (id, port)
+        print "[FORMSENT %s]: %s" % (id, fn)
         event = main_events.FormEvent(id, _("Message Sent"))
         event.set_as_final()
         self.mainwindow.tabs["messages"].message_sent(fn)
         self.mainwindow.tabs["event"].event(event)
 
     def __file_sent(self, object, id, fn, port=None):
-        print "[FILESENT %i]: %s" % (id, fn)
+        if port:
+            id = "%s_%s" % (id, port)
+        print "[FILESENT %s]: %s" % (id, fn)
         _fn = os.path.basename(fn)
         msg = '%s "%s" %s' % (_("File"), _fn, _("Sent"))
         event = main_events.FileEvent(id, msg)
@@ -694,7 +698,6 @@ class MainApp:
             "session-status-update" : self.__session_status_update,
             "session-started" : self.__session_started,
             "session-ended" : self.__session_ended,
-            "session-failed" : self.__session_failed,
             "file-received" : self.__file_received,
             "form-received" : self.__form_received,
             "file-sent" : self.__file_sent,
