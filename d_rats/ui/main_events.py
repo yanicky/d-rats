@@ -230,6 +230,19 @@ class EventTab(MainWindowTab):
         _EVENT_TYPES[EVENT_POS_REPORT] = \
             self._config.ship_img("event_posreport.png")
 
+    def __change_sort(self, column):
+        srt = column.get_sort_order()
+
+        if srt == gtk.SORT_ASCENDING:
+            srt = gtk.SORT_DESCENDING
+        else:
+            srt = gtk.SORT_ASCENDING
+
+        self._config.set("state", "events_sort", int(srt))
+
+        self.store.set_sort_column_id(5, srt)
+        column.set_sort_order(srt)
+
     def __init__(self, wtree, config):
         MainWindowTab.__init__(self, wtree, config, "event")
 
@@ -264,13 +277,20 @@ class EventTab(MainWindowTab):
         col = gtk.TreeViewColumn(_("Time"), r, text=2)
         col.set_cell_data_func(r, render_time)
         col.set_sort_column_id(5)
+        col.connect("clicked", self.__change_sort)
         eventlist.append_column(col)
+
+        try:
+            srt = int(self._config.get("state", "events_sort"))
+        except ValueError:
+            srt = gtk.SORT_DESCENDING
+        self.store.set_sort_column_id(5, srt)
+        col.set_sort_indicator(True)
+        col.set_sort_order(srt)
 
         r = gtk.CellRendererText()
         col = gtk.TreeViewColumn(_("Description"), r, text=3)
         eventlist.append_column(col)
-
-        self.store.set_sort_column_id(5, gtk.SORT_DESCENDING)
 
         typesel, = self._getw("typesel")
         typesel.set_active(0)
