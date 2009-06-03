@@ -23,14 +23,24 @@ import gobject
 
 import signals
 import utils
+import rpcsession
 
 class DRatsPluginServer(SimpleXMLRPCServer, gobject.GObject):
     __gsignals__ = {
         "user-send-chat" : signals.USER_SEND_CHAT,
         "get-station-list" : signals.GET_STATION_LIST,
         "user-send-file" : signals.USER_SEND_FILE,
+        "submit-rpc-job" : signals.SUBMIT_RPC_JOB,
         }
     _signals = __gsignals__
+
+    def __get_port(self, station):
+        ports = self.emit("get-station-list")
+        port = utils.port_for_station(ports, station)
+        if not port:
+            raise Exception("Station %s not heard" % station)
+
+        return port
 
     def __send_chat(self, port, message):
         """Send a chat @message on @port"""
@@ -50,10 +60,7 @@ class DRatsPluginServer(SimpleXMLRPCServer, gobject.GObject):
         used.  An exception will be thrown if the last port cannot be
         determined"""
         if not port:
-            ports = self.emit("get-station-list")
-            port = utils.port_for_station(ports, station)
-            if not port:
-                raise Exception("Port not specified and station not heard")
+            port = self.__get_port(station)
 
         sname = os.path.basename(filename)
 
@@ -62,13 +69,57 @@ class DRatsPluginServer(SimpleXMLRPCServer, gobject.GObject):
 
         return 0
 
+    def __submit_rpcjob(self, station, rpcname, port=None, params={}):
+        """Submit an RPC job to @station of type @rpcname.  Optionally
+        specify the @port to be used.  The @params structure is a key=value
+        list of function(value) items to call on the job object before
+        submission.  Returns a job specifier to be used with get_result()."""
+        if not rpcname.isalpha() or not rpcname.startswith("RPC"):
+            raise Exception("Invalid RPC function call name")
+
+        if not port:
+            port = self.__get_port(station)
+
+        job = eval("rpcsession.%s('%s', 'New Job')" % (rpcname, station))
+        for key, val in params:
+            func = job.__getattribute__(key)
+            func(val)
+
+        ident = self.__idcount
+        self.__idcount += 1
+
+        def record_result(job, state, result, ident):
+            self.__persist[ident] = result
+        job.connect("state-change", record_result, ident)
+
+        self.emit("submit-rpc-job", job, port)
+
+        return ident
+
+    def __get_result(self, ident):
+        """Get the result of job @ident.  Returns a structure, empty until
+        completion"""
+        if self.__persist.has_key(ident):
+            result = self.__persist[ident]
+            del self.__persist[ident]
+        else:
+            result = {}
+
+        return result
+
     def __init__(self):
         SimpleXMLRPCServer.__init__(self, ("localhost", 9100))
         gobject.GObject.__init__(self)
+
         self.__thread = None
+        self.__idcount = 0
+        self.__persist = {}
+                    
         self.register_function(self.__send_chat, "send_chat")
         self.register_function(self.__list_ports, "list_ports")
         self.register_function(self.__send_file, "send_file")
+        self.register_function(self.__submit_rpcjob, "submit_rpcjob")
+        self.register_function(self.__get_result, "get_result")
 
     def serve_background(self):
         self.__thread = Thread(target=self.serve_forever)
