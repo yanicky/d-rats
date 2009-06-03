@@ -60,6 +60,7 @@ import emailgw
 import rpcsession
 import formgui
 import station_status
+import pluginsrv
 
 from ui import main_events
 
@@ -784,6 +785,13 @@ class MainApp:
                                                    "DEFAULT"))
             for i in ["port", "rate", "sniff_packets", "compatmode"]:
                 self.config.remove_option("settings", i)
+
+        try:
+            ps = pluginsrv.DRatsPluginServer()
+            self.__connect_object(ps)
+            ps.serve_background()
+        except Exception, e:
+            print "Unable to start plugin server: %s" % e
 
         try:
             gtk.main()
