@@ -8,14 +8,16 @@ msgstr ""
 "Project-Id-Version: D-RATS\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2009-06-03 06:32-0700\n"
-"PO-Revision-Date: 2009-04-23 19:51+0100\n"
+"PO-Revision-Date: 2009-06-03 22:18+0100\n"
 "Last-Translator: IZ5FSA Leo <iz5fsa@gmail.com>\n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: d_rats/config.py:41 d_rats/config.py:677 d_rats/gps.py:105
+#: d_rats/config.py:41
+#: d_rats/config.py:677
+#: d_rats/gps.py:105
 msgid "Imperial"
 msgstr "Anglosassone"
 
@@ -27,21 +29,28 @@ msgstr "Connesso (D-RATS)"
 msgid "Going offline (D-RATS)"
 msgstr "Disconnesso (D-RATS)"
 
-#: d_rats/config.py:211 d_rats/config.py:218 d_rats/config.py:242
-#, fuzzy
+#: d_rats/config.py:211
+#: d_rats/config.py:218
+#: d_rats/config.py:242
 msgid "Serial"
-msgstr "Anglosassone"
+msgstr "Seriale"
 
-#: d_rats/config.py:212 d_rats/config.py:218 d_rats/config.py:244
+#: d_rats/config.py:212
+#: d_rats/config.py:218
+#: d_rats/config.py:244
 #: d_rats/config.py:1402
 msgid "Network"
 msgstr "Rete"
 
-#: d_rats/config.py:213 d_rats/config.py:218 d_rats/config.py:247
+#: d_rats/config.py:213
+#: d_rats/config.py:218
+#: d_rats/config.py:247
 msgid "TNC"
-msgstr ""
+msgstr "TNC"
 
-#: d_rats/config.py:393 d_rats/config.py:867 d_rats/config.py:1099
+#: d_rats/config.py:393
+#: d_rats/config.py:867
+#: d_rats/config.py:1099
 msgid "Enabled"
 msgstr "Abilitato"
 
@@ -49,15 +58,25 @@ msgstr "Abilitato"
 msgid "Test"
 msgstr "Prova"
 
-#: d_rats/config.py:658 d_rats/config.py:1267 d_rats/config.py:1289
-#: d_rats/config.py:1294 d_rats/config.py:1297 d_rats/config.py:1303
-#: d_rats/config.py:1311 d_rats/config.py:1319 d_rats/mapdisplay.py:1088
+#: d_rats/config.py:658
+#: d_rats/config.py:1267
+#: d_rats/config.py:1289
+#: d_rats/config.py:1294
+#: d_rats/config.py:1297
+#: d_rats/config.py:1303
+#: d_rats/config.py:1311
+#: d_rats/config.py:1319
+#: d_rats/mapdisplay.py:1088
 #: d_rats/mapdisplay.py:1097
 msgid "Callsign"
 msgstr "Nominativo"
 
-#: d_rats/config.py:662 d_rats/config.py:872 d_rats/map_source_editor.py:72
-#: d_rats/mapdisplay.py:72 d_rats/mapdisplay.py:96 d_rats/mapdisplay.py:112
+#: d_rats/config.py:662
+#: d_rats/config.py:872
+#: d_rats/map_source_editor.py:72
+#: d_rats/mapdisplay.py:72
+#: d_rats/mapdisplay.py:96
+#: d_rats/mapdisplay.py:112
 #: ui/mainwindow.glade.h:30
 msgid "Name"
 msgstr "Nome"
@@ -70,7 +89,8 @@ msgstr "Messaggio di apertura"
 msgid "Sign-off Message"
 msgstr "Messaggio di chiusura"
 
-#: d_rats/config.py:677 d_rats/gps.py:108
+#: d_rats/config.py:677
+#: d_rats/gps.py:108
 msgid "Metric"
 msgstr "Metrico"
 
@@ -103,26 +123,38 @@ msgid "Blink tray on"
 msgstr "Barra lampeggiante"
 
 #: d_rats/config.py:720
-#, fuzzy
 msgid "File Transfer Path"
-msgstr "Trasferimenti File"
+msgstr "Percorso Trasferimenti File"
 
 #: d_rats/config.py:724
-#, fuzzy
 msgid "Map Storage Path"
-msgstr "Directory Salvataggio Mappe"
+msgstr "Percorso Salvataggio Mappe"
 
-#: d_rats/config.py:732 d_rats/geocode_ui.py:87 d_rats/geocode_ui.py:117
-#: d_rats/geocode_ui.py:152 d_rats/mapdisplay.py:73 d_rats/mapdisplay.py:97
-#: d_rats/mapdisplay.py:113 d_rats/mapdisplay.py:788 d_rats/mapdisplay.py:1090
-#: d_rats/mapdisplay.py:1092 d_rats/mapdisplay.py:1099
+#: d_rats/config.py:732
+#: d_rats/geocode_ui.py:87
+#: d_rats/geocode_ui.py:117
+#: d_rats/geocode_ui.py:152
+#: d_rats/mapdisplay.py:73
+#: d_rats/mapdisplay.py:97
+#: d_rats/mapdisplay.py:113
+#: d_rats/mapdisplay.py:788
+#: d_rats/mapdisplay.py:1090
+#: d_rats/mapdisplay.py:1092
+#: d_rats/mapdisplay.py:1099
 msgid "Latitude"
 msgstr "Latitudine"
 
-#: d_rats/config.py:736 d_rats/geocode_ui.py:88 d_rats/geocode_ui.py:118
-#: d_rats/geocode_ui.py:153 d_rats/mapdisplay.py:74 d_rats/mapdisplay.py:98
-#: d_rats/mapdisplay.py:114 d_rats/mapdisplay.py:789 d_rats/mapdisplay.py:1091
-#: d_rats/mapdisplay.py:1093 d_rats/mapdisplay.py:1100
+#: d_rats/config.py:736
+#: d_rats/geocode_ui.py:88
+#: d_rats/geocode_ui.py:118
+#: d_rats/geocode_ui.py:153
+#: d_rats/mapdisplay.py:74
+#: d_rats/mapdisplay.py:98
+#: d_rats/mapdisplay.py:114
+#: d_rats/mapdisplay.py:789
+#: d_rats/mapdisplay.py:1091
+#: d_rats/mapdisplay.py:1093
+#: d_rats/mapdisplay.py:1100
 msgid "Longitude"
 msgstr "Longitudine"
 
@@ -156,11 +188,11 @@ msgstr "Simbolo:"
 
 #: d_rats/config.py:767
 msgid "Freshen map after"
-msgstr ""
+msgstr "Aggiorna la mappa dopo"
 
 #: d_rats/config.py:767
 msgid "hours"
-msgstr ""
+msgstr "ore"
 
 #: d_rats/config.py:775
 msgid "Notice RegEx"
@@ -188,7 +220,7 @@ msgstr "Righe da scorrere indietro"
 
 #: d_rats/config.py:812
 msgid "Show status updates in chat"
-msgstr ""
+msgstr "Mostra aggiornamenti di stato in chat"
 
 #: d_rats/config.py:825
 msgid "Chat activity"
@@ -202,50 +234,63 @@ msgstr "Attività Messaggi"
 msgid "File activity"
 msgstr "Attività su file"
 
-#: d_rats/config.py:868 d_rats/config.py:1019 d_rats/config.py:1024
-#: d_rats/config.py:1025 d_rats/config.py:1032 d_rats/config.py:1143
-#: d_rats/config.py:1155 d_rats/config.py:1165 d_rats/config.py:1179
-#: d_rats/config.py:1200 d_rats/ui/main_common.py:63
+#: d_rats/config.py:868
+#: d_rats/config.py:1019
+#: d_rats/config.py:1024
+#: d_rats/config.py:1025
+#: d_rats/config.py:1032
+#: d_rats/config.py:1143
+#: d_rats/config.py:1155
+#: d_rats/config.py:1165
+#: d_rats/config.py:1179
+#: d_rats/config.py:1200
+#: d_rats/ui/main_common.py:63
 #: d_rats/ui/main_stations.py:278
 msgid "Port"
 msgstr "Porta"
 
 #: d_rats/config.py:869
-#, fuzzy
 msgid "Settings"
-msgstr "Stazioni"
+msgstr "Impostazioni"
 
 #: d_rats/config.py:870
 msgid "Sniff"
-msgstr ""
+msgstr "scovare (sniff)"
 
 #: d_rats/config.py:871
-#, fuzzy
 msgid "Raw Text"
-msgstr "Testo"
+msgstr "Testo grezzo"
 
 #: d_rats/config.py:874
-msgid ""
-"Configure data paths below.  This may include any number of serial-attached "
-"radios and network-attached proxies."
-msgstr ""
+msgid "Configure data paths below.  This may include any number of serial-attached radios and network-attached proxies."
+msgstr "Configura i sottostanti percorsi per i dati. Questo puo includere numero di radio conesse via seriale e poxy collegati via rete."
 
-#: d_rats/config.py:882 d_rats/config.py:1011 d_rats/config.py:1037
-#: d_rats/config.py:1217 d_rats/config.py:1333
+#: d_rats/config.py:882
+#: d_rats/config.py:1011
+#: d_rats/config.py:1037
+#: d_rats/config.py:1217
+#: d_rats/config.py:1333
 msgid "Add"
 msgstr "Aggiungi"
 
-#: d_rats/config.py:884 d_rats/config.py:1219 d_rats/config.py:1335
+#: d_rats/config.py:884
+#: d_rats/config.py:1219
+#: d_rats/config.py:1335
 #: d_rats/mapdisplay.py:745
 msgid "Edit"
 msgstr "Modifica"
 
-#: d_rats/config.py:886 d_rats/config.py:1013 d_rats/config.py:1039
-#: d_rats/config.py:1221 d_rats/config.py:1337 d_rats/ui/main_stations.py:153
+#: d_rats/config.py:886
+#: d_rats/config.py:1013
+#: d_rats/config.py:1039
+#: d_rats/config.py:1221
+#: d_rats/config.py:1337
+#: d_rats/ui/main_stations.py:153
 msgid "Remove"
 msgstr "Elimina"
 
-#: d_rats/config.py:889 d_rats/config.py:1392
+#: d_rats/config.py:889
+#: d_rats/config.py:1392
 msgid "Paths"
 msgstr "Percorsi"
 
@@ -281,42 +326,59 @@ msgstr "Intervallo di warm-up"
 msgid "Force transmission delay"
 msgstr "Forzare il tempo di trasmissione"
 
-#: d_rats/config.py:975 d_rats/config.py:1125 d_rats/config.py:1276
+#: d_rats/config.py:975
+#: d_rats/config.py:1125
+#: d_rats/config.py:1276
 msgid "Invalid value for"
 msgstr "Valore non valido per"
 
-#: d_rats/config.py:990 d_rats/config.py:996 d_rats/config.py:997
+#: d_rats/config.py:990
+#: d_rats/config.py:996
+#: d_rats/config.py:997
 msgid "Local Port"
 msgstr "Porta Locale"
 
-#: d_rats/config.py:991 d_rats/config.py:998
+#: d_rats/config.py:991
+#: d_rats/config.py:998
 msgid "Remote Port"
 msgstr "Porta Remota"
 
-#: d_rats/config.py:992 d_rats/config.py:999 d_rats/config.py:1007
-#: d_rats/mainapp.py:572 d_rats/mapdisplay.py:787 d_rats/qst.py:679
-#: d_rats/qst.py:725 d_rats/ui/main_common.py:62
+#: d_rats/config.py:992
+#: d_rats/config.py:999
+#: d_rats/config.py:1007
+#: d_rats/mainapp.py:572
+#: d_rats/mapdisplay.py:787
+#: d_rats/qst.py:679
+#: d_rats/qst.py:725
+#: d_rats/ui/main_common.py:62
 #: d_rats/ui/main_stations.py:273
 msgid "Station"
 msgstr "Stazione"
 
-#: d_rats/config.py:1005 d_rats/sessions.py:66 ui/mainwindow.glade.h:24
+#: d_rats/config.py:1005
+#: d_rats/sessions.py:66
+#: ui/mainwindow.glade.h:24
 msgid "Local"
 msgstr "Locale"
 
-#: d_rats/config.py:1006 d_rats/sessions.py:67
+#: d_rats/config.py:1006
+#: d_rats/sessions.py:67
 msgid "Remote"
 msgstr "Remoto"
 
-#: d_rats/config.py:1015 d_rats/config.py:1324
+#: d_rats/config.py:1015
+#: d_rats/config.py:1324
 msgid "Outgoing"
 msgstr "In uscita"
 
-#: d_rats/config.py:1020 d_rats/config.py:1026 d_rats/config.py:1033
+#: d_rats/config.py:1020
+#: d_rats/config.py:1026
+#: d_rats/config.py:1033
 msgid "Host"
 msgstr "Host"
 
-#: d_rats/config.py:1041 d_rats/config.py:1324
+#: d_rats/config.py:1041
+#: d_rats/config.py:1324
 msgid "Incoming"
 msgstr "In Arrivo"
 
@@ -344,44 +406,69 @@ msgstr "Password SMTP"
 msgid "Gateway"
 msgstr "Gateway"
 
-#: d_rats/config.py:1138 d_rats/config.py:1148 d_rats/config.py:1150
-#: d_rats/config.py:1160 d_rats/config.py:1172 d_rats/config.py:1174
+#: d_rats/config.py:1138
+#: d_rats/config.py:1148
+#: d_rats/config.py:1150
+#: d_rats/config.py:1160
+#: d_rats/config.py:1172
+#: d_rats/config.py:1174
 #: d_rats/config.py:1195
 msgid "Server"
 msgstr "Server"
 
-#: d_rats/config.py:1139 d_rats/config.py:1148 d_rats/config.py:1151
-#: d_rats/config.py:1161 d_rats/config.py:1172 d_rats/config.py:1175
+#: d_rats/config.py:1139
+#: d_rats/config.py:1148
+#: d_rats/config.py:1151
+#: d_rats/config.py:1161
+#: d_rats/config.py:1172
+#: d_rats/config.py:1175
 #: d_rats/config.py:1196
 msgid "Username"
 msgstr "Nome Utente"
 
-#: d_rats/config.py:1140 d_rats/config.py:1152 d_rats/config.py:1162
-#: d_rats/config.py:1176 d_rats/config.py:1197
+#: d_rats/config.py:1140
+#: d_rats/config.py:1152
+#: d_rats/config.py:1162
+#: d_rats/config.py:1176
+#: d_rats/config.py:1197
 msgid "Password"
 msgstr "Password"
 
-#: d_rats/config.py:1141 d_rats/config.py:1153 d_rats/config.py:1163
-#: d_rats/config.py:1177 d_rats/config.py:1198
+#: d_rats/config.py:1141
+#: d_rats/config.py:1153
+#: d_rats/config.py:1163
+#: d_rats/config.py:1177
+#: d_rats/config.py:1198
 msgid "Poll Interval"
 msgstr "Intervallo di Interrogazione"
 
-#: d_rats/config.py:1142 d_rats/config.py:1154 d_rats/config.py:1164
-#: d_rats/config.py:1178 d_rats/config.py:1199
+#: d_rats/config.py:1142
+#: d_rats/config.py:1154
+#: d_rats/config.py:1164
+#: d_rats/config.py:1178
+#: d_rats/config.py:1199
 msgid "Use SSL"
 msgstr "Usa SSL"
 
-#: d_rats/config.py:1144 d_rats/config.py:1156 d_rats/config.py:1166
-#: d_rats/config.py:1180 d_rats/config.py:1201 d_rats/config.py:1205
+#: d_rats/config.py:1144
+#: d_rats/config.py:1156
+#: d_rats/config.py:1166
+#: d_rats/config.py:1180
+#: d_rats/config.py:1201
+#: d_rats/config.py:1205
 msgid "Action"
 msgstr "Azione"
 
-#: d_rats/config.py:1205 d_rats/ui/main_messages.py:310
-#: d_rats/ui/main_messages.py:413 d_rats/ui/main_messages.py:790
+#: d_rats/config.py:1205
+#: d_rats/ui/main_messages.py:310
+#: d_rats/ui/main_messages.py:413
+#: d_rats/ui/main_messages.py:790
 msgid "Form"
 msgstr "Modello"
 
-#: d_rats/config.py:1205 d_rats/config.py:1395 ui/mainwindow.glade.h:13
+#: d_rats/config.py:1205
+#: d_rats/config.py:1395
+#: ui/mainwindow.glade.h:13
 msgid "Chat"
 msgstr "Chat"
 
@@ -389,17 +476,25 @@ msgstr "Chat"
 msgid "Incoming Accounts"
 msgstr "Accrediti In Arrivo"
 
-#: d_rats/config.py:1290 d_rats/config.py:1298 d_rats/config.py:1304
-#: d_rats/config.py:1312 d_rats/config.py:1320 d_rats/config.py:1324
+#: d_rats/config.py:1290
+#: d_rats/config.py:1298
+#: d_rats/config.py:1304
+#: d_rats/config.py:1312
+#: d_rats/config.py:1320
+#: d_rats/config.py:1324
 msgid "Access"
 msgstr "Accesso"
 
-#: d_rats/config.py:1290 d_rats/config.py:1324
+#: d_rats/config.py:1290
+#: d_rats/config.py:1324
 msgid "Both"
 msgstr "entrambi"
 
-#: d_rats/config.py:1291 d_rats/config.py:1299 d_rats/config.py:1305
-#: d_rats/config.py:1313 d_rats/config.py:1321
+#: d_rats/config.py:1291
+#: d_rats/config.py:1299
+#: d_rats/config.py:1305
+#: d_rats/config.py:1313
+#: d_rats/config.py:1321
 msgid "Email Filter"
 msgstr "Filtro email"
 
@@ -407,7 +502,8 @@ msgstr "Filtro email"
 msgid "None"
 msgstr "Niente"
 
-#: d_rats/config.py:1339 d_rats/config.py:1407
+#: d_rats/config.py:1339
+#: d_rats/config.py:1407
 msgid "Email Access"
 msgstr "Accesso email"
 
@@ -415,7 +511,9 @@ msgstr "Accesso email"
 msgid "Preferences"
 msgstr "Preferenze"
 
-#: d_rats/config.py:1393 d_rats/qst.py:675 d_rats/qst.py:723
+#: d_rats/config.py:1393
+#: d_rats/qst.py:675
+#: d_rats/qst.py:723
 msgid "GPS"
 msgstr "GPS"
 
@@ -480,12 +578,8 @@ msgid "Your current altitude"
 msgstr "Altitudine attuale"
 
 #: d_rats/config_tips.py:10
-msgid ""
-"When enabled, form time fields will default to current time in UTC.  When "
-"disabled, default to local time"
-msgstr ""
-"Quando abilitato, i campi 'orario' dei modelli sono inizializzati all'ora "
-"corrente in UTC. Quando disabilitato, predefinito all'ora locale"
+msgid "When enabled, form time fields will default to current time in UTC.  When disabled, default to local time"
+msgstr "Quando abilitato, i campi 'orario' dei modelli sono inizializzati all'ora corrente in UTC. Quando disabilitato, predefinito all'ora locale"
 
 #: d_rats/config_tips.py:11
 msgid "Requires a D-RATS restart"
@@ -540,11 +634,8 @@ msgid "The symbol character for GPS-A beacons"
 msgstr "Il carattere simbolo per i beacon GPS-A"
 
 #: d_rats/config_tips.py:27
-msgid ""
-"Treat incoming raw text (and garbage) as chat data and display it on-screen"
-msgstr ""
-"Tratta il testo grezzo (e i rifiuti) come dati di chat e li visualizza sul "
-"monitor"
+msgid "Treat incoming raw text (and garbage) as chat data and display it on-screen"
+msgstr "Tratta il testo grezzo (e i rifiuti) come dati di chat e li visualizza sul monitor"
 
 #: d_rats/config_tips.py:28
 msgid "Alternate location to store cached map images"
@@ -555,12 +646,8 @@ msgid "Amount of fake data to send during a warmup cycle"
 msgstr "Quantità di dati fittizi per il messaggio di warmup"
 
 #: d_rats/config_tips.py:30
-msgid ""
-"Length of time between transmissions that must pass before we send a warmup "
-"block to open the power-save circuits on handhelds"
-msgstr ""
-"Tempo di attesa per spedire un messaggio di warmup per evitare l'auto-"
-"spengimento dei palmari"
+msgid "Length of time between transmissions that must pass before we send a warmup block to open the power-save circuits on handhelds"
+msgstr "Tempo di attesa per spedire un messaggio di warmup per evitare l'auto-spengimento dei palmari"
 
 #: d_rats/config_tips.py:31
 msgid "Amount of time to wait between transmissions"
@@ -572,22 +659,15 @@ msgstr "Stringa di riposta alle richieste di ping."
 
 #: d_rats/config_tips.py:33
 msgid "If prefixed by a > character, interpret as a path to a text file"
-msgstr ""
-"Se preceduto da uno \">\", sarà interpretato come il persorso a un file di "
-"testo"
+msgstr "Se preceduto da uno \">\", sarà interpretato come il persorso a un file di testo"
 
 #: d_rats/config_tips.py:34
 msgid "If prefixed by a ! character, interpret as a path to a script"
-msgstr ""
-"Se preceduto da un \"!\", sarà interpretato come il percorso di uno script"
+msgstr "Se preceduto da un \"!\", sarà interpretato come il percorso di uno script"
 
 #: d_rats/config_tips.py:35
-msgid ""
-"Hostname of outgoing SMTP server.  If this is specified, this station will "
-"be a gateway for email forms.  If left blank, this feature is disabled"
-msgstr ""
-"Hostname per server SMTP in uscita. Se specificato, questa stazione sarà "
-"gateway per invio e-mail. Se vuoto, la caratteristica sarà disabilitata"
+msgid "Hostname of outgoing SMTP server.  If this is specified, this station will be a gateway for email forms.  If left blank, this feature is disabled"
+msgstr "Hostname per server SMTP in uscita. Se specificato, questa stazione sarà gateway per invio e-mail. Se vuoto, la caratteristica sarà disabilitata"
 
 #: d_rats/config_tips.py:36
 msgid "Email address to set on outgoing form email messages"
@@ -595,8 +675,7 @@ msgstr "Indirizzo email da assegnare per i messaggi in uscita"
 
 #: d_rats/config_tips.py:37
 msgid "If enabled, attempt to negotiate TLS/SSL with SMTP server"
-msgstr ""
-"Se abilitato, tenta di negoziare una connessione TLS/SSL son il server SMTP"
+msgstr "Se abilitato, tenta di negoziare una connessione TLS/SSL son il server SMTP"
 
 #: d_rats/config_tips.py:38
 msgid "Username for SMTP authentication.  Disabled if blank"
@@ -611,17 +690,12 @@ msgid "Default is 25.  Set to the value given by your ISP"
 msgstr "Default a 25. Assegnare il valore indicato dal provider."
 
 #: d_rats/config_tips.py:41
-msgid ""
-"Display information about packets seen that are destined for other stations"
-msgstr ""
-"Visualizza informazioni sui pacchetti ascoltati che sono destinati ad altre "
-"stazioni"
+msgid "Display information about packets seen that are destined for other stations"
+msgstr "Visualizza informazioni sui pacchetti ascoltati che sono destinati ad altre stazioni"
 
 #: d_rats/config_tips.py:42
-msgid ""
-"After this many hours, a map tile will be re-fetched, regardless of if it is "
-"already stored locally.  0 means never re-fetch.  720 hours is 30 days."
-msgstr ""
+msgid "After this many hours, a map tile will be re-fetched, regardless of if it is already stored locally.  0 means never re-fetch.  720 hours is 30 days."
+msgstr "Dopo questo numero di ore, la mappa sarà aggiornata, indipendentemente dal suo salvataggio locale. 0 significa nessun aggiornamento. 720 ore sono 30 giorni."
 
 #: d_rats/config_tips.py:45
 msgid "Specify a .WAV file to be played"
@@ -639,16 +713,22 @@ msgstr "quando arriva un messaggio"
 msgid " when new file activity occurs"
 msgstr "quando arriva un file"
 
-#: d_rats/emailgw.py:178 d_rats/session_coordinator.py:193
-#: d_rats/ui/main_messages.py:213 d_rats/ui/main_messages.py:690
-#: d_rats/ui/main_messages.py:694 d_rats/ui/main_messages.py:750
+#: d_rats/emailgw.py:178
+#: d_rats/session_coordinator.py:193
+#: d_rats/ui/main_messages.py:213
+#: d_rats/ui/main_messages.py:690
+#: d_rats/ui/main_messages.py:694
+#: d_rats/ui/main_messages.py:750
 #: d_rats/ui/main_messages.py:780
 msgid "Inbox"
 msgstr "in Arrivo"
 
-#: d_rats/emailgw.py:209 d_rats/ui/main_messages.py:213
-#: d_rats/ui/main_messages.py:523 d_rats/ui/main_messages.py:558
-#: d_rats/ui/main_messages.py:764 d_rats/ui/main_messages.py:772
+#: d_rats/emailgw.py:209
+#: d_rats/ui/main_messages.py:213
+#: d_rats/ui/main_messages.py:523
+#: d_rats/ui/main_messages.py:558
+#: d_rats/ui/main_messages.py:764
+#: d_rats/ui/main_messages.py:772
 msgid "Outbox"
 msgstr "in Uscita"
 
@@ -656,7 +736,9 @@ msgstr "in Uscita"
 msgid "Enter an address, postal code, or intersection"
 msgstr "Inserisci indirizzo, CAP o località"
 
-#: d_rats/geocode_ui.py:86 d_rats/geocode_ui.py:116 d_rats/geocode_ui.py:151
+#: d_rats/geocode_ui.py:86
+#: d_rats/geocode_ui.py:116
+#: d_rats/geocode_ui.py:151
 msgid "Address"
 msgstr "Indirizzo"
 
@@ -692,7 +774,8 @@ msgstr "relazione"
 msgid "Invalid GPS data"
 msgstr "Dati GPS non corretti"
 
-#: d_rats/gps.py:691 d_rats/qst.py:635
+#: d_rats/gps.py:691
+#: d_rats/qst.py:635
 msgid "UNKNOWN"
 msgstr "SCONOSCIUTO"
 
@@ -736,11 +819,13 @@ msgstr "Socket GPSd Non Bloccato"
 msgid "Static position"
 msgstr "Posizione Statica"
 
-#: d_rats/image.py:81 d_rats/ui/main_files.py:305
+#: d_rats/image.py:81
+#: d_rats/ui/main_files.py:305
 msgid "Filename"
 msgstr "Nome File"
 
-#: d_rats/image.py:84 d_rats/ui/main_files.py:310
+#: d_rats/image.py:84
+#: d_rats/ui/main_files.py:310
 msgid "Size"
 msgstr "Dimensione"
 
@@ -776,16 +861,21 @@ msgstr "Impossibile connettere"
 msgid "Invalid port string"
 msgstr "Invalid port string"
 
-#: d_rats/mainapp.py:390 d_rats/mainapp.py:396 d_rats/mainapp.py:402
-#: d_rats/mainapp.py:588 d_rats/qst.py:575 d_rats/ui/main_stations.py:238
+#: d_rats/mainapp.py:390
+#: d_rats/mainapp.py:396
+#: d_rats/mainapp.py:402
+#: d_rats/mainapp.py:588
+#: d_rats/qst.py:575
+#: d_rats/ui/main_stations.py:238
 msgid "Stations"
 msgstr "Stazioni"
 
 #: d_rats/mainapp.py:574
 msgid "is now"
-msgstr ""
+msgstr "adesso è"
 
-#: d_rats/mainapp.py:617 d_rats/qst.py:445
+#: d_rats/mainapp.py:617
+#: d_rats/qst.py:445
 msgid "Message"
 msgstr "Messaggio"
 
@@ -793,12 +883,15 @@ msgstr "Messaggio"
 msgid "received from"
 msgstr "ricevuto da"
 
-#: d_rats/mainapp.py:630 d_rats/mainapp.py:650 d_rats/qst.py:673
+#: d_rats/mainapp.py:630
+#: d_rats/mainapp.py:650
+#: d_rats/qst.py:673
 #: d_rats/qst.py:722
 msgid "File"
 msgstr "File"
 
-#: d_rats/mainapp.py:630 d_rats/ui/conntest.py:174
+#: d_rats/mainapp.py:630
+#: d_rats/ui/conntest.py:174
 msgid "Received"
 msgstr "Ricevuto"
 
@@ -806,14 +899,18 @@ msgstr "Ricevuto"
 msgid "Message Sent"
 msgstr "Messaggio Inviato"
 
-#: d_rats/mainapp.py:650 d_rats/session_coordinator.py:178
-#: d_rats/ui/conntest.py:174 d_rats/ui/main_messages.py:213
-#: d_rats/ui/main_messages.py:652 d_rats/ui/main_messages.py:767
+#: d_rats/mainapp.py:650
+#: d_rats/session_coordinator.py:178
+#: d_rats/ui/conntest.py:174
+#: d_rats/ui/main_messages.py:213
+#: d_rats/ui/main_messages.py:652
+#: d_rats/ui/main_messages.py:767
 #: d_rats/ui/main_messages.py:773
 msgid "Sent"
 msgstr "Inviato"
 
-#: d_rats/map_source_editor.py:69 d_rats/ui/main_messages.py:385
+#: d_rats/map_source_editor.py:69
+#: d_rats/ui/main_messages.py:385
 msgid "Type"
 msgstr "Tipo"
 
@@ -829,7 +926,9 @@ msgstr "Buoys (separati da virgola)"
 msgid "Add Marker"
 msgstr "Aggiungi Segnaposto"
 
-#: d_rats/mapdisplay.py:71 d_rats/mapdisplay.py:82 d_rats/mapdisplay.py:93
+#: d_rats/mapdisplay.py:71
+#: d_rats/mapdisplay.py:82
+#: d_rats/mapdisplay.py:93
 msgid "Group"
 msgstr "Gruppo"
 
@@ -837,11 +936,15 @@ msgstr "Gruppo"
 msgid "Lookup"
 msgstr "Ricerca"
 
-#: d_rats/mapdisplay.py:76 d_rats/mapdisplay.py:99 d_rats/mapdisplay.py:115
+#: d_rats/mapdisplay.py:76
+#: d_rats/mapdisplay.py:99
+#: d_rats/mapdisplay.py:115
 msgid "Comment"
 msgstr "Commento"
 
-#: d_rats/mapdisplay.py:77 d_rats/mapdisplay.py:101 d_rats/mapdisplay.py:116
+#: d_rats/mapdisplay.py:77
+#: d_rats/mapdisplay.py:101
+#: d_rats/mapdisplay.py:116
 #: d_rats/qst.py:446
 msgid "Icon"
 msgstr "Icona"
@@ -862,7 +965,8 @@ msgstr "Recupero in corso"
 msgid "Loading"
 msgstr "Caricamento"
 
-#: d_rats/mapdisplay.py:627 d_rats/mapdisplay.py:651
+#: d_rats/mapdisplay.py:627
+#: d_rats/mapdisplay.py:651
 msgid "Zoom"
 msgstr "Zoom"
 
@@ -874,7 +978,8 @@ msgstr "Min"
 msgid "Max"
 msgstr "Max"
 
-#: d_rats/mapdisplay.py:751 d_rats/ui/main_files.py:273
+#: d_rats/mapdisplay.py:751
+#: d_rats/ui/main_files.py:273
 #: d_rats/ui/main_messages.py:725
 msgid "Delete"
 msgstr "Elimina"
@@ -911,11 +1016,13 @@ msgstr "Mappa della Stazione"
 msgid "Generated at"
 msgstr "Generato il"
 
-#: d_rats/mapdisplay.py:982 ui/mainwindow.glade.h:27
+#: d_rats/mapdisplay.py:982
+#: ui/mainwindow.glade.h:27
 msgid "Map"
 msgstr "Mappa"
 
-#: d_rats/mapdisplay.py:983 d_rats/ui/main_files.py:272
+#: d_rats/mapdisplay.py:983
+#: d_rats/ui/main_files.py:272
 msgid "Refresh"
 msgstr "Aggiornare"
 
@@ -951,7 +1058,8 @@ msgstr "Salva Immagine (area visibile)"
 msgid "Broadcast Location"
 msgstr "Posizone di Trasmissione"
 
-#: d_rats/mapdisplay.py:1089 d_rats/mapdisplay.py:1098
+#: d_rats/mapdisplay.py:1089
+#: d_rats/mapdisplay.py:1098
 #: d_rats/ui/main_events.py:292
 msgid "Description"
 msgstr "Descrizione"
@@ -976,11 +1084,14 @@ msgstr "Nuovo Segnaposto qui"
 msgid "Broadcast this location"
 msgstr "Trasmetti questa posizione"
 
-#: d_rats/qst.py:255 d_rats/qst.py:620 d_rats/qst.py:634
+#: d_rats/qst.py:255
+#: d_rats/qst.py:620
+#: d_rats/qst.py:634
 msgid "Airport"
 msgstr "Aereoporto"
 
-#: d_rats/qst.py:257 d_rats/qst.py:620
+#: d_rats/qst.py:257
+#: d_rats/qst.py:620
 msgid "Personal"
 msgstr "Personale"
 
@@ -993,10 +1104,8 @@ msgid "Choose a text file.  The contents will be used when the QST is sent."
 msgstr "Scegli un file di testo. Il contenuto sarà inviato come messaggio QST."
 
 #: d_rats/qst.py:402
-msgid ""
-"Choose a script to execute.  The output will be used when the QST is sent"
-msgstr ""
-"Scegli uno script da eseguire. Il risultato sarà inviato come messaggio QST."
+msgid "Choose a script to execute.  The output will be used when the QST is sent"
+msgstr "Scegli uno script da eseguire. Il risultato sarà inviato come messaggio QST."
 
 #: d_rats/qst.py:415
 msgid "DPRS message"
@@ -1026,27 +1135,35 @@ msgstr "Scegli la stazione per la quale inviare la posizione"
 msgid "Enter a WeatherUnderground station ID:"
 msgstr "Digita un ID Stazione Meteo (WU):"
 
-#: d_rats/qst.py:655 d_rats/qst.py:672 d_rats/qst.py:720
+#: d_rats/qst.py:655
+#: d_rats/qst.py:672
+#: d_rats/qst.py:720
 msgid "Text"
 msgstr "Testo"
 
-#: d_rats/qst.py:674 d_rats/qst.py:721
+#: d_rats/qst.py:674
+#: d_rats/qst.py:721
 msgid "Exec"
 msgstr "Esegui"
 
-#: d_rats/qst.py:676 d_rats/qst.py:724
+#: d_rats/qst.py:676
+#: d_rats/qst.py:724
 msgid "GPS-A"
 msgstr "GPS-A"
 
-#: d_rats/qst.py:677 d_rats/qst.py:726 d_rats/qst.py:732
+#: d_rats/qst.py:677
+#: d_rats/qst.py:726
+#: d_rats/qst.py:732
 msgid "RSS"
 msgstr "RSS"
 
-#: d_rats/qst.py:678 d_rats/qst.py:727
+#: d_rats/qst.py:678
+#: d_rats/qst.py:727
 msgid "CAP"
 msgstr "CAP"
 
-#: d_rats/qst.py:680 d_rats/qst.py:728
+#: d_rats/qst.py:680
+#: d_rats/qst.py:728
 msgid "Weather (WU)"
 msgstr "Meteo (WU)"
 
@@ -1068,7 +1185,8 @@ msgstr "Richiesto file %s"
 msgid "Requested message %s"
 msgstr "Richiesto messaggio %s"
 
-#: d_rats/session_coordinator.py:80 d_rats/session_coordinator.py:82
+#: d_rats/session_coordinator.py:80
+#: d_rats/session_coordinator.py:82
 #: d_rats/ui/conntest.py:174
 msgid "Total"
 msgstr "Totale"
@@ -1089,8 +1207,11 @@ msgstr "da"
 msgid "retries"
 msgstr "riprova"
 
-#: d_rats/session_coordinator.py:239 d_rats/session_coordinator.py:241
-#: d_rats/sessions.py:206 d_rats/sessions.py:223 d_rats/sessions.py:228
+#: d_rats/session_coordinator.py:239
+#: d_rats/session_coordinator.py:241
+#: d_rats/sessions.py:206
+#: d_rats/sessions.py:223
+#: d_rats/sessions.py:228
 #: d_rats/sessions.py:282
 msgid "bytes"
 msgstr "bytes"
@@ -1150,11 +1271,13 @@ msgstr "Lanciato"
 
 #: d_rats/sessions.py:204
 msgid "Echo request of"
-msgstr ""
+msgstr "Richiesta eco di"
 
-#: d_rats/sessions.py:221 d_rats/sessions.py:226 d_rats/sessions.py:280
+#: d_rats/sessions.py:221
+#: d_rats/sessions.py:226
+#: d_rats/sessions.py:280
 msgid "Echo of"
-msgstr ""
+msgstr "Eco di"
 
 #: d_rats/sessions.py:373
 msgid "Waiting for response"
@@ -1172,7 +1295,8 @@ msgstr "Recupero a"
 msgid "Failed to send file (incomplete)"
 msgstr "Mancato invio file (incompleto)"
 
-#: d_rats/sessions.py:416 d_rats/sessions.py:502
+#: d_rats/sessions.py:416
+#: d_rats/sessions.py:502
 msgid "Complete"
 msgstr "Completa"
 
@@ -1204,106 +1328,101 @@ msgstr "Ricezione"
 msgid "Failed to receive file (incomplete)"
 msgstr "Mancata ricezione file (incompleta)"
 
-#: d_rats/station_status.py:27 d_rats/ui/main_messages.py:80
+#: d_rats/station_status.py:27
+#: d_rats/ui/main_messages.py:80
 #: d_rats/ui/main_messages.py:411
 msgid "Unknown"
 msgstr "Sconosciuto"
 
 #: d_rats/station_status.py:28
 msgid "Online"
-msgstr ""
+msgstr "Attivo"
 
 #: d_rats/station_status.py:29
 msgid "Unattended"
-msgstr ""
+msgstr "Incustodito"
 
 #: d_rats/station_status.py:30
 msgid "Offline"
-msgstr ""
+msgstr "Disattivo"
 
 #: d_rats/ui/conntest.py:69
-#, fuzzy
 msgid "Remote station:"
-msgstr "Stazione remota"
+msgstr "Stazione remota:"
 
 #: d_rats/ui/conntest.py:76
-#, fuzzy
 msgid "Port:"
-msgstr "Porta"
+msgstr "Porta:"
 
 #: d_rats/ui/conntest.py:93
 msgid "Multiple fixed-size packets"
-msgstr ""
+msgstr "Pacchetti a dimensione fissa multipli"
 
 #: d_rats/ui/conntest.py:96
 msgid "Gradually increasing packet sizes"
-msgstr ""
+msgstr "Incremento graduale dimensioni del pacchetto"
 
-#: d_rats/ui/conntest.py:136 d_rats/ui/conntest.py:404
+#: d_rats/ui/conntest.py:136
+#: d_rats/ui/conntest.py:404
 msgid "Attempts per size"
-msgstr ""
+msgstr "Tentativi per dimensione"
 
-#: d_rats/ui/conntest.py:137 d_rats/ui/conntest.py:405
+#: d_rats/ui/conntest.py:137
+#: d_rats/ui/conntest.py:405
 msgid "Increment size"
-msgstr ""
+msgstr "Incrementa dimensione"
 
-#: d_rats/ui/conntest.py:138 d_rats/ui/conntest.py:406
-#, fuzzy
+#: d_rats/ui/conntest.py:138
+#: d_rats/ui/conntest.py:406
 msgid "Starting size"
-msgstr "Stazioni"
+msgstr "Dimensione iniziale"
 
-#: d_rats/ui/conntest.py:139 d_rats/ui/conntest.py:407
-#, fuzzy
+#: d_rats/ui/conntest.py:139
+#: d_rats/ui/conntest.py:407
 msgid "Ending size"
-msgstr "Sto inviando il file"
+msgstr "Dimensione finale"
 
-#: d_rats/ui/conntest.py:149 d_rats/ui/conntest.py:399
-#, fuzzy
+#: d_rats/ui/conntest.py:149
+#: d_rats/ui/conntest.py:399
 msgid "Packet size"
-msgstr "Dimensione blocco"
+msgstr "Dimensione pacchetti"
 
-#: d_rats/ui/conntest.py:150 d_rats/ui/conntest.py:400
-#, fuzzy
+#: d_rats/ui/conntest.py:150
+#: d_rats/ui/conntest.py:400
 msgid "Number of packets"
-msgstr "Annusare (Sniff) pacchetti "
+msgstr "Numero di pacchetti "
 
 #: d_rats/ui/conntest.py:180
-#, fuzzy
 msgid "Packets"
-msgstr "Percorsi"
+msgstr "Pacchetti"
 
 #: d_rats/ui/conntest.py:184
-#, fuzzy
 msgid "Bytes"
-msgstr "bytes"
+msgstr "Bytes"
 
 #: d_rats/ui/conntest.py:210
 msgid "Status"
 msgstr "Stato"
 
 #: d_rats/ui/conntest.py:218
-#, fuzzy
 msgid "Statistics"
-msgstr "Stazioni"
+msgstr "Statistiche"
 
 #: d_rats/ui/conntest.py:237
 msgid "Start"
 msgstr "Avvia"
 
 #: d_rats/ui/conntest.py:430
-#, fuzzy
 msgid "Test Type"
-msgstr "Prova"
+msgstr "Tipo prova"
 
 #: d_rats/ui/conntest.py:436
-#, fuzzy
 msgid "Test Parameters"
-msgstr "Parametri QST"
+msgstr "Prova parametri"
 
 #: d_rats/ui/conntest.py:442
-#, fuzzy
 msgid "Run Test"
-msgstr "Prova"
+msgstr "Lancia la prova"
 
 #: d_rats/ui/main_chat.py:59
 msgid "Add Quick Message"
@@ -1313,7 +1432,8 @@ msgstr "Crea Messaggio Rapido"
 msgid "Enter text for the new quick message:"
 msgstr "Inserisci il testo per il nuovo messaggio rapido:"
 
-#: d_rats/ui/main_chat.py:69 d_rats/ui/main_chat.py:132
+#: d_rats/ui/main_chat.py:69
+#: d_rats/ui/main_chat.py:132
 msgid "Really delete?"
 msgstr "Davvero vuoi cancellare?"
 
@@ -1334,14 +1454,14 @@ msgstr "Crea filtro"
 msgid "Enter a filter search string:"
 msgstr "Inserisci stringa di ricerca per filtro:"
 
-#: d_rats/ui/main_chat.py:540 ui/mainwindow.glade.h:26
+#: d_rats/ui/main_chat.py:540
+#: ui/mainwindow.glade.h:26
 msgid "Main"
 msgstr "Principale"
 
 #: d_rats/ui/main_common.py:61
-#, fuzzy
 msgid "Enter destination"
-msgstr "Stazione remota"
+msgstr "Inserire destinazione"
 
 #: d_rats/ui/main_events.py:46
 msgid "Enter filter text"
@@ -1356,9 +1476,8 @@ msgid "Cancel"
 msgstr "Annulla"
 
 #: d_rats/ui/main_events.py:162
-#, fuzzy
 msgid "Restart"
-msgstr "Avvia"
+msgstr "Riavvia"
 
 #: d_rats/ui/main_events.py:203
 msgid "All"
@@ -1413,11 +1532,13 @@ msgstr "Disconnetti"
 msgid "Download"
 msgstr "Download"
 
-#: d_rats/ui/main_files.py:316 d_rats/ui/main_messages.py:395
+#: d_rats/ui/main_files.py:316
+#: d_rats/ui/main_messages.py:395
 msgid "Date"
 msgstr "Data"
 
-#: d_rats/ui/main_messages.py:213 d_rats/ui/main_messages.py:592
+#: d_rats/ui/main_messages.py:213
+#: d_rats/ui/main_messages.py:592
 #: d_rats/ui/main_messages.py:595
 msgid "Trash"
 msgstr "Cestino"
@@ -1439,30 +1560,27 @@ msgstr "Scegli un modello"
 msgid "New %s form"
 msgstr "Nuovo modulo %s"
 
-#: d_rats/ui/main_messages.py:531 d_rats/ui/main_messages.py:722
+#: d_rats/ui/main_messages.py:531
+#: d_rats/ui/main_messages.py:722
 #: ui/mainwindow.glade.h:36
 msgid "Send"
 msgstr "Invia"
 
 #: d_rats/ui/main_messages.py:635
-#, fuzzy
 msgid "Unable to email this form:"
-msgstr "Impossibile aprire il file %s: %s"
+msgstr "Impossibile inviare il messaggio:"
 
 #: d_rats/ui/main_messages.py:641
-#, fuzzy
 msgid "Enter destination address:"
-msgstr "Trova un indirizzo"
+msgstr "Inserire indirizzo di destinazione:"
 
 #: d_rats/ui/main_messages.py:645
-#, fuzzy
 msgid "Invalid address"
-msgstr "Valore non valido"
+msgstr "Indirizzo non valido"
 
 #: d_rats/ui/main_messages.py:647
-#, fuzzy
 msgid "Send this form via email to"
-msgstr "Spedire questo modello per email?"
+msgstr "Spedire questo modello per email a"
 
 #: d_rats/ui/main_messages.py:721
 msgid "New"
@@ -1485,28 +1603,24 @@ msgid "Mark Unread"
 msgstr "Segna da leggere"
 
 #: d_rats/ui/main_stations.py:81
-#, fuzzy
 msgid "says"
-msgstr "giorni"
+msgstr "ha detto"
 
 #: d_rats/ui/main_stations.py:149
-#, fuzzy
 msgid "Ping"
 msgstr "Ping"
 
 #: d_rats/ui/main_stations.py:150
-#, fuzzy
 msgid "Test Connectivity"
-msgstr "Attività Messaggi"
+msgstr "Prova Connettività"
 
 #: d_rats/ui/main_stations.py:151
 msgid "Request Position"
 msgstr "Richiedi Posizione"
 
 #: d_rats/ui/main_stations.py:152
-#, fuzzy
 msgid "Send file"
-msgstr "_Invia File"
+msgstr "Invia File"
 
 #: d_rats/ui/main_stations.py:154
 msgid "Reset"
@@ -1514,40 +1628,35 @@ msgstr "Reimposta"
 
 #: d_rats/ui/main_stations.py:155
 msgid "Get version"
-msgstr ""
+msgstr "Ottieni versione"
 
 #: d_rats/ui/main_stations.py:163
 msgid "Clear All"
 msgstr "Pulisci i campi"
 
 #: d_rats/ui/main_stations.py:164
-#, fuzzy
 msgid "Ping All Stations"
-msgstr "Invia Ping"
+msgstr "Invia ping a tutti"
 
 #: d_rats/ui/main_stations.py:165
-#, fuzzy
 msgid "Request all positions"
-msgstr "Richiedi Posizione"
+msgstr "Richiedi tutte le posizioni"
 
 #: d_rats/ui/main_stations.py:275
-#, fuzzy
 msgid "last seen at"
-msgstr "Cronologia"
+msgstr "ultima posizione a"
 
 #: d_rats/ui/main_stations.py:317
-#, fuzzy
 msgid "Now"
-msgstr "Crea"
+msgstr "Adesso"
 
 #: ui/mainwindow.glade.h:1
 msgid "<b>My Status</b>"
-msgstr ""
+msgstr "<b>Condizioni</b>"
 
 #: ui/mainwindow.glade.h:2
-#, fuzzy
 msgid "<b>Stations</b>"
-msgstr "Stazioni"
+msgstr "<b>Stazioni</b>"
 
 #: ui/mainwindow.glade.h:3
 msgid ""
@@ -1555,6 +1664,9 @@ msgid ""
 "B\n"
 "C"
 msgstr ""
+"A\n"
+"B\n"
+"C"
 
 #: ui/mainwindow.glade.h:6
 msgid "Add filter"
@@ -1635,6 +1747,8 @@ msgid ""
 "Online\n"
 "Unattended"
 msgstr ""
+"Connesso\n"
+"Incustodito"
 
 #: ui/mainwindow.glade.h:33
 msgid "Ping Station"
@@ -1657,18 +1771,16 @@ msgid "Show event type:"
 msgstr "Mostra il tipo evento:"
 
 #: ui/mainwindow.glade.h:39
-#, fuzzy
 msgid "Show station list"
-msgstr "Stazioni"
+msgstr "Mostra elenco stazioni"
 
 #: ui/mainwindow.glade.h:40
 msgid "Side Pane"
-msgstr ""
+msgstr "Pannello Laterale"
 
 #: ui/mainwindow.glade.h:41
-#, fuzzy
 msgid "Station:"
-msgstr "Stazione"
+msgstr "Stazione:"
 
 #: ui/mainwindow.glade.h:42
 msgid "_Edit"
@@ -1692,6 +1804,9 @@ msgid ""
 "b\n"
 "c"
 msgstr ""
+"a\n"
+"b\n"
+"c"
 
 #: ui/mainwindow.glade.h:49
 msgid ""
@@ -1699,69 +1814,62 @@ msgid ""
 "b\n"
 "c\n"
 msgstr ""
+"a\n"
+"b\n"
+"c\n"
 
 #: ui/mainwindow.glade.h:53
 msgid "gtk-about"
-msgstr ""
+msgstr "gtk-about"
 
 #: ui/mainwindow.glade.h:54
 msgid "gtk-add"
-msgstr ""
+msgstr "gtk-add"
 
 #: ui/mainwindow.glade.h:55
 msgid "gtk-clear"
-msgstr ""
+msgstr "gtk-clear"
 
 #: ui/mainwindow.glade.h:56
 msgid "gtk-close"
-msgstr ""
+msgstr "gtk-close"
 
 #: ui/mainwindow.glade.h:57
 msgid "gtk-delete"
-msgstr ""
+msgstr "gtk-delete"
 
 #: ui/mainwindow.glade.h:58
 msgid "gtk-edit"
-msgstr ""
+msgstr "gtk-edit"
 
 #: ui/mainwindow.glade.h:59
 msgid "gtk-preferences"
-msgstr ""
+msgstr "gtk-preferences"
 
 #: ui/mainwindow.glade.h:60
 msgid "gtk-remove"
-msgstr ""
+msgstr "gtk-remove"
 
 #~ msgid "Download Directory"
 #~ msgstr "Scarico directory"
-
 #~ msgid "Serial Port"
 #~ msgstr "Porta Seriale"
-
 #~ msgid "No password"
 #~ msgstr "No password"
-
 #~ msgid "Ratflector password"
 #~ msgstr "Ratflector password"
-
 #~ msgid "Receive raw text"
 #~ msgstr "Ricevi testo grezzo"
-
 #~ msgid "Sniff packets"
 #~ msgstr "Annusare (Sniff) pacchetti "
-
 #~ msgid "Select (or enter) a destination station"
 #~ msgstr "Seleziona (o inserisci) la stazione destinataria"
-
 #~ msgid "Upload to remote"
 #~ msgstr "Caricare su remoto"
-
 #~ msgid "Download from remote"
 #~ msgstr "Scarico da remoto"
-
 #~ msgid "CQCQCQ"
 #~ msgstr "CQCQCQ"
-
 #~ msgid ""
 #~ "CQCQCQ\n"
 #~ "KK7DS\n"
@@ -1770,343 +1878,232 @@ msgstr ""
 #~ "CQCQCQ\n"
 #~ "IZ5FSA\n"
 #~ "IW5CWA"
-
 #~ msgid "Destination Station"
 #~ msgstr "Stazione destinataria"
-
 #~ msgid "Not connected"
 #~ msgstr "Non connesso"
-
 #~ msgid "Unable to open file"
 #~ msgstr "Errore apertura file"
-
 #~ msgid "File to large (must be less than %iK)"
 #~ msgstr "File troppo grande (deve essere minore di %iK)"
-
 #~ msgid "Enter a regular expression to define the filter:"
 #~ msgstr "Inserire un'espressione regolare per definire il filtro:"
-
 #~ msgid "Multicast Receive"
 #~ msgstr "Ricezione Multicast"
-
 #~ msgid "_Multi Send File"
 #~ msgstr "Invia File _Multiplo"
-
 #~ msgid "_Multi Recv File"
 #~ msgstr "_Ricezione File Multiplo"
-
 #~ msgid "Main _Settings"
 #~ msgstr "Opzioni _Principali"
-
 #~ msgid "_Auto QST Settings"
 #~ msgstr "Opzioni _Auto-QST"
-
 #~ msgid "Quick _Messages"
 #~ msgstr "Messaggi _Rapidi"
-
 #~ msgid "_Manage Form Templates"
 #~ msgstr "_Gestione Modelli"
-
 #~ msgid "_Quit"
 #~ msgstr "_Esci"
-
 #~ msgid "Broadcast _Text File"
 #~ msgstr "Invia File di _Testo"
-
 #~ msgid "_Clear"
 #~ msgstr "_Pulisci"
-
 #~ msgid "_Filter by string"
 #~ msgstr "_Filtro per stringa"
-
 #~ msgid "_Remove current filter"
 #~ msgstr "_Rimuovi filtro"
-
 #~ msgid "Show \"_all\" filter"
 #~ msgstr "Mostra \"tutti\" i filtri"
-
 #~ msgid "Log for this tab"
 #~ msgstr "Registra questa sessione"
-
 #~ msgid "_About"
 #~ msgstr "_Info"
-
 #~ msgid "_Advanced"
 #~ msgstr "_Avanzate"
-
 #~ msgid "_Connected"
 #~ msgstr "_Connesso"
-
 #~ msgid "QSTs Enabled"
 #~ msgstr "QST Abilitati"
-
 #~ msgid "Send _Image"
 #~ msgstr "Invia _Immagine"
-
 #~ msgid "Connected"
 #~ msgstr "Connesso"
-
 #~ msgid "Disconnected"
 #~ msgstr "Disconnesso"
-
 #~ msgid "QST Monitor"
 #~ msgstr "Lista QST"
-
 #~ msgid "Form Manager"
 #~ msgstr "Gestore Messaggi"
-
 #~ msgid "Sessions"
 #~ msgstr "Sessioni"
-
 #~ msgid "Filter on this string"
 #~ msgstr "Filtro per questa stringa"
-
 #~ msgid "D-RATS Station Map"
 #~ msgstr "Mappa della Stazione D-RATS"
-
 #~ msgid "Set as current location"
 #~ msgstr "Impostare come posizione corrente"
-
 #~ msgid "Me"
 #~ msgstr "QRA"
-
 #~ msgid "Quick messages"
 #~ msgstr "Messaggi Rapidi"
-
 #~ msgid "Double-click to send"
 #~ msgstr "Doppio-click per inviare"
-
 #~ msgid "Double-click on a row to reset the timer and send now"
 #~ msgstr "Doppio-click sulla riga per azzerare il timer e inviare ora"
-
 #~ msgid "Period"
 #~ msgstr "Periodo"
-
 #~ msgid "Remaining"
 #~ msgstr "Rimanente"
-
 #~ msgid "Manual"
 #~ msgstr "Manuale"
-
 #~ msgid "sec"
 #~ msgstr "sec"
-
 #~ msgid "min"
 #~ msgstr "min"
-
 #~ msgid "Low"
 #~ msgstr "Basso"
-
 #~ msgid "Med"
 #~ msgstr "Medio"
-
 #~ msgid "Hi"
 #~ msgstr "Alto"
-
 #~ msgid "Done"
 #~ msgstr "Fatto"
-
 #~ msgid "ID"
 #~ msgstr "ID"
-
 #~ msgid "Last Edited"
 #~ msgstr "Ultima Modifica"
-
 #~ msgid "Last Transferred"
 #~ msgstr "Ultimo Trasferimento"
-
 #~ msgid "Private"
 #~ msgstr "Privato"
-
 #~ msgid "Never"
 #~ msgstr "Mai"
-
 #~ msgid "No template forms available"
 #~ msgstr "Nessun modello disponibile"
-
 #~ msgid ""
 #~ "Please copy in the template forms to %s or create a new template by going "
 #~ "to File->Manage Form Templates"
 #~ msgstr ""
 #~ "Vi preghiamo di copiare il modello in %s o creare un nuovo modello "
 #~ "andando a File-> Gestione dei modelli"
-
 #~ msgid "Select a form type to create"
 #~ msgstr "Seleziona modello per nuovo messaggio"
-
 #~ msgid "Confirm Delete"
 #~ msgstr "Conferma l'eliminazione"
-
 #~ msgid "Really delete this form?"
 #~ msgstr "Sei sicuro di voler eliminare questo modello?"
-
 #~ msgid "Edit Form"
 #~ msgstr "Modifica il modello"
-
 #~ msgid "Reply to"
 #~ msgstr "Rispondi a"
-
 #~ msgid "Open"
 #~ msgstr "Apri"
-
 #~ msgid "Echo position (GPS)"
 #~ msgstr "Eco della posizione (GPS)"
-
 #~ msgid "Echo position (GPS-A)"
 #~ msgstr "Eco della posizione (GPS-A)"
-
 #~ msgid "Request Position of..."
 #~ msgstr "Richiedi Posizione di..."
-
 #~ msgid "Get File"
 #~ msgstr "Scarica File"
-
 #~ msgid "Get Form"
 #~ msgstr "Scarica Messaggio"
-
 #~ msgid "Forget"
 #~ msgstr "Dimentica"
-
 #~ msgid "Lookup (QRZ)"
 #~ msgstr "Ricerca (QRZ)"
-
 #~ msgid "Last Position"
 #~ msgstr "Ultima Posizione"
-
 #~ msgid "Remove callsign from list"
 #~ msgstr "Elimina il nominativo dalla lista"
-
 #~ msgid "Address a message to selected call"
 #~ msgstr "Indirizza un messaggio al nominativo selezionato"
-
 #~ msgid "Reset last seen time for selected call"
 #~ msgstr "Reimposta la cronologia del nominativo selezionato"
-
 #~ msgid "Forget when this call was last seen"
 #~ msgstr "Dimentica la cronologia del nominativo"
-
 #~ msgid "Clear all recorded callsigns"
 #~ msgstr "Cancella tutti i nominativi registrati"
-
 #~ msgid "day"
 #~ msgstr "giorno"
-
 #~ msgid "Transfer"
 #~ msgstr "Trasferimento"
-
 #~ msgid "complete"
 #~ msgstr "completo"
-
 #~ msgid "Cancel (without ACK)"
 #~ msgstr "Annulla (senza conferma ACK)"
-
 #~ msgid "Clear"
 #~ msgstr "Pulisci"
-
 #~ msgid "Clear all finished"
 #~ msgstr "Pulizia completata"
-
 #~ msgid "Resume transfer"
 #~ msgstr "Recuperra trasferimento"
-
 #~ msgid "Stop transfer"
 #~ msgstr "Ferma Trasferimento"
-
 #~ msgid "File transfer started with"
 #~ msgstr "Trasferimento file avviato con"
-
 #~ msgid "Form transfer started with"
 #~ msgstr "Trasferimento modulo avviato con"
-
 #~ msgid "Socket session started with"
 #~ msgstr "Sessione socket avviata con"
-
 #~ msgid "Error starting socket session"
 #~ msgstr "Errore avvio sessione soket"
-
 #~ msgid "Idle"
 #~ msgstr "Inattivo"
-
 #~ msgid "Failed to load overlay file"
 #~ msgstr "Mancata apertura file overlay"
-
 #~ msgid "Load Static Overlay"
 #~ msgstr "Carica Overlay Statici"
-
 #~ msgid "Remove Static Overlay"
 #~ msgstr "Rimuovi Overlay Statici"
-
 #~ msgid "Loading map"
 #~ msgstr "Caricamento mapp"
-
 #~ msgid "Getting map center"
 #~ msgstr "Trova centro mappa"
-
 #~ msgid "Set Marker"
 #~ msgstr "Evidenzia"
-
 #~ msgid "Group name required"
 #~ msgstr "Nome Gruppo Richiesto"
-
 #~ msgid "Marker name required"
 #~ msgstr "Nome Segnalibro Richiesto"
-
 #~ msgid "Please select a top-level overlay group"
 #~ msgstr "Prego seleziona un gruppo Overlay principale"
-
 #~ msgid "Ping function failed"
 #~ msgstr "Funzinone Ping mancata"
-
 #~ msgid "Ping request, sent reply"
 #~ msgstr "Richiesta ping, inviata risposta"
-
 #~ msgid "Sent ping"
 #~ msgstr "Invia ping"
-
 #~ msgid "Move item up in list"
 #~ msgstr "Movere la voce in alto nella lista"
-
 #~ msgid "Move item down in list"
 #~ msgstr "Movere la voce in basso nella lista"
-
 #~ msgid "Discard item from list"
 #~ msgstr "Scartare la voce dalla lista"
-
 #~ msgid "OK"
 #~ msgstr "OK"
-
 #~ msgid "Apply"
 #~ msgstr "Applica"
-
 #~ msgid "Enter new message text"
 #~ msgstr "Inserire nuovo messaggio testo"
-
 #~ msgid "My message"
 #~ msgstr "Mio messaggio"
-
 #~ msgid "Interval"
 #~ msgstr "Intervallo"
-
 #~ msgid "Content"
 #~ msgstr "Contenuto"
-
 #~ msgid "Save"
 #~ msgstr "Salva"
-
 #~ msgid "Callsigns"
 #~ msgstr "Nominativi"
-
 #~ msgid "Transfer Failed"
 #~ msgstr "Trasferimento Fallito"
-
 #~ msgid "max zoom"
 #~ msgstr "max zoom"
-
 #~ msgid "Stopped"
 #~ msgstr "Fermato"
-
 #~ msgid "Controls"
 #~ msgstr "Controlli"
-
 #~ msgid "Map Download Utility"
 #~ msgstr "Utilità Scarico Mappe"
+
