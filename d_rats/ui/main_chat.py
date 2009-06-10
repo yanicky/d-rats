@@ -287,7 +287,11 @@ class ChatTab(MainWindowTab):
         else:
             stamp = time.strftime("%H:%M:%S")
 
-        line = "[%s] %s" % (stamp, text)
+        if self._config.getboolean("prefs", "chat_timestamp"):
+            line = "[%s] %s" % (stamp, text)
+        else:
+            line = text
+
         self._last_date = time.time()
 
         self._display_line(line, incoming, "default", *attrs)

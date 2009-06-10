@@ -74,6 +74,7 @@ _DEF_PREFS = {
     "blink_files" : "True",
     "blink_event" : "False",
     "chat_showstatus" : "True",
+    "chat_timestamp" : "True",
 }
 
 _DEF_SETTINGS = {
@@ -810,6 +811,10 @@ class DratsChatPanel(DratsPanel):
         val = DratsConfigWidget(config, "prefs", "chat_showstatus")
         val.add_bool()
         self.mv(_("Show status updates in chat"), val)
+
+        val = DratsConfigWidget(config, "prefs", "chat_timestamp")
+        val.add_bool()
+        self.mv(_("Timestamp chat messages"), val)
 
 class DratsSoundPanel(DratsPanel):
     def __init__(self, config):
