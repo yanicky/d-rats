@@ -441,6 +441,9 @@ class MainApp:
         return True
 
     def __chat(self, src, dst, data, incoming, port):
+        if self.plugsrv:
+            self.plugsrv.incoming_chat_message(src, dst, data)
+
         if src != "CQCQCQ":
             self.seen_callsigns.set_call_time(src, time.time())
 
@@ -787,11 +790,12 @@ class MainApp:
                 self.config.remove_option("settings", i)
 
         try:
-            ps = pluginsrv.DRatsPluginServer()
-            self.__connect_object(ps)
-            ps.serve_background()
+            self.plugsrv = pluginsrv.DRatsPluginServer()
+            self.__connect_object(self.plugsrv)
+            self.plugsrv.serve_background()
         except Exception, e:
             print "Unable to start plugin server: %s" % e
+            self.plugsrv = None
 
         try:
             gtk.main()

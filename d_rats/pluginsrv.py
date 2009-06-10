@@ -16,14 +16,36 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
+import threading
 from SimpleXMLRPCServer import SimpleXMLRPCServer
-from threading import Thread
 
 import gobject
 
 import signals
 import utils
 import rpcsession
+
+class DRatsChatEvent:
+    def __init__(self, src_station=None):
+        self.__event = threading.Event()
+        self.__src_station = src_station
+        self.__text = None
+
+    def get_src_station(self):
+        return self.__src_station
+
+    def set_chat_info(self, src, text):
+        self.__src_station = src
+        self.__text = text
+
+    def get_text(self):
+        return self.__text
+
+    def set(self):
+        self.__event.set()
+
+    def wait(self, timeout):
+        self.__event.wait(timeout)
 
 class DRatsPluginServer(SimpleXMLRPCServer, gobject.GObject):
     __gsignals__ = {
@@ -107,6 +129,20 @@ class DRatsPluginServer(SimpleXMLRPCServer, gobject.GObject):
 
         return result
 
+    def __wait_for_chat(self, timeout, src_station=None):
+        """Wait for a chat message for @timeout seconds.  Optional filter
+        @src_station avoids returning until a chat message from that
+        station is received"""
+        
+        ev = DRatsChatEvent(src_station)
+        self.__events["chat"].append(ev)
+        ev.wait(timeout)
+
+        if ev.get_text():
+            return ev.get_src_station(), ev.get_text()
+        else:
+            return "", ""
+
     def __init__(self):
         SimpleXMLRPCServer.__init__(self, ("localhost", 9100))
         gobject.GObject.__init__(self)
@@ -114,15 +150,27 @@ class DRatsPluginServer(SimpleXMLRPCServer, gobject.GObject):
         self.__thread = None
         self.__idcount = 0
         self.__persist = {}
-                    
+        self.__events = {
+            "chat" : [],
+            }
+            
         self.register_function(self.__send_chat, "send_chat")
         self.register_function(self.__list_ports, "list_ports")
         self.register_function(self.__send_file, "send_file")
         self.register_function(self.__submit_rpcjob, "submit_rpcjob")
         self.register_function(self.__get_result, "get_result")
+        self.register_function(self.__wait_for_chat, "wait_for_chat")
 
     def serve_background(self):
-        self.__thread = Thread(target=self.serve_forever)
+        self.__thread = threading.Thread(target=self.serve_forever)
         self.__thread.start()
         print "Started serve_forever() thread"
                                
+    def incoming_chat_message(self, src, dst, text):
+        for ev in self.__events["chat"]:
+            if not ev.get_src_station():
+                ev.set_chat_info(src, text)
+                ev.set()
+            elif ev.get_src_station() == src:
+                ev.set_chat_info(src, text)
+                ev.set()
