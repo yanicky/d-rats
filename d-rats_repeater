@@ -198,14 +198,23 @@ class TcpDataPath(DataPath):
         else:
             return DataPath.hasIncoming(self)
 
+    def reconnect(self):
+        return False # Can't reconnect inbound paths
+
     def tcp_outgoing(self):
         out = call_with_lock(self.lock,
                              self.l_drain_buffer, OUT)
         if len(out) > 0:
             try:
                 self.socket.send(out)
-            except:
-                self.enabled = False
+            except socket.timeout:
+                pass
+            except socket.error, e:
+                if self.reconnect():
+                    print "Reconnected"
+                else:
+                    print "Unable to connect after %s" % e
+                    self.enabled = False
 
     def tcp_incoming(self):
         inp = "foo"
@@ -221,13 +230,15 @@ class TcpDataPath(DataPath):
                     self.enabled = False
                     break
                 data += inp
-            except socket.error, info:
-                if "timed out" in str(info):
-                    DEBUG("Socket read timed out")
-                else:
-                    DEBUG("Socket error: %s" % info)
-                    self.enabled = False
+            except socket.timeout:
                 break
+            except socket.error:
+                DEBUG("Socket error: %s" % info)
+                if self.reconnect():
+                    continue # Reconnected, try again
+                else:
+                    self.enabled = False
+                    break    # Didn't reconnect, give up
             except Exception, e:
                 DEBUG("Exception during socket read: %s" % e)
                 self.enabled = False
@@ -351,17 +362,34 @@ class TcpDataPath(DataPath):
         self.thread.start()
 
 class TcpOutgoingDataPath(TcpDataPath):
+    def reconnect(self):
+        if self.socket:
+            print "Disconnecting %s:%i" % (self.__host, self.__port)
+            self.socket.close()
+            time.sleep(0.5)
+
+        self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        for i in range(0,10):
+            try:
+                print "Connecting to %s:%i" % (self.__host, self.__port)
+                self.socket.connect((self.__host, self.__port))
+                return True
+            except Exception, e:
+                print "Failed to connect: %s" % e
+
+        return False
+
     def __init__(self, id, condition, host):
         try:
-            _, host, port = host.split(":")
-            port = int(port)
+            _, self.__host, port = host.split(":")
+            self.__port = int(port)
         except Exception, e:
             print "Unable to parse host `%s': %s" % (host, e)
             return
 
-        _socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        _socket.connect((host, port))
-        TcpDataPath.__init__(self, id, condition, _socket)
+        self.socket = None
+        self.reconnect()
+        TcpDataPath.__init__(self, id, condition, self.socket)
 
 class Repeater:
     def __init__(self, id="D-RATS Network Proxy"):
