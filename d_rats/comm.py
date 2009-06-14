@@ -403,14 +403,16 @@ class SocketDataPath(DataPath):
             try:
                 x = time.time()
                 inp = self._socket.recv(count - len(data))
-            except Exception, e:
+            except socket.timeout:
                 if time.time() > end:
                     break
                 else:
                     continue
+            except Exception, e:
+                raise DataPathIOError("Socket error: %s" % e)
 
             if inp == "":
-                raise DataPathIOError("Socket closed")
+                raise DataPathIOError("Socket disconnected")
 
             end = time.time() + self.timeout
             data += inp
