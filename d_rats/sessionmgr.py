@@ -857,6 +857,9 @@ class SessionManager:
     def get_heard_stations(self):
         return dict(self._stations_heard)
 
+    def manual_heard_station(self, station):
+        self._stations_heard[station] = time.time()
+
     def fire_session_cb(self, session, reason):
         for f,d in self.session_cb.items():
             try:
