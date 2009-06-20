@@ -530,6 +530,7 @@ class MessagesTab(MainWindowTab):
                                 forms[selection],
                                 buttons=(_("Send"), 999))
         form.add_path_element(self._config.get("user", "callsign"))
+        form.set_path_src(self._config.get("user", "callsign"))
         form.save_to(newfn)
 
         if self._messages.open_msg(newfn) != gtk.RESPONSE_CANCEL:
