@@ -535,12 +535,12 @@ class RepeaterGUI(RepeaterUI):
             pass
 
     def sig_destroy(self, widget, data=None):
-        self.button_off(None)
+        self.button_off(None, False)
         self.save_config(self.config)
         gtk.main_quit()
 
     def ev_delete(self, widget, event, data=None):
-        self.button_off(None)
+        self.button_off(None, False)
         self.save_config(self.config)
         gtk.main_quit()        
 
@@ -797,6 +797,7 @@ class RepeaterGUI(RepeaterUI):
     def button_on(self, widget, data=None):
         self.tick = 0
 
+        self.config.set("settings", "state", "True")
         self.save_config(self.config)
 
         self.but_off.set_sensitive(True)
@@ -830,7 +831,11 @@ class RepeaterGUI(RepeaterUI):
 
         self.repeater.repeat()
 
-    def button_off(self, widget, data=None):
+    def button_off(self, widget, user=True):
+        if user:
+            self.config.set("settings", "state", "False")
+            self.save_config(self.config)
+
         self.but_off.set_sensitive(False)
         self.but_on.set_sensitive(True)
         self.settings.set_sensitive(True)
@@ -901,6 +906,12 @@ class RepeaterGUI(RepeaterUI):
         self.window.show()
 
         gobject.timeout_add(1000, self.update)
+
+        try:
+            if self.config.get("settings", "state") == "True":
+                self.button_on(None, None)
+        except Exception, e:
+            print e
 
 class RepeaterConsole(RepeaterUI):
     def main(self):
