@@ -599,6 +599,47 @@ class Form(gtk.Dialog):
                                   buffer.get_end_iter())
         checkwidget.set_text("%i" % len(message.split()))
 
+    def build_routing_widget(self):
+        shbox = gtk.HBox(True, 2)
+        shbox.show()
+
+        dhbox = gtk.HBox(True, 2)
+        dhbox.show()
+
+        lab = gtk.Label(_("Source Callsign"))
+        lab.show()
+        shbox.pack_start(lab, 0, 0, 0)
+
+        lab = gtk.Label(_("Destination Callsign"))
+        lab.show()
+        dhbox.pack_start(lab, 0, 0, 0)
+
+        srcbox = gtk.Entry()
+        srcbox.set_text(self.get_path_src())
+        srcbox.set_editable(False)
+        srcbox.show()
+        self._srcbox = srcbox
+        shbox.pack_start(srcbox, 1, 1, 0)
+
+        dstbox = gtk.Entry()
+        dstbox.set_text(self.get_path_dst())
+        dstbox.show()
+        self._dstbox = dstbox
+        dhbox.pack_start(dstbox, 1, 1, 0)
+
+        vbox = gtk.VBox(True, 0)
+        vbox.pack_start(shbox, 0, 0, 0)
+        vbox.pack_start(dhbox, 0, 0 ,0)
+        vbox.show()
+
+        exp = gtk.Expander()
+        exp.set_label(_("Routing Information"))
+        exp.add(vbox)
+        exp.set_expanded(True)
+        exp.show()
+
+        return exp
+
     def build_path_widget(self):
         pathels = self.get_path()
 
@@ -628,6 +669,8 @@ class Form(gtk.Dialog):
                 print "Unable to load or display logo %s: %s" % (self.logo_path,
                                                                  e)
         self.vbox.pack_start(tlabel, 0,0,0)
+
+        self.vbox.pack_start(self.build_routing_widget(), 0, 0, 0)
 
         field_box = gtk.VBox(False, 2)
 
@@ -755,7 +798,8 @@ class Form(gtk.Dialog):
         self.build_gui(gtk.RESPONSE_CANCEL in self._buttons)
         self.set_size_request(380, 450)
 
-        return gtk.Dialog.run(self)
+        r = gtk.Dialog.run(self)
+        self.set_path_dst(self._dstbox.get_text().upper())
 
     def configure(self, config):
         self.xsl_dir = config.form_source_dir()
@@ -773,25 +817,66 @@ class Form(gtk.Dialog):
                 field.entry.set_value(value)
                 break
 
+    def __get_xpath(self, path):
+        ctx = self.doc.xpathNewContext()
+        return ctx.xpathEval(path)
+
     def get_path(self):
         pathels = []
-        ctx = self.doc.xpathNewContext()
-        els = ctx.xpathEval("//form/path/e")
-        for element in els:
+        for element in self.__get_xpath("//form/path/e"):
             pathels.append(element.getContent().strip())
-
         return pathels
     
-    def add_path_element(self, element):
-        ctx = self.doc.xpathNewContext()
-        els = ctx.xpathEval("//form/path")
+    def __get_path(self):
+        els = self.__get_xpath("//form/path")
         if not els:
+            ctx = self.doc.xpathNewContext()
             form, = ctx.xpathEval("//form")
-            path = form.newChild(None, "path", None)
+            return form.newChild(None, "path", None)
         else:
-            path = els[0]
+            return els[0]
 
-        pathel = path.newChild(None, "e", element)
+    def __add_path_element(self, name, element, append=False):
+        path = self.__get_path()
+
+        if append:
+            path.newChild(None, name, element)
+            return
+
+        els = self.__get_xpath("//form/path/%s" % name)
+        if not els:
+            path.newChild(None, name, element)
+            return
+
+        child = els[0].children
+        while child:
+            if child.type == "text":
+                child.unlinkNode()
+            child = child.next
+
+        els[0].addContent(element)
+
+    def add_path_element(self, element):
+        self.__add_path_element("e", element, True)
+
+    def set_path_src(self, src):
+        self.__add_path_element("src", src)
+
+    def set_path_dst(self, dst):
+        self.__add_path_element("dst", dst)
+
+    def __get_path_element(self, name):
+        els = self.__get_xpath("//form/path/%s" % name)
+        if els:
+            return els[0].getContent().strip()
+        else:
+            return ""
+
+    def get_path_src(self):
+        return self.__get_path_element("src")
+
+    def get_path_dst(self):
+        return self.__get_path_element("dst")
 
     def _try_get_fields(self, *names):
         for field in names:
@@ -805,11 +890,18 @@ class Form(gtk.Dialog):
         return self._try_get_fields("_auto_subject", "subject")
 
     def get_recipient_string(self):
-        return self._try_get_fields("_auto_recip", "recip", "recipient")
+        dst = self.get_path_dst()
+        if dst:
+            return dst
+        else:
+            return self._try_get_fields("_auto_recip", "recip", "recipient")
 
     def get_sender_string(self):
-        return self._try_get_fields("_auto_sender", "sender")
-    
+        src = self.get_path_src()
+        if src:
+            return src
+        else:
+            return self._try_get_fields("_auto_sender", "sender")
 
 class FormFile(Form):
     def __init__(self, title, filename, buttons=None, parent=None):
