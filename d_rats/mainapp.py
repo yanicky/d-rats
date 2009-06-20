@@ -61,6 +61,7 @@ import rpcsession
 import formgui
 import station_status
 import pluginsrv
+import msgrouting
 
 from ui import main_events
 
@@ -616,15 +617,27 @@ class MainApp:
     def __form_received(self, object, id, fn, port=None):
         if port:
             id = "%s_%s" % (id, port)
+
         print "[NEWFORM %s]: %s" % (id, fn)
         f = formgui.FormFile("", fn)
+
         msg = '%s "%s" %s %s' % (_("Message"),
                                  f.get_subject_string(),
                                  _("received from"),
                                  f.get_sender_string())
+
+        if f.get_path_dst() != self.config.get("user", "callsign"):
+            msg += " (" + _("forwarding to") + " " + f.get_path_dst() + ")"
+            newfn = os.path.join(self.config.form_store_dir(),
+                                 _("Outbox"),
+                                 os.path.basename(fn))
+            shutil.move(fn, newfn)
+            self.mainwindow.tabs["messages"].refresh_if_folder("Outbox")
+        else:
+            self.mainwindow.tabs["messages"].refresh_if_folder("Inbox")
+
         event = main_events.FormEvent(id, msg)
         event.set_as_final()
-        self.mainwindow.tabs["messages"].refresh_if_folder("Inbox")
         self.mainwindow.tabs["event"].event(event)
 
     def __file_received(self, object, id, fn, port=None):
@@ -752,6 +765,30 @@ class MainApp:
         p.set_station(self.config.get("user", "callsign"))
         return p
 
+    def load_static_routes(self):
+        routes = self.config.platform.config_file("routes.txt")
+        if not os.path.exists(routes):
+            return
+
+        f = file(routes)
+        lines = f.readlines()
+        lno = 0
+        for line in lines:
+            lno += 1
+            if not line or line.startswith("#"):
+                continue
+
+            try:
+                routeto, station, port = line.split()
+            except Exception:
+                print "Line %i of %s not valid" % (lno, routes)
+                continue
+
+            self.mainwindow.tabs["stations"].saw_station(station.upper(), port)
+            if self.sm.has_key(port):
+                sm, sc = self.sm[port]
+                sm.manual_heard_station(station)
+
     def main(self):
         # Copy default forms before we start
 
@@ -796,6 +833,16 @@ class MainApp:
         except Exception, e:
             print "Unable to start plugin server: %s" % e
             self.plugsrv = None
+
+        self.load_static_routes()
+
+        try:
+            self.msgrouter = msgrouting.MessageRouter(self.config)
+            self.__connect_object(self.msgrouter)
+            self.msgrouter.start()
+        except Exception, e:
+            log_exception()
+            self.msgrouter = None
 
         try:
             gtk.main()
