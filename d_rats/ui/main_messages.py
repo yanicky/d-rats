@@ -261,6 +261,10 @@ class MessageFolders(MainWindowElement):
             print "Dragged %s from %s into %s" % (fn, src_folder, dst_folder)
             print "  %s %s %s" % (subj, type, read)
 
+            try:
+                dst.delete(os.path.basename(fn))
+            except Exception:
+                pass
             newfn = dst.create_msg(os.path.basename(fn))
             shutil.copy(fn, newfn)
             src.delete(fn)
@@ -329,10 +333,10 @@ class MessageList(MainWindowElement):
         store, paths = view.get_selection().get_selected_rows()
         msgs = [self.current_info.name()]
         for path in paths:
-            data = "%s\0%s\0%s\0%s" % (store[path][4],
-                                       store[path][1],
+            data = "%s\0%s\0%s\0%s" % (store[path][5],
                                        store[path][2],
-                                       store[path][5])
+                                       store[path][3],
+                                       store[path][6])
             msgs.append(data)
 
         sel.set("text/d-rats_message", 0, "\x01".join(msgs))
@@ -362,34 +366,39 @@ class MessageList(MainWindowElement):
         col = gtk.TreeViewColumn("", gtk.CellRendererPixbuf(), pixbuf=0)
         msglist.append_column(col)
 
-        def bold_if_unread(col, rend, model, iter):
-            subj, read, = model.get(iter, 1, 5)
+        def bold_if_unread(col, rend, model, iter, cnum):
+            subj, read, = model.get(iter, cnum, 6)
             if not read:
                 rend.set_property("markup", "<b>%s</b>" % subj)
 
         r = gtk.CellRendererText()
         col = gtk.TreeViewColumn(_("Sender"), r, text=1)
-        col.set_cell_data_func(r, bold_if_unread)
+        col.set_cell_data_func(r, bold_if_unread, 1)
         col.set_sort_column_id(1)
         col.set_sizing(gtk.TREE_VIEW_COLUMN_AUTOSIZE)
         msglist.append_column(col)
 
         r = gtk.CellRendererText()
         col = gtk.TreeViewColumn(_("Subject"), r, text=2)
-        col.set_cell_data_func(r, bold_if_unread)
+        col.set_cell_data_func(r, bold_if_unread, 2)
         col.set_expand(True)
         col.set_sort_column_id(2)
         col.set_sizing(gtk.TREE_VIEW_COLUMN_AUTOSIZE)
         msglist.append_column(col)
 
-        col = gtk.TreeViewColumn(_("Type"), gtk.CellRendererText(), text=3)
+        r = gtk.CellRendererText()
+        col = gtk.TreeViewColumn(_("Type"), r, text=3)
+        col.set_cell_data_func(r, bold_if_unread, 3)
         col.set_sort_column_id(3)
         msglist.append_column(col)
 
         def render_date(col, rend, model, iter):
-            ts, = model.get(iter, 4)
+            ts, read = model.get(iter, 4, 6)
             stamp = datetime.fromtimestamp(ts).strftime("%H:%M:%S %Y-%m-%d")
-            rend.set_property("text", stamp)
+            if read:
+                rend.set_property("text", stamp)
+            else:
+                rend.set_property("markup", "<b>%s</b>" % stamp)
 
         r = gtk.CellRendererText()
         col = gtk.TreeViewColumn(_("Date"), r, text=4)
@@ -398,7 +407,7 @@ class MessageList(MainWindowElement):
         msglist.append_column(col)
 
         msglist.connect("row-activated", self._open_msg)
-        self.store.set_sort_column_id(3, gtk.SORT_DESCENDING)
+        self.store.set_sort_column_id(4, gtk.SORT_DESCENDING)
 
         self.message_pixbuf = self._config.ship_img("message.png")
         self.unread_pixbuf = self._config.ship_img("msg-markunread.png")
