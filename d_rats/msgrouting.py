@@ -23,6 +23,8 @@ from glob import glob
 import formgui
 import signals
 
+CALL_TIMEOUT_RETRY = 300
+
 class MessageRouter(threading.Thread, gobject.GObject):
     __gsignals__ = {
         "get-station-list" : signals.GET_STATION_LIST,
@@ -35,6 +37,10 @@ class MessageRouter(threading.Thread, gobject.GObject):
         gobject.GObject.__init__(self)
 
         self.__config = config
+
+        self.__sent_call = {}
+        self.__sent_port = {}
+        self.__file_to_call = {}
 
     def _sleep(self):
         t = self.__config.getint("settings", "msg_flush")
@@ -61,12 +67,22 @@ class MessageRouter(threading.Thread, gobject.GObject):
         return queue
 
     def _send_form(self, call, port, filename):
+        self.__sent_call[call] = time.time()
+        self.__sent_port[port] = time.time()
+        self.__file_to_call[filename] = call
         self.emit("user-send-form", call, port, filename, "Foo")
+
+    def _sent_recently(self, call):
+        if self.__sent_call.has_key(call):
+            return (time.time() - self.__sent_call[call]) < CALL_TIMEOUT_RETRY
+        return False
+
+    def _port_free(self, port):
+        return not self.__sent_port.has_key(port)
 
     def _run_one(self):
         plist = self.emit("get-station-list")
         slist = {}
-        avail_ports = plist.keys()
 
         for port, stations in plist.items():
             for station in stations:
@@ -75,21 +91,38 @@ class MessageRouter(threading.Thread, gobject.GObject):
         queue = self._get_queue()
         for call, callq in queue.items():
             if not slist.has_key(call):
-                print "No route for station %s" % call
+                self._p("No route for station %s" % call)
                 continue # station unknown
 
-            port = slist[call]
-            if port not in avail_ports:
-                continue # already dispatched one on this port this cycle
+            if self._sent_recently(call):
+                self._p("Call %s is busy" % call)
+                continue
 
-            for msg in callq:
-                print "Sending %s to %s" % (msg, call)
-                avail_ports.remove(port) # No more to this port this round
-                self._send_form(call, port, msg)
-                break
+            port = slist[call]
+            if not self._port_free(port):
+                self._p("I think port %s is busy" % port)
+                continue # likely already a transfer going here so skip it
+
+            msg = callq[0]
+            self._p("Sending %s to %s" % (msg, call))
+            self._send_form(call, port, msg)
 
     def run(self):
         while True:
             if self.__config.getboolean("settings", "msg_forward"):
                 self._run_one()
             self._sleep()
+
+    def form_xfer_done(self, fn, port, failed):
+        self._p("File %s on %s done" % (fn, port))
+
+        call = self.__file_to_call.get(fn, None)
+        if call and self.__sent_call.has_key(call):
+            # This callsign completed (or failed) a transfer
+            del self.__sent_call[call]
+            del self.__file_to_call[fn]
+
+        if self.__sent_port.has_key(port):
+            # This port is not open for another transfer
+            del self.__sent_port[port]
+

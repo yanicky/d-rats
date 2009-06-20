@@ -614,6 +614,12 @@ class MainApp:
         event.set_restart_info(restart_info)
         event.set_as_final()
 
+        fn = None
+        if restart_info:
+            fn = restart_info[1]
+
+        self.msgrouter.form_xfer_done(fn, port, True)
+
     def __form_received(self, object, id, fn, port=None):
         if port:
             id = "%s_%s" % (id, port)
@@ -658,6 +664,8 @@ class MainApp:
         event.set_as_final()
         self.mainwindow.tabs["messages"].message_sent(fn)
         self.mainwindow.tabs["event"].event(event)
+
+        self.msgrouter.form_xfer_done(fn, port, False)
 
     def __file_sent(self, object, id, fn, port=None):
         if port:
