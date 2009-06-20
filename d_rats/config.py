@@ -107,6 +107,8 @@ _DEF_SETTINGS = {
     "smtp_dogw" : "False",
     "sniff_packets" : "False",
     "map_tile_ttl" : "720",
+    "msg_flush" : "60",
+    "msg_forward" : "False",
 }
 
 _DEF_STATE = {
@@ -919,10 +921,6 @@ class DratsTransfersPanel(DratsPanel):
         val.add_bool()
         self.mv(_("Remote file transfers"), val)
 
-class DratsTuningPanel(DratsPanel):
-    def __init__(self, config):
-        DratsPanel.__init__(self, config)
-
         val = DratsConfigWidget(config, "settings", "warmup_length", True)
         val.add_numeric(0, 64, 8)
         self.mv(_("Warmup Length"), val)
@@ -934,6 +932,18 @@ class DratsTuningPanel(DratsPanel):
         val = DratsConfigWidget(config, "settings", "force_delay", True)
         val.add_numeric(-32, 32, 1)
         self.mv(_("Force transmission delay"), val)
+
+class DratsMessagePanel(DratsPanel):
+    def __init__(self, config):
+        DratsPanel.__init__(self, config)
+
+        val = DratsConfigWidget(config, "settings", "msg_forward")
+        val.add_bool()
+        self.mv(_("Automatically forward messages"), val)
+
+        val = DratsConfigWidget(config, "settings", "msg_flush", True)
+        val.add_numeric(15, 9999, 1)
+        self.mv(_("Queue flush interval"), val)
 
 class DratsNetworkPanel(DratsPanel):
     pass
@@ -1400,9 +1410,10 @@ class DratsConfigUI(gtk.Dialog):
         add_panel(DratsChatPanel, "chat", _("Chat"), prefs)
         add_panel(DratsSoundPanel, "sounds", _("Sounds"), prefs)
 
+        add_panel(DratsMessagePanel, "messages", _("Messages"), None)
+
         radio = add_panel(DratsRadioPanel, "radio", _("Radio"), None)
         add_panel(DratsTransfersPanel, "transfers", _("Transfers"), radio)
-        add_panel(DratsTuningPanel, "tuning", _("Tuning"), radio)
 
         network = add_panel(DratsNetworkPanel, "network", _("Network"), None)
         add_panel(DratsTCPIncomingPanel, "tcpin", _("TCP Gateway"), network)
