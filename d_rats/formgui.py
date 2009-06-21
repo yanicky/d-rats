@@ -568,7 +568,184 @@ class FormField(object):
     def update_node(self):
         self.entry.update_node()
 
-class Form(gtk.Dialog):
+class FormFile(object):
+    def __init__(self, filename):
+        self._filename = filename
+        f = file(self._filename)
+        data = f.read()
+        f.close()
+
+        self.fields = []
+
+        self.doc = libxml2.parseMemory(data, len(data))
+        self.process_form(self.doc)
+
+    def save_to(self, filename):
+        f = file(filename, "w")
+        print >>f, self.doc.serialize()
+        f.close()
+        
+    def process_form(self, doc):
+        ctx = doc.xpathNewContext()
+        forms = ctx.xpathEval("//form")
+        if len(forms) != 1:
+            raise Exception("%i forms in document" % len(forms))
+
+        form = forms[0]
+        
+        self.id = form.prop("id")
+
+        titles = ctx.xpathEval("//form/title")
+        if len(titles) != 1:
+            raise Exception("%i titles in document" % len(titles))
+
+        title = titles[0]
+
+        self.title_text = title.children.getContent().strip()
+
+        logos = ctx.xpathEval("//form/logo")
+        if len(logos) > 1:
+            raise Exception("%i logos in document" % len(logos))
+        elif len(logos) == 1:
+            logo = logos[0]
+            self.logo_path = logo.children.getContent().strip()
+        else:
+            self.logo_path = None
+
+    def __set_content(self, node, content):
+        child = node.children
+        while child:
+            if child.type == "text":
+                child.unlinkNode()
+            child = child.next
+        node.addContent(content)
+
+    def __get_xpath(self, path):
+        ctx = self.doc.xpathNewContext()
+        return ctx.xpathEval(path)
+
+    def get_path(self):
+        pathels = []
+        for element in self.__get_xpath("//form/path/e"):
+            pathels.append(element.getContent().strip())
+        return pathels
+    
+    def __get_path(self):
+        els = self.__get_xpath("//form/path")
+        if not els:
+            ctx = self.doc.xpathNewContext()
+            form, = ctx.xpathEval("//form")
+            return form.newChild(None, "path", None)
+        else:
+            return els[0]
+
+    def __add_path_element(self, name, element, append=False):
+        path = self.__get_path()
+
+        if append:
+            path.newChild(None, name, element)
+            return
+
+        els = self.__get_xpath("//form/path/%s" % name)
+        if not els:
+            path.newChild(None, name, element)
+            return
+
+        self.__set_content(els[0], element)
+
+    def add_path_element(self, element):
+        self.__add_path_element("e", element, True)
+
+    def set_path_src(self, src):
+        self.__add_path_element("src", src)
+
+    def set_path_dst(self, dst):
+        self.__add_path_element("dst", dst)
+
+    def __get_path_element(self, name):
+        els = self.__get_xpath("//form/path/%s" % name)
+        if els:
+            return els[0].getContent().strip()
+        else:
+            return ""
+
+    def get_path_src(self):
+        return self.__get_path_element("src")
+
+    def get_path_dst(self):
+        return self.__get_path_element("dst")
+
+    def get_field_value(self, id):
+        els = self.__get_xpath("//form/field[@id='%s']/entry" % id)
+        if len(els) == 1:
+            return els[0].getContent().strip()
+
+        raise Exception("More than one id=%s node!" % id)
+
+    def set_field_value(self, id, value):
+        els = self.__get_xpath("//form/field[@id='%s']" % id)
+        if len(els) == 1:
+            self.__set_content(els[0], value.strip())
+
+    def _try_get_fields(self, *names):
+        for field in names:
+            try:
+                return self.get_field_value(field)
+            except Exception:
+                pass
+        return "Unknown"
+
+    def get_subject_string(self):
+        return self._try_get_fields("_auto_subject", "subject")
+
+
+    def get_recipient_string(self):
+        dst = self.get_path_dst()
+        if dst:
+            return dst
+        else:
+            return self._try_get_fields("_auto_recip", "recip", "recipient")
+
+    def get_sender_string(self):
+        src = self.get_path_src()
+        if src:
+            return src
+        else:
+            return self._try_get_fields("_auto_sender", "sender")
+
+class FormDialog(FormFile, gtk.Dialog):
+    def save_to(self, *args):
+        for f in self.fields:
+            f.update_node()
+        FormFile.save_to(self, *args)
+
+    def process_fields(self, doc):
+        ctx = doc.xpathNewContext()
+        fields = ctx.xpathEval("//form/field")
+        for f in fields:
+            try:
+                self.fields.append(FormField(f))
+            except Exception, e:
+                raise
+                print e
+
+    def export(self, outfile):
+        for f in self.fields:
+            f.update_node()
+
+        w = HTMLFormWriter(self.id, self.xsl_dir)
+        w.writeDoc(self.doc, outfile)
+
+    def run_auto(self, save_file=None):
+        if not save_file:
+            save_file = self._filename
+
+        r = self.run()
+        if r != gtk.RESPONSE_CANCEL:
+            self.save_to(save_file)
+
+        return r
+
     def but_save(self, widget, data=None):
         p = platform.get_platform()
         f = p.gui_save_file(default_name="%s.html" % self.id)
@@ -718,71 +895,16 @@ class Form(gtk.Dialog):
         printable.show()
         self.action_area.pack_start(printable, 0,0,0)
 
-    def process_fields(self, doc):
-        ctx = doc.xpathNewContext()
-        fields = ctx.xpathEval("//form/field")
-        for f in fields:
-            try:
-                self.fields.append(FormField(f))
-            except Exception, e:
-                raise
-                print e
-
-    def process_form(self, doc):
-        ctx = doc.xpathNewContext()
-        forms = ctx.xpathEval("//form")
-        if len(forms) != 1:
-            raise Exception("%i forms in document" % len(forms))
-
-        form = forms[0]
-        
-        self.id = form.prop("id")
-
-        titles = ctx.xpathEval("//form/title")
-        if len(titles) != 1:
-            raise Exception("%i titles in document" % len(titles))
-
-        title = titles[0]
-
-        self.title_text = title.children.getContent().strip()
-
-        logos = ctx.xpathEval("//form/logo")
-        if len(logos) > 1:
-            raise Exception("%i logos in document" % len(logos))
-        elif len(logos) == 1:
-            logo = logos[0]
-            self.logo_path = logo.children.getContent().strip()
-        else:
-            self.logo_path = None
-
-    def get_xml(self):
-        for f in self.fields:
-            f.update_node()
-
-        return self.doc.serialize()
-
-    def export(self, outfile):
-        for f in self.fields:
-            f.update_node()
-
-        w = HTMLFormWriter(self.id, self.xsl_dir)
-        w.writeDoc(self.doc, outfile)
-
-    def __init__(self, title, xmlstr, buttons=None, parent=None):
-        self._title = title
-        self._parent = parent
+    def __init__(self, title, filename, buttons=None, parent=None):
         self._buttons = (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
                          gtk.STOCK_SAVE, gtk.RESPONSE_OK)
         if buttons:
             self._buttons += buttons
 
+        gtk.Dialog.__init__(self, buttons=self._buttons, parent=parent,
+                            title=title)
+        FormFile.__init__(self, filename)
 
-
-        self.fields = []
-
-        self.doc = libxml2.parseMemory(xmlstr, len(xmlstr))
-
-        self.process_form(self.doc)
         self.process_fields(self.doc)
 
         self.set_default_size(300,500)
@@ -790,10 +912,6 @@ class Form(gtk.Dialog):
         print "Form ID: %s" % self.id
 
     def run(self):
-        gtk.Dialog.__init__(self,
-                            title=self._title,
-                            buttons=self._buttons,
-                            parent=self._parent)
         self.vbox.set_spacing(5)
         self.build_gui(gtk.RESPONSE_CANCEL in self._buttons)
         self.set_size_request(380, 450)
@@ -801,132 +919,11 @@ class Form(gtk.Dialog):
         r = gtk.Dialog.run(self)
         self.set_path_dst(self._dstbox.get_text().upper())
 
+        return r
+
     def configure(self, config):
         self.xsl_dir = config.form_source_dir()
         
-    def get_field_value(self, id):
-        for field in self.fields:
-            if field.id == id:
-                return field.entry.get_value()
-
-        return None
-
-    def set_field_value(self, id, value):
-        for field in self.fields:
-            if field.id == id:
-                field.entry.set_value(value)
-                break
-
-    def __get_xpath(self, path):
-        ctx = self.doc.xpathNewContext()
-        return ctx.xpathEval(path)
-
-    def get_path(self):
-        pathels = []
-        for element in self.__get_xpath("//form/path/e"):
-            pathels.append(element.getContent().strip())
-        return pathels
-    
-    def __get_path(self):
-        els = self.__get_xpath("//form/path")
-        if not els:
-            ctx = self.doc.xpathNewContext()
-            form, = ctx.xpathEval("//form")
-            return form.newChild(None, "path", None)
-        else:
-            return els[0]
-
-    def __add_path_element(self, name, element, append=False):
-        path = self.__get_path()
-
-        if append:
-            path.newChild(None, name, element)
-            return
-
-        els = self.__get_xpath("//form/path/%s" % name)
-        if not els:
-            path.newChild(None, name, element)
-            return
-
-        child = els[0].children
-        while child:
-            if child.type == "text":
-                child.unlinkNode()
-            child = child.next
-
-        els[0].addContent(element)
-
-    def add_path_element(self, element):
-        self.__add_path_element("e", element, True)
-
-    def set_path_src(self, src):
-        self.__add_path_element("src", src)
-
-    def set_path_dst(self, dst):
-        self.__add_path_element("dst", dst)
-
-    def __get_path_element(self, name):
-        els = self.__get_xpath("//form/path/%s" % name)
-        if els:
-            return els[0].getContent().strip()
-        else:
-            return ""
-
-    def get_path_src(self):
-        return self.__get_path_element("src")
-
-    def get_path_dst(self):
-        return self.__get_path_element("dst")
-
-    def _try_get_fields(self, *names):
-        for field in names:
-            val = self.get_field_value(field)
-            if val:
-                return val
-
-        return "Unknown"
-
-    def get_subject_string(self):
-        return self._try_get_fields("_auto_subject", "subject")
-
-    def get_recipient_string(self):
-        dst = self.get_path_dst()
-        if dst:
-            return dst
-        else:
-            return self._try_get_fields("_auto_recip", "recip", "recipient")
-
-    def get_sender_string(self):
-        src = self.get_path_src()
-        if src:
-            return src
-        else:
-            return self._try_get_fields("_auto_sender", "sender")
-
-class FormFile(Form):
-    def __init__(self, title, filename, buttons=None, parent=None):
-        self._filename = filename
-        f = file(self._filename)
-        data = f.read()
-        f.close()
-
-        Form.__init__(self, title, data, buttons=buttons, parent=parent)
-
-    def save_to(self, filename):
-        f = file(filename, "w")
-        print >>f, self.get_xml()
-        f.close()
-        
-    def run_auto(self, save_file=None):
-        if not save_file:
-            save_file = self._filename
-
-        r = Form.run(self)
-        if r != gtk.RESPONSE_CANCEL:
-            self.save_to(save_file)
-
-        return r
-
 if __name__ == "__main__":
     f = file(sys.argv[1])
     xml = f.read()

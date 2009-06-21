@@ -21,7 +21,7 @@ import os
 import glob
 
 from miscwidgets import make_choice
-from formgui import Form,FormFile,xml_escape,xml_unescape
+from formgui import FormDialog,FormFile,xml_escape,xml_unescape
 import formgui
 
 class FormElementEditor(gtk.Dialog):
@@ -451,7 +451,7 @@ class FormBuilderGUI(gtk.Dialog):
         return frame
 
     def show_preview(self, widget, data=None):
-        d = Form("Preview of form",
+        d = FormDialog("Preview of form",
                  self.get_form_xml(),
                  buttons=(gtk.STOCK_CLOSE, gtk.RESPONSE_OK),
                  parent=self)
@@ -474,7 +474,7 @@ class FormBuilderGUI(gtk.Dialog):
                        self.col_opts, opts)
 
     def load_from_file(self, filename):
-        form = FormFile("", filename)
+        form = FormFile(filename)
         self.props["ID"].set_text(form.id)
         self.props["Title"].set_text(form.title_text)
         self.props["Logo"].set_text(form.logo_path or "")
@@ -505,7 +505,7 @@ class FormManagerGUI(object):
 
     def add_form(self, filename):
         try:
-            form = FormFile("", filename)
+            form = FormFile(filename)
             id = form.id
             title = form.title_text
             form.destroy()        

@@ -199,7 +199,7 @@ class FormRecvThread(FileBaseThread):
                                self.session.get_station())
 
         if fn == newfn:
-            form = formgui.FormFile(None, fn)
+            form = formgui.FormFile(fn)
             form.add_path_element(self.coord.config.get("user", "callsign"))
             form.save_to(fn)
 

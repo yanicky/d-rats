@@ -630,7 +630,7 @@ class MainApp(object):
             id = "%s_%s" % (id, port)
 
         print "[NEWFORM %s]: %s" % (id, fn)
-        f = formgui.FormFile("", fn)
+        f = formgui.FormFile(fn)
 
         msg = '%s "%s" %s %s' % (_("Message"),
                                  f.get_subject_string(),

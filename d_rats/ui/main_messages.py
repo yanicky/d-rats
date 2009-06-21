@@ -311,7 +311,7 @@ class MessageList(MainWindowElement):
 
     def open_msg(self, filename):
         parent = self._wtree.get_widget("mainwindow")
-        form = formgui.FormFile(_("Form"), filename, parent=parent)
+        form = formgui.FormDialog(_("Form"), filename, parent=parent)
         form.configure(self._config)
         r = form.run_auto()
         form.destroy()
@@ -419,7 +419,7 @@ class MessageList(MainWindowElement):
         subj = self.current_info.get_msg_subject(fn)
         if subj == _("Unknown") or force:
             # Not registered, so update the registry
-            form = formgui.FormFile(_("Form"), fn)
+            form = formgui.FormFile(fn)
             self.current_info.set_msg_type(fn, form.id)
             self.current_info.set_msg_read(fn, False)
             self.current_info.set_msg_subject(fn, form.get_subject_string())
@@ -535,9 +535,7 @@ class MessagesTab(MainWindowTab):
         newfn = self._messages.current_info.create_msg(tstamp)
 
 
-        form = formgui.FormFile(_("New %s form") % selection,
-                                forms[selection],
-                                buttons=(_("Send"), 999))
+        form = formgui.FormFile(forms[selection])
         form.add_path_element(self._config.get("user", "callsign"))
         form.set_path_src(self._config.get("user", "callsign"))
         form.save_to(newfn)
@@ -568,10 +566,10 @@ class MessagesTab(MainWindowTab):
         self._folders.select_folder(_("Outbox"))
 
         fn = sel[0]
-        oform = formgui.FormFile("", fn)
+        oform = formgui.FormFile(fn)
         tmpl = os.path.join(self._config.form_source_dir(), "%s.xml" % oform.id)
                             
-        nform = formgui.FormFile("", tmpl)
+        nform = formgui.FormFile(tmpl)
         nform.add_path_element(self._config.get("user", "callsign"))
         
         try:
@@ -639,7 +637,7 @@ class MessagesTab(MainWindowTab):
 
         fn = sel[0]
         try:
-            form = formgui.FormFile("", fn)
+            form = formgui.FormFile(fn)
         except Exception, e:
             log_exception()
             display_error(_("Unable to email this form:") + " %s" % e)
@@ -797,7 +795,7 @@ class MessagesTab(MainWindowTab):
         for fn in info.files():
             stamp = os.stat(fn).st_mtime
             ffn = "%s/%s" % (shared, os.path.basename(fn))
-            form = formgui.FormFile(_("Form"), fn)
+            form = formgui.FormFile(fn)
             ret.append((form.get_subject_string(), stamp, ffn))
 
         return ret

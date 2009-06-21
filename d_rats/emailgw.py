@@ -183,7 +183,7 @@ class MailThread(threading.Thread, gobject.GObject):
             f = file(ffn, "w")
             f.write(xml)
             f.close()
-            form = formgui.FormFile("", ffn)
+            form = formgui.FormFile(ffn)
             recip = form.get_recipient_string()
             if "%" in recip:
                 recip, addr = recip.split("%", 1)
@@ -194,7 +194,7 @@ class MailThread(threading.Thread, gobject.GObject):
             recip, addr = rfc822.parseaddr(mail.get("To", "UNKNOWN"))
 
             efn = os.path.join(self.config.form_source_dir(), "email.xml")
-            form = formgui.FormFile("", efn)
+            form = formgui.FormFile(efn)
             form.set_field_value("_auto_sender", sender)
             form.set_field_value("recipient", recip)
             form.set_field_value("subject", "EMAIL: %s" % subject)
