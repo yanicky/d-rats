@@ -104,6 +104,12 @@ class MessageFolderInfo(object):
     def set_msg_sender(self, filename, sender):
         self._setprop(filename, "sender", sender)
 
+    def get_msg_recip(self, filename):
+        return self._getprop(filename, "recip")
+
+    def set_msg_recip(self, filename, recip):
+        self._setprop(filename, "recip", recip)
+
     def subfolders(self):
         """Return a list of MessageFolderInfo objects representing this
         folder's subfolders"""
@@ -273,6 +279,7 @@ class MessageFolders(MainWindowElement):
             dst.set_msg_subject(fn, subj)
             dst.set_msg_type(fn, type)
             dst.set_msg_sender(fn, send)
+            dst.set_msg_recip(fn, recp)
 
     # MessageFolders
     def __init__(self, wtree, config):
@@ -307,7 +314,7 @@ ML_COL_TYPE = 3
 ML_COL_DATE = 4
 ML_COL_FILE = 5
 ML_COL_READ = 6
-ML_COL_FROM = 7
+ML_COL_RECP = 7
 
 class MessageList(MainWindowElement):
     def _folder_path(self, folder):
@@ -348,7 +355,7 @@ class MessageList(MainWindowElement):
                                                store[path][ML_COL_TYPE],
                                                store[path][ML_COL_READ],
                                                store[path][ML_COL_SEND],
-                                               "FOO")
+                                               store[path][ML_COL_RECP])
             msgs.append(data)
 
         sel.set("text/d-rats_message", 0, "\x01".join(msgs))
@@ -366,7 +373,8 @@ class MessageList(MainWindowElement):
                                    gobject.TYPE_STRING,
                                    gobject.TYPE_INT,
                                    gobject.TYPE_STRING,
-                                   gobject.TYPE_BOOLEAN)
+                                   gobject.TYPE_BOOLEAN,
+                                   gobject.TYPE_STRING)
         msglist.set_model(self.store)
         msglist.get_selection().set_mode(gtk.SELECTION_MULTIPLE)
         msglist.enable_model_drag_source(gtk.gdk.BUTTON1_MASK,
@@ -387,6 +395,13 @@ class MessageList(MainWindowElement):
         col = gtk.TreeViewColumn(_("Sender"), r, text=ML_COL_SEND)
         col.set_cell_data_func(r, bold_if_unread, ML_COL_SEND)
         col.set_sort_column_id(ML_COL_SEND)
+        col.set_sizing(gtk.TREE_VIEW_COLUMN_AUTOSIZE)
+        msglist.append_column(col)
+
+        r = gtk.CellRendererText()
+        col = gtk.TreeViewColumn(_("Recipient"), r, text=ML_COL_RECP)
+        col.set_cell_data_func(r, bold_if_unread, ML_COL_RECP)
+        col.set_sort_column_id(ML_COL_RECP)
         col.set_sizing(gtk.TREE_VIEW_COLUMN_AUTOSIZE)
         msglist.append_column(col)
 
@@ -437,6 +452,7 @@ class MessageList(MainWindowElement):
             self.current_info.set_msg_read(fn, False)
             self.current_info.set_msg_subject(fn, form.get_subject_string())
             self.current_info.set_msg_sender(fn, form.get_sender_string())
+            self.current_info.set_msg_recip(fn, form.get_recipient_string())
 
         ts = os.stat(fn).st_ctime
         read = self.current_info.get_msg_read(fn)
@@ -447,6 +463,7 @@ class MessageList(MainWindowElement):
         self.store.set(iter,
                        ML_COL_ICON, icon,
                        ML_COL_SEND, self.current_info.get_msg_sender(fn),
+                       ML_COL_RECP, self.current_info.get_msg_recip(fn),
                        ML_COL_SUBJ, self.current_info.get_msg_subject(fn),
                        ML_COL_TYPE, self.current_info.get_msg_type(fn),
                        ML_COL_DATE, ts,
