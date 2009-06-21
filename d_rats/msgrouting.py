@@ -110,6 +110,24 @@ class MessageRouter(gobject.GObject):
     def _port_free(self, port):
         return not self.__sent_port.has_key(port)
 
+    def _route_msg(self, call, path, routes):
+        if routes.has_key(call):
+            self._p("Routing message for %s to %s" % (call,
+                                                      routes[call]))
+            route = routes[call]
+        elif routes.has_key("*"):
+            self._p("Routing message for %s to %s (default)" % \
+                        (call, routes["*"]))
+            route = routes["*"]
+        else:
+            self._p("No route for station %s" % call)
+            return None
+
+        if route in path:
+            self._p("Routing loop: Routes say %s goes to %s" % (call, route) +
+                    " but we've already been there!")
+            return None
+
     def _run_one(self):
         plist = self.emit("get-station-list")
         slist = {}
@@ -122,31 +140,30 @@ class MessageRouter(gobject.GObject):
 
         queue = self._get_queue()
         for call, callq in queue.items():
-            if not slist.has_key(call):
-                if routes.has_key(call):
-                    self._p("Routing message for %s to %s" % (call,
-                                                              routes[call]))
-                    call = routes[call]
-                elif routes.has_key("*"):
-                    self._p("Routing message for %s to %s (default)" % \
-                                (call, routes["*"]))
-                    call = routes["*"]
-                else:
-                    self._p("No route for station %s" % call)
-                    continue # station unknown
+            msg = callq[0]
 
-            if self._sent_recently(call):
-                self._p("Call %s is busy" % call)
+            if slist.has_key(call):
+                route = call
+            else:
+                form = formgui.FormFile(msg)
+                path = form.get_path()
+                del form
+                route = self._route_msg(call, path, routes)
+
+            if not route:
+                continue # No route to station
+
+            if self._sent_recently(route):
+                self._p("Call %s is busy" % route)
                 continue
 
-            port = slist[call]
+            port = slist[route]
             if not self._port_free(port):
                 self._p("I think port %s is busy" % port)
                 continue # likely already a transfer going here so skip it
 
-            msg = callq[0]
-            self._p("Sending %s to %s" % (msg, call))
-            self._send_form(call, port, msg)
+            self._p("Sending %s to %s (via %s)" % (msg, call, route))
+            self._send_form(route, port, msg)
 
     def _run(self):
         while self.__enabled:
