@@ -14,18 +14,20 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import sys
 import threading
-import gobject
 import time
 import os
 from glob import glob
+
+import gobject
 
 import formgui
 import signals
 
 CALL_TIMEOUT_RETRY = 300
 
-class MessageRouter(threading.Thread, gobject.GObject):
+class MessageRouter(gobject.GObject):
     __gsignals__ = {
         "get-station-list" : signals.GET_STATION_LIST,
         "user-send-form" : signals.USER_SEND_FORM,
@@ -33,7 +35,6 @@ class MessageRouter(threading.Thread, gobject.GObject):
     _signals = __gsignals__
 
     def __init__(self, config):
-        threading.Thread.__init__(self)
         gobject.GObject.__init__(self)
 
         self.__config = config
@@ -42,12 +43,17 @@ class MessageRouter(threading.Thread, gobject.GObject):
         self.__sent_port = {}
         self.__file_to_call = {}
 
+        self.__thread = None
+        self.__enabled = False
+
     def _sleep(self):
         t = self.__config.getint("settings", "msg_flush")
         time.sleep(t)
 
     def _p(self, string):
         print "[MR] %s" % string
+        import sys
+        sys.stdout.flush()
 
     def _get_queue(self):
         queue = {}
@@ -55,8 +61,10 @@ class MessageRouter(threading.Thread, gobject.GObject):
         qd = os.path.join(self.__config.form_store_dir(), _("Outbox"))
         fl = glob(os.path.join(qd, "*.xml"))
         for f in fl:
-            form = formgui.FormFile("", f)
+            form = formgui.FormFile(f)
             call = form.get_path_dst()
+            del form
+
             if not call:
                 continue
             elif not queue.has_key(call):
@@ -107,11 +115,20 @@ class MessageRouter(threading.Thread, gobject.GObject):
             self._p("Sending %s to %s" % (msg, call))
             self._send_form(call, port, msg)
 
-    def run(self):
-        while True:
+    def _run(self):
+        while self.__enabled:
             if self.__config.getboolean("settings", "msg_forward"):
                 self._run_one()
             self._sleep()
+
+    def start(self):
+        self.__enabled = True
+        self.__thread = threading.Thread(target=self._run)
+        self.__thread.start()
+
+    def stop(self):
+        self.__enabled = False
+        self.__thread.join()
 
     def form_xfer_done(self, fn, port, failed):
         self._p("File %s on %s done" % (fn, port))
