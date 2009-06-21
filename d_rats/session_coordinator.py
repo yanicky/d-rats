@@ -28,7 +28,7 @@ import emailgw
 import signals
 from utils import run_safe, run_gtk_locked
 
-class SessionThread:
+class SessionThread(object):
     OUTGOING = False
 
     def __init__(self, coord, session, data):

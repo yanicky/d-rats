@@ -300,7 +300,7 @@ class NotifyDict(UserDict.UserDict):
         self.data[name] = value
         self.cb()
 
-class BaseFileTransferSession:
+class BaseFileTransferSession(object):
     def internal_status(self, vals):
         print "XFER STATUS: %s" % vals["msg"]
 
@@ -532,7 +532,7 @@ class PipelinedFileTransfer(BaseFileTransferSession, sessionmgr.PipelinedStatefu
         except zlib.error, e:
             raise e
 
-class BaseFormTransferSession:
+class BaseFormTransferSession(object):
     pass
 
 class FormTransferSession(BaseFormTransferSession, FileTransferSession):
@@ -557,7 +557,7 @@ class SocketSession(sessionmgr.PipelinedStatefulSession):
     def _status(self, msg):
         print "Socket Status: %s" % msg
 
-class SocketListener:
+class SocketListener(object):
     def __init__(self, sm, dest, sport, dport, addr='0.0.0.0'):
         self.sm = sm
         self.dest = dest

@@ -501,7 +501,7 @@ class FormBuilderGUI(gtk.Dialog):
 
         self.action_area.pack_start(preview, 0,0,0)
 
-class FormManagerGUI:
+class FormManagerGUI(object):
 
     def add_form(self, filename):
         try:

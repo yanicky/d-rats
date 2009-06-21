@@ -257,7 +257,7 @@ def parse_date(string, fmt):
                              vals["M"],
                              vals["S"])
 
-class GPSPosition:
+class GPSPosition(object):
     """Represents a position on the globe, either from GPS data or a static
     positition"""
     def _from_coords(self, lat, lon, alt=0):
@@ -801,7 +801,7 @@ class APRSGPSPosition(GPSPosition):
 
         self._from_APRS(message)
 
-class MapImage:
+class MapImage(object):
     def __init__(self, center):
         self.key = "ABQIAAAAWot3KuWpenfCAGfQ65FdzRTaP0xjRaMPpcw6bBbU2QUEXQBgHBR5Rr2HTGXYVWkcBFNkPvxtqV4VLg"
         self.center = center
@@ -865,7 +865,7 @@ class MapImage:
         p = platform.get_platform()
         p.open_html_file(f.name)
 
-class GPSSource:
+class GPSSource(object):
     def __init__(self, port, rate=4800):
         self.port = port
         self.enabled = False

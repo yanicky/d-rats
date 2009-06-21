@@ -197,7 +197,7 @@ class SWFSerial(serial.Serial):
         return serial.Serial.read(self, len)
 
 
-class DataPath:
+class DataPath(object):
     def __init__(self, pathspec, timeout=0.25):
         self.timeout = timeout
         self.pathspec = pathspec

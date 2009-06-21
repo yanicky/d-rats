@@ -93,7 +93,7 @@ def ping_exec(command):
 
     return o    
 
-class CallList:
+class CallList(object):
     def __init__(self):
         self.clear()
 
@@ -135,7 +135,7 @@ class CallList:
         except:
             pass
 
-class MainApp:
+class MainApp(object):
     def setup_autoid(self):
         idtext = "(ID)"
 

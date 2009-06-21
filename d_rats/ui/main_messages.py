@@ -38,7 +38,7 @@ from d_rats import signals
 
 _FOLDER_CACHE = {}
 
-class MessageFolderInfo:
+class MessageFolderInfo(object):
     def __init__(self, folder_path):
         self._path = folder_path
 

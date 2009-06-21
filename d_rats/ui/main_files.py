@@ -33,7 +33,7 @@ from d_rats import signals
 THROB_IMAGE = "throbber.gif"
 REMOTE_HINT = _("Enter remote callsign")
 
-class FileView:
+class FileView(object):
     def __init__(self, view, path, config):
         self._view = view
         self._path = path

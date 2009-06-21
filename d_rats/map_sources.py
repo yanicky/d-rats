@@ -26,11 +26,11 @@ import gobject
 import utils
 import platform
 
-class Callable:
+class Callable(object):
     def __init__(self, target):
         self.__call__ = target
 
-class MapItem:
+class MapItem(object):
     pass
 
 class MapPoint(gobject.GObject):

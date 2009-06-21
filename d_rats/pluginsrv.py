@@ -25,7 +25,7 @@ import signals
 import utils
 import rpcsession
 
-class DRatsChatEvent:
+class DRatsChatEvent(object):
     def __init__(self, src_station=None):
         self.__event = threading.Event()
         self.__src_station = src_station

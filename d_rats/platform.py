@@ -25,7 +25,7 @@ import urllib
 def find_me():
     return sys.modules["d_rats.platform"].__file__
 
-class Platform:
+class Platform(object):
     # pylint: disable-msg=R0201
 
     def __init__(self, basepath):

@@ -272,7 +272,7 @@ class MailThread(threading.Thread, gobject.GObject):
 
         self.message("Thread ending")
 
-class FormEmailService:
+class FormEmailService(object):
     def message(self, msg):
         print "[SMTP] %s" % msg
 
@@ -408,7 +408,7 @@ def validate_incoming(config, callsign, emailaddr):
     return __validate_access(config, callsign, emailaddr, ["Both", "Incoming"])
 
 if __name__ == "__main__":
-    class fakeout:
+    class fakeout(object):
         form_source_dir = "forms"
         form_store_dir = "."
 

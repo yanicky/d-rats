@@ -36,7 +36,7 @@ T_RPC       = 7
 class SessionClosedError(Exception):
     pass
 
-class Block:
+class Block(object):
     def __init__(self):
         self.seq = 0
         self.type = 0
@@ -67,7 +67,7 @@ class Block:
     def get_data(self):
         return self.data
 
-class Session:
+class Session(object):
     _sm = None
     _id = None
     _st = None
@@ -821,7 +821,7 @@ class PipelinedStatefulSession(StatefulSession):
             del self.oob_queue[next(self.iseq)]
             enqueue(block)            
 
-class SessionManager:
+class SessionManager(object):
     def set_comm(self, pipe, **kwargs):
         self.pipe = pipe
         if self.tport:

@@ -41,7 +41,7 @@ def ev_cmp_eff(ev1, ev2):
 
 FMT = "%Y-%m-%dT%H:%M:%S"
 
-class CAPEvent:
+class CAPEvent(object):
     def __init__(self):
         self.category = None
         self.event = None
@@ -87,7 +87,7 @@ class CAPEvent:
        self.expires.strftime(FMT),
        self.description)
 
-class CAPParser:
+class CAPParser(object):
     def __init__(self, filename):
         doc = libxml2.parseFile(filename)
 

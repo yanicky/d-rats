@@ -45,7 +45,7 @@ _EVENT_TYPES = {EVENT_INFO : None,
 
 FILTER_HINT = _("Enter filter text")
 
-class Event:
+class Event(object):
     def __init__(self, group_id, message, evtype=EVENT_INFO):
         self._group_id = group_id
 

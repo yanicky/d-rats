@@ -6,7 +6,7 @@ import platform
 
 sublist = None
 
-class SubstitutionList:
+class SubstitutionList(object):
     delim = "/"
 
     def __init__(self, configfile):

@@ -62,7 +62,7 @@ def encode(data):
 def decode(data):
     return yencode.ydecode_buffer(data)
 
-class DDT2Frame:
+class DDT2Frame(object):
     format = "!BHBBHH8s8s"
     cso = 6
     csl = 2

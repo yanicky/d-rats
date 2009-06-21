@@ -34,7 +34,7 @@ WEATHER_KEYS = [
     "precip_today_string", "precip_today_in", "precip_today_metric",
 ]
 
-class WUObservation:
+class WUObservation(object):
     def __init__(self):
         self.location = {}
         self.station_id = None

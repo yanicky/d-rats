@@ -26,7 +26,7 @@ import utils
 import ddt2
 import comm
 
-class BlockQueue:
+class BlockQueue(object):
     def __init__(self):
         self._lock = threading.Lock()
         self._queue = []
@@ -84,7 +84,7 @@ class BlockQueue:
     def unlock(self):
         self._lock.release()
 
-class Transporter:
+class Transporter(object):
     def __init__(self, pipe, inhandler=None, **kwargs):
         self.inq = BlockQueue()
         self.outq = BlockQueue()
@@ -285,7 +285,7 @@ class Transporter:
                     print "Block disappeared while flushing?"
         self.outq.unlock()
 
-class TestPipe:
+class TestPipe(object):
     def make_fake_data(self, src, dst):
         self.buf = ""
 

@@ -191,7 +191,7 @@ class NetFile(file):
         if self.is_temp:
             os.remove(self.__fn)
 
-class ExternalHash:
+class ExternalHash(object):
     def __init__(self):
         self.hval = ""
 

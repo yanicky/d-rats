@@ -28,7 +28,7 @@ import utils
 class EditorInitCancel(Exception):
     pass
 
-class MapSourcesEditor:
+class MapSourcesEditor(object):
     def _add(self, button, typesel):
         t = typesel.get_active_text()
 
@@ -118,7 +118,7 @@ class MapSourcesEditor:
     def destroy(self):
         self.__dialog.destroy()
 
-class MapSourceEditor:
+class MapSourceEditor(object):
     def __init__(self, config, source):
         self._config = config
         self.__source = source

@@ -141,7 +141,7 @@ def num2deg(xtile, ytile, zoom):
   lat_deg = lat_rad * 180.0 / math.pi
   return(lat_deg, lon_deg)
 
-class MapTile:
+class MapTile(object):
     def path_els(self):
         return deg2num(self.lat, self.lon, self.zoom)
 
@@ -254,7 +254,7 @@ class MapTile:
         if not os.path.isdir(self.dir):
             os.mkdir(self.dir)
 
-class LoadContext:
+class LoadContext(object):
     pass
 
 class MapWidget(gtk.DrawingArea):

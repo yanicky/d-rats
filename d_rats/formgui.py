@@ -100,7 +100,7 @@ def xml_unescape(string):
 
     return out
 
-class FormWriter:
+class FormWriter(object):
     def write(self, formxml, outfile):
         doc = libxml2.parseMemory(formxml, len(formxml))
         doc.saveFile(outfile)
@@ -123,7 +123,7 @@ class HTMLFormWriter(FormWriter):
         #doc.freeDoc()
         #result.freeDoc()
 
-class FieldWidget:
+class FieldWidget(object):
     def __init__(self, node):
         self.node = node
         self.caption = "Untitled Field"
@@ -511,7 +511,7 @@ class LabelWidget(FieldWidget):
 
         return widget
 
-class FormField:
+class FormField(object):
     widget_types = {
     "text" : TextWidget,
     "multiline" : MultilineWidget,

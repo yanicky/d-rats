@@ -263,7 +263,7 @@ class ConnTestAssistant(baseclass):
     def test_fixedmulti(self, station, port, size, packets):
         self.set_test_val("pt", packets, "bt", packets * size)
 
-        class TestContext:
+        class TestContext(object):
             def __init__(ctx):
                 ctx.ps = ctx.pr = 0
                 ctx.cycle = 0
@@ -327,7 +327,7 @@ class ConnTestAssistant(baseclass):
         
         self.set_test_val("pt", ptotal, "bt", btotal)
 
-        class TestContext:
+        class TestContext(object):
             def __init__(ctx):
                 ctx.bs = ctx.br = ctx.ps = ctx.pr = 0
                 ctx.size = start
