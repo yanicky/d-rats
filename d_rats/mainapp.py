@@ -379,7 +379,12 @@ class MainApp(object):
                         map_sources.MapNBDCBuoySource]
 
         for stype in source_types:
-            sources = stype.enumerate(self.config)
+            try:
+                sources = stype.enumerate(self.config)
+            except Exception, e:
+                print "Failed to load source type %s" % stype
+                continue
+
             for sname in sources:
                 try:
                     source = stype.open_source_by_name(self.config, sname)
@@ -836,7 +841,7 @@ class MainApp(object):
 
         try:
             self.plugsrv = pluginsrv.DRatsPluginServer()
-            self.__connect_object(self.plugsrv)
+            self.__connect_object(self.plugsrv.get_proxy())
             self.plugsrv.serve_background()
         except Exception, e:
             print "Unable to start plugin server: %s" % e
