@@ -46,6 +46,28 @@ class MessageRouter(gobject.GObject):
         self.__thread = None
         self.__enabled = False
 
+    def _get_routes(self):
+        rf = self.__config.platform.config_file("routes.txt")
+        try:
+            f = file(rf)
+            lines = f.readlines()
+            f.close()
+        except IOError:
+            return {}
+
+        routes = {}
+
+        for line in lines:
+            if not line.strip() or line.startswith("#"):
+                continue
+            try:
+                dest, gw, port = line.split()
+                routes[dest] = gw
+            except Exception, e:
+                print "Error parsing line '%s': %s" % (line, e)
+
+        return routes
+
     def _sleep(self):
         t = self.__config.getint("settings", "msg_flush")
         time.sleep(t)
@@ -92,6 +114,8 @@ class MessageRouter(gobject.GObject):
         plist = self.emit("get-station-list")
         slist = {}
 
+        routes = self._get_routes()
+
         for port, stations in plist.items():
             for station in stations:
                 slist[station] = port
@@ -99,8 +123,17 @@ class MessageRouter(gobject.GObject):
         queue = self._get_queue()
         for call, callq in queue.items():
             if not slist.has_key(call):
-                self._p("No route for station %s" % call)
-                continue # station unknown
+                if routes.has_key(call):
+                    self._p("Routing message for %s to %s" % (call,
+                                                              routes[call]))
+                    call = routes[call]
+                elif routes.has_key("*"):
+                    self._p("Routing message for %s to %s (default)" % \
+                                (call, routes["*"]))
+                    call = routes["*"]
+                else:
+                    self._p("No route for station %s" % call)
+                    continue # station unknown
 
             if self._sent_recently(call):
                 self._p("Call %s is busy" % call)
