@@ -28,4 +28,4 @@ while not result:
     result = s.get_result(ident)
 
 # Print results
-print "File list:\n%s" % "\r\n".join(result.items())
+print "File list:\n%s" % "\r\n".join(result.keys())
