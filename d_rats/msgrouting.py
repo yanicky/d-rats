@@ -163,12 +163,19 @@ class MessageRouter(gobject.GObject):
         self.__enabled = False
         self.__thread.join()
 
+    def _update_path(self, fn, call):
+        form = formgui.FormFile(fn)
+        form.add_path_element(call)
+        form.save_to(fn)
+
     def form_xfer_done(self, fn, port, failed):
         self._p("File %s on %s done" % (fn, port))
 
         call = self.__file_to_call.get(fn, None)
         if call and self.__sent_call.has_key(call):
             # This callsign completed (or failed) a transfer
+            if not failed:
+                self._update_path(fn, call)
             del self.__sent_call[call]
             del self.__file_to_call[fn]
 

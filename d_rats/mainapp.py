@@ -662,6 +662,7 @@ class MainApp(object):
         self.mainwindow.tabs["event"].event(event)
                 
     def __form_sent(self, object, id, fn, port=None):
+        self.msgrouter.form_xfer_done(fn, port, False)
         if port:
             id = "%s_%s" % (id, port)
         print "[FORMSENT %s]: %s" % (id, fn)
@@ -669,8 +670,6 @@ class MainApp(object):
         event.set_as_final()
         self.mainwindow.tabs["messages"].message_sent(fn)
         self.mainwindow.tabs["event"].event(event)
-
-        self.msgrouter.form_xfer_done(fn, port, False)
 
     def __file_sent(self, object, id, fn, port=None):
         if port:
