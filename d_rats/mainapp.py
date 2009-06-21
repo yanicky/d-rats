@@ -788,7 +788,7 @@ class MainApp(object):
         lno = 0
         for line in lines:
             lno += 1
-            if not line or line.startswith("#"):
+            if not line.strip() or line.startswith("#"):
                 continue
 
             try:
