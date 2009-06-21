@@ -257,9 +257,9 @@ class MessageFolders(MainWindowElement):
         src = MessageFolderInfo(os.path.join(self._folders_path(), src_folder))
                                 
         for record in msgs:
-            fn, subj, type, read = record.split("\0")
+            fn, subj, type, read, send, recp = record.split("\0")
             print "Dragged %s from %s into %s" % (fn, src_folder, dst_folder)
-            print "  %s %s %s" % (subj, type, read)
+            print "  %s %s %s %s->%s" % (subj, type, read, send, recp)
 
             try:
                 dst.delete(os.path.basename(fn))
@@ -272,6 +272,7 @@ class MessageFolders(MainWindowElement):
             dst.set_msg_read(fn, read == "True")
             dst.set_msg_subject(fn, subj)
             dst.set_msg_type(fn, type)
+            dst.set_msg_sender(fn, send)
 
     # MessageFolders
     def __init__(self, wtree, config):
@@ -299,6 +300,15 @@ class MessageFolders(MainWindowElement):
         for folder in self.get_folders():
             self._add_folders(store, None, folder)
 
+ML_COL_ICON = 0
+ML_COL_SEND = 1
+ML_COL_SUBJ = 2
+ML_COL_TYPE = 3
+ML_COL_DATE = 4
+ML_COL_FILE = 5
+ML_COL_READ = 6
+ML_COL_FROM = 7
+
 class MessageList(MainWindowElement):
     def _folder_path(self, folder):
         path = os.path.join(self._config.platform.config_dir(),
@@ -323,7 +333,7 @@ class MessageList(MainWindowElement):
     def _open_msg(self, view, path, col):
         store = view.get_model()
         iter = store.get_iter(path)
-        path, = store.get(iter, 5)
+        path, = store.get(iter, ML_COL_FILE)
 
         self.open_msg(path)
         self.current_info.set_msg_read(path, True)
@@ -333,10 +343,12 @@ class MessageList(MainWindowElement):
         store, paths = view.get_selection().get_selected_rows()
         msgs = [self.current_info.name()]
         for path in paths:
-            data = "%s\0%s\0%s\0%s" % (store[path][5],
-                                       store[path][2],
-                                       store[path][3],
-                                       store[path][6])
+            data = "%s\0%s\0%s\0%s\0%s\0%s" % (store[path][ML_COL_FILE],
+                                               store[path][ML_COL_SUBJ],
+                                               store[path][ML_COL_TYPE],
+                                               store[path][ML_COL_READ],
+                                               store[path][ML_COL_SEND],
+                                               "FOO")
             msgs.append(data)
 
         sel.set("text/d-rats_message", 0, "\x01".join(msgs))
@@ -367,33 +379,33 @@ class MessageList(MainWindowElement):
         msglist.append_column(col)
 
         def bold_if_unread(col, rend, model, iter, cnum):
-            subj, read, = model.get(iter, cnum, 6)
+            subj, read, = model.get(iter, cnum, ML_COL_READ)
             if not read:
                 rend.set_property("markup", "<b>%s</b>" % subj)
 
         r = gtk.CellRendererText()
-        col = gtk.TreeViewColumn(_("Sender"), r, text=1)
-        col.set_cell_data_func(r, bold_if_unread, 1)
-        col.set_sort_column_id(1)
+        col = gtk.TreeViewColumn(_("Sender"), r, text=ML_COL_SEND)
+        col.set_cell_data_func(r, bold_if_unread, ML_COL_SEND)
+        col.set_sort_column_id(ML_COL_SEND)
         col.set_sizing(gtk.TREE_VIEW_COLUMN_AUTOSIZE)
         msglist.append_column(col)
 
         r = gtk.CellRendererText()
-        col = gtk.TreeViewColumn(_("Subject"), r, text=2)
-        col.set_cell_data_func(r, bold_if_unread, 2)
+        col = gtk.TreeViewColumn(_("Subject"), r, text=ML_COL_SUBJ)
+        col.set_cell_data_func(r, bold_if_unread, ML_COL_SUBJ)
         col.set_expand(True)
-        col.set_sort_column_id(2)
+        col.set_sort_column_id(ML_COL_SUBJ)
         col.set_sizing(gtk.TREE_VIEW_COLUMN_AUTOSIZE)
         msglist.append_column(col)
 
         r = gtk.CellRendererText()
-        col = gtk.TreeViewColumn(_("Type"), r, text=3)
-        col.set_cell_data_func(r, bold_if_unread, 3)
-        col.set_sort_column_id(3)
+        col = gtk.TreeViewColumn(_("Type"), r, text=ML_COL_TYPE)
+        col.set_cell_data_func(r, bold_if_unread, ML_COL_TYPE)
+        col.set_sort_column_id(ML_COL_TYPE)
         msglist.append_column(col)
 
         def render_date(col, rend, model, iter):
-            ts, read = model.get(iter, 4, 6)
+            ts, read = model.get(iter, ML_COL_DATE, ML_COL_READ)
             stamp = datetime.fromtimestamp(ts).strftime("%H:%M:%S %Y-%m-%d")
             if read:
                 rend.set_property("text", stamp)
@@ -401,20 +413,21 @@ class MessageList(MainWindowElement):
                 rend.set_property("markup", "<b>%s</b>" % stamp)
 
         r = gtk.CellRendererText()
-        col = gtk.TreeViewColumn(_("Date"), r, text=4)
+        col = gtk.TreeViewColumn(_("Date"), r, text=ML_COL_DATE)
         col.set_cell_data_func(r, render_date)
-        col.set_sort_column_id(4)
+        col.set_sort_column_id(ML_COL_DATE)
         msglist.append_column(col)
 
         msglist.connect("row-activated", self._open_msg)
-        self.store.set_sort_column_id(4, gtk.SORT_DESCENDING)
+        self.store.set_sort_column_id(ML_COL_DATE, gtk.SORT_DESCENDING)
 
         self.message_pixbuf = self._config.ship_img("message.png")
         self.unread_pixbuf = self._config.ship_img("msg-markunread.png")
         self.current_info = None
 
+
     def _update_message_info(self, iter, force=False):
-        fn, = self.store.get(iter, 5)
+        fn, = self.store.get(iter, ML_COL_FILE)
 
         subj = self.current_info.get_msg_subject(fn)
         if subj == _("Unknown") or force:
@@ -432,12 +445,12 @@ class MessageList(MainWindowElement):
         else:
             icon = self.unread_pixbuf
         self.store.set(iter,
-                       0, icon,
-                       1, self.current_info.get_msg_sender(fn),
-                       2, self.current_info.get_msg_subject(fn),
-                       3, self.current_info.get_msg_type(fn),
-                       4, ts,
-                       6, read)
+                       ML_COL_ICON, icon,
+                       ML_COL_SEND, self.current_info.get_msg_sender(fn),
+                       ML_COL_SUBJ, self.current_info.get_msg_subject(fn),
+                       ML_COL_TYPE, self.current_info.get_msg_type(fn),
+                       ML_COL_DATE, ts,
+                       ML_COL_READ, read)
 
     def refresh(self, fn=None):
         """Refresh the current folder"""
@@ -445,13 +458,12 @@ class MessageList(MainWindowElement):
             self.store.clear()
             for msg in self.current_info.files():
                 iter = self.store.append()
-                self.store.set(iter,
-                               5, msg)
+                self.store.set(iter, ML_COL_FILE, msg)
                 self._update_message_info(iter)
         else:
             iter = self.store.get_iter_first()
             while iter:
-                _fn, = self.store.get(iter, 5)
+                _fn, = self.store.get(iter, ML_COL_FILE)
                 if _fn == fn:
                     break
                 iter = self.store.iter_next(iter)
@@ -459,7 +471,7 @@ class MessageList(MainWindowElement):
             if not iter:
                 iter = self.store.append()
                 self.store.set(iter,
-                               5, fn)
+                               ML_COL_FILE, fn)
 
             self._update_message_info(iter, True)
 
@@ -477,7 +489,7 @@ class MessageList(MainWindowElement):
             iters.append(store.get_iter(path))
 
         for iter in iters:
-            fn, = store.get(iter, 5)
+            fn, = store.get(iter, ML_COL_FILE)
             store.remove(iter)
             self.current_info.delete(fn)
 
@@ -497,7 +509,7 @@ class MessageList(MainWindowElement):
         selected = []
         (store, paths) = msglist.get_selection().get_selected_rows()
         for path in paths:
-            selected.append(store[path][5])
+            selected.append(store[path][ML_COL_FILE])
         
         return selected
 
