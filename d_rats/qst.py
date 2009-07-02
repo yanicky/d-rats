@@ -542,6 +542,9 @@ class QSTStationEditWidget(QSTEditWidget):
     def ev_group_sel(self, group, station):
         group = group.get_active_text()
 
+        if not self.__sources:
+            return
+
         for src in self.__sources:
             if src.get_name() == group:
                 break
