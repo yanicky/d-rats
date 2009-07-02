@@ -27,6 +27,10 @@ import signals
 
 CALL_TIMEOUT_RETRY = 300
 
+class MessageRoute(object):
+    def __init__(self, line):
+        self.dest, self.gw, self.port = line.split()
+
 class MessageRouter(gobject.GObject):
     __gsignals__ = {
         "get-station-list" : signals.GET_STATION_LIST,
@@ -42,6 +46,7 @@ class MessageRouter(gobject.GObject):
         self.__sent_call = {}
         self.__sent_port = {}
         self.__file_to_call = {}
+        self.__failed_stations = {}
 
         self.__thread = None
         self.__enabled = False
@@ -110,23 +115,37 @@ class MessageRouter(gobject.GObject):
     def _port_free(self, port):
         return not self.__sent_port.has_key(port)
 
-    def _route_msg(self, call, path, routes):
-        if routes.has_key(call):
-            self._p("Routing message for %s to %s" % (call,
-                                                      routes[call]))
-            route = routes[call]
-        elif routes.has_key("*"):
-            self._p("Routing message for %s to %s (default)" % \
-                        (call, routes["*"]))
-            route = routes["*"]
+    def _route_msg(self, call, path, slist, routes):
+        invalid = []
+
+        while True:
+            if slist.has_key(call) and call not in invalid:
+                # Direct send
+                route = call
+            elif routes.has_key(call) and routes[call] not in invalid:
+                # Static route present
+                route = routes[call]
+            elif routes.has_key("*") and routes["*"] not in invalid:
+                # Default route
+                route = routes["*"]
+            else:
+                break
+
+            if route != call and route in path:
+                invalid.append(route)
+                route = None # Don't route to the same location twice
+            elif self._is_station_failed(route):
+                invalid.append(route)
+                route = None # This one is not responding lately
+            else:
+                break # We have a route to try
+
+        if route:
+            self._p("Routing message for %s to %s" % (call, route))
         else:
             self._p("No route for station %s" % call)
-            return None
 
-        if route in path:
-            self._p("Routing loop: Routes say %s goes to %s" % (call, route) +
-                    " but we've already been there!")
-            return None
+        return route
 
     def _run_one(self):
         plist = self.emit("get-station-list")
@@ -142,14 +161,10 @@ class MessageRouter(gobject.GObject):
         for call, callq in queue.items():
             msg = callq[0]
 
-            if slist.has_key(call):
-                route = call
-            else:
-                form = formgui.FormFile(msg)
-                path = form.get_path()
-                del form
-                route = self._route_msg(call, path, routes)
-
+            form = formgui.FormFile(msg)
+            path = form.get_path()
+            del form
+            route = self._route_msg(call, path, slist, routes)
             if not route:
                 continue # No route to station
 
@@ -157,6 +172,7 @@ class MessageRouter(gobject.GObject):
                 self._p("Call %s is busy" % route)
                 continue
 
+            print slist
             port = slist[route]
             if not self._port_free(port):
                 self._p("I think port %s is busy" % port)
@@ -185,14 +201,28 @@ class MessageRouter(gobject.GObject):
         form.add_path_element(call)
         form.save_to(fn)
 
+    def _station_succeeded(self, call):
+        self.__failed_stations[call] = 0
+
+    def _station_failed(self, call):
+        self.__failed_stations[call] = self.__failed_stations.get(call, 0) + 1
+        print "Fail count for %s is %i" % (call, self.__failed_stations[call])
+
+    def _is_station_failed(self, call):
+        return self.__failed_stations.get(call, 0) >= 1
+
     def form_xfer_done(self, fn, port, failed):
         self._p("File %s on %s done" % (fn, port))
 
         call = self.__file_to_call.get(fn, None)
         if call and self.__sent_call.has_key(call):
             # This callsign completed (or failed) a transfer
-            if not failed:
+            if failed:
+                self._station_failed(call)
+            else:
+                self._station_succeeded(call)
                 self._update_path(fn, call)
+
             del self.__sent_call[call]
             del self.__file_to_call[fn]
 
