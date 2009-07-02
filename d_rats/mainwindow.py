@@ -51,6 +51,7 @@ class MainWindow(MainWindowElement):
         "show-map-station" : signals.SHOW_MAP_STATION,
         "ping-station" : signals.PING_STATION,
         "get-station-list" : signals.GET_STATION_LIST,
+        "user-send-chat" : signals.USER_SEND_CHAT,
         }
     _signals = __gsignals__
 
@@ -138,6 +139,25 @@ class MainWindow(MainWindowElement):
             else:
                 pane.hide()
 
+        def do_dq(but):
+            c = self._config
+            wtree = gtk.glade.XML(c.ship_obj_fn("ui/mainwindow.glade"),
+                                  "dquery_dialog", "D-RATS")
+            dlg = wtree.get_widget("dquery_dialog")
+            cmd = wtree.get_widget("dq_cmd")
+            dlg.set_modal(True)
+            dlg.set_transient_for(window)
+            r = dlg.run()
+            d = cmd.get_text()
+            dlg.destroy()
+            if r == gtk.RESPONSE_OK:
+                ports = self.emit("get-station-list")
+                if ports.keys():
+                    port = ports.keys()[0]
+                else:
+                    return
+                self.emit("user-send-chat", "CQCQCQ", port, "?D*%s?" % d, True)
+
         quit = self._wtree.get_widget("main_menu_quit")
         quit.connect("activate", do_save_and_quit)
 
@@ -176,6 +196,9 @@ class MainWindow(MainWindowElement):
         if not sspw.get_active():
             pane.hide()
         sspw.connect("activate", do_showpane, pane)
+
+        dq = self._wtree.get_widget("main_menu_dq")
+        dq.connect("activate", do_dq)
 
     def _page_name(self, index=None):
         if index is None:
