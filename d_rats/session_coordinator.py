@@ -223,7 +223,7 @@ class FormSendThread(FileBaseThread):
             self.completed()
             self.coord.session_form_sent(self.session, path)
         else:
-            self.failed()
+            self.failed((self.session.get_station(), path))
 
 class SocketThread(SessionThread):
     def status(self):
