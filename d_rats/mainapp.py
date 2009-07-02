@@ -632,12 +632,14 @@ class MainApp(object):
         print "[NEWFORM %s]: %s" % (id, fn)
         f = formgui.FormFile(fn)
 
+        fwd_on = self.config.getboolean("settings", "msg_forward");
+
         msg = '%s "%s" %s %s' % (_("Message"),
                                  f.get_subject_string(),
                                  _("received from"),
                                  f.get_sender_string())
 
-        if f.get_path_dst() != self.config.get("user", "callsign"):
+        if fwd_on and f.get_path_dst() != self.config.get("user", "callsign"):
             msg += " (" + _("forwarding to") + " " + f.get_path_dst() + ")"
             newfn = os.path.join(self.config.form_store_dir(),
                                  _("Outbox"),
