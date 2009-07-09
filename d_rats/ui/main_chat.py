@@ -265,6 +265,9 @@ class ChatQST(MainWindowElement):
             self._store.append((i, t, f, 0.0, c, e))
                               
             qc = qst.get_qst_class(t)
+            if not qc:
+                print "Error: unable to get QST class `%s'" % t
+                continue
             q = qc(self._config, c)
             q.connect("qst-fired", self._qst_fired)
 
