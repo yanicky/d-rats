@@ -941,9 +941,10 @@ class DratsMessagePanel(DratsPanel):
         val.add_bool()
         self.mv(_("Automatically forward messages"), val)
 
-        val = DratsConfigWidget(config, "settings", "msg_flush", True)
+        val = DratsConfigWidget(config, "settings", "msg_flush")
         val.add_numeric(15, 9999, 1)
-        self.mv(_("Queue flush interval"), val)
+        lab = gtk.Label(_("seconds"))
+        self.mv(_("Queue flush interval"), val, lab)
 
 class DratsNetworkPanel(DratsPanel):
     pass
