@@ -696,7 +696,10 @@ class FilenameBox(gtk.HBox):
         self.filename.set_text(fn)
 
     def get_filename(self):
-        return self.filename.get_text()    
+        return self.filename.get_text()
+
+    def set_mutable(self, mutable):
+        self.filename.set_sensitive(mutable)
 
 def make_pixbuf_choice(options, default=None):
     store = gtk.ListStore(gtk.gdk.Pixbuf, gobject.TYPE_STRING)
