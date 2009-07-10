@@ -243,6 +243,10 @@ class EventTab(MainWindowTab):
         self.store.set_sort_column_id(5, srt)
         column.set_sort_order(srt)
 
+    def _get_sort_asc(self):
+        srt = self._config.getint("state", "events_sort")
+        return srt == gtk.SORT_ASCENDING
+
     def __init__(self, wtree, config):
         MainWindowTab.__init__(self, wtree, config, "event")
 
@@ -310,6 +314,13 @@ class EventTab(MainWindowTab):
         sw, = self._getw("sw")
         adj = sw.get_vadjustment()
         top_scrolled = (adj.get_value() == 0.0)
+        bot_scrolled = (adj.get_value() == (adj.upper - adj.page_size))
+        if (adj.page_size == adj.upper) and self._get_sort_asc():
+            # This means we're top-sorted, but only because there aren't
+            # enough items to have a scroll bar.  So, if we're sorted
+            # ascending, default to bottom-sort if we cross that boundary
+            top_scrolled = False
+            bot_scrolled = True
 
         iter = None
         if event._group_id != None:
@@ -344,9 +355,14 @@ class EventTab(MainWindowTab):
         @utils.run_gtk_locked
         def top_scroll(adj):
             adj.set_value(0.0)
+        @utils.run_gtk_locked
+        def bot_scroll(adj):
+            adj.set_value(adj.upper - adj.page_size)
 
         if top_scrolled:
             gobject.idle_add(top_scroll, adj)
+        elif bot_scrolled:
+            gobject.idle_add(bot_scroll, adj)
 
     def event(self, event):
         gobject.idle_add(self._event, event)
