@@ -19,6 +19,7 @@ import gobject
 
 import os
 import glob
+import tempfile
 
 from miscwidgets import make_choice
 from formgui import FormDialog,FormFile,xml_escape,xml_unescape
@@ -451,12 +452,18 @@ class FormBuilderGUI(gtk.Dialog):
         return frame
 
     def show_preview(self, widget, data=None):
+        f = tempfile.NamedTemporaryFile()
+
+        f.write(self.get_form_xml())
+        f.flush()
+
         d = FormDialog("Preview of form",
-                 self.get_form_xml(),
-                 buttons=(gtk.STOCK_CLOSE, gtk.RESPONSE_OK),
-                 parent=self)
+                       f.name,
+                       buttons=(gtk.STOCK_CLOSE, gtk.RESPONSE_OK),
+                       parent=self)
         d.run()
         d.destroy()
+        f.close()
 
     def load_field(self, widget):
         iter = self.store.append()
@@ -474,7 +481,7 @@ class FormBuilderGUI(gtk.Dialog):
                        self.col_opts, opts)
 
     def load_from_file(self, filename):
-        form = FormFile(filename)
+        form = FormDialog("", filename)
         self.props["ID"].set_text(form.id)
         self.props["Title"].set_text(form.title_text)
         self.props["Logo"].set_text(form.logo_path or "")
@@ -483,7 +490,7 @@ class FormBuilderGUI(gtk.Dialog):
             w = f.entry
             self.load_field(w)
 
-        form.destroy()
+        del form
 
     def __init__(self):
         gtk.Dialog.__init__(self,
@@ -508,8 +515,10 @@ class FormManagerGUI(object):
             form = FormFile(filename)
             id = form.id
             title = form.title_text
-            form.destroy()        
+            del form
         except Exception, e:
+            import utils
+            utils.log_exception()
             id = "broken"
             title = "Broken Form - Delete me"
 
