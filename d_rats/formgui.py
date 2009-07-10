@@ -662,6 +662,9 @@ class FormFile(object):
     def set_path_dst(self, dst):
         self.__add_path_element("dst", dst)
 
+    def set_path_mid(self, mid):
+        self.__add_path_element("mid", mid)
+
     def __get_path_element(self, name):
         els = self.__get_xpath("//form/path/%s" % name)
         if els:
@@ -674,6 +677,9 @@ class FormFile(object):
 
     def get_path_dst(self):
         return self.__get_path_element("dst")
+
+    def get_path_mid(self):
+        return self.__get_path_element("mid")
 
     def get_field_value(self, id):
         els = self.__get_xpath("//form/field[@id='%s']/entry" % id)

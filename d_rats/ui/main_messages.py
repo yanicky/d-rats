@@ -18,6 +18,7 @@
 import os
 import time
 import shutil
+import random
 from datetime import datetime
 
 import gobject
@@ -37,6 +38,10 @@ from d_rats.utils import log_exception
 from d_rats import signals
 
 _FOLDER_CACHE = {}
+
+def mkmsgid(callsign):
+    r = random.SystemRandom().randint(0,100000)
+    return "%s.%x.%x" % (callsign, int(time.time()) - 1114880400, r)
 
 class MessageFolderInfo(object):
     def __init__(self, folder_path):
@@ -565,8 +570,10 @@ class MessagesTab(MainWindowTab):
 
 
         form = formgui.FormFile(forms[selection])
-        form.add_path_element(self._config.get("user", "callsign"))
-        form.set_path_src(self._config.get("user", "callsign"))
+        call = self._config.get("user", "callsign")
+        form.add_path_element(call)
+        form.set_path_src(call)
+        form.set_path_mid(mkmsgid(call))
         form.save_to(newfn)
 
         if self._messages.open_msg(newfn) != gtk.RESPONSE_CANCEL:
