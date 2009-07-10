@@ -382,6 +382,8 @@ class MainApp(object):
             try:
                 sources = stype.enumerate(self.config)
             except Exception, e:
+                import utils
+                utils.log_exception()
                 print "Failed to load source type %s" % stype
                 continue
 

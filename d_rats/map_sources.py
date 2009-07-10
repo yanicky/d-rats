@@ -26,7 +26,7 @@ import gobject
 import utils
 import platform
 
-class Callable(object):
+class Callable:
     def __init__(self, target):
         self.__call__ = target
 
