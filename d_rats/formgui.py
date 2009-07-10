@@ -18,6 +18,8 @@ import sys
 import time
 import os
 import tempfile
+import base64
+import zlib
 
 import libxml2
 import libxslt
@@ -25,7 +27,8 @@ import libxslt
 import gtk
 import gobject
 
-from miscwidgets import make_choice
+from miscwidgets import make_choice, FilenameBox
+from d_rats.ui import main_common
 import platform
 
 test = """
@@ -511,6 +514,117 @@ class LabelWidget(FieldWidget):
 
         return widget
 
+class FileWidget(FieldWidget):
+    def __init__(self, node):
+        FieldWidget.__init__(self, node)
+
+        self.widget = FilenameBox()
+        self.widget.set_mutable(False)
+        self.widget.show()
+
+        self._data = ""
+
+        child = node.children
+        while child:
+            if child.name == "name":
+                fn = xml_unescape(child.children.getContent().strip())
+                self.set_value(fn)
+            elif child.name == "data":
+                self._data = child.children.getContent().strip()
+            child = child.next
+
+        self._orig = self.get_value()
+
+    def update_node(self):
+        fn = self.get_value()
+        if fn == self._orig:
+            return
+
+        try:
+            f = file(fn)
+        except Exception, e:
+            print "Failed to open attachment %s: %s" % (fn, e)
+            return
+
+        self._data = f.read()
+        f.close()
+
+        print "Compressing %i" % len(self._data)
+        self._data = zlib.compress(self._data, 9)
+        print "Encoding %i" % len(self._data)
+        self._data = base64.b64encode(self._data)
+        print "Done"
+
+        child = self.node.children
+        while child:
+            next = child.next
+            if child.name == "name":
+                child.unlinkNode()
+            elif child.name == "data":
+                child.unlinkNode()
+
+            child = next
+
+        name = self.node.newChild(None, "name", os.path.basename(fn))
+        data = self.node.newChild(None, "data", self._data)
+
+    def _save(self, button):
+        p = platform.get_platform()
+        fn = p.gui_save_file(default_name=self.get_value())
+        if not fn:
+            return
+
+        try:
+            data = base64.b64decode(self._data)
+            data = zlib.decompress(data)
+        except Exception, e:
+            main_common.display_error("File is corrupted: %s" % e)
+            return
+
+        try:
+            f = file(fn, "w")
+            f.write(data)
+            f.close()
+        except Exception, e:
+            main_common.display_error("Unable to save: %s" % e)
+
+    def _update_savebtn(self, foo, savebtn, sizelab):
+        savebtn.set_sensitive(bool(self.get_value()))
+        self.update_node()
+        if len(self._data) < 1024:
+            sizelab.set_text("%i bytes" % len(self._data))
+        else:
+            sizelab.set_text("%0.1f KB" % (len(self._data) >> 10))
+
+    def make_container(self):
+        hbox = gtk.HBox(False, 2)
+
+        size = gtk.Label()
+        size.show()
+
+        save = gtk.Button(_("Save"))
+        save.connect("clicked", self._save)
+        self.widget.connect("filename-changed",
+                            self._update_savebtn, save, size)
+        self._update_savebtn(None, save, size)
+        save.show()
+
+        hbox.pack_start_defaults(self.widget)
+        hbox.pack_start(size)
+        hbox.pack_start(save)
+        hbox.show()
+
+        frame = gtk.Frame(self.caption)
+        frame.add(hbox)
+
+        return frame
+
+    def get_value(self):
+        return self.widget.get_filename()
+
+    def set_value(self, fn):
+        self.widget.set_filename(fn)
+
 class FormField(object):
     widget_types = {
     "text" : TextWidget,
@@ -522,6 +636,7 @@ class FormField(object):
     "choice" : ChoiceWidget,
     "multiselect" : MultiselectWidget,
     "label" : LabelWidget,
+    "file" : FileWidget,
     }
 
     def get_caption_string(self, node):
