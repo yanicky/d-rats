@@ -102,6 +102,7 @@ class FormElementEditor(gtk.Dialog):
             "choice"    : self.make_choice_editor("choice"),
             "multiselect": self.make_choice_editor("multiselect", False),
             "label"     : self.make_null_editor("label"),
+            "file"      : self.make_null_editor("file"),
             }
 
         self.type_sel = make_choice(self.vals.keys(), False, "text")
