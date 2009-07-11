@@ -453,18 +453,19 @@ class FormBuilderGUI(gtk.Dialog):
         return frame
 
     def show_preview(self, widget, data=None):
-        f = tempfile.NamedTemporaryFile()
+        fd, n = tempfile.mkstemp()
 
+        f = file(n, "w")
         f.write(self.get_form_xml())
-        f.flush()
+        f.close()
 
         d = FormDialog("Preview of form",
-                       f.name,
+                       n,
                        buttons=(gtk.STOCK_CLOSE, gtk.RESPONSE_OK),
                        parent=self)
         d.run()
         d.destroy()
-        f.close()
+        os.remove(n)
 
     def load_field(self, widget):
         iter = self.store.append()
