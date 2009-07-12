@@ -66,6 +66,9 @@ import msgrouting
 from ui import main_events
 
 from utils import hexprint,filter_to_ascii,NetFile,log_exception,run_gtk_locked
+from utils import init_icon_maps
+
+init_icon_maps()
 
 LOGTF = "%m-%d-%Y_%H:%M:%S"
 

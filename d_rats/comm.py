@@ -3,7 +3,6 @@ import socket
 import time
 import struct
 
-import mainapp
 import utils
 
 class DataPathError(Exception):

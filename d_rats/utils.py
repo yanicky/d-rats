@@ -15,7 +15,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import re
-import gtk
 import os
 import tempfile
 import urllib
@@ -24,6 +23,8 @@ import popen2
 import platform
 
 def open_icon_map(iconfn):
+    import gtk
+
     if not os.path.exists(iconfn):
         print "Icon file %s not found" % iconfn
         return None
@@ -34,12 +35,17 @@ def open_icon_map(iconfn):
         print "Error opening icon map %s: %s" % (iconfn, e)
         return None
 
-ICON_MAPS = {
-    "/" : open_icon_map(os.path.join(platform.get_platform().source_dir(),
-                                           "images", "aprs_pri.png")),
-    "\\": open_icon_map(os.path.join(platform.get_platform().source_dir(),
-                                           "images", "aprs_sec.png")),
-}
+ICON_MAPS = None
+
+def init_icon_maps():
+    global ICON_MAPS
+
+    ICON_MAPS = {
+        "/" : open_icon_map(os.path.join(platform.get_platform().source_dir(),
+                                         "images", "aprs_pri.png")),
+        "\\": open_icon_map(os.path.join(platform.get_platform().source_dir(),
+                                         "images", "aprs_sec.png")),
+        }
 
 def hexprint(data):
     col = 0
@@ -120,7 +126,8 @@ def run_gtk_locked(f):
     return runner
 
 def get_sub_image(iconmap, i, j, size=20):
-    
+    import gtk
+
     # Account for division lines (1px per icon)
     x = (i * size) + i + 1
     y = (j * size) + j + 1
@@ -226,6 +233,8 @@ def log_exception():
         print "------"
 
 def set_entry_hint(entry, hint, default_focused=False):
+    import gtk
+
     def focus(entry, event, direction):
         if direction == "out" and not entry.get_text():
             entry.set_text(hint)

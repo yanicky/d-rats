@@ -45,8 +45,6 @@ if __name__ == "__main__":
 
 from d_rats.comm import SWFSerial
 from d_rats import utils
-from d_rats.miscwidgets import make_choice
-from d_rats import miscwidgets
 
 def call_with_lock(lock, fn, *args):
     lock.acquire()
@@ -971,6 +969,8 @@ if __name__=="__main__":
     else:
         import gtk
         import gobject
+        from d_rats.miscwidgets import make_choice
+        from d_rats import miscwidgets
 
         g = RepeaterGUI()
         gtk.main()
