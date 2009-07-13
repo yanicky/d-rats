@@ -25,9 +25,5 @@
       <caption>Message</caption>
       <entry type="multiline"/>
     </field>
-    <field id="att">
-      <caption>Attachment</caption>
-      <entry type="file"/>
-    </field>
   </form>
 </xml>
