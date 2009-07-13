@@ -199,6 +199,9 @@ class KeyedListWidget(gtk.HBox):
                           ellipsize and pango.ELLIPSIZE_END \
                               or pango.ELLIPSIZE_NONE)
         
+    def set_expander(self, column):
+        col = self.__view.get_column(column)
+        self.__view.set_expander_column(col)
 
 class ListWidget(gtk.HBox):
     __gsignals__ = {
