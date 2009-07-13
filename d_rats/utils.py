@@ -125,6 +125,19 @@ def run_gtk_locked(f):
 
     return runner
 
+def run_or_error(f):
+    import gtk
+    from d_rats.ui import main_common
+
+    def runner(*args, **kwargs):
+        try:
+            f(*args, **kwargs)
+        except Exception, e:
+            log_exception()
+            main_common.display_error(_("An error occurred: ") + str(e))
+
+    return runner
+
 def get_sub_image(iconmap, i, j, size=20):
     import gtk
 
@@ -257,3 +270,4 @@ def port_for_station(ports, station):
         if station in stations:
             return port
     return None
+
