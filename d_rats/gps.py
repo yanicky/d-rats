@@ -899,6 +899,8 @@ class GPSSource(object):
             self.serial.close()
 
     def gpsthread(self):
+        self.invalid = 0
+
         while self.enabled:
             data = self.serial.read(1024)
             lines = data.split("\r\n")
@@ -908,10 +910,14 @@ class GPSSource(object):
                         line.startswith("$GPRMC"):
                     position = NMEAGPSPosition(line)
 
-                    self.last_valid = position.valid
+                    if not position.valid:
+                        invalid += 1
+                    else:
+                        invalid = 0
+
                     if position.valid and self.position.valid:
                         self.position += position
-                        print _("ME") + ": %s" % self.position                        
+                        print _("ME") + ": %s" % self.position
                     elif position.valid:
                         self.position = position
                     else:
@@ -923,7 +929,7 @@ class GPSSource(object):
     def status_string(self):
         if self.broken:
             return self.broken
-        elif self.last_valid and self.position.satellites >= 3:
+        elif self.invalid < 10 and self.position.satellites >= 3:
             return _("GPS Locked") + " (%i sats)" % self.position.satellites
         else:
             return _("GPS Not Locked")
