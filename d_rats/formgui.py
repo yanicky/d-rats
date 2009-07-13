@@ -18,6 +18,8 @@ import sys
 import time
 import os
 import tempfile
+import zlib
+import base64
 
 import libxml2
 import libxslt
@@ -25,7 +27,8 @@ import libxslt
 import gtk
 import gobject
 
-from miscwidgets import make_choice
+from miscwidgets import make_choice, KeyedListWidget
+from utils import run_or_error
 import platform
 
 test = """
@@ -719,6 +722,48 @@ class FormFile(object):
         else:
             return self._try_get_fields("_auto_sender", "sender")
 
+    def get_attachments(self):
+        atts = []
+        els = self.__get_xpath("//form/att")
+        for el in els:
+            name = el.prop("name")
+            data = el.getContent()
+            atts.append((name, len(data)))
+
+        return atts
+
+    def get_attachment(self, name):
+        els = self.__get_xpath("//form/att[@name='%s']" % name)
+        if len(els) == 1:
+            data = els[0].getContent()
+            data = base64.b64decode(data)
+            return zlib.decompress(data)
+        else:
+            raise Exception("Internal Error: %i attachments named `%s'" % \
+                                (len(els), name))
+
+    def add_attachment(self, name, data):
+        try:
+            att = self.get_attachment(name)
+        except Exception, e:
+            att = None
+
+        if att is not None:
+            raise Exception("Already have an attachment named `%s'" % name)
+
+        els = self.__get_xpath("//form")
+        if len(els) == 1:
+            attnode = els[0].newChild(None, "att", None)
+            attnode.setProp("name", name)
+            data = zlib.compress(data, 9)
+            data = base64.b64encode(data)
+            self.__set_content(attnode, data)
+
+    def del_attachment(self, name):
+        els = self.__get_xpath("//form/att[@name='%s']" % name)
+        if len(els) == 1:
+            els[0].unlinkNode()
+
 class FormDialog(FormFile, gtk.Dialog):
     def save_to(self, *args):
         for f in self.fields:
@@ -837,6 +882,98 @@ class FormDialog(FormFile, gtk.Dialog):
 
         return expander
 
+    def build_att_widget(self):
+        hbox = gtk.HBox(False, 2)
+
+        cols = [(gobject.TYPE_STRING, "KEY"),
+                (gobject.TYPE_STRING, _("Name")),
+                (gobject.TYPE_INT, _("Size (bytes)"))]
+        self.attbox = KeyedListWidget(cols)
+        self.attbox.set_resizable(0, True)
+        self.attbox.set_expander(0)
+        self.attbox.show()
+        sw = gtk.ScrolledWindow()
+        sw.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
+        sw.add_with_viewport(self.attbox)
+        sw.show()
+
+        hbox.pack_start(sw, 1, 1, 1)
+
+        def item_set(box, key):
+            natt = len(self.attbox.get_keys())
+            print "Item %s set: %i\n" % (key, natt)
+            if natt:
+                msg = _("Attachments") + " (%i)" % natt
+                attexp.set_label("<span color='blue'>%s</span>" % msg)
+            else:
+                attexp.set_label(_("Attachments"))
+
+        self.attbox.connect("item-set", item_set)
+        
+        bbox = gtk.VBox(False, 2)
+        bbox.show()
+        hbox.pack_start(bbox, 0, 0, 0)
+
+        @run_or_error
+        def but_add(but):
+            fn = platform.get_platform().gui_open_file()
+            if fn:
+                name = os.path.basename(fn)
+                f = file(fn)
+                data = f.read()
+                f.close()
+                self.add_attachment(name, data)
+                self.attbox.set_item(name, name, len(data))
+
+        add = gtk.Button(_("Add"), gtk.STOCK_ADD)
+        add.connect("clicked", but_add)
+        add.show()
+        bbox.pack_start(add, 0, 0, 0)
+
+        @run_or_error
+        def but_rem(but):
+            name = self.attbox.get_selected()
+            self.del_attachment(name)
+            self.attbox.del_item(name)
+            item_set(None, name)
+
+        rem = gtk.Button(_("Remove"), gtk.STOCK_REMOVE)
+        rem.connect("clicked", but_rem)
+        rem.show()
+        bbox.pack_start(rem, 0, 0, 0)        
+
+        @run_or_error
+        def but_sav(but):
+            name = self.attbox.get_selected()
+            if not name:
+                return
+            fn = platform.get_platform().gui_save_file(default_name=name)
+            if fn:
+                f = file(fn, "w")
+                data = self.get_attachment(name)
+                if not data:
+                    raise Exception("Unable to extract attachment")
+                f.write(data)
+                f.close()
+
+        sav = gtk.Button(_("Save"), gtk.STOCK_SAVE)
+        sav.connect("clicked", but_sav)
+        sav.show()
+        bbox.pack_start(sav, 0, 0, 0)
+
+        attexp = gtk.Expander(_("Attachments"))
+        attexp.set_use_markup(True)
+        hbox.show()
+        attexp.add(hbox)
+        attexp.show()
+
+
+        atts = self.get_attachments()
+        for name, size in atts:
+            self.attbox.set_item(name, name, size)
+
+        return attexp
+
     def build_gui(self, allow_export=True):
         tlabel = gtk.Label()
         tlabel.set_markup("<big><b>%s</b></big>" % self.title_text)
@@ -882,6 +1019,7 @@ class FormDialog(FormFile, gtk.Dialog):
             
             field_box.pack_start(f.get_widget(), 0,0,0)
 
+        self.vbox.pack_start(self.build_att_widget(), 0, 0, 0)
         self.vbox.pack_start(self.build_path_widget(), 0, 0, 0)
 
         if msg_field and chk_field:
