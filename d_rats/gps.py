@@ -623,12 +623,6 @@ class NMEAGPSPosition(GPSPosition):
         if len(elements) < 12:
             raise Exception("Unable to split GPRMC (%i)" % len(elements))
 
-        if elements[2] != "A":
-            self.valid = False
-            print "GPRMC marked invalid by GPS (%s)" % elements[2]
-            #return
-            self.valid = True
-
         t = elements[1]
         d = elements[9]
 
@@ -664,7 +658,12 @@ class NMEAGPSPosition(GPSPosition):
         if len(self.comment) >= 7 and "*" in self.comment[-3:-1]:
             self._parse_dprs_comment()
 
-        self.valid = self._test_checksum(string, csum)
+        if elements[2] != "A":
+            self.valid = False
+            print "GPRMC marked invalid by GPS (%s)" % elements[2]
+        else:
+            print "GPRMC is valid"
+            self.valid = self._test_checksum(string, csum)
 
     def _from_NMEA_GPGGA(self, string):
         string = string.replace('\r', ' ')
@@ -887,6 +886,7 @@ class GPSSource(object):
             print "Not starting broken GPSSource"
             return
 
+        self.invalid = 100
         self.enabled = True
         self.thread = threading.Thread(target=self.gpsthread)
         self.thread.setDaemon(True)
@@ -899,8 +899,6 @@ class GPSSource(object):
             self.serial.close()
 
     def gpsthread(self):
-        self.invalid = 0
-
         while self.enabled:
             data = self.serial.read(1024)
             lines = data.split("\r\n")
@@ -910,10 +908,10 @@ class GPSSource(object):
                         line.startswith("$GPRMC"):
                     position = NMEAGPSPosition(line)
 
-                    if not position.valid:
-                        invalid += 1
-                    else:
-                        invalid = 0
+                    if position.valid and line.startswith("$GPRMC"):
+                        self.invalid = 0
+                    elif self.invalid < 10:
+                        self.invalid += 1
 
                     if position.valid and self.position.valid:
                         self.position += position
