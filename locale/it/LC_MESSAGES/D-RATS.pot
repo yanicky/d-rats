@@ -661,14 +661,14 @@ msgstr "quando arriva un file"
 #: d_rats/ui/main_messages.py:731 d_rats/ui/main_messages.py:787
 #: d_rats/ui/main_messages.py:817
 msgid "Inbox"
-msgstr "in Arrivo"
+msgstr "Inbox"
 
 #: d_rats/emailgw.py:209 d_rats/mainapp.py:645 d_rats/msgrouting.py:88
 #: d_rats/ui/main_messages.py:219 d_rats/ui/main_messages.py:561
 #: d_rats/ui/main_messages.py:595 d_rats/ui/main_messages.py:801
 #: d_rats/ui/main_messages.py:809
 msgid "Outbox"
-msgstr "in Uscita"
+msgstr "Outbox"
 
 #: d_rats/formgui.py:786
 #, fuzzy
@@ -848,7 +848,7 @@ msgstr "Messaggio Inviato"
 #: d_rats/ui/main_messages.py:689 d_rats/ui/main_messages.py:804
 #: d_rats/ui/main_messages.py:810
 msgid "Sent"
-msgstr "Inviato"
+msgstr "Sent"
 
 #: d_rats/map_source_editor.py:69 d_rats/ui/main_messages.py:417
 msgid "Type"
@@ -1443,7 +1443,7 @@ msgstr "Data"
 #: d_rats/ui/main_messages.py:219 d_rats/ui/main_messages.py:629
 #: d_rats/ui/main_messages.py:632
 msgid "Trash"
-msgstr "Cestino"
+msgstr "Trash"
 
 #: d_rats/ui/main_messages.py:395
 msgid "Sender"
