@@ -12,7 +12,7 @@ FILES="$FILES ui/*.h"
 
 echo "Generating master translation file..."
 mkdir -p $(dirname $MASTER_FILE)
-intltool-extract --type=gettext/glade ui/mainwindow.glade
+intltool-extract --type=gettext/glade ui/*.glade
 xgettext -k_ -kN_ -o $MASTER_FILE $FILES
 sed -i 's/CHARSET/utf-8/' $MASTER_FILE
 
