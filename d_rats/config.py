@@ -210,19 +210,20 @@ def prompt_for_port(config, portspec=None, info=None, pname=None):
     netport = wtree.get_widget("net_port")
     netpass = wtree.get_widget("net_pass")
 
-    descriptions = {
-        _("Serial") : "A D-STAR radio connected to a serial port",
-        _("Network") : "A network link to a ratflector instance",
-        _("TNC") : "A KISS-mode TNC connected to a serial port",
-        }
+    descriptions = [
+        "A D-STAR radio connected to a serial port",
+        "A network link to a ratflector instance",
+        "A KISS-mode TNC connected to a serial port",
+        ]
+
+    tablist = [_("Serial"), _("Network"), _("TNC")]
 
     def chg_type(tsel, tabs, desc):
-        print "Changed"
-        tablist = [_("Serial"), _("Network"), _("TNC")]
-        tabs.set_current_page(tablist.index(tsel.get_active_text()))
+        print "Changed to %s" % tsel.get_active_text()
+        tabs.set_current_page(tsel.get_active())
 
         desc.set_markup("<span fgcolor='blue'>%s</span>" % \
-                            descriptions[tsel.get_active_text()])
+                            descriptions[tsel.get_active()])
     
     name = wtree.get_widget("name")
     desc = wtree.get_widget("typedesc")
@@ -241,7 +242,7 @@ def prompt_for_port(config, portspec=None, info=None, pname=None):
     chg_type(tsel, tabs, desc)
     r = d.run()
 
-    t = tsel.get_active_text()
+    t = tablist[tsel.get_active()]
     if t == _("Serial"):
         portspec = sportsel.get_active_text(), sratesel.get_active_text()
     elif t == _("Network"):
