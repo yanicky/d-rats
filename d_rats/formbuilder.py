@@ -24,6 +24,7 @@ import tempfile
 from miscwidgets import make_choice
 from formgui import FormDialog,FormFile,xml_escape,xml_unescape
 import formgui
+import mainapp
 
 class FormElementEditor(gtk.Dialog):
     def make_entry_editor(self, id):
@@ -457,11 +458,14 @@ class FormBuilderGUI(gtk.Dialog):
         f = file(n, "w")
         f.write(self.get_form_xml())
         f.close()
+        os.close(fd)
 
         d = FormDialog("Preview of form",
                        n,
                        buttons=(gtk.STOCK_CLOSE, gtk.RESPONSE_OK),
                        parent=self)
+        config = mainapp.get_mainapp().config
+        d.configure(config)
         d.run()
         d.destroy()
         os.remove(n)
