@@ -462,7 +462,6 @@ class FormBuilderGUI(gtk.Dialog):
 
         d = FormDialog("Preview of form",
                        n,
-                       buttons=(gtk.STOCK_CLOSE, gtk.RESPONSE_OK),
                        parent=self)
         config = mainapp.get_mainapp().config
         d.configure(config)
