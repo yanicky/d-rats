@@ -588,6 +588,9 @@ class FormFile(object):
         print >>f, self.doc.serialize()
         f.close()
         
+    def get_xml(self):
+        return self.doc.serialize()
+
     def process_form(self, doc):
         ctx = doc.xpathNewContext()
         forms = ctx.xpathEval("//form")
