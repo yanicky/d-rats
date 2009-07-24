@@ -52,9 +52,6 @@ class MailThread(threading.Thread, gobject.GObject):
 
     _signals = __gsignals__
 
-    def emit(self, signal, *args):
-        gobject.idle_add(gobject.GObject.emit, self, signal, *args)
-
     def __init__(self, config, account):
         threading.Thread.__init__(self)
         gobject.GObject.__init__(self)
@@ -199,6 +196,9 @@ class MailThread(threading.Thread, gobject.GObject):
             form.set_field_value("recipient", recip)
             form.set_field_value("subject", "EMAIL: %s" % subject)
             form.set_field_value("message", body)
+            form.set_path_src(sender)
+            form.set_path_dst(recip)
+            form.set_path_mid(messageid)
 
         form.add_path_element("EMAIL")
         form.add_path_element(self.config.get("user", "callsign"))
@@ -211,8 +211,9 @@ class MailThread(threading.Thread, gobject.GObject):
             os.rename(ffn, nfn) # Move to Outbox
             ports = self.emit("get-station-list")
             port = utils.port_for_station(ports, recip)
+
             if port:
-                self.emit("user-send-form", recip, None, nfn, subject)
+                self.emit("user-send-form", recip, port, nfn, subject)
                 msg = "Attempted send of mail from %s to %s on port %s" % \
                     (sender, recip, port)
             else:
