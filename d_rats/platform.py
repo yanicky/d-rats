@@ -277,6 +277,12 @@ class MacOSXPlatform(UnixPlatform):
     def os_version_string(self):
         return "MacOS X"
 
+    def source_dir(self):
+        if "site-packages" in find_me():
+            return "../Resources"
+        else:
+            return "."
+
 class Win32Platform(Platform):
     def __init__(self, basepath=None):
         if not basepath:

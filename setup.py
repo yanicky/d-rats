@@ -51,7 +51,7 @@ def macos_build():
                    ['/opt/local/lib/libpangox-1.0.0.2203.1.dylib']),
                   ('../Resources/pango/1.6.0/modules', ['/opt/local/lib/pango/1.6.0/modules/pango-basic-atsui.so']),
                   ('../Resources',
-                   ['images']),
+                   ['images', 'ui']),
                   ]
     OPTIONS = {'argv_emulation': True, "includes" : "gtk,atk,pangocairo,cairo"}
 
