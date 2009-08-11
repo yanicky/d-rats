@@ -379,7 +379,7 @@ class ChatTab(MainWindowTab):
         port = dest.get_active_text()
         self.emit("user-send-chat", "CQCQCQ", port, msg, raw)
 
-    def _bcast_file(self, but):
+    def _bcast_file(self, but, dest):
         dir = self._config.get("prefs", "download_dir")
         fn = self._config.platform.gui_open_file(dir)
         if not fn:
@@ -398,7 +398,8 @@ class ChatTab(MainWindowTab):
             display_error(_("File is too large to send (>8KB)"))
             return
 
-        self.emit("user-send-chat", "CQCQCQ", "\r\n" + data, False)
+        port = dest.get_active_text()
+        self.emit("user-send-chat", "CQCQCQ", port, "\r\n" + data, False)
 
     def _clear(self, but):
         num, display = self._display_selected()
@@ -476,7 +477,7 @@ class ChatTab(MainWindowTab):
         self._last_date = 0
 
         bcast = self._wtree.get_widget("main_menu_bcast")
-        bcast.connect("activate", self._bcast_file)
+        bcast.connect("activate", self._bcast_file, dest)
 
         clear = self._wtree.get_widget("main_menu_clear")
         clear.connect("activate", self._clear)
