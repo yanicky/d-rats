@@ -972,6 +972,8 @@ if __name__=="__main__":
         from d_rats.miscwidgets import make_choice
         from d_rats import miscwidgets
 
+        gobject.threads_init()
+
         g = RepeaterGUI()
         gtk.main()
 
