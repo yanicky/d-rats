@@ -176,6 +176,8 @@ class MainApp(object):
         if port.startswith("tnc:"):
             _port = port.replace("tnc:", "")
             path = comm.TNCDataPath((_port, int(rate)))
+        elif port.startswith("dongle:"):
+            path = comm.SocketDataPath(("127.0.0.1", 20003, call, None))
         elif ":" in port:
             try:
                 (mode, host, port) = port.split(":")

@@ -214,9 +214,10 @@ def prompt_for_port(config, portspec=None, info=None, pname=None):
         "A D-STAR radio connected to a serial port",
         "A network link to a ratflector instance",
         "A KISS-mode TNC connected to a serial port",
+        "A locally-attached dongle",
         ]
 
-    tablist = [_("Serial"), _("Network"), _("TNC")]
+    tablist = [_("Serial"), _("Network"), _("TNC"), _("Dongle")]
 
     def chg_type(tsel, tabs, desc):
         print "Changed to %s" % tsel.get_active_text()
@@ -252,6 +253,8 @@ def prompt_for_port(config, portspec=None, info=None, pname=None):
         portspec = "tnc:%s:%i" % (tportsel.get_active_text(),
                                   ttncport.get_value()), \
                                   tratesel.get_active_text()
+    elif t == _("Dongle"):
+        portspec = "dongle:", ""
 
     d.destroy()
 
