@@ -586,6 +586,7 @@ class MessagesTab(MainWindowTab):
         save_fields = [
             ("_auto_number", "_auto_number", lambda x: str(int(x)+1)),
             ("_auto_subject", "_auto_subject", lambda x: "RE: %s" % x),
+            ("subject", "subject", lambda x: "RE: %s" % x),
             ("_auto_sender", "_auto_recip", None)
             ]
 
@@ -619,8 +620,15 @@ class MessagesTab(MainWindowTab):
                 else:
                     nform.set_field_value(df, oldval)
         except Exception, e:
+            log_exception()
             print "Failed to do reply: %s" % e
             return
+
+        call = self._config.get("user", "callsign")
+        nform.add_path_element(call)
+        nform.set_path_dst(oform.get_path_src())
+        nform.set_path_src(call)
+        nform.set_path_mid(mkmsgid(call))
 
         tstamp = time.strftime("form_%m%d%Y_%H%M%S.xml")
         newfn = self._messages.current_info.create_msg(tstamp)
