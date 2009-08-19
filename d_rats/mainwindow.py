@@ -34,6 +34,7 @@ import libxml2
 import gtk
 import gtk.glade
 import gobject
+import subprocess
 
 from d_rats.ui.main_messages import MessagesTab
 from d_rats.ui.main_chat import ChatTab
@@ -158,6 +159,12 @@ class MainWindow(MainWindowElement):
                     return
                 self.emit("user-send-chat", "CQCQCQ", port, "?D*%s?" % d, True)
 
+        def do_proxy(but):
+            if os.path.exists("./d-rats_repeater"):
+                p = subprocess.Popen("./d-rats_repeater")
+            else:
+                p = subprocess.Popen("d-rats_repeater")
+
         quit = self._wtree.get_widget("main_menu_quit")
         quit.connect("activate", do_save_and_quit)
 
@@ -199,6 +206,9 @@ class MainWindow(MainWindowElement):
 
         dq = self._wtree.get_widget("main_menu_dq")
         dq.connect("activate", do_dq)
+
+        proxy = self._wtree.get_widget("main_menu_proxy")
+        proxy.connect("activate", do_proxy)
 
     def _page_name(self, index=None):
         if index is None:
