@@ -691,8 +691,10 @@ class FormFile(object):
         els = self.__get_xpath("//form/field[@id='%s']/entry" % id)
         if len(els) == 1:
             return els[0].getContent().strip()
-
-        raise Exception("More than one id=%s node!" % id)
+        elif len(els) > 1:
+            raise Exception("More than one id=%s node!" % id)
+        else:
+            return None
 
     def set_field_value(self, id, value):
         els = self.__get_xpath("//form/field[@id='%s']/entry" % id)
