@@ -383,7 +383,8 @@ class SocketDataPath(DataPath):
             self._socket = None
             raise DataPathNotConnectedError("Unable to connect (%s)" % e)
 
-        self.do_auth()
+        if self.passwd is not None:
+            self.do_auth()
 
     def disconnect(self):
         if self._socket:
