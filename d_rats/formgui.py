@@ -1069,7 +1069,10 @@ class FormDialog(FormFile, gtk.Dialog):
         self.set_size_request(380, 450)
 
         r = gtk.Dialog.run(self)
-        self.set_path_dst(self._dstbox.get_text().upper())
+        dst = self._dstbox.get_text()
+        if "@" not in dst:
+            dst = dst.upper()
+        self.set_path_dst(dst)
 
         return r
 
