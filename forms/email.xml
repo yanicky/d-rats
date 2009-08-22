@@ -1,14 +1,6 @@
 <xml>
 <form id='email'>
 <title>Email Message</title>
-<field id='_auto_sender'>
-<caption>From</caption>
-<entry type='text'/>
-</field>
-<field id='recipient'>
-<caption>To</caption>
-<entry type='text'/>
-</field>
 <field id='subject'>
 <caption>Subject</caption>
 <entry type='text'/>

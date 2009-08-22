@@ -49,6 +49,19 @@
 	    <xsl:value-of select="title"/>
 	  </h1>
 
+	  <div align="center">
+	    <table>
+	      <tr>
+		<td class="field"> From: 
+		  <b><xsl:value-of select="path/src"/></b>
+		</td>
+		<td class="field"> To:
+		  <b><xsl:value-of select="path/dst"/></b>
+		</td>
+	      </tr>
+	    </table>
+	  </div>
+
 	  <table>
 	      <xsl:apply-templates select="field"/>
 	  </table>
