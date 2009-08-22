@@ -148,18 +148,20 @@ class MailThread(threading.Thread, gobject.GObject):
         sender = mail.get("From", "Unknown <devnull@nowhere.com>")
         
         xml = None
-        body = None
+        body = ""
 
         if mail.is_multipart():
+            html = None
             for part in mail.walk():
-                html = None
-                if part.get_content_type() == "d-rats/form_xml":
+                if part.get_content_maintype() == "multipart":
+                    continue
+                elif part.get_content_type() == "d-rats/form_xml":
                     xml = str(part.get_payload())
                     break # A form payload trumps all
                 elif part.get_content_type() == "text/plain":
-                    body = str(part)
+                    body += part.get_payload(decode=True)
                 elif part.get_content_type() == "text/html":
-                    html = str(part)
+                    html = part.get_payload(decode=True)
             if not body:
                 body = html
         else:
@@ -231,10 +233,10 @@ class MailThread(threading.Thread, gobject.GObject):
             for part in mail.walk():
                 html = None
                 if part.get_content_type() == "text/plain":
-                    body = str(part)
+                    body = part.get_payload(decode=True)
                     break
                 elif part.get_content_type() == "text/html":
-                    html = str(part)
+                    html = part.get_payload(decode=True)
             if not body:
                 body = html
         else:
