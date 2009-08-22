@@ -1234,6 +1234,7 @@ class DratsInEmailPanel(DratsPanel):
             return "%s@%s" % (vals[0], vals[1])
 
         lw = val.add_list(cols, make_key)
+        lw.set_password(2);
         add = gtk.Button(_("Add"), gtk.STOCK_ADD)
         add.connect("clicked", self.but_add, lw)
         edit = gtk.Button(_("Edit"), gtk.STOCK_EDIT)
