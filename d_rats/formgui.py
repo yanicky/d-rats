@@ -705,8 +705,10 @@ class FormFile(object):
     def _try_get_fields(self, *names):
         for field in names:
             try:
-                return self.get_field_value(field)
-            except Exception:
+                val = self.get_field_value(field)
+                if val is not None:
+                    return val
+            except Exception, e:
                 pass
         return "Unknown"
 
