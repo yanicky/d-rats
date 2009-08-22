@@ -1115,6 +1115,10 @@ class DratsInEmailPanel(DratsPanel):
         for n, t, d in fields:
             if n in self.choices.keys():
                 w = miscwidgets.make_choice(self.choices[n], False, d)
+            elif n == _("Password"):
+                w = gtk.Entry()
+                w.set_visibility(False)
+                w.set_text(str(d))
             elif t == bool:
                 w = gtk.CheckButton(_("Enabled"))
                 w.set_active(d)
