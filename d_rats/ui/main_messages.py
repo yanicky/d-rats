@@ -392,9 +392,11 @@ class MessageList(MainWindowElement):
         msglist.append_column(col)
 
         def bold_if_unread(col, rend, model, iter, cnum):
-            subj, read, = model.get(iter, cnum, ML_COL_READ)
+            val, read, = model.get(iter, cnum, ML_COL_READ)
             if not read:
-                rend.set_property("markup", "<b>%s</b>" % subj)
+                val = val.replace("<", "&lt;")
+                val = val.replace(">", "&gt;")
+                rend.set_property("markup", "<b>%s</b>" % val)
 
         r = gtk.CellRendererText()
         col = gtk.TreeViewColumn(_("Sender"), r, text=ML_COL_SEND)
