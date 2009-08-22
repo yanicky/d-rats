@@ -203,6 +203,16 @@ class KeyedListWidget(gtk.HBox):
         col = self.__view.get_column(column)
         self.__view.set_expander_column(col)
 
+    def set_password(self, column):
+        def render_password(foo, rend, model, iter):
+            val = model.get(iter, column+1)[0]
+            rend.set_property("text", "*" * len(val));
+        
+        col = self.__view.get_column(column)
+        rnd = col.get_cell_renderers()[0]
+        col.set_cell_data_func(rnd, render_password)
+        
+
 class ListWidget(gtk.HBox):
     __gsignals__ = {
         "click-on-list" : (gobject.SIGNAL_RUN_LAST,
