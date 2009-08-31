@@ -200,6 +200,7 @@ class DataPath(object):
     def __init__(self, pathspec, timeout=0.25):
         self.timeout = timeout
         self.pathspec = pathspec
+        self.can_reconnect = True
 
         print "New data path: %s" % str(self.pathspec)
 
@@ -301,14 +302,22 @@ class SocketDataPath(DataPath):
     def __init__(self, pathspec, timeout=0.25):
         DataPath.__init__(self, pathspec, timeout)
 
-        if len(pathspec) == 2:
+        self._socket = None
+
+        if isinstance(pathspec, socket.socket):
+            self._socket = pathspec
+            self._socket.settimeout(self.timeout)
+            self.can_reconnect = False
+            print "Socket was passed to me: %s" % self._socket
+        elif len(pathspec) == 2:
             (self.host, self.port) = pathspec
             self.call = self.passwd = "UNKNOWN"
         else:
             (self.host, self.port, self.call, self.passwd) = pathspec
-        self._socket = None
 
     def reconnect(self):
+        if not self.can_reconnect:
+            return
         self.disconnect()
         time.sleep(0.5)
         self.connect()
