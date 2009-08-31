@@ -77,11 +77,10 @@ class Repeater:
         for tport,calls in self.paths.items():
             if frame.d_station == "!":
                 return
-            elif frame.d_station == "CQCQCQ":
-                break # Always repeat
 
             if tport == transport:
-                if frame.s_station not in calls:
+                if frame.s_station not in calls and \
+                        frame.s_station != "CQCQCQ":
                     print "Adding %s as heard on %s" % (frame.s_station,
                                                         transport)
                     self.paths[transport].append(frame.s_station)
