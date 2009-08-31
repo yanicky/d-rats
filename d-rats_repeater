@@ -64,7 +64,7 @@ def DEBUG(str):
 
 class Repeater:
     def __init__(self, id="D-RATS Network Proxy"):
-        self.paths = []
+        self.paths = {}
         self.thread = None
         self.enabled = True
         self.socket = None
@@ -73,23 +73,42 @@ class Repeater:
         self.condition = threading.Condition()
 
     def __repeat(self, transport, frame):
+
+        for tport,calls in self.paths.items():
+            if frame.d_station == "!":
+                return
+            elif frame.d_station == "CQCQCQ":
+                break # Always repeat
+
+            if tport == transport:
+                if frame.s_station not in calls:
+                    print "Adding %s as heard on %s" % (frame.s_station,
+                                                        transport)
+                    self.paths[transport].append(frame.s_station)
+            elif frame.d_station in calls:
+                print "Delivering frame to port %s" % tport
+                tport.send_frame(frame.get_copy())
+                return
+
         print "Repeating frame %s" % frame
 
-        self.condition.acquire()
-
         paths = list(self.paths)
-        paths.remove(transport)
         
-        for path in paths:
+        for path in self.paths.keys():
+            if path == transport:
+                continue
             path.send_frame(frame.get_copy())
 
-        self.condition.release()
-
     def add_new_transport(self, transport):
-        self.paths.append(transport)
+        self.paths[transport] = []
 
         def handler(frame):
-            self.__repeat(transport, frame)
+            self.condition.acquire()
+            try:
+                self.__repeat(transport, frame)
+            except Exception, e:
+                print "Exception during __repeat: %s" % e
+            self.condition.release()
 
         transport.inhandler = handler
 
