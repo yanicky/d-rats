@@ -180,6 +180,17 @@ class DDT2Frame(object):
                                                         data,
                                                         len(self.data))
 
+    def get_copy(self):
+        f = DDT2EncodedFrame()
+        f.seq = self.seq
+        f.session = self.session
+        f.type = self.type
+        f.s_station = self.s_station
+        f.d_station = self.d_station
+        f.data = self.data
+        f.set_compress(self.compress)
+        return f
+
 class DDT2EncodedFrame(DDT2Frame):
     def get_packed(self):
         raw = DDT2Frame.get_packed(self)
