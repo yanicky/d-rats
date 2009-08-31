@@ -22,6 +22,8 @@ import ConfigParser
 import os
 
 from d_rats import platform
+from d_rats import transport
+from d_rats import comm
 
 if __name__ == "__main__":
     from optparse import OptionParser
@@ -60,335 +62,6 @@ def DEBUG(str):
     pass
     #print str
 
-class DataPath:
-    def __init__(self, id, condition):
-        self.id = id
-        self.in_buffer = ""
-        self.out_buffer = ""
-        self.lock = threading.Lock()
-        self.thread = None
-        self.enabled = True
-        self.condition = condition
-        self.min_buffer = 512
-
-    def signal(self):
-        self.condition.acquire()
-        print "Signaling %s" % time.time()
-        self.condition.notify()
-        self.condition.release()
-
-    def hasIncoming(self):
-        r = call_with_lock(self.lock, len, self.in_buffer)
-        return r > 0
-
-    def hasOutgoing(self):
-        r = call_with_lock(self.lock, len, self.out_buffer)
-        return r > 0
-
-    def l_drain_buffer(self, buffer):
-        if buffer == IN:
-            b = self.in_buffer
-            self.in_buffer = ""
-        elif buffer == OUT:
-            b = self.out_buffer
-            self.out_buffer = ""
-
-        return b
-
-    def l_append_buffer(self, buffer, value):
-        if buffer == IN:
-            self.in_buffer += value
-            self.signal()
-        elif buffer == OUT:
-            self.out_buffer += value
-
-    def read(self):
-        if not self.enabled:
-            raise Exception("Closed")
-        return call_with_lock(self.lock,
-                              self.l_drain_buffer, IN)
-
-    def write(self, buf):
-        if not self.enabled:
-            raise Exception("Closed")
-        return call_with_lock(self.lock,
-                              self.l_append_buffer, OUT, buf)
-
-    def stop(self):
-        print "Stopping %s" % self.id
-        self.enabled = False
-
-class LoopDataPath(DataPath):
-    def hasIncoming(self):
-        return False
-
-    def l_drain_buffer(self, buffer):
-        if buffer != PEEK:
-            return ""
-
-        b = self.in_buffer
-        self.in_buffer = ""
-
-        return b
-
-    def l_append_buffer(self, buffer, value):
-        self.in_buffer += value
-
-    def peek(self):
-        if not self.enabled:
-            raise Exception("Closed")
-        return call_with_lock(self.lock,
-                              self.l_drain_buffer, PEEK)
-
-class SerialDataPath(DataPath):
-    def serial_outgoing(self):
-        out = call_with_lock(self.lock,
-                             self.l_drain_buffer, OUT)
-        if len(out) > 0:
-            self.pipe.write(out)
-        
-    def serial_incoming(self):
-        inp = "foo"
-        data = ""
-
-        while inp:
-            inp = self.pipe.read(64)
-            data += inp
-
-            if len(data) > self.min_buffer:
-                call_with_lock(self.lock,
-                               self.l_append_buffer, IN, data)
-                data = ""
-
-        if data:
-            call_with_lock(self.lock,
-                           self.l_append_buffer, IN, data)
-
-    def serial_thread(self):
-        while self.enabled:
-            try:
-                self.serial_outgoing()
-            except Exception, e:
-                print "Got exception during write: %s" % e
-
-            try:
-                self.serial_incoming()
-            except Exception, e:
-                print "Got Exception during read: %s" % e
-
-        self.pipe.close()
-
-    def __init__(self, id, condition, port, rate):
-        DataPath.__init__(self, id, condition)
-
-        self.pipe = SWFSerial(port=port,
-                              baudrate=rate,
-                              timeout=0.1,
-                              writeTimeout=5)
-        self.thread = threading.Thread(target=self.serial_thread)
-        self.thread.setDaemon(True)
-        self.thread.start()
-
-class TcpDataPath(DataPath):
-    def hasIncoming(self):
-        if not self.enabled:
-            raise Exception("Socket Closed")
-        else:
-            return DataPath.hasIncoming(self)
-
-    def reconnect(self):
-        return False # Can't reconnect inbound paths
-
-    def tcp_outgoing(self):
-        out = call_with_lock(self.lock,
-                             self.l_drain_buffer, OUT)
-        if len(out) > 0:
-            try:
-                self.socket.send(out)
-            except socket.timeout:
-                pass
-            except socket.error, e:
-                if self.reconnect():
-                    print "Reconnected"
-                else:
-                    print "Unable to connect after %s" % e
-                    self.enabled = False
-
-    def tcp_incoming(self):
-        inp = "foo"
-        data = ""
-
-        while True:
-            try:
-                DEBUG("Read...")
-                inp = self.socket.recv(64)
-                DEBUG("Read returned")
-                if inp == "":
-                    DEBUG("Socket returned nothing; closed")
-                    self.enabled = False
-                    break
-                data += inp
-            except socket.timeout:
-                break
-            except socket.error:
-                DEBUG("Socket error: %s" % info)
-                if self.reconnect():
-                    continue # Reconnected, try again
-                else:
-                    self.enabled = False
-                    break    # Didn't reconnect, give up
-            except Exception, e:
-                DEBUG("Exception during socket read: %s" % e)
-                self.enabled = False
-                break
-
-            DEBUG("Socket returned data: %s" % inp)
-
-            if len(data) > self.min_buffer:
-                # If the data is above the low water mark, go ahead
-                # and start filling the output buffer
-                DEBUG("Hit low-water mark")
-                call_with_lock(self.lock,
-                               self.l_append_buffer, IN, data)
-                data = ""
-
-        DEBUG("Done with tcp_incoming")
-
-        if data:
-            call_with_lock(self.lock,
-                           self.l_append_buffer, IN, data)
-
-    def tcp_thread(self):
-        while self.enabled:
-            self.tcp_outgoing()
-            self.tcp_incoming()
-
-        self.socket.close()
-
-    def auth_user(self, username, password):
-        auth = file("users.txt")
-        lines = auth.readlines()
-        auth.close()
-
-        lno = 1
-        for line in lines:
-            line = line.strip()
-            try:
-                u, p = line.split(" ", 1)
-                u = u.upper()
-            except Exception, e:
-                print "Failed to parse line %i in users.txt: %s" % (lno, e)
-                continue
-
-            if u == username and p == password:
-                print "Authorized user %s" % username
-                return True
-
-        print "User %s not authorized" % username
-        return False
-
-    def auth(self):
-        username = None
-        password = None
-        count = 0
-
-        if not os.path.exists("users.txt"):
-            print "Not requiring authentication for incoming connection"
-            self.socket.send("100 No authorization required\r\n")
-            return True
-
-        self.socket.send("101 Authorization required\r\n")
-
-        def readline(_s):
-            data = ""
-            while "\r\n" not in data:
-                try:
-                    _d = _s.recv(32)
-                except socket.timeout:
-                    continue
-
-                if _d == "":
-                    break
-
-                data += _d
-            return data.strip()
-
-        while (not username or not password) and count < 3:
-            line = readline(self.socket)
-            try:
-                cmd, value = line.split(" ", 1)
-            except Exception, e:
-                print "Unable to read auth command `%s': %s\n" % (line, e)
-                self.socket.send("501 Invalid syntax\r\n")
-                break
-
-            cmd = cmd.upper()
-
-            if cmd == "USER" and not username and not password:
-                username = value
-                self.socket.send("102 User %s okay\r\n" % username)
-            elif cmd == "PASS" and username and not password:
-                password = value
-            else:
-                self.socket.send("100 Goodbye\r\n")
-                break
-
-        if not username or not password:
-            print "Negotiation failed with client"
-            return False
-
-        result = self.auth_user(username, password)
-        if result:
-            self.socket.send("200 Authorized\r\n")
-        else:
-            self.socket.send("500 Not authorized\r\n")
-
-        return result
-
-    def __init__(self, id, condition, socket):
-        DataPath.__init__(self, id, condition)
-
-        self.socket = socket
-        #self.socket.setblocking(False)
-        self.socket.settimeout(0.1)
-
-        if not self.auth():
-            raise Exception("Failed to authenticate")
-
-        self.thread = threading.Thread(target=self.tcp_thread)
-        self.thread.setDaemon(True)
-        self.thread.start()
-
-class TcpOutgoingDataPath(TcpDataPath):
-    def reconnect(self):
-        if self.socket:
-            print "Disconnecting %s:%i" % (self.__host, self.__port)
-            self.socket.close()
-            time.sleep(0.5)
-
-        self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        for i in range(0,10):
-            try:
-                print "Connecting to %s:%i" % (self.__host, self.__port)
-                self.socket.connect((self.__host, self.__port))
-                return True
-            except Exception, e:
-                print "Failed to connect: %s" % e
-
-        return False
-
-    def __init__(self, id, condition, host):
-        try:
-            _, self.__host, port = host.split(":")
-            self.__port = int(port)
-        except Exception, e:
-            print "Unable to parse host `%s': %s" % (host, e)
-            return
-
-        self.socket = None
-        self.reconnect()
-        TcpDataPath.__init__(self, id, condition, self.socket)
-
 class Repeater:
     def __init__(self, id="D-RATS Network Proxy"):
         self.paths = []
@@ -399,6 +72,27 @@ class Repeater:
         self.id = id
         self.condition = threading.Condition()
 
+    def __repeat(self, transport, frame):
+        print "Repeating frame %s" % frame
+
+        self.condition.acquire()
+
+        paths = list(self.paths)
+        paths.remove(transport)
+        
+        for path in paths:
+            path.send_frame(frame.get_copy())
+
+        self.condition.release()
+
+    def add_new_transport(self, transport):
+        self.paths.append(transport)
+
+        def handler(frame):
+            self.__repeat(transport, frame)
+
+        transport.inhandler = handler
+
     def accept_new(self):
         if not self.socket:
             return
@@ -408,19 +102,11 @@ class Repeater:
         except:
             return
 
-        try:
-            path = TcpDataPath("Network (%s:%s)" % csocket.getpeername(),
-                               self.condition,
-                               csocket)
-        except Exception, e:
-            print "Failure while accepting connection: %s" % e
-            return
-
-        try:
-            path.write(self.id)
-            self.paths.append(path)
-        except:
-            path.stop()
+        print "Accepted new client %s" % str(addr)
+        csocket.send("100 Authentication not supported yet\r\n")
+        path = comm.SocketDataPath(csocket)
+        tport = transport.Transporter(path)
+        self.add_new_transport(tport)
 
     def listen_on(self, port):
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -431,38 +117,13 @@ class Repeater:
         self.socket.bind(('0.0.0.0', port))
         self.socket.listen(0)
 
-    def send_data(self, exclude, data):
-        targets = list(self.paths)
-        if exclude in targets:
-            targets.remove(exclude)
-
-        for t in targets:
-            print "Sending to %s" % t.id
-            try:
-                t.write(data)
-            except:
-                print "Removing stale %s" % t.id
-                self.paths.remove(t)
-                t.stop()
-
     def _repeat(self):
         while self.enabled:
             self.condition.acquire()
-            self.condition.wait(0.5)
             self.accept_new()
             self.condition.release()
 
-            data = {}
-            for p in self.paths:
-                try:
-                    if p.hasIncoming():
-                        print "Got data from %s" % p.id
-                        data = p.read()
-                        self.send_data(p, data)
-                except:
-                    print "%s closed" % p.id
-                    self.paths.remove(p)
-                    p.stop()
+            time.sleep(0.5)
 
         print "Repeater thread ended"
 
@@ -516,6 +177,27 @@ class RepeaterUI:
         f = file(self.config_fn, "w")
         config.write(f)
         f.close()
+
+    def add_outgoing_paths(self, id, paths):
+        self.repeater = Repeater(id)
+        for dev,baud in paths:
+            if dev.startswith("net:"):
+                try:
+                    net, host, port = dev.split(":", 2)
+                    port = int(port)
+                except Exception, e:
+                    print "Invalid net string: %s (%s)" % (dev, e)
+                    continue
+
+                path = comm.SocketDataPath((host, port))
+            else:
+                path = comm.SerialDataPath((dev, int(baud)))
+
+            path.connect()
+            tport = transport.Transporter(path)
+            self.repeater.add_new_transport(tport)
+
+
 
 class RepeaterGUI(RepeaterUI):
     def add_serial(self, widget, widgets):
@@ -802,18 +484,8 @@ class RepeaterGUI(RepeaterUI):
         self.but_on.set_sensitive(False)
         self.settings.set_sensitive(False)
 
-        self.repeater = Repeater(self.entry_id.get_text())
-        for dev,baud in self.dev_list.get_values():
-            if dev.startswith("net:"):
-                p = TcpOutgoingDataPath("Network (%s)" % dev,
-                                        self.repeater.condition,
-                                        dev)
-            else:
-                p = SerialDataPath("Serial (%s)" % dev,
-                                   self.repeater.condition,
-                                   dev,
-                                   baud)
-            self.repeater.paths.append(p)
+        self.add_outgoing_paths(self.entry_id.get_text(),
+                                self.dev_list.get_values())
 
         try:
             port = int(self.entry_port.get_text())
@@ -824,8 +496,8 @@ class RepeaterGUI(RepeaterUI):
         if port and enabled:
             self.repeater.listen_on(port)
 
-        self.tap = LoopDataPath("TAP", self.repeater.condition)
-        self.repeater.paths.append(self.tap)
+        #self.tap = LoopDataPath("TAP", self.repeater.condition)
+        #self.repeater.paths.append(self.tap)
 
         self.repeater.repeat()
 
@@ -913,19 +585,8 @@ class RepeaterGUI(RepeaterUI):
 
 class RepeaterConsole(RepeaterUI):
     def main(self):
-        self.repeater = Repeater(self.config.get("settings", "idstr"))
         devices = eval(self.config.get("settings", "devices"))
-        for dev, baud in devices:
-            if dev.startswith("net:"):
-                p = TcpOutgoingDataPath("Network (%s)" % dev,
-                                        self.repeater.condition,
-                                        dev)
-            else:
-                p = SerialDataPath("Serial (%s)" % dev,
-                                   self.repeater.condition,
-                                   dev,
-                                   baud)
-            self.repeater.paths.append(p)
+        self.add_outgoing_paths(self.config.get("settings", "idstr"), devices)
 
         try:
             acceptnet = eval(self.config.get("settings", "acceptnet"))
