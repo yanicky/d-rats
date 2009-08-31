@@ -290,6 +290,9 @@ class Transporter(object):
                     print "Block disappeared while flushing?"
         self.outq.unlock()
 
+    def __str__(self):
+        return str(self.pipe)
+
 class TestPipe(object):
     def make_fake_data(self, src, dst):
         self.buf = ""

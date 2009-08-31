@@ -223,7 +223,7 @@ class DataPath(object):
         return False
 
     def __str__(self):
-        return "-- DataPath base class --"
+        return "--"
 
 class SerialDataPath(DataPath):
     def __init__(self, pathspec, timeout=0.25):
@@ -308,6 +308,8 @@ class SocketDataPath(DataPath):
             self._socket = pathspec
             self._socket.settimeout(self.timeout)
             self.can_reconnect = False
+            self.host = "(incoming)"
+            self.port = 0
             print "Socket was passed to me: %s" % self._socket
         elif len(pathspec) == 2:
             (self.host, self.port) = pathspec
