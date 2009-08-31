@@ -108,6 +108,8 @@ class Transporter(object):
             try:
                 return self.pipe.write(data)
             except comm.DataPathIOError, e:
+                if not self.pipe.can_reconnect:
+                    break
                 print "Data path IO error: %s" % e
                 try:
                     time.sleep(i)
@@ -116,7 +118,7 @@ class Transporter(object):
                 except comm.DataPathNotConnectedError:
                     pass
 
-        raise comm.DataPathIOError("Unable to reconnect after 10 retries")
+        raise comm.DataPathIOError("Unable to reconnect")
 
     def __recv(self, size):
         data = ""
@@ -124,6 +126,8 @@ class Transporter(object):
             try:
                 return self.pipe.read(size - len(data))
             except comm.DataPathIOError, e:
+                if not self.pipe.can_reconnect:
+                    break
                 print "Data path IO error: %s" % e
                 try:
                     time.sleep(i) 
@@ -132,7 +136,7 @@ class Transporter(object):
                 except comm.DataPathNotConnectedError:
                     pass
 
-        raise comm.DataPathIOError("Unable to reconnect after 10 retries")
+        raise comm.DataPathIOError("Unable to reconnect")
 
     def get_input(self):
         while True:
@@ -230,7 +234,8 @@ class Transporter(object):
                 time.sleep(self.force_delay)
                 delayed = True
 
-            if time.time() - self.last_xmit > self.warmup_timeout:
+            if ((time.time() - self.last_xmit) > self.warmup_timeout) and \
+                    (self.warmup_timeout > 0):
                 warmup_f = ddt2.DDT2EncodedFrame()
                 warmup_f.seq = 0
                 warmup_f.session = 0
