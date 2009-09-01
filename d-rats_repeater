@@ -62,9 +62,34 @@ def DEBUG(str):
     pass
     #print str
 
+class CallInfo:
+    def __init__(self, call, transport):
+        self.__call = call
+        self.just_heard(transport)
+
+    def get_call(self):
+        return self.__call
+
+    def just_heard(self, transport):
+        self.__heard = time.time()
+        self.__transport = transport
+
+    def last_heard(self):
+        return time.time() - self.__heard
+
+    def last_transport(self):
+        return self.__transport
+
+def call_in_list(callinfo, call):
+    for info in callinfo:
+        if call == info.get_call():
+            return True
+    return False
+
 class Repeater:
     def __init__(self, id="D-RATS Network Proxy"):
-        self.paths = {}
+        self.paths = []
+        self.calls = {}
         self.thread = None
         self.enabled = True
         self.socket = None
@@ -74,32 +99,32 @@ class Repeater:
 
     def __repeat(self, transport, frame):
 
-        for tport,calls in self.paths.items():
-            if frame.d_station == "!":
-                return
+        if frame.d_station == "!":
+            return
 
-            if tport == transport:
-                if frame.s_station not in calls and \
-                        frame.s_station != "CQCQCQ":
-                    print "Adding %s as heard on %s" % (frame.s_station,
-                                                        transport)
-                    self.paths[transport].append(frame.s_station)
-            elif frame.d_station in calls:
-                print "Delivering frame to port %s" % tport
-                tport.send_frame(frame.get_copy())
-                return
+        srcinfo = self.calls.get(frame.s_station, None)
+        if srcinfo is None and frame.s_station != "CQCQCQ":
+            self.calls[frame.s_station] = CallInfo(frame.s_station,
+                                                   transport)
+        elif srcinfo.last_transport() is not transport:
+            srcinfo.just_heard(transport)
 
-        print "Repeating frame %s" % frame
+        dstinfo = self.calls.get(frame.d_station, None)
+        if dstinfo is not None and dstinfo.last_heard() < 600:
+            print "Delivering frame to %s at %s" % (frame.d_station,
+                                                    dstinfo.last_transport())
+            dstinfo.last_transport().send_frame(frame.get_copy())
+            return
+                
+        print "Repeating frame to %s on all ports" % frame.d_station
 
-        paths = list(self.paths)
-        
-        for path in self.paths.keys():
+        for path in self.paths:
             if path == transport:
                 continue
             path.send_frame(frame.get_copy())
 
     def add_new_transport(self, transport):
-        self.paths[transport] = []
+        self.paths.append(transport)
 
         def handler(frame):
             self.condition.acquire()
@@ -123,7 +148,7 @@ class Repeater:
         print "Accepted new client %s" % str(addr)
         csocket.send("100 Authentication not supported yet\r\n")
         path = comm.SocketDataPath(csocket)
-        tport = transport.Transporter(path)
+        tport = transport.Transporter(path, warmup_timeout=0)
         self.add_new_transport(tport)
 
     def listen_on(self, port):
@@ -199,6 +224,7 @@ class RepeaterUI:
     def add_outgoing_paths(self, id, paths):
         self.repeater = Repeater(id)
         for dev,baud in paths:
+            to = 0
             if dev.startswith("net:"):
                 try:
                     net, host, port = dev.split(":", 2)
@@ -210,11 +236,11 @@ class RepeaterUI:
                 path = comm.SocketDataPath((host, port))
             else:
                 path = comm.SerialDataPath((dev, int(baud)))
+                to = 3
 
             path.connect()
-            tport = transport.Transporter(path)
+            tport = transport.Transporter(path, warmup_timout=to)
             self.repeater.add_new_transport(tport)
-
 
 
 class RepeaterGUI(RepeaterUI):
