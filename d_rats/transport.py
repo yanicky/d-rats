@@ -96,12 +96,14 @@ class Transporter(object):
         self.warmup_length = kwargs.get("warmup_length", 8)
         self.warmup_timeout = kwargs.get("warmup_timeout", 3)
         self.force_delay = kwargs.get("force_delay", 0)
+        self.compat_delay = kwargs.get("compat_delay", 5)
 
         self.thread = threading.Thread(target=self.worker)
         self.thread.setDaemon(True)
         self.thread.start()
 
         self.last_xmit = 0
+        self.last_recv = 0
 
     def __send(self, data):
         for i in range(0, 10):
@@ -145,6 +147,7 @@ class Transporter(object):
                 break
             else:
                 self.inbuf += chunk
+                self.last_recv = time.time()
 
     def _handle_frame(self, frame):
         if self.inhandler:
@@ -252,6 +255,9 @@ class Transporter(object):
             f.sent_event.set()
             self.last_xmit = time.time()
 
+    def compat_is_time(self):
+        return (time.time() - self.last_recv) > self.compat_delay
+
     def worker(self):
         while self.enabled:
             try:
@@ -263,13 +269,14 @@ class Transporter(object):
 
             self.parse_blocks()
             self.parse_gps()
-            if self.inbuf:
+
+            if self.inbuf and self.compat_is_time():
                 if self.compat:
                     self._send_text_block(self.inbuf)
                 else:
                     print "### Unconverted data: %s" % self.inbuf
-                
-            self.inbuf = ""
+                self.inbuf = ""
+
             try:
                 self.send_frames()
             except Exception, e:
