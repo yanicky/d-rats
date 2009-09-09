@@ -254,7 +254,13 @@ class Transporter(object):
 
     def worker(self):
         while self.enabled:
-            self.get_input()
+            try:
+                self.get_input()
+            except Exception, e:
+                print "Exception while getting input: %s" % e
+                self.enabled = False
+                break
+
             self.parse_blocks()
             self.parse_gps()
             if self.inbuf:
@@ -264,7 +270,12 @@ class Transporter(object):
                     print "### Unconverted data: %s" % self.inbuf
                 
             self.inbuf = ""
-            self.send_frames()
+            try:
+                self.send_frames()
+            except Exception, e:
+                print "Exception while sending frames: %s" % e
+                self.enabled = False
+                break
 
     def disable(self):
         self.inhandler = None
