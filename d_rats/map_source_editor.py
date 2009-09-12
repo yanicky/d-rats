@@ -16,6 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
+import shutil
 from glob import glob
 
 import gtk
@@ -160,9 +161,14 @@ class StaticMapSourceEditor(MapSourceEditor):
             if not fn:
                 raise EditorInitCancel()
 
-            source = map_sources.MapFileSource(os.path.basename(fn),
+            nfn = os.path.join(config.platform.config_file("static_locations"),
+                               os.path.basename(fn))
+            shutil.copy(fn, nfn)
+            fn = nfn
+
+            source = map_sources.MapFileSource(os.path.basename(nfn),
                                                "Static Source",
-                                               fn)
+                                               nfn)
 
         MapSourceEditor.__init__(self, config, source)
 
