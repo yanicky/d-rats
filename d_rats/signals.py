@@ -164,3 +164,6 @@ FORM_SENT = \
      (gobject.TYPE_INT,          # Session ID
       gobject.TYPE_STRING))      # Filename
 
+GET_CHAT_PORT = \
+    (gobject.SIGNAL_ACTION, gobject.TYPE_STRING,
+     ())

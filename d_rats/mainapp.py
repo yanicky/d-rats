@@ -692,6 +692,9 @@ class MainApp(object):
         self.mainwindow.tabs["files"].file_sent(fn)
         self.mainwindow.tabs["event"].event(event)
 
+    def __get_chat_port(self, object):
+        return self.mainwindow.tabs["chat"].get_selected_port()
+
 # ------------ END SIGNAL HANDLERS ----------------
 
     def __connect_object(self, object, *args):
@@ -741,6 +744,7 @@ class MainApp(object):
             "form-received" : self.__form_received,
             "file-sent" : self.__file_sent,
             "form-sent" : self.__form_sent,
+            "get-chat-port" : self.__get_chat_port,
             }
 
         global MAINAPP

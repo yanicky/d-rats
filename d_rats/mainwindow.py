@@ -53,6 +53,7 @@ class MainWindow(MainWindowElement):
         "ping-station" : signals.PING_STATION,
         "get-station-list" : signals.GET_STATION_LIST,
         "user-send-chat" : signals.USER_SEND_CHAT,
+        "get-chat-port" : signals.GET_CHAT_PORT,
         }
     _signals = __gsignals__
 
@@ -152,11 +153,7 @@ class MainWindow(MainWindowElement):
             d = cmd.get_text()
             dlg.destroy()
             if r == gtk.RESPONSE_OK:
-                ports = self.emit("get-station-list")
-                if ports.keys():
-                    port = ports.keys()[0]
-                else:
-                    return
+                port = self.emit("get-chat-port")
                 self.emit("user-send-chat", "CQCQCQ", port, "?D*%s?" % d, True)
 
         def do_proxy(but):

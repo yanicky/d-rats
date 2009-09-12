@@ -602,6 +602,10 @@ class ChatTab(MainWindowTab):
         if ports:
             utils.combo_select(dest, ports[0])
 
+    def get_selected_port(self):
+        dest, = self._getw("destination")
+        return dest.get_active_text()
+
     def selected(self):
         MainWindowTab.selected(self)
 
