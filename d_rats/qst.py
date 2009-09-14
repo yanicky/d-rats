@@ -433,7 +433,7 @@ class QSTGPSEditWidget(QSTEditWidget):
 
         icons = []
         for sym in sorted(gps.DPRS_TO_APRS.values()):
-            icon = get_icon(mapdisplay.ICON_MAPS, sym)
+            icon = get_icon(sym)
             if icon:
                 icons.append((icon, sym))
         iconsel = miscwidgets.make_pixbuf_choice(icons, deficn)
