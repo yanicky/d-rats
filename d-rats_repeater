@@ -461,8 +461,11 @@ class RepeaterGUI(RepeaterUI):
     def make_connected(self):
         frame = gtk.Frame("Connected Paths")
 
-        self.conn_list = miscwidgets.ListWidget([(gobject.TYPE_STRING,
-                                                  "ID")])
+        idlist = miscwidgets.ListWidget([(gobject.TYPE_STRING, "ID")])
+        idlist.show()
+
+        self.conn_list = gtk.ScrolledWindow()
+        self.conn_list.add_with_viewport(idlist)
         self.conn_list.show()
 
         frame.add(self.conn_list)
