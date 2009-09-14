@@ -109,6 +109,7 @@ _DEF_SETTINGS = {
     "map_tile_ttl" : "720",
     "msg_flush" : "60",
     "msg_forward" : "False",
+    "form_logo_dir" : os.path.join(platform.get_platform().config_dir(), "logos"),
 }
 
 _DEF_STATE = {
@@ -729,6 +730,10 @@ class DratsPathsPanel(DratsPanel):
         val = DratsConfigWidget(config, "settings", "mapdir", True)
         val.add_path()
         self.mv(_("Map Storage Path"), val)
+
+        val = DratsConfigWidget(config, "settings", "form_logo_dir", True)
+        val.add_path()
+        self.mv(_("Form Logo Path"), val)
 
 class DratsGPSPanel(DratsPanel):
     def __init__(self, config, window):
