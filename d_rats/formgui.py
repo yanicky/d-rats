@@ -990,7 +990,11 @@ class FormDialog(FormFile, gtk.Dialog):
         if self.logo_path:
             image = gtk.Image()
             try:
-                image.set_from_file(self.logo_path)
+                import mainapp
+                base = mainapp.get_mainapp().config.get("settings",
+                                                        "form_logo_dir")
+                print "Logo path: %s" % os.path.join(base, self.logo_path)
+                image.set_from_file(os.path.join(base, self.logo_path))
                 self.vbox.pack_start(image, 0,0,0)
                 image.show()
             except Exception, e:
