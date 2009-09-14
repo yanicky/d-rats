@@ -21,6 +21,7 @@ import utils
 import geocode_ui
 import map_sources
 import map_source_editor
+import signals
 
 from gps import GPSPosition, distance, value_with_units, DPRS_TO_APRS
 
@@ -618,8 +619,14 @@ class MapWidget(gtk.DrawingArea):
 class MapWindow(gtk.Window):
     __gsignals__ = {
         "reload-sources" : (gobject.SIGNAL_RUN_LAST, gobject.TYPE_NONE, ()),
+        "user-send-chat" : signals.USER_SEND_CHAT,
+        "get-station-list" : signals.GET_STATION_LIST,
         }
-                            
+
+    _signals = {"user-send-chat" : None,
+                "get-station-list" : None,
+                }
+
     def zoom(self, widget, frame):
         adj = widget.get_adjustment()
 
@@ -1102,10 +1109,14 @@ class MapWindow(gtk.Window):
                 fix = GPSPosition(lat=lat, lon=lon, station=call)
                 fix.comment = desc
 
-                ma = mainapp.get_mainapp()
-                ma.chatgui.tx_msg(fix.to_NMEA_GGA())
+                for port in self.emit("get-station-list").keys():
+                    self.emit("user-send-chat",
+                              "CQCQCQ", port,
+                              fix.to_NMEA_GGA(), True)
+                    
                 break
             except Exception, e:
+                utils.log_exception()
                 ed = gtk.MessageDialog(buttons=gtk.BUTTONS_OK, parent=d)
                 ed.set_property("text", _("Invalid value") + ": %s" % e)
                 ed.run()

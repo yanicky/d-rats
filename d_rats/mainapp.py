@@ -764,6 +764,7 @@ class MainApp(object):
         self.map = mapdisplay.MapWindow(self.config)
         self.map.set_title("D-RATS Map Window")
         self.map.connect("reload-sources", lambda m: self._load_map_overlays())
+        self.__connect_object(self.map)
         pos = self.get_position()
         self.map.set_center(pos.latitude, pos.longitude)
         self.map.set_zoom(14)
