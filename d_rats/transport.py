@@ -233,8 +233,17 @@ class Transporter(object):
                 break
 
             if self.force_delay and not delayed:
-                print "Waiting %i sec before transmitting" % self.force_delay
-                time.sleep(self.force_delay)
+                if self.force_delay < 0:
+                    # If force_delay is negative, wait between 0.5 and
+                    # abs(force_delay) seconds before transmitting
+                    delay = random.randint(5, abs(self.force_delay)*10)/10.0
+                else:
+                    # If force_delay is positive, then wait exactly that
+                    # long before transmitting
+                    delay = self.force_delay
+
+                print "Waiting %.1f sec before transmitting" % delay
+                time.sleep(delay)
                 delayed = True
 
             if ((time.time() - self.last_xmit) > self.warmup_timeout) and \

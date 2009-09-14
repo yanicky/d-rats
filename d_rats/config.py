@@ -96,7 +96,7 @@ _DEF_SETTINGS = {
     "mapdir" : os.path.join(platform.get_platform().config_dir(), "maps"),
     "warmup_length" : "8",
     "warmup_timeout" : "3",
-    "force_delay" : "0",
+    "force_delay" : "-2",
     "ping_info" : "",
     "smtp_server" : "",
     "smtp_replyto" : "",

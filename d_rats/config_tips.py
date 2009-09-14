@@ -28,7 +28,7 @@ TIPS_SETTINGS = {
     "mapdir" : _("Alternate location to store cached map images"),
     "warmup_length" : _("Amount of fake data to send during a warmup cycle"),
     "warmup_timeout" : _("Length of time between transmissions that must pass before we send a warmup block to open the power-save circuits on handhelds"),
-    "force_delay" : _("Amount of time to wait between transmissions"),
+    "force_delay" : _("Amount of time to wait between transmissions in seconds (a positive number is a fixed delay, a negative value means 'randomly choose between 0 and X')"),
     "ping_info" : _("Text string to return in response to a ping.") + "\n" + \
         _("If prefixed by a > character, interpret as a path to a text file") + "\n" + \
         _("If prefixed by a ! character, interpret as a path to a script"),
