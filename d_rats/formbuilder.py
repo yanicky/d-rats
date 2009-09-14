@@ -373,7 +373,7 @@ class FormBuilderGUI(gtk.Dialog):
     def get_form_xml(self):
         id = self.props["ID"].get_text()
         title = self.props["Title"].get_text()
-        logo = self.props["Logo"].get_text()
+        logo = self.props["Logo"].get_active_text()
 
         self.xml = "<xml>\n<form id='%s'>\n<title>%s</title>\n" % (id,title)
         if logo:
@@ -403,14 +403,17 @@ class FormBuilderGUI(gtk.Dialog):
 
         return box
 
-    def make_field(self, caption):
+    def make_field(self, caption, choices=None):
         box = gtk.HBox(False, 2)
         
         l = gtk.Label(caption)
         l.set_size_request(45, -1)
         l.show()
 
-        e = gtk.Entry()
+        if choices:
+            e = make_choice(choices, True)
+        else:
+            e = gtk.Entry()
         e.show()
 
         self.props[caption] = e
@@ -426,11 +429,20 @@ class FormBuilderGUI(gtk.Dialog):
         
         frame = gtk.Frame("Form Properties")
 
+        path = mainapp.get_mainapp().config.get("settings", "form_logo_dir")
+        logos = []
+        for fn in glob.glob(os.path.join(path, "*.*")):
+            logos.append(fn.replace(path, "")[1:])
+
         box = gtk.VBox(False, 2)
-        for i in ["Title", "ID", "Logo"]:
+        for i in ["Title", "ID"]:
             f = self.make_field(i)
             box.pack_start(f, 0,0,0)
             f.show()
+
+        f = self.make_field("Logo", logos)
+        box.pack_start(f, 0, 0, 0)
+        f.show()
 
         box.show()
 
@@ -488,7 +500,7 @@ class FormBuilderGUI(gtk.Dialog):
         form = FormDialog("", filename)
         self.props["ID"].set_text(form.id)
         self.props["Title"].set_text(form.title_text)
-        self.props["Logo"].set_text(form.logo_path or "")
+        self.props["Logo"].child.set_text(form.logo_path or "")
 
         for f in form.fields:
             w = f.entry
