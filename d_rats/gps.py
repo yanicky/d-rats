@@ -608,7 +608,7 @@ class NMEAGPSPosition(GPSPosition):
                 self.station = utils.filter_to_ascii(sta.strip()[0:8])
                 self.comment = utils.filter_to_ascii(com.strip()[0:20])
 
-        if len(self.comment) >=7 and "*" in self.comment[-3:-2]:
+        if len(self.comment) >=7 and "*" in self.comment[-3:-1]:
             self._parse_dprs_comment()
 
         self.valid = self._test_checksum(string, csum)
