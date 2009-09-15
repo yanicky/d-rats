@@ -449,6 +449,8 @@ class MainApp(object):
             self.__map_point.set_comment(fix.comment)
             self.__map_point.set_name(fix.station)
             
+        self.__map_point.set_icon_from_aprs_sym(fix.APRSIcon)
+
         self.stations_overlay.add_point(self.__map_point)
         self.map.update_gps_status(self.gps.status_string())
 
