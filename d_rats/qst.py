@@ -49,6 +49,60 @@ except ImportError:
     print "Installing hashlib replacement hack"
     from utils import ExternalHash as md5
 
+def do_dprs_calculator(initial=""):
+    def ev_sym_changed(iconsel, oversel, icons):
+        oversel.set_sensitive(icons[iconsel.get_active()][1][0] == "\\")
+
+    d = inputdialog.FieldDialog(title=_("DPRS message"))
+    msg = gtk.Entry(13)
+
+    overlays = [chr(x) for x in range(ord(" "), ord("_"))]
+
+    cur = initial
+    if cur and cur[-3] == "*" and cur[3] == " ":
+        msg.set_text(cur[4:-3])
+        dsym = cur[:2]
+        deficn = gps.DPRS_TO_APRS.get(dsym, "/#")
+        defovr = cur[2]
+        if defovr not in overlays:
+            print "Overlay %s not in list" % defovr
+            defovr = " "
+    else:
+        deficn = "/#"
+        defovr = " "
+
+    icons = []
+    for sym in sorted(gps.DPRS_TO_APRS.values()):
+        icon = get_icon(sym)
+        if icon:
+            icons.append((icon, sym))
+    iconsel = miscwidgets.make_pixbuf_choice(icons, deficn)
+
+    oversel = miscwidgets.make_choice(overlays, False, defovr)
+    iconsel.connect("changed", ev_sym_changed, oversel, icons)
+    ev_sym_changed(iconsel, oversel, icons)
+
+    d.add_field(_("Message"), msg)
+    d.add_field(_("Icon"), iconsel)
+    d.add_field(_("Overlay"), oversel)
+
+    r = d.run()
+    aicon = icons[iconsel.get_active()][1]
+    mstr = msg.get_text()
+    over = oversel.get_active_text()
+    d.destroy()
+    if r != gtk.RESPONSE_OK:
+        return
+
+    dicon = gps.APRS_TO_DPRS[aicon]
+
+    callsign = mainapp.get_mainapp().config.get("user", "callsign")
+    string = "%s%s %s" % (dicon, over, mstr)
+
+    check = gps.DPRS_checksum(callsign, string)
+
+    return string + check
+
 class QSTText(gobject.GObject):
     __gsignals__ = {
         "qst-fired" : (gobject.SIGNAL_RUN_LAST,
@@ -408,60 +462,13 @@ class QSTGPSEditWidget(QSTEditWidget):
     msg_limit = 20
     type = "GPS"
 
-    def ev_sym_changed(self, iconsel, oversel, icons):
-        oversel.set_sensitive(icons[iconsel.get_active()][1][0] == "\\")
 
     def prompt_for_DPRS(self, button):
-        d = inputdialog.FieldDialog(title=_("DPRS message"))
-
-        msg = gtk.Entry(13)
-
-        overlays = [chr(x) for x in range(ord(" "), ord("_"))]
-
-        cur = self.__msg.get_text()
-        if cur and cur[-3] == "*" and cur[3] == " ":
-            msg.set_text(cur[4:-3])
-            dsym = cur[:2]
-            deficn = gps.DPRS_TO_APRS.get(dsym, "/#")
-            defovr = cur[2]
-            if defovr not in overlays:
-                print "Overlay %s not in list" % defovr
-                defovr = " "
-        else:
-            deficn = "/#"
-            defovr = " "
-
-        icons = []
-        for sym in sorted(gps.DPRS_TO_APRS.values()):
-            icon = get_icon(sym)
-            if icon:
-                icons.append((icon, sym))
-        iconsel = miscwidgets.make_pixbuf_choice(icons, deficn)
-
-        oversel = miscwidgets.make_choice(overlays, False, defovr)
-        iconsel.connect("changed", self.ev_sym_changed, oversel, icons)
-        self.ev_sym_changed(iconsel, oversel, icons)
-
-        d.add_field(_("Message"), msg)
-        d.add_field(_("Icon"), iconsel)
-        d.add_field(_("Overlay"), oversel)
-
-        r = d.run()
-        aicon = icons[iconsel.get_active()][1]
-        mstr = msg.get_text()
-        over = oversel.get_active_text()
-        d.destroy()
-        if r != gtk.RESPONSE_OK:
+        dprs = do_dprs_calculator(self.__msg.get_text())
+        if dprs is None:
             return
-
-        dicon = gps.APRS_TO_DPRS[aicon]
-
-        callsign = mainapp.get_mainapp().config.get("user", "callsign")
-        string = "%s%s %s" % (dicon, over, mstr)
-
-        check = gps.DPRS_checksum(callsign, string)
-
-        self.__msg.set_text(string + check)
+        else:
+            self.__msg.set_text(dprs)
 
     def __init__(self):
         QSTEditWidget.__init__(self, False, 2)
