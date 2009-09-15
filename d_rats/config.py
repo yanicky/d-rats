@@ -110,6 +110,7 @@ _DEF_SETTINGS = {
     "msg_flush" : "60",
     "msg_forward" : "False",
     "form_logo_dir" : os.path.join(platform.get_platform().config_dir(), "logos"),
+    "default_gps_comment" : "D-RATS Station",
 }
 
 _DEF_STATE = {
@@ -777,6 +778,20 @@ class DratsGPSPanel(DratsPanel):
         val = DratsConfigWidget(config, "settings", "map_tile_ttl")
         val.add_numeric(0, 9999999999999, 1)
         self.mv(_("Freshen map after"), val, gtk.Label(_("hours")))
+
+        def gps_comment_from_dprs(button, val):
+            import qst
+            dprs = qst.do_dprs_calculator(config.get("settings",
+                                                     "default_gps_comment"))
+            if dprs is not None:
+                config.set("settings", "default_gps_comment", dprs)
+                val._widget.set_text(dprs)
+
+        val = DratsConfigWidget(config, "settings", "default_gps_comment")
+        val.add_text(20)
+        but = gtk.Button(_("DPRS"))
+        but.connect("clicked", gps_comment_from_dprs, val)
+        self.mv(_("Default GPS comment"), val, but)
 
 class DratsAppearancePanel(DratsPanel):
     def __init__(self, config):

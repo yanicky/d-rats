@@ -462,7 +462,6 @@ class QSTGPSEditWidget(QSTEditWidget):
     msg_limit = 20
     type = "GPS"
 
-
     def prompt_for_DPRS(self, button):
         dprs = do_dprs_calculator(self.__msg.get_text())
         if dprs is None:
@@ -470,7 +469,7 @@ class QSTGPSEditWidget(QSTEditWidget):
         else:
             self.__msg.set_text(dprs)
 
-    def __init__(self):
+    def __init__(self, config):
         QSTEditWidget.__init__(self, False, 2)
 
         lab = gtk.Label(_("Enter your GPS message:"))
@@ -483,13 +482,17 @@ class QSTGPSEditWidget(QSTEditWidget):
         self.pack_start(hbox, 0, 0, 0)
 
         self.__msg = gtk.Entry(self.msg_limit)
-        self.__msg.set_text("ON D-RATS")
         self.__msg.show()
         hbox.pack_start(self.__msg, 1, 1, 1)
 
         dprs = gtk.Button("DPRS")
+
         if not isinstance(self, QSTGPSAEditWidget):
             dprs.show()
+            self.__msg.set_text(config.get("settings", "default_gps_comment"))
+        else:
+            self.__msg.set_text("ON D-RATS")
+
         dprs.connect("clicked", self.prompt_for_DPRS)
         hbox.pack_start(dprs, 0, 0, 0)
         
@@ -682,8 +685,8 @@ class QSTEditDialog(gtk.Dialog):
             _("Text") : QSTTextEditWidget(),
             _("File") : QSTFileEditWidget(),
             _("Exec") : QSTExecEditWidget(),
-            _("GPS")  : QSTGPSEditWidget(),
-            _("GPS-A"): QSTGPSAEditWidget(),
+            _("GPS")  : QSTGPSEditWidget(config),
+            _("GPS-A"): QSTGPSAEditWidget(config),
             _("RSS")  : QSTRSSEditWidget(),
             _("CAP")  : QSTCAPEditWidget(),
             _("Station") : QSTStationEditWidget(),
