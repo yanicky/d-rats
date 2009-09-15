@@ -275,6 +275,21 @@ class GPSPosition(object):
         self.satellites = 3
         self.valid = True
 
+    def _parse_dprs_comment(self):
+        symbol = self.comment[0:4].strip()
+        astidx = self.comment.rindex("*")
+        checksum = self.comment[astidx:]
+
+        _checksum = DPRS_checksum(self.station, self.comment[:astidx])
+
+        if _checksum != checksum:
+            print "Comment: |%s|" % self.comment
+            print "Check: %s %s (%i)" % (checksum, _checksum, astidx)
+            raise Exception("DPRS checksum failed")
+
+        self.APRSIcon = dprs_to_aprs(symbol)
+        self.comment = self.comment[4:astidx].strip()
+
     def __init__(self, lat=0, lon=0, station="UNKNOWN"):
         self.valid = False
         self.altitude = 0
@@ -496,6 +511,9 @@ class GPSPosition(object):
         self.station = station
         self.comment = comment
 
+        if len(self.comment) >=7 and "*" in self.comment[-3:-1]:
+            self._parse_dprs_comment()
+
     def distance_from(self, pos):
         return distance(self.latitude, self.longitude,
                         pos.latitude, pos.longitude)
@@ -564,20 +582,6 @@ class NMEAGPSPosition(GPSPosition):
 
         return csum == _csum
 
-    def _parse_dprs_comment(self):
-        symbol = self.comment[0:4].strip()
-        astidx = self.comment.rindex("*")
-        checksum = self.comment[astidx:]
-
-        _checksum = DPRS_checksum(self.station, self.comment[:astidx])
-
-        if _checksum != checksum:
-            print "Comment: |%s|" % self.comment
-            print "Check: %s %s (%i)" % (checksum, _checksum, astidx)
-            raise Exception("DPRS checksum failed")
-
-        self.APRSIcon = dprs_to_aprs(symbol)
-        self.comment = self.comment[4:astidx].strip()
 
     def _parse_GPGGA(self, string):
         elements = string.split(",", 14)
