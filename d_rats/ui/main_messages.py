@@ -393,7 +393,12 @@ class MessageList(MainWindowElement):
 
         def bold_if_unread(col, rend, model, iter, cnum):
             val, read, = model.get(iter, cnum, ML_COL_READ)
+            if not val:
+                val = ""
+                model.set(iter, cnum, val)
+                print "Fixing 'None' in message store, column %i" % cnum
             if not read:
+                val = val.replace("&", "&amp;")
                 val = val.replace("<", "&lt;")
                 val = val.replace(">", "&gt;")
                 rend.set_property("markup", "<b>%s</b>" % val)
