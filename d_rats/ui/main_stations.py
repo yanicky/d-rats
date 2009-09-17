@@ -314,7 +314,8 @@ class StationsList(MainWindowTab):
             self.emit("incoming-chat-message",
                       station,
                       "CQCQCQ",
-                      "%s %s: %s" % (_("Now"), status_msg, smsg))
+                      "%s %s: %s (%s %s)" % (_("Now"), status_msg, smsg,
+                                             _("Port"), port))
             
     def get_status(self):
         sval = station_status.STATUS_VALS[self.__status]
