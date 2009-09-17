@@ -89,6 +89,7 @@ class StationsList(MainWindowTab):
             self.emit("submit-rpc-job", job, port)
         elif action == "clearall":
             model.clear()
+            self.__calls = []
         elif action == "pingall":
             stationlist = self.emit("get-station-list")
             for port in stationlist.keys():
