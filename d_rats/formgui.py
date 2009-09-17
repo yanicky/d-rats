@@ -713,8 +713,12 @@ class FormFile(object):
         return "Unknown"
 
     def get_subject_string(self):
-        return self._try_get_fields("_auto_subject", "subject")
+        subj = self._try_get_fields("_auto_subject", "subject")
+        if subj != "Unknown":
+            return subj
 
+        return "%s#%s" % (self.get_path_src(),
+                          self._try_get_fields("_auto_number"))
 
     def get_recipient_string(self):
         dst = self.get_path_dst()
