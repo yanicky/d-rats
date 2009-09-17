@@ -338,7 +338,11 @@ class RepeaterGUI(RepeaterUI):
         self.dev_list.show()
         self.load_devices()
 
-        hbox.pack_start(self.dev_list, 1,1,1)
+        sw = gtk.ScrolledWindow()
+        sw.add_with_viewport(self.dev_list)
+        sw.show()
+
+        hbox.pack_start(sw, 1,1,1)
         hbox.pack_start(self.make_side_buttons(), 0,0,0)
         hbox.show()
 
