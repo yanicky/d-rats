@@ -395,8 +395,6 @@ class MessageList(MainWindowElement):
             val, read, = model.get(iter, cnum, ML_COL_READ)
             if not val:
                 val = ""
-                model.set(iter, cnum, val)
-                print "Fixing 'None' in message store, column %i" % cnum
             if not read:
                 val = val.replace("&", "&amp;")
                 val = val.replace("<", "&lt;")
@@ -664,11 +662,16 @@ class MessagesTab(MainWindowTab):
             return
 
         fn = sel[0]
+        recip = self._messages.current_info.get_msg_recip(fn)
 
         stations = []
         ports = self.emit("get-station-list")
         for slist in ports.values():
             stations += slist
+
+        if recip in stations:
+            stations.remove(recip)
+        stations.insert(0, recip)
 
         station, port = prompt_for_station(stations, self._config)
         if not station:
