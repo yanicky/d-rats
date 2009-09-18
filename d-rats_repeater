@@ -266,7 +266,8 @@ class RepeaterGUI(RepeaterUI):
     def ev_delete(self, widget, event, data=None):
         self.button_off(None, False)
         self.save_config(self.config)
-        gtk.main_quit()        
+        self.repeater.stop()
+        gtk.main_quit()
 
     def make_side_buttons(self):
         vbox = gtk.VBox(False, 2)
