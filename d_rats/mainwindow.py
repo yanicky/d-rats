@@ -16,8 +16,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
+import sys
 if __name__ == "__main__":
-    import sys
     sys.path.insert(0, ".")
     from d_rats import mainapp
     from d_rats import platform
@@ -157,10 +157,16 @@ class MainWindow(MainWindowElement):
                 self.emit("user-send-chat", "CQCQCQ", port, "?D*%s?" % d, True)
 
         def do_proxy(but):
-            if os.path.exists("./d-rats_repeater"):
-                p = subprocess.Popen("./d-rats_repeater")
+            if sys.platform == "nt":
+                args = []
             else:
-                p = subprocess.Popen("d-rats_repeater")
+                args = [sys.executable]
+            if os.path.exists("./d-rats_repeater"):
+                args.append("./d-rats_repeater")
+            else:
+                args.append("d-rats_repeater")
+            print "Running proxy: %s" % str(args)
+            p = subprocess.Popen(args)
 
         quit = self._wtree.get_widget("main_menu_quit")
         quit.connect("activate", do_save_and_quit)
