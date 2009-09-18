@@ -129,6 +129,7 @@ class MessageRouter(gobject.GObject):
                 # Default route
                 route = routes["*"]
             else:
+                route = None
                 break
 
             if route != call and route in path:
