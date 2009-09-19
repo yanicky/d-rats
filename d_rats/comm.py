@@ -46,23 +46,23 @@ def kiss_send_frame(frame, port=0):
     buf = struct.pack("BB", FEND, cmd) + frame + struct.pack("B", FEND)
 
     if TNC_DEBUG:
-        print "[TNC] Sending %s" % str([buf])
+        print "[TNC] Sending:"
+        utils.hexprint(buf)
 
     return buf
+
+def kiss_buf_has_frame(buf):
+    return buf.count(chr(FEND)) >=2
 
 def kiss_recv_frame(buf):
     if not buf:
         return "", ""
-    elif buf.count(chr(FEND)) < 2:
-        print "[TNC] Broken frame:"
-        utils.hexprint(buf)
-        return "", buf
 
     data = ""
     inframe = False
 
     _buf = ""
-    _lst = ""
+    _lst = "0" # Make sure we don't choke trying to ord() this
     for char in buf:
         if ord(char) == FEND:
             if not inframe:
@@ -88,10 +88,13 @@ def kiss_recv_frame(buf):
         _lst = char
 
     if TNC_DEBUG:
-        print "[TNC] Data: %s" % str([data])
+        print "[TNC] Data:"
+        utils.hexprint(data)
 
-    if not inframe:
+    if not inframe and _buf:
         # There was not a partial frame started at the end of the data
+        print "[TNC] Dumping non-frame data trailer"
+        utils.hexprint(_buf)
         _buf = ""
 
     return data, _buf
@@ -106,6 +109,7 @@ class TNCSerial(serial.Serial):
         serial.Serial.__init__(self, **kwargs)
 
         self.__buffer = ""
+        self.__tstamp = 0
 
     def reconnect(self):
         pass
@@ -117,9 +121,14 @@ class TNCSerial(serial.Serial):
         if self.__buffer:
             print "Buffer is %i before read" % len(self.__buffer)
         self.__buffer += serial.Serial.read(self, 1024)
-        data, self.__buffer = kiss_recv_frame(self.__buffer)
 
-        return data
+        framedata = ""
+        if kiss_buf_has_frame(self.__buffer):
+            framedata, self.__buffer = kiss_recv_frame(self.__buffer)
+        elif len(self.__buffer) > 0:
+            print "[TNC] Buffer partially-filled (%i b)" % len(self.__buffer)
+
+        return framedata
 
 
 class SWFSerial(serial.Serial):
