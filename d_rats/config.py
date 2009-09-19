@@ -173,7 +173,7 @@ def load_portspec(wtree, portspec, info, name):
     elif portspec.startswith("tnc:"):
         tsel.set_active(2)
         tnc, port, tncport = portspec.split(":")
-        wtree.get_widget("tnc_port").set_text(port)
+        wtree.get_widget("tnc_port").child.set_text(port)
         wtree.get_widget("tnc_tncport").set_value(int(tncport))
         utils.combo_select(wtree.get_widget("tnc_rate"), info)
     else:
