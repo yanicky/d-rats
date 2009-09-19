@@ -182,6 +182,7 @@ class Transporter(object):
                 else:
                     print "Found a broken block (S:%i E:%i len(buf):%i" % (\
                         s, e, len(self.inbuf))
+                    utils.hexprint(block)
             except Exception, e:
                 print "Failed to process block:"
                 utils.log_exception()
