@@ -136,6 +136,84 @@ class Repeater:
 
         transport.inhandler = handler
 
+    def auth_exchange(self, pipe):
+        username = password = None
+        count = 0
+
+        def readline(_s):
+            data = ""
+            while "\r\n" not in data:
+                try:
+                    _d = _s.read(32)
+                except socket.timeout:
+                    continue
+
+                if _d == "":
+                    break
+
+                data += _d
+            return data.strip()
+
+        while (not username or not password) and count < 3:
+            line = readline(pipe)
+            if not line:
+                continue
+            try:
+                cmd, value = line.split(" ", 1)
+            except Exception, e:
+                print "Unable to read auth command: `%s': %s" % (line, e)
+                pipe.write("501 Invalid Syntax\r\n")
+                break
+
+            cmd = cmd.upper()
+
+            if cmd == "USER" and not username and not password:
+                username = value
+            elif cmd == "PASS" and username and not password:
+                password = value
+            else:
+                pipe.write("201 Protocol violation\r\n")
+                break
+
+            if username and not password:
+                pipe.write("102 %s okay\r\n" % cmd)
+
+        if not username or not password:
+            print "Negotiation failed with client"
+
+        return username, password
+
+    def auth_user(self, pipe):
+        try:
+            auth = file("users.txt")
+            lines = auth.readlines()
+            auth.close()
+        except:
+            pipe.write("100 Authentication not required\r\n")
+            return True
+
+        pipe.write("101 Authorization required\r\n")
+        username, password = self.auth_exchange(pipe)
+
+        lno = 1
+        for line in lines:
+            line = line.strip()
+            try:
+                u, p = line.split(" ", 1)
+                u = u.upper()
+            except Exception, e:
+                print "Failed to parse line %i in users.txt: %s" % (lno, line)
+                continue
+
+            if u == username and p == password:
+                print "Authorized user %s" % u
+                pipe.write("200 Authorized\r\n")
+                return True
+
+        print "User %s failed to authenticate" % username
+        pipe.write("500 Not authorized\r\n")
+        return False
+
     def accept_new(self):
         if not self.socket:
             return
@@ -146,9 +224,10 @@ class Repeater:
             return
 
         print "Accepted new client %s" % str(addr)
-        csocket.send("100 Authentication not supported yet\r\n")
         path = comm.SocketDataPath(csocket)
-        tport = transport.Transporter(path, warmup_timeout=0)
+        tport = transport.Transporter(path,
+                                      authfn=self.auth_user,
+                                      warmup_timeout=0)
         self.add_new_transport(tport)
 
     def listen_on(self, port):
