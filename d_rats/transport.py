@@ -85,7 +85,7 @@ class BlockQueue(object):
         self._lock.release()
 
 class Transporter(object):
-    def __init__(self, pipe, inhandler=None, **kwargs):
+    def __init__(self, pipe, inhandler=None, authfn=None, **kwargs):
         self.inq = BlockQueue()
         self.outq = BlockQueue()
         self.pipe = pipe
@@ -98,7 +98,8 @@ class Transporter(object):
         self.force_delay = kwargs.get("force_delay", 0)
         self.compat_delay = kwargs.get("compat_delay", 5)
 
-        self.thread = threading.Thread(target=self.worker)
+        self.thread = threading.Thread(target=self.worker,
+                                       args=(authfn,))
         self.thread.setDaemon(True)
         self.thread.start()
 
@@ -268,7 +269,11 @@ class Transporter(object):
     def compat_is_time(self):
         return (time.time() - self.last_recv) > self.compat_delay
 
-    def worker(self):
+    def worker(self, authfn):
+        if authfn and not authfn(self.pipe):
+            print "Transport exiting due to failed authfn"
+            self.enabled = False
+
         while self.enabled:
             try:
                 self.get_input()
