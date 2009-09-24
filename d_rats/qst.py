@@ -172,7 +172,7 @@ class QSTGPS(QSTText):
         else:
             fix = self.fix
 
-        fix.comment = self.text[:20]
+        fix.set_station(fix.station, self.text[:20])
 
         if fix.valid:
             return fix.to_NMEA_GGA()
@@ -187,7 +187,7 @@ class QSTGPSA(QSTGPS):
             fix = self.fix
 
         if not "::" in self.text:
-            fix.comment = self.text
+            fix.set_station(fix.station, self.text[:20])
 
         if fix.valid:
             return fix.to_APRS(symtab=self.config.get("settings", "aprssymtab"),
@@ -362,7 +362,8 @@ class QSTStation(QSTGPSA):
         self.fix = gps.GPSPosition(point.get_latitude(),
                                    point.get_longitude(),
                                    point.get_name())
-        self.fix.comment = "VIA %s" % self.config.get("user", "callsign")
+        self.fix.set_station(fix.station,
+                             "VIA %s" % self.config.get("user", "callsign"))
 
         print "Sending position for %s/%s: %s" % (group, station, self.fix)
 

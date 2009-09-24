@@ -301,6 +301,7 @@ class GPSPosition(object):
         self.speed = None
         self.direction = None
         self.APRSIcon = None
+        self._original_comment = ""
 
         self._from_coords(lat, lon)
 
@@ -327,6 +328,7 @@ class GPSPosition(object):
 
         if update.comment:
             self.comment = update.comment
+            self._original_comment = update._original_comment
 
         if update.APRSIcon:
             self.APRSIcon = update.APRSIcon
@@ -421,10 +423,16 @@ class GPSPosition(object):
 
         sta = self.station_format()
 
+        # If we had an original comment (with some encoding), use that instead
+        if self._original_comment:
+            com = self._original_comment
+        else:
+            com = self.comment
+
         return "$%s%s\r\n%-8.8s,%-20.20s\r\n" % (data,
                                                  NMEA_checksum(data),
                                                  sta,
-                                                 self.comment)
+                                                 com)
 
     def to_NMEA_RMC(self):
         """Returns an NMEA-compliant GPRMC sentence"""
@@ -510,6 +518,7 @@ class GPSPosition(object):
     def set_station(self, station, comment="D-RATS"):
         self.station = station
         self.comment = comment
+        self._original_comment = comment
 
         if len(self.comment) >=7 and "*" in self.comment[-3:-1]:
             self._parse_dprs_comment()
@@ -611,6 +620,7 @@ class NMEAGPSPosition(GPSPosition):
             if not sta.strip().startswith("$"):
                 self.station = utils.filter_to_ascii(sta.strip()[0:8])
                 self.comment = utils.filter_to_ascii(com.strip()[0:20])
+                self._original_comment = self.comment
 
         if len(self.comment) >=7 and "*" in self.comment[-3:-1]:
             self._parse_dprs_comment()
@@ -658,6 +668,7 @@ class NMEAGPSPosition(GPSPosition):
             sta, com = station.split(",", 1)
             self.station = utils.filter_to_ascii(sta.strip())
             self.comment = utils.filter_to_ascii(com.strip())
+            self._original_comment = self.comment
 
         if len(self.comment) >= 7 and "*" in self.comment[-3:-1]:
             self._parse_dprs_comment()
@@ -782,6 +793,7 @@ class APRSGPSPosition(GPSPosition):
         self.latitude = nmea2deg(float(m.group(4)), m.group(5))
         self.longitude = nmea2deg(float(m.group(7)), m.group(8))
         self.comment = m.group(10).strip()
+        self._original_comment = self.comment
 
         if len(m.groups()) == 11 and m.group(11):
             _, alt = m.group(11).split("=")
