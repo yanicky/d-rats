@@ -139,6 +139,9 @@ class MailThread(threading.Thread, gobject.GObject):
         if not validate_incoming(self.config, recip, sender):
             print "Not auto-sending %s -> %s (no access rule)" % (sender, recip)
             return False
+        elif recip == self.config.get("user", "callsign"):
+            print "Not auto-sending to myself"
+            return False
         else:
             print "Auto-sending form %s -> %s" % (sender, recip)
             return True
@@ -211,19 +214,10 @@ class MailThread(threading.Thread, gobject.GObject):
                                _("Outbox"),
                                os.path.basename(ffn))
             os.rename(ffn, nfn) # Move to Outbox
-            ports = self.emit("get-station-list")
-            port = utils.port_for_station(ports, recip)
-
-            if port:
-                self.emit("user-send-form", recip, port, nfn, subject)
-                msg = "Attempted send of mail from %s to %s on port %s" % \
-                    (sender, recip, port)
-            else:
-                msg = "Unable to determine port for station %s" % recip
         else:
             self.emit("form-received", -999, ffn)
-            msg = "Mail received from %s" % sender
 
+        msg = "Mail received from %s" % sender
         event = main_events.Event(None, msg)
         self.emit("event", event)
 
@@ -274,115 +268,6 @@ class MailThread(threading.Thread, gobject.GObject):
             self.event.clear()
 
         self.message("Thread ending")
-
-class FormEmailService(object):
-    def message(self, msg):
-        print "[SMTP] %s" % msg
-
-    def __init__(self, config):
-        self.config = config
-
-    def _send_email(self, send, recp, subj, mesg, xmlpayload):
-        server = self.config.get("settings", "smtp_server")
-        replyto = self.config.get("settings", "smtp_replyto")
-        tls = self.config.getboolean("settings", "smtp_tls")
-        user = self.config.get("settings", "smtp_username")
-        pwrd = self.config.get("settings", "smtp_password")
-        port = self.config.getint("settings", "smtp_port")
-
-        if not replyto:
-            replyto = "DO_NOT_REPLY@danplanet.com"
-
-        for i in "<>\"'":
-            if i in send:
-                send = send.replace(i, "")
-
-        msg = MIMEMultipart()
-        msg["Subject"] = subj
-        msg["From"] = '"%s" <%s>' % (send, replyto)
-        msg["To"] = recp
-        msg["Reply-To"] = msg["From"]
-
-        if mesg:
-            msg.preamble = mesg
-            message = MIMEText(mesg)
-            msg.attach(message)
-
-        payload = MIMEBase("d-rats", "form_xml")
-        payload.set_payload(xmlpayload)
-        payload.add_header("Content-Disposition",
-                           "attachment",
-                           filename="do_not_open_me")
-        msg.attach(payload)
-
-        self.message("Connecting to %s:%i" % (server, port))
-        mailer = smtplib.SMTP(server, port)
-        self.message("Connected")
-        mailer.set_debuglevel(1)
-
-        self.message("Sending EHLO")
-        mailer.ehlo()
-        self.message("Done")
-        if tls:
-            self.message("TLS is enabled, sending STARTTLS")
-            mailer.starttls()
-            self.message("Sending EHLO again")
-            mailer.ehlo()
-            self.message("Done")
-        if user and pwrd:
-            self.message("Doing login with %s,%s" % (user, pwrd))
-            mailer.login(user, pwrd)
-            self.message("Done")
-
-        self.message("Sending mail")
-        mailer.sendmail(replyto, recp, msg.as_string())
-        self.message("Done")
-        mailer.quit()
-        self.message("Disconnected")
-
-    def send_email(self, form, recp=None):
-        if not self.config.getboolean("state", "connected_inet"):
-            raise Exception("Unable to send mail: Not connected to internet")
-
-        send = form.get_sender_string().upper()
-        if not recp:
-            recp = form.get_recipient_string()
-        if form.id == "email":
-            subj = form.get_subject_string()
-            mesg = form.get_field_value("message")
-        else:
-            subj = "D-RATS Form"
-            mesg = None
-
-        if "%" in recp:
-            station, recp = recp.split("%", 1)
-
-        self.message("Preparing to send `%s' from %s to %s" % (\
-                subj, send, recp))
-
-        if not self.config.getboolean("settings", "smtp_dogw"):
-            return False, "Email form received but not configured for SMTP"
-        
-        try:
-            self.message("Sending mail...")
-            self._send_email(send, recp, subj, mesg, form.get_xml())
-            self.message("Successfully sent to %s" % recp)
-            return True, "Mail sent ('%s' to '%s')" % (subj, recp)
-        except Exception, e:
-            self.message("Error sending mail: %s" % e)
-            return False, "Error sending mail: %s" % e
-
-    def thread_fn(self, form, recip, cb):
-        status, msg = self.send_email(form, recip)
-        gobject.idle_add(cb, status, msg)
-
-    def send_email_background(self, form, cb, recip=None):
-        if not self.config.getboolean("state", "connected_inet"):
-            raise Exception("Unable to send mail: Not connected to internet")
-
-        thread = threading.Thread(target=self.thread_fn,
-                                  args=(form,recip,cb))
-        thread.start()
 
 def __validate_access(config, callsign, emailaddr, types):
     rules = config.options("email_access")

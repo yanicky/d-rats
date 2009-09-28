@@ -649,8 +649,13 @@ class MainApp(object):
                                  _("received from"),
                                  f.get_sender_string())
 
-        if fwd_on and f.get_path_dst() != self.config.get("user", "callsign"):
-            msg += " (" + _("forwarding to") + " " + f.get_path_dst() + ")"
+        dst = f.get_path_dst()
+        src = f.get_path_src()
+
+        if fwd_on and \
+                "@" not in src and \
+                dst != self.config.get("user", "callsign"):
+            msg += " (" + _("forwarding to") + " " + dst + ")"
             newfn = os.path.join(self.config.form_store_dir(),
                                  _("Outbox"),
                                  os.path.basename(fn))

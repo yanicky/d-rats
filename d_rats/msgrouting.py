@@ -18,12 +18,24 @@ import sys
 import threading
 import time
 import os
+import smtplib
 from glob import glob
+
+try:
+    from email.mime.multipart import MIMEMultipart
+    from email.mime.base import MIMEBase
+    from email.mime.text import MIMEText
+except ImportError:
+    # Python 2.4
+    from email import MIMEMultipart
+    from email import MIMEBase
+    from email import MIMEText 
 
 import gobject
 
 import formgui
 import signals
+import emailgw
 
 CALL_TIMEOUT_RETRY = 300
 
@@ -35,6 +47,7 @@ class MessageRouter(gobject.GObject):
     __gsignals__ = {
         "get-station-list" : signals.GET_STATION_LIST,
         "user-send-form" : signals.USER_SEND_FORM,
+        "form-sent" : signals.FORM_SENT,
         }
     _signals = __gsignals__
 
@@ -115,16 +128,22 @@ class MessageRouter(gobject.GObject):
     def _port_free(self, port):
         return not self.__sent_port.has_key(port)
 
-    def _route_msg(self, call, path, slist, routes):
+    def _route_msg(self, src, dst, path, slist, routes):
         invalid = []
 
+        emailok = emailgw.validate_incoming(self.__config, src, dst)
+
         while True:
-            if slist.has_key(call) and call not in invalid:
+            print dst
+            if "@" in dst and emailok:
+                # Out via email
+                route = dst
+            elif slist.has_key(dst) and dst not in invalid:
                 # Direct send
-                route = call
-            elif routes.has_key(call) and routes[call] not in invalid:
+                route = dst
+            elif routes.has_key(dst) and routes[dst] not in invalid:
                 # Static route present
-                route = routes[call]
+                route = routes[dst]
             elif routes.has_key("*") and routes["*"] not in invalid:
                 # Default route
                 route = routes["*"]
@@ -132,7 +151,7 @@ class MessageRouter(gobject.GObject):
                 route = None
                 break
 
-            if route != call and route in path:
+            if route != dst and route in path:
                 invalid.append(route)
                 route = None # Don't route to the same location twice
             elif self._is_station_failed(route):
@@ -142,11 +161,82 @@ class MessageRouter(gobject.GObject):
                 break # We have a route to try
 
         if route:
-            self._p("Routing message for %s to %s" % (call, route))
+            self._p("Routing message for %s to %s" % (dst, route))
         else:
-            self._p("No route for station %s" % call)
+            self._p("No route for station %s" % dst)
 
         return route
+
+    def _form_to_email(self, msgfn, replyto):
+        form = formgui.FormFile(msgfn)
+
+        if not replyto:
+            replyto = "DO_NOT_REPLY@d-rats.com"
+
+        sender = form.get_path_src()
+        for i in "<>\"'":
+            if i in sender:
+                sender = sender.replace(i, "")
+
+        msg = MIMEMultipart()
+        msg["Subject"] = form.get_subject_string()
+        msg["From"] = '"%s" <%s>' % (sender, replyto)
+        msg["To"] = form.get_path_dst()
+        msg["Reply-To"] = msg["From"]
+
+        if form.id == "email":
+            body = form.get_field_value("message")
+        else:
+            body = "D-RATS form data attached"
+
+        msg.attach(MIMEText(body))
+    
+        payload = MIMEBase("d-rats", "form_xml")
+        payload.set_payload(form.get_xml())
+        payload.add_header("Content-Disposition",
+                           "attachment",
+                           filename="do_not_open_me")
+        msg.attach(payload)
+
+        return msg
+
+    def _route_via_email(self, call, msgfn):
+        server = self.__config.get("settings", "smtp_server")
+        replyto = self.__config.get("settings", "smtp_replyto")
+        tls = self.__config.getboolean("settings", "smtp_tls")
+        user = self.__config.get("settings", "smtp_username")
+        pwrd = self.__config.get("settings", "smtp_password")
+        port = self.__config.getint("settings", "smtp_port")
+
+        msg = self._form_to_email(msgfn, replyto)
+
+        mailer = smtplib.SMTP(server, port)
+        mailer.set_debuglevel(1)
+
+        mailer.ehlo()
+        if tls:
+            mailer.starttls()
+            mailer.ehlo()
+        if user and pwrd:
+            mailer.login(user, pwrd)
+
+        mailer.sendmail(replyto, msg["To"], msg.as_string())
+        mailer.quit()
+        self.emit("form-sent", -1, msgfn)
+
+    def _route_via_station(self, call, route, slist, msg):
+        if self._sent_recently(route):
+            self._p("Call %s is busy" % route)
+            return
+
+        print slist
+        port = slist[route]
+        if not self._port_free(port):
+            self._p("I think port %s is busy" % port)
+            return # likely already a transfer going here so skip it
+
+        self._p("Sending %s to %s (via %s)" % (msg, call, route))
+        self._send_form(route, port, msg)
 
     def _run_one(self):
         plist = self.emit("get-station-list")
@@ -159,28 +249,20 @@ class MessageRouter(gobject.GObject):
                 slist[station] = port
 
         queue = self._get_queue()
-        for call, callq in queue.items():
+        for dst, callq in queue.items():
             msg = callq[0]
 
             form = formgui.FormFile(msg)
             path = form.get_path()
+            src = form.get_path_src()
             del form
-            route = self._route_msg(call, path, slist, routes)
+            route = self._route_msg(src, dst, path, slist, routes)
             if not route:
                 continue # No route to station
-
-            if self._sent_recently(route):
-                self._p("Call %s is busy" % route)
-                continue
-
-            print slist
-            port = slist[route]
-            if not self._port_free(port):
-                self._p("I think port %s is busy" % port)
-                continue # likely already a transfer going here so skip it
-
-            self._p("Sending %s to %s (via %s)" % (msg, call, route))
-            self._send_form(route, port, msg)
+            elif "@" in route:
+                self._route_via_email(dst, msg)
+            else:
+                self._route_via_station(dst, route, slist, msg)
 
     def _run(self):
         while self.__enabled:

@@ -151,44 +151,6 @@ class FileSendThread(FileBaseThread):
 class FormRecvThread(FileBaseThread):
     progress_key = "recv_size"
 
-    def maybe_send_form(self, form, fn):
-        def cb(status, msg):
-            #self.gui.chatgui.tx_msg("[EMAIL GW] %s" % msg)
-            pass
-
-        if not self.coord.config.getboolean("settings", "smtp_dogw"):
-            print "Not configured as a mail gateway"
-            return fn
-
-        if "EMAIL" in form.get_path():
-            print "This form has already been through the internet"
-            return fn
-
-        if not emailgw.validate_outgoing(self.coord.config,
-                                         self.session.get_station(),
-                                         form.get_recipient_string()):
-            msg = "Remote station %s " % self.session.get_station() + \
-                "not authorized for automatic outbound email service; " + \
-                "Message held for local station operator."
-            print msg
-            cb(False, msg)
-            return fn
-
-        newfn = os.path.join(self.coord.config.form_store_dir(),
-                             _("Sent"),
-                             os.path.basename(fn))
-        os.rename(fn, newfn)
-
-        srv = emailgw.FormEmailService(self.coord.config)
-        try:
-            srv.send_email_background(form, cb)
-            self.coord.session_status(self.session, msg)
-        except Exception, e:
-            msg = "Failed to send mail: %s" % e
-            self.coord.session_status(self.session, msg)
-
-        return newfn
-
     def worker(self, path):
         md = os.path.join(self.coord.config.form_store_dir(), _("Inbox"))
         newfn = time.strftime(os.path.join(md, "form_%m%d%Y_%H%M%S.xml"))
@@ -204,11 +166,6 @@ class FormRecvThread(FileBaseThread):
             form.save_to(fn)
 
             self.completed("form")
-            recip = form.get_recipient_string()
-            print "Form recipient: %s" % recip
-            if recip and "@" in recip:
-                fn = self.maybe_send_form(form, fn)
-
             self.coord.session_newform(self.session, fn)
         else:
             self.failed()

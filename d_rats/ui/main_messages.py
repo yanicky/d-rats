@@ -679,58 +679,6 @@ class MessagesTab(MainWindowTab):
 
         self.emit("user-send-form", station, port, fn, "foo")
 
-    def _email(self, button):
-        try:
-            sel = self._messages.get_selected_messages()
-        except TypeError:
-            return
-
-        if len(sel) > 1:
-            print "FIXME: Warn about multiple send"
-            return
-
-        fn = sel[0]
-        try:
-            form = formgui.FormFile(fn)
-        except Exception, e:
-            log_exception()
-            display_error(_("Unable to email this form:") + " %s" % e)
-            return
-
-        addr = form.get_recipient_string()
-
-        if "@" not in addr:
-            addr = prompt_for_string(_("Enter destination address:"))
-            if not addr:
-                return
-            elif "@" not in addr:
-                display_error(_("Invalid address"))
-                return
-        elif not ask_for_confirmation(_("Send this form via email to") + \
-                                          " %s?" % addr):
-            return
-
-        newfn = os.path.join(self._config.form_store_dir(),
-                             _("Sent"),
-                             os.path.basename(fn))
-        try:
-            os.rename(fn, newfn)
-        except OSError, e:
-            print "Failed to rename %s -> %s" % (fn, newfn)
-            print e
-            return
-
-        srv = emailgw.FormEmailService(self._config)
-        try:
-            srv.send_email_background(form, lambda s, m: True, addr)
-            event = main_events.Event(None, "Sent email")
-        except Exception, e:
-            log_exception()
-            msg = "Failed to send mail: %s" % e
-            event = main_events.Event(None, msg)
-
-        self.emit("event", event)
-
     def _mrk_msg(self, button, read):
         try:
             sel = self._messages.get_selected_messages()
@@ -782,7 +730,6 @@ class MessagesTab(MainWindowTab):
 
         buttons = [("msg-new.png", _("New"), self._new_msg),
                    ("msg-send.png", _("Send"), self._snd_msg),
-                   ("msg-email.png", _("Email"), self._email),
                    ("msg-reply.png", _("Reply"), self._rpl_msg),
                    ("msg-delete.png", _("Delete"), self._del_msg),
                    ("msg-markread.png", _("Mark Read"), read),
