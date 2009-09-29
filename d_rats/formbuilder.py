@@ -410,7 +410,7 @@ class FormBuilderGUI(gtk.Dialog):
         l.set_size_request(45, -1)
         l.show()
 
-        if choices:
+        if choices is not None:
             e = make_choice(choices, True)
         else:
             e = gtk.Entry()
