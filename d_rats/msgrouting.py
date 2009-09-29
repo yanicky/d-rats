@@ -51,6 +51,9 @@ class MessageRouter(gobject.GObject):
         }
     _signals = __gsignals__
 
+    def _emit(signal, *args):
+        gobject.idle_add(self.emit, signal, *args)
+
     def __init__(self, config):
         gobject.GObject.__init__(self)
 
@@ -118,7 +121,7 @@ class MessageRouter(gobject.GObject):
         self.__sent_call[call] = time.time()
         self.__sent_port[port] = time.time()
         self.__file_to_call[filename] = call
-        self.emit("user-send-form", call, port, filename, "Foo")
+        self._emit("user-send-form", call, port, filename, "Foo")
 
     def _sent_recently(self, call):
         if self.__sent_call.has_key(call):
@@ -222,7 +225,7 @@ class MessageRouter(gobject.GObject):
 
         mailer.sendmail(replyto, msg["To"], msg.as_string())
         mailer.quit()
-        self.emit("form-sent", -1, msgfn)
+        self._emit("form-sent", -1, msgfn)
 
     def _route_via_station(self, call, route, slist, msg):
         if self._sent_recently(route):
@@ -239,7 +242,7 @@ class MessageRouter(gobject.GObject):
         self._send_form(route, port, msg)
 
     def _run_one(self):
-        plist = self.emit("get-station-list")
+        plist = self._emit("get-station-list")
         slist = {}
 
         routes = self._get_routes()

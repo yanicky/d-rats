@@ -52,6 +52,9 @@ class MailThread(threading.Thread, gobject.GObject):
 
     _signals = __gsignals__
 
+    def _emit(self, signal, *args):
+        gobject.idle_add(self.emit, signal, *args)
+
     def __init__(self, config, account):
         threading.Thread.__init__(self)
         gobject.GObject.__init__(self)
