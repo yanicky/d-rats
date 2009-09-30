@@ -74,11 +74,15 @@ class LocalFileView(FileView):
 
         files = glob(os.path.join(self._path, "*.*"))
         for file in files:
-            stat = os.stat(file)
-            ts = stat.st_mtime
-            sz = stat.st_size
-            nm = os.path.basename(file)
-            self._store.append((self._file_icon, nm, sz, ts))
+            print "Adding local file `%s'" % file
+            try:
+                stat = os.stat(file)
+                ts = stat.st_mtime
+                sz = stat.st_size
+                nm = os.path.basename(file)
+                self._store.append((self._file_icon, nm, sz, ts))
+            except Exception, e:
+                print "Failed to add local file: %s" % e
 
 class RemoteFileView(FileView):
     def _file_list_cb(self, job, state, result):
