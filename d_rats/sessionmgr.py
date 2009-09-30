@@ -36,37 +36,6 @@ T_RPC       = 7
 class SessionClosedError(Exception):
     pass
 
-class Block(object):
-    def __init__(self):
-        self.seq = 0
-        self.type = 0
-        self.data = ""
-        self.source = ""
-        self.destination = ""
-        self.consistent = False
-
-    def set_seq(self, seq):
-        self.seq = int(seq)
-
-    def set_type(self, type):
-        self.type = int(type)
-
-    def set_data(self, data):
-        self.data = data
-
-    def set_station(self, src, dst):
-        self.source = src
-        self.destination = dst
-
-    def get_info(self):
-        return (self.seq, self.type, self.source, self.destination)
-
-    def get_consistent(self):
-        return self.consistent
-
-    def get_data(self):
-        return self.data
-
 class Session(object):
     _sm = None
     _id = None
