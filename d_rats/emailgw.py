@@ -218,11 +218,11 @@ class MailThread(threading.Thread, gobject.GObject):
                                os.path.basename(ffn))
             os.rename(ffn, nfn) # Move to Outbox
         else:
-            self.emit("form-received", -999, ffn)
+            self._emit("form-received", -999, ffn)
 
         msg = "Mail received from %s" % sender
         event = main_events.Event(None, msg)
-        self.emit("event", event)
+        self._emit("event", event)
 
     def do_chat_from_mail(self, mail):
         if mail.is_multipart():
@@ -245,12 +245,12 @@ class MailThread(threading.Thread, gobject.GObject):
             body)
             
         for port in self.emit("get-station-list").keys():
-            self.emit("user-send-chat", "CQCQCQ", port, text, False)
+            self._emit("user-send-chat", "CQCQCQ", port, text, False)
 
         event = main_events.Event(None,
                                   "Mail received from %s and sent via chat" % \
                                       mail.get("From", "Unknown Sender"))
-        self.emit("event", event)
+        self._emit("event", event)
 
     def run(self):
         self.message("Thread starting")

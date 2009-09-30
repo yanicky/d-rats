@@ -51,7 +51,7 @@ class MessageRouter(gobject.GObject):
         }
     _signals = __gsignals__
 
-    def _emit(signal, *args):
+    def _emit(self, signal, *args):
         gobject.idle_add(self.emit, signal, *args)
 
     def __init__(self, config):
@@ -242,7 +242,7 @@ class MessageRouter(gobject.GObject):
         self._send_form(route, port, msg)
 
     def _run_one(self):
-        plist = self._emit("get-station-list")
+        plist = self.emit("get-station-list")
         slist = {}
 
         routes = self._get_routes()
