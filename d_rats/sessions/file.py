@@ -16,7 +16,9 @@ class NotifyDict(UserDict.UserDict):
         self.data[name] = value
         self.cb()
 
-class BaseFileTransferSession(object):
+class FileTransferSession(stateful.StatefulSession):
+    type = base.T_FILEXFER
+
     def internal_status(self, vals):
         print "XFER STATUS: %s" % vals["msg"]
 
@@ -34,6 +36,7 @@ class BaseFileTransferSession(object):
         self.status(self.last_status)
 
     def __init__(self, name, status_cb=None, **kwargs):
+        stateful.StatefulSession.__init__(self, name, **kwargs)
         if not status_cb:
             self.status_cb = self.internal_status
         else:
@@ -43,11 +46,9 @@ class BaseFileTransferSession(object):
         self.retries = 0
         self.filename = ""
 
-        self.stats["total_size"] = 0
         self.last_status = ""
-
-        # Replace the regular dict with NotifyDict
         self.stats = NotifyDict(self.status_tick, self.stats)
+        self.stats["total_size"] = 0
 
     def get_file_data(self, filename):
         f = file(filename, "rb")
@@ -161,7 +162,7 @@ class BaseFileTransferSession(object):
         partfilename = filename + ".part"
 
         if os.path.exists(partfilename):
-            data = BaseFileTransferSession.get_file_data(self, partfilename)
+            data = self.get_file_data(self, partfilename)
             offset = os.path.getsize(partfilename)
             print "Part file exists, resuming at %i" % offset
         else:
@@ -206,7 +207,7 @@ class BaseFileTransferSession(object):
                 os.remove(partfilename)
         except Exception, e:
             print "Failed to write transfer data: %s" % e
-            BaseFileTransferSession.put_file_data(self, partfilename, data)
+            self.put_file_data(self, partfilename, data)
             return None
 
         if self.stats["recv_size"] != self.stats["total_size"]:
@@ -217,20 +218,6 @@ class BaseFileTransferSession(object):
             self.stats["recv_size"] = self.stats["total_size"] = actual
             self.status(_("Complete"))
             return filename
-
-class FileTransferSession(BaseFileTransferSession, stateful.StatefulSession):
-    type = base.T_FILEXFER
-
-    def __init__(self, *args, **kwargs):
-        stateful.StatefulSession.__init__(self, *args, **kwargs)
-        BaseFileTransferSession.__init__(self, *args, **kwargs)
-
-class PipelinedFileTransfer(BaseFileTransferSession, stateful.PipelinedStatefulSession):
-    type = base.T_PFILEXFER
-
-    def __init__(self, *args, **kwargs):
-        stateful.PipelinedStatefulSession.__init__(self, *args, **kwargs)
-        BaseFileTransferSession.__init__(self, *args, **kwargs)
 
     def get_file_data(self, filename):
         f = file(filename, "rb")
@@ -247,4 +234,3 @@ class PipelinedFileTransfer(BaseFileTransferSession, stateful.PipelinedStatefulS
             f.close()
         except zlib.error, e:
             raise e
-

@@ -3,13 +3,13 @@ from threading import Thread
 
 from d_rats.sessions import base, stateful
 
-class SocketSession(stateful.PipelinedStatefulSession):
+class SocketSession(stateful.StatefulSession):
     type = base.T_SOCKET
 
     IDLE_TIMEOUT = None
 
     def __init__(self, name, status_cb=None):
-        stateful.PipelinedStatefulSession.__init__(self, name)
+        stateful.StatefulSession.__init__(self, name)
 
         if status_cb:
             self.status_cb = status_cb

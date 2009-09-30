@@ -31,14 +31,14 @@ class SniffSession(stateless.StatelessSession, gobject.GObject):
         self.handler = self._handler
 
     def decode_control(self, frame):
-        if frame.type == control.ControlSession.T_ACK:
+        if frame.type == control.T_ACK:
             l, r = struct.unpack("BB", frame.data)
             return _("Control: ACK") + " " + \
                 _("Local") + ":%i " % l + \
                 _("Remote") + ":%i" % r
-        elif frame.type == control.ControlSession.T_END:
+        elif frame.type == control.T_END:
             return _("Control: END session %s") % frame.data
-        elif frame.type >= control.ControlSession.T_NEW:
+        elif frame.type >= control.T_NEW:
             id, = struct.unpack("B", frame.data[0])
             name = frame.data[1:]
             stype = session_types.get(frame.type,

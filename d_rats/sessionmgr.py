@@ -195,7 +195,7 @@ class SessionManager(object):
         else:
             s = cls(name, **kwargs)
 
-        s.set_state(s.ST_SYNC)
+        s.set_state(base.ST_SYNC)
         id = self._register_session(s, dest, "new,out")
 
         if dest != "CQCQCQ":
@@ -211,7 +211,7 @@ class SessionManager(object):
         for id, s in self.sessions.items():
             if session.name == s.name:
                 self.tport.flush_blocks(id)
-                if session.get_state() != session.ST_CLSD:
+                if session.get_state() != base.ST_CLSD:
                     self.control.end_session(session)
                 self._deregister_session(id)
                 session.close()

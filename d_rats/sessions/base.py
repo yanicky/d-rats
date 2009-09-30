@@ -21,12 +21,17 @@ from d_rats import transport
 
 T_STATELESS = 0
 T_GENERAL   = 1
-T_FILEXFER  = 2
-T_FORMXFER  = 3
+T_UNUSED2   = 2 # Old non-pipelined FileTransfer
+T_UNUSED3   = 3 # Old non-pipelined FormTransfer
 T_SOCKET    = 4
-T_PFILEXFER = 5
-T_PFORMXFER = 6
+T_FILEXFER  = 5
+T_FORMXFER  = 6
 T_RPC       = 7
+
+ST_OPEN     = 0
+ST_CLSD     = 1
+ST_CLSW     = 2
+ST_SYNC     = 3
 
 class SessionClosedError(Exception):
     pass
@@ -38,17 +43,12 @@ class Session(object):
     _rs = None
     type = None
 
-    ST_OPEN = 0
-    ST_CLSD = 1
-    ST_CLSW = 2
-    ST_SYNC = 3
-
     def __init__(self, name):
         self.name = name
         self.inq = transport.BlockQueue()
         self.handler = None
         self.state_event = threading.Event()
-        self.state = self.ST_CLSD
+        self.state = ST_CLSD
 
         self.stats = { "sent_size"   : 0,
                        "recv_size"   : 0,
@@ -67,7 +67,7 @@ class Session(object):
     def close(self, force=False):
         print "Got close request"
         if force:
-            self.state = self.ST_CLSD
+            self.state = ST_CLSD
 
         if self._sm:
             self._sm.stop_session(self)
@@ -82,7 +82,7 @@ class Session(object):
         pass
 
     def set_state(self, state):
-        if state not in [self.ST_OPEN, self.ST_CLSD, self.ST_SYNC]:
+        if state not in [ST_OPEN, ST_CLSD, ST_SYNC]:
             return False
 
         self.state = state

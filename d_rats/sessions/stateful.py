@@ -22,27 +22,34 @@ from d_rats import transport
 from d_rats.ddt2 import DDT2EncodedFrame
 from d_rats.sessions import base
 
+T_SYN    = 0
+T_ACK    = 1
+T_NAK    = 2
+T_DAT    = 4
+T_REQACK = 5
+
 class StatefulSession(base.Session):
     stateless = False
     type = base.T_GENERAL
 
-    T_SYN = 0
-    T_ACK = 1
-    T_NAK = 2
-    T_DAT = 4
 
     IDLE_TIMEOUT = 90
 
     def __init__(self, name, **kwargs):
         base.Session.__init__(self, name)
         self.outq = transport.BlockQueue()
+        self.oob_queue = {}
+        self.recv_list = []
+        self.outstanding = []
+        self.waiting_for_ack = []
+
         self.enabled = True
 
         self.bsize = kwargs.get("blocksize", 1024)
+        self.out_limit = kwargs.get("outlimit", 8)
+
         self.iseq = -1
         self.oseq = 0
-
-        self.outstanding = None
 
         self.data = transport.BlockQueue()
         self.data_waiting = threading.Condition()
@@ -85,230 +92,6 @@ class StatefulSession(base.Session):
         base.Session.close(self, force)
 
     def queue_next(self):
-        if not self.outstanding:
-            self.outstanding = self.outq.dequeue()
-            self.ts = 0
-            self.attempts = 0
-
-    def is_timeout(self):
-        if self.ts == 0:
-            return True
-
-        if (time.time() - self._sm.last_frame) < 3:
-            return False
-
-        if (time.time() - self.ts) < self.ack_timeout:
-            return False
-
-        return True
-
-    def send_blocks(self):
-        self.queue_next()
-
-        if self.outstanding and self.is_timeout():
-            if self.attempts:
-                self.stats["retries"] += 1
-
-            if self.attempts == 10:
-                print "Too many retries, closing..."
-                self.set_state(self.ST_CLSD)
-                self.enabled = False
-                return
-
-            self.attempts += 1
-            print "Attempt %i" % self.attempts
-
-            self._sm.outgoing(self, self.outstanding)
-            t = time.time()
-            print "Waiting for block to be sent..." 
-            self.outstanding.sent_event.wait()
-            self.outstanding.sent_event.clear()
-            self.ts = time.time()
-            print "Block sent after: %f" % (self.ts - t)
-
-    def send_ack(self, seq):
-        f = DDT2EncodedFrame()
-        f.seq = 0
-        f.type = self.T_ACK
-        f.data = str(seq)
-
-        self._sm.outgoing(self, f)
-
-    def recv_blocks(self):
-        blocks = self.inq.dequeue_all()
-
-        for b in blocks:
-            if b.type == self.T_ACK:
-                # FIXME: lock here
-                if self.outstanding:
-                    print "Got ACK for %s" % b.data
-                    self.outstanding.ackd_event.set()
-                    self.stats["sent_size"] += len(self.outstanding.data)
-                    self.attempts = 0
-                    self.outstanding = None
-                else:
-                    print "Got ACK but no block sent!"
-            elif b.type == self.T_DAT:
-                print "Sending ACK for %s" % b.data
-                self.send_ack(b.seq)
-                self.stats["recv_wire"] += len(b.data)
-                if b.seq == self.iseq + 1:
-                    print "Queuing data for %i" % b.seq
-                    self.stats["recv_size"] += len(b.data)
-
-                    self.data_waiting.acquire()
-                    self.data.enqueue(b.data)
-                    self.data_waiting.notify()
-                    self.data_waiting.release()
-
-                    self.iseq = (self.iseq + 1) % 256
-                else:
-                    print "Dropping duplicate block %i" % b.seq
-            else:
-                print "Got unknown type: %i" % b.type
-
-    def worker(self):
-        while self.enabled:
-            self.send_blocks()
-            self.recv_blocks()
-
-            if not self.outstanding and self.outq.peek():
-                print "Short-circuit"
-                continue # Short circuit because we have things to send
-
-            print "Session loop (%s:%s)" % (self._id, self.name)
-
-            if self.outstanding:
-                print "Outstanding data, short sleep"
-                self.event.wait(1)
-            else:
-                print "Deep sleep"
-                self.event.wait(self.IDLE_TIMEOUT)
-                if not self.event.isSet():
-                    print "Session timed out!"
-                    self.set_state(self.ST_CLSD)
-                    self.enabled = False                    
-                else:
-                    print "Awoke from deep sleep to some data"
-                    
-            self.event.clear()
-            
-    def _block_read_for(self, count):
-        waiting = self.data.peek_all()
-
-        if not count and not waiting:
-            self.data_waiting.wait(1)
-            return
-
-        if count > len("".join(waiting)):
-            self.data_waiting.wait(1)
-            return
-
-    def _read(self, count):
-        self.data_waiting.acquire()
-
-        self._block_read_for(count)
-
-        if count == None:
-            b = self.data.dequeue_all()
-            # BlockQueue.dequeue_all() returns the blocks in poppable order,
-            # which is newest first
-            b.reverse()
-            buf = "".join(b)
-        else:
-            buf = ""
-            i = 0
-            while True:
-                next = self.data.peek() or ''
-                if len(next) > 0 and (len(next) + i) < count:
-                    buf += self.data.dequeue()
-                else:
-                    break
-
-        self.data_waiting.release()
-
-        return buf
-
-    def read(self, count=None):
-        while self.get_state() == self.ST_SYNC:
-            print "Waiting for session to open"
-            self.wait_for_state_change(5)
-
-        if self.get_state() != self.ST_OPEN:
-            raise base.SessionClosedError("State is %i" % self.get_state())
-
-        buf = self._read(count)
-
-        if not buf and self.get_state() != self.ST_OPEN:
-            raise base.SessionClosedError()
-
-        return buf
-
-    def write(self, buf, timeout=0):
-        while self.get_state() == self.ST_SYNC:
-            print "Waiting for session to open"
-            self.wait_for_state_change(5)
-
-        if self.get_state() != self.ST_OPEN:
-            raise base.SessionClosedError("State is %s" % self.get_state())
-
-        blocks = []
-
-        while buf:
-            chunk = buf[:self.bsize]
-            buf = buf[self.bsize:]
-
-            f = DDT2EncodedFrame()
-            f.seq = self.oseq
-            f.type = self.T_DAT
-            f.data = chunk
-            f.sent_event.clear()
-
-            self.outq.enqueue(f)
-            blocks.append(f)
-
-            self.oseq = (self.oseq + 1) % 256
-
-        self.queue_next()
-        self.event.set()
-
-        while timeout is not None and \
-                blocks and \
-                self.get_state() != self.ST_CLSD:
-            block = blocks[0]
-            del blocks[0]
-
-            print "Waiting for block %i to be ack'd" % block.seq
-            block.sent_event.wait()
-            if block.sent_event.isSet():
-                print "Block %i is sent, waiting for ack" % block.seq
-                block.ackd_event.wait(timeout)
-                if block.ackd_event.isSet() and block.sent_event.isSet():
-                    print "%i ACKED" % block.seq
-                else:
-                    print "%i Not ACKED (probably canceled)" % block.seq
-                    break
-            else:
-                print "Block %i not sent?" % block.seq
-
-class PipelinedStatefulSession(StatefulSession):
-    T_REQACK = 5
-
-    def __init__(self, *args, **kwargs):
-        self.oob_queue = {}
-        self.recv_list = []
-
-        if kwargs.has_key("outlimit"):
-            self.out_limit = kwargs["outlimit"]
-            del kwargs["outlimit"]
-        else:
-            self.out_limit = 8
-
-        StatefulSession.__init__(self, *args, **kwargs)
-        self.outstanding = []
-        self.waiting_for_ack = []
-
-    def queue_next(self):
         if self.outstanding is None:
             # This is a silly race condition because the worker thread is
             # started in the init, which might run before we set our values
@@ -334,10 +117,22 @@ class PipelinedStatefulSession(StatefulSession):
             else:
                 break
 
+    def is_timeout(self):
+        if self.ts == 0:
+            return True
+
+        if (time.time() - self._sm.last_frame) < 3:
+            return False
+
+        if (time.time() - self.ts) < self.ack_timeout:
+            return False
+
+        return True
+
     def send_reqack(self, blocks):
         f = DDT2EncodedFrame()
         f.seq = 0
-        f.type = self.T_REQACK
+        f.type = T_REQACK
         # FIXME: This needs to support 16-bit block numbers!
         f.data = "".join([chr(x) for x in blocks])
 
@@ -357,7 +152,7 @@ class PipelinedStatefulSession(StatefulSession):
         
         if self.stats["retries"] >= 10:
             print "Too many retries, closing..."
-            self.set_state(self.ST_CLSD)
+            self.set_state(base.ST_CLSD)
             self.enabled = False
             return
 
@@ -406,7 +201,7 @@ class PipelinedStatefulSession(StatefulSession):
     def send_ack(self, blocks):
         f = DDT2EncodedFrame()
         f.seq = 0
-        f.type = self.T_ACK
+        f.type = T_ACK
         f.data = "".join([chr(x) for x in blocks])
 
         print "Acking blocks %s (%s)" % (blocks,
@@ -430,7 +225,7 @@ class PipelinedStatefulSession(StatefulSession):
             self.data_waiting.release()
 
         for b in blocks:
-            if b.type == self.T_ACK:
+            if b.type == T_ACK:
                 self.waiting_for_ack = False
                 acked = [ord(x) for x in b.data]
                 print "Acked blocks: %s (/%i)" % (acked, len(self.outstanding))
@@ -442,7 +237,7 @@ class PipelinedStatefulSession(StatefulSession):
                         self.outstanding.remove(block)
                     else:
                         print "Block %i outstanding, but not acked" % block.seq
-            elif b.type == self.T_DAT:
+            elif b.type == T_DAT:
                 print "Got block %i" % b.seq
                 # FIXME: For 16-bit blocks
                 if b.seq == 0 and self.iseq == 255:
@@ -455,7 +250,7 @@ class PipelinedStatefulSession(StatefulSession):
                     self.recv_list.append(b.seq)
                     self.stats["recv_size"] += len(b.data)
                     self.oob_queue[b.seq] = b
-            elif b.type == self.T_REQACK:
+            elif b.type == T_REQACK:
                 toack = []
 
                 # FIXME: This needs to support 16-bit block numbers!
@@ -480,3 +275,129 @@ class PipelinedStatefulSession(StatefulSession):
                                                          block)
             del self.oob_queue[next(self.iseq)]
             enqueue(block)            
+
+    def worker(self):
+        while self.enabled:
+            self.send_blocks()
+            self.recv_blocks()
+
+            if not self.outstanding and self.outq.peek():
+                print "Short-circuit"
+                continue # Short circuit because we have things to send
+
+            print "Session loop (%s:%s)" % (self._id, self.name)
+
+            if self.outstanding:
+                print "Outstanding data, short sleep"
+                self.event.wait(1)
+            else:
+                print "Deep sleep"
+                self.event.wait(self.IDLE_TIMEOUT)
+                if not self.event.isSet():
+                    print "Session timed out!"
+                    self.set_state(base.ST_CLSD)
+                    self.enabled = False                    
+                else:
+                    print "Awoke from deep sleep to some data"
+                    
+            self.event.clear()
+            
+    def _block_read_for(self, count):
+        waiting = self.data.peek_all()
+
+        if not count and not waiting:
+            self.data_waiting.wait(1)
+            return
+
+        if count > len("".join(waiting)):
+            self.data_waiting.wait(1)
+            return
+
+    def _read(self, count):
+        self.data_waiting.acquire()
+
+        self._block_read_for(count)
+
+        if count == None:
+            b = self.data.dequeue_all()
+            # BlockQueue.dequeue_all() returns the blocks in poppable order,
+            # which is newest first
+            b.reverse()
+            buf = "".join(b)
+        else:
+            buf = ""
+            i = 0
+            while True:
+                next = self.data.peek() or ''
+                if len(next) > 0 and (len(next) + i) < count:
+                    buf += self.data.dequeue()
+                else:
+                    break
+
+        self.data_waiting.release()
+
+        return buf
+
+    def read(self, count=None):
+        while self.get_state() == base.ST_SYNC:
+            print "Waiting for session to open"
+            self.wait_for_state_change(5)
+
+        if self.get_state() != base.ST_OPEN:
+            raise base.SessionClosedError("State is %i" % self.get_state())
+
+        buf = self._read(count)
+
+        if not buf and self.get_state() != base.ST_OPEN:
+            raise base.SessionClosedError()
+
+        return buf
+
+    def write(self, buf, timeout=0):
+        while self.get_state() == base.ST_SYNC:
+            print "Waiting for session to open"
+            self.wait_for_state_change(5)
+
+        if self.get_state() != base.ST_OPEN:
+            raise base.SessionClosedError("State is %s" % self.get_state())
+
+        blocks = []
+
+        while buf:
+            chunk = buf[:self.bsize]
+            buf = buf[self.bsize:]
+
+            f = DDT2EncodedFrame()
+            f.seq = self.oseq
+            f.type = T_DAT
+            f.data = chunk
+            f.sent_event.clear()
+
+            self.outq.enqueue(f)
+            blocks.append(f)
+
+            self.oseq = (self.oseq + 1) % 256
+
+        self.queue_next()
+        self.event.set()
+
+        while timeout is not None and \
+                blocks and \
+                self.get_state() != base.ST_CLSD:
+            block = blocks[0]
+            del blocks[0]
+
+            print "Waiting for block %i to be ack'd" % block.seq
+            block.sent_event.wait()
+            if block.sent_event.isSet():
+                print "Block %i is sent, waiting for ack" % block.seq
+                block.ackd_event.wait(timeout)
+                if block.ackd_event.isSet() and block.sent_event.isSet():
+                    print "%i ACKED" % block.seq
+                else:
+                    print "%i Not ACKED (probably canceled)" % block.seq
+                    break
+            else:
+                print "Block %i not sent?" % block.seq
+
+

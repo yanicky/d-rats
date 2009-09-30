@@ -17,21 +17,22 @@
 
 import struct
 
+from d_rats.utils import log_exception
 from d_rats.ddt2 import DDT2EncodedFrame
 from d_rats.sessions import base, stateful, stateless
 from d_rats.sessions import file, form, sock
 
+T_PNG = 0
+T_END = 1
+T_ACK = 2
+T_NEW = 3
+
 class ControlSession(base.Session):
     stateless = True
 
-    T_PNG = 0
-    T_END = 1
-    T_ACK = 2
-    T_NEW = 3
-
     def ack_req(self, dest, data):
         f = DDT2EncodedFrame()
-        f.type = self.T_ACK
+        f.type = T_ACK
         f.seq = 0
         f.d_station = dest
         f.data = data
@@ -46,12 +47,12 @@ class ControlSession(base.Session):
         except Exception, e:
             print "Failed to lookup new session event: %s" % e
 
-        if session.get_state() == session.ST_CLSW:
-            session.set_state(session.ST_CLSD)
-        elif session.get_state() == session.ST_OPEN:
+        if session.get_state() == base.ST_CLSW:
+            session.set_state(base.ST_CLSD)
+        elif session.get_state() == base.ST_OPEN:
             pass
-        elif session.get_state() == session.ST_SYNC:
-            session.set_state(session.ST_OPEN)
+        elif session.get_state() == base.ST_SYNC:
+            session.set_state(base.ST_OPEN)
         else:
             print "ACK for session in invalid state: %i" % session.get_state()
         
@@ -66,7 +67,7 @@ class ControlSession(base.Session):
 
         try:
             session = self._sm.sessions[id]
-            session.set_state(session.ST_CLSD)
+            session.set_state(base.ST_CLSD)
             self._sm.stop_session(session)
         except Exception, e:
             print "Session %s ended but not registered" % id
@@ -104,8 +105,9 @@ class ControlSession(base.Session):
             print "Got type: %s" % c
             s = c(name)
             s._rs = id
-            s.set_state(s.ST_OPEN)
+            s.set_state(base.ST_OPEN)
         except Exception, e:
+            log_exception()
             print "Can't start session type `%s': %s" % (frame.type, e)
             return
                 
@@ -119,18 +121,18 @@ class ControlSession(base.Session):
             print "Control ignoring frame for station %s" % frame.d_station
             return
 
-        if frame.type == self.T_ACK:
+        if frame.type == T_ACK:
             self.ctl_ack(frame)
-        elif frame.type == self.T_END:
+        elif frame.type == T_END:
             self.ctl_end(frame)
-        elif frame.type >= self.T_NEW:
+        elif frame.type >= T_NEW:
             self.ctl_new(frame)
         else:
             print "Unknown control message type %i" % frame.type
             
     def new_session(self, session):
         f = DDT2EncodedFrame()
-        f.type = self.T_NEW + session.type
+        f.type = T_NEW + session.type
         f.seq = 0
         f.d_station = session._st
         f.data = struct.pack("B", int(session._id)) + session.name
@@ -148,18 +150,18 @@ class ControlSession(base.Session):
 
             state = session.get_state()
 
-            if state == session.ST_CLSD:
+            if state == base.ST_CLSD:
                 print "Session is closed"
                 break
-            elif state == session.ST_SYNC:
+            elif state == base.ST_SYNC:
                 print "Waiting for synchronization"
                 wait_time = 15
             else:
                 print "Established session %i:%i" % (session._id, session._rs)
-                session.set_state(session.ST_OPEN)
+                session.set_state(base.ST_OPEN)
                 return True
 
-        session.set_state(session.ST_CLSD)
+        session.set_state(base.ST_CLSD)
         print "Failed to establish session"
         return False
         
@@ -167,12 +169,12 @@ class ControlSession(base.Session):
         if session.stateless:
             return
 
-        while session.get_state() == session.ST_SYNC:
+        while session.get_state() == base.ST_SYNC:
             print "Waiting for session in SYNC"
             session.wait_for_state_change(2)
 
         f = DDT2EncodedFrame()
-        f.type = self.T_END
+        f.type = T_END
         f.seq = 0
         f.d_station = session._st
         if session._rs:
@@ -180,7 +182,7 @@ class ControlSession(base.Session):
         else:
             f.data = str(session._id)
 
-        session.set_state(session.ST_CLSW)
+        session.set_state(base.ST_CLSW)
 
         for i in range(0, 3):
             print "Sending End-of-Session"
@@ -192,11 +194,11 @@ class ControlSession(base.Session):
             print "Sent, waiting for response"
             session.wait_for_state_change(15)
 
-            if session.get_state() == session.ST_CLSD:
+            if session.get_state() == base.ST_CLSD:
                 print "Session closed"
                 return True
 
-        session.set_state(session.ST_CLSD)
+        session.set_state(base.ST_CLSD)
         print "Session closed because no response"
         return False
             
@@ -204,11 +206,9 @@ class ControlSession(base.Session):
         base.Session.__init__(self, "control")
         self.handler = self.ctl
 
-        self.stypes = { self.T_NEW + base.T_GENERAL  : stateful.StatefulSession,
-                        self.T_NEW + base.T_FILEXFER : file.FileTransferSession,
-                        self.T_NEW + base.T_FORMXFER : form.FormTransferSession,
-                        self.T_NEW + base.T_SOCKET   : sock.SocketSession,
-                        self.T_NEW + base.T_PFILEXFER: file.PipelinedFileTransfer,
-                        self.T_NEW + base.T_PFORMXFER: form.PipelinedFormTransfer,
+        self.stypes = { T_NEW + base.T_GENERAL  : stateful.StatefulSession,
+                        T_NEW + base.T_FILEXFER : file.FileTransferSession,
+                        T_NEW + base.T_FORMXFER : form.FormTransferSession,
+                        T_NEW + base.T_SOCKET   : sock.SocketSession,
                         }
 

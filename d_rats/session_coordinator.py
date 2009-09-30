@@ -395,9 +395,9 @@ class SessionCoordinator(gobject.GObject):
         print "New session (%s) of type: %s" % (direction, session.__class__)
         self.emit("session-started", session._id, type)
 
-        if isinstance(session, form.BaseFormTransferSession):
+        if isinstance(session, form.FormTransferSession):
             self.new_form_xfer(session, direction)
-        elif isinstance(session, file.BaseFileTransferSession):
+        elif isinstance(session, file.FileTransferSession):
             self.new_file_xfer(session, direction)
         elif isinstance(session, sock.SocketSession):
             self.new_socket(session, direction)
@@ -431,11 +431,7 @@ class SessionCoordinator(gobject.GObject):
         self.outgoing_files.insert(0, filename)
         print "Outgoing files: %s" % self.outgoing_files
 
-        if self.config.getboolean("settings", "pipelinexfers"):
-            xfer = file.PipelinedFileTransfer
-        else:
-            xfer = file.FileTransferSession
-
+        xfer = file.FileTransferSession
         bs = self.config.getint("settings", "ddt_block_size")
         ol = self.config.getint("settings", "ddt_block_outlimit")
 
@@ -452,10 +448,7 @@ class SessionCoordinator(gobject.GObject):
         self.outgoing_forms.insert(0, filename)
         print "Outgoing forms: %s" % self.outgoing_forms
 
-        if self.config.getboolean("settings", "pipelinexfers"):
-            xfer = form.PipelinedFormTransfer
-        else:
-            xfer = form.FormTransferSession
+        xfer = form.FormTransferSession
 
         t = threading.Thread(target=self.sm.start_session,
                              kwargs={"name" : name,
