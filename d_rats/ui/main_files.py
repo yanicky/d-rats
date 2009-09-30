@@ -25,7 +25,7 @@ import gtk
 
 from d_rats.ui.main_common import MainWindowElement, MainWindowTab
 from d_rats.ui.main_common import ask_for_confirmation
-from d_rats import rpcsession
+from d_rats.sessions import rpc
 from d_rats import image
 from d_rats import utils
 from d_rats import signals
@@ -116,7 +116,7 @@ class RemoteFileView(FileView):
     def refresh(self):
         self._store.clear()
         
-        job = rpcsession.RPCFileListJob(self.get_path(), "File list request")
+        job = rpc.RPCFileListJob(self.get_path(), "File list request")
         job.connect("state-change", self._file_list_cb)
 
         return job
@@ -242,7 +242,7 @@ class FilesTab(MainWindowTab):
         ssel, psel = self._get_ssel()
         port = psel.get_active_text()
 
-        job = rpcsession.RPCPullFileJob(station, "Request file %s" % fn)
+        job = rpc.RPCPullFileJob(station, "Request file %s" % fn)
         job.set_file(fn)
 
         self.emit("submit-rpc-job", job, port)

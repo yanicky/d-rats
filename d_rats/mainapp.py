@@ -54,10 +54,8 @@ import mapdisplay
 import map_sources
 import comm
 import sessionmgr
-import sessions
 import session_coordinator
 import emailgw
-import rpcsession
 import formgui
 import station_status
 import pluginsrv
@@ -67,6 +65,7 @@ from ui import main_events
 
 from utils import hexprint,filter_to_ascii,NetFile,log_exception,run_gtk_locked
 from utils import init_icon_maps
+from sessions import rpc, chat, sniff
 
 init_icon_maps()
 
@@ -155,9 +154,9 @@ class MainApp(object):
     def start_comms(self, portid):
         spec = self.config.get("ports", portid)
         try:
-            enb, port, rate, sniff, raw, name = spec.split(",")
+            enb, port, rate, dosniff, raw, name = spec.split(",")
             enb = (enb == "True")
-            sniff = (sniff == "True")
+            dosniff = (dosniff == "True")
             raw = (raw == "True")                   
         except Exception, e:
             print "Failed to parse portspec %s:" % spec
@@ -214,19 +213,19 @@ class MainApp(object):
 
             chat_session = sm.start_session("chat",
                                             dest="CQCQCQ",
-                                            cls=sessions.ChatSession)
+                                            cls=chat.ChatSession)
             self.__connect_object(chat_session, name)
 
-            rpcactions = rpcsession.RPCActionSet(self.config, name)
+            rpcactions = rpc.RPCActionSet(self.config, name)
             self.__connect_object(rpcactions)
 
             rpc_session = sm.start_session("rpc",
                                            dest="CQCQCQ",
-                                           cls=rpcsession.RPCSession,
+                                           cls=rpc.RPCSession,
                                            rpcactions=rpcactions)
 
             def sniff_event(ss, src, dst, msg, port):
-                if sniff:
+                if dosniff:
                     event = main_events.Event(None, "Sniffer: %s" % msg)
                     self.mainwindow.tabs["event"].event(event)
 
@@ -234,7 +233,7 @@ class MainApp(object):
 
             ss = sm.start_session("Sniffer",
                                   dest="CQCQCQ",
-                                  cls=sessions.SniffSession)
+                                  cls=sniff.SniffSession)
             sm.set_sniffer_session(ss._id)
             ss.connect("incoming_frame", sniff_event, name)
 

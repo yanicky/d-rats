@@ -26,7 +26,7 @@ from d_rats.ui import main_events
 from d_rats.ui import conntest
 from d_rats import station_status
 from d_rats import signals
-from d_rats import rpcsession
+from d_rats.sessions import rpc
 
 class StationsList(MainWindowTab):
     __gsignals__ = {
@@ -72,7 +72,7 @@ class StationsList(MainWindowTab):
         elif action == "reset":
             model.set(iter, 1, time.time())
         elif action == "reqpos":
-            job = rpcsession.RPCPositionReport(station, "Position Request")
+            job = rpc.RPCPositionReport(station, "Position Request")
             def log_result(job, state, result):
                 msg = result.get("rc", "(Error)")
                 if msg != "OK":
@@ -96,7 +96,7 @@ class StationsList(MainWindowTab):
                 print "Doing CQCQCQ ping on port %s" % port
                 self.emit("ping-station", "CQCQCQ", port)
         elif action == "reqposall":
-            job = rpcsession.RPCPositionReport("CQCQCQ", "Position Request")
+            job = rpc.RPCPositionReport("CQCQCQ", "Position Request")
             job.set_station(".")
             stationlist = self.emit("get-station-list")
             for port in stationlist.keys():
@@ -123,7 +123,7 @@ class StationsList(MainWindowTab):
                 event = main_events.Event(None, msg)
                 self.emit("event", event)
 
-            job = rpcsession.RPCGetVersion(station, "Version Request")
+            job = rpc.RPCGetVersion(station, "Version Request")
             job.connect("state-change", log_result)
             self.emit("submit-rpc-job", job, port)
 
