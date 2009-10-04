@@ -118,10 +118,15 @@ class Repeater:
                 
         print "Repeating frame to %s on all ports" % frame.d_station
 
-        for path in self.paths:
+        for path in self.paths[:]:
             if path == transport:
                 continue
-            path.send_frame(frame.get_copy())
+            if not path.enabled:
+                print "Found a stale path, removing..."
+                path.disable()
+                self.paths.remove(path)
+            else:
+                path.send_frame(frame.get_copy())
 
     def add_new_transport(self, transport):
         self.paths.append(transport)

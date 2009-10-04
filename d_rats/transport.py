@@ -307,6 +307,9 @@ class Transporter(object):
         self.thread.join()
         
     def send_frame(self, frame):
+        if not self.enabled:
+            print "Refusing to queue block for dead transport"
+            return
         self.outq.enqueue(frame)
 
     def recv_frame(self):
