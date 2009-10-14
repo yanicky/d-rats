@@ -285,7 +285,7 @@ class SerialDataPath(DataPath):
         self._serial.flush()
 
     def __str__(self):
-        return "Serial (%s at %s baud)" % (self.port, self.baud)
+        return "[SERIAL %s@%s]" % (self.port, self.baud)
 
 class TNCDataPath(SerialDataPath):
     def connect(self):
@@ -306,6 +306,9 @@ class TNCDataPath(SerialDataPath):
             print "TNC exception on connect: %s" % e
             utils.log_exception()
             raise DataPathNotConnectedError("Unable to open serial port")
+
+    def __str__(self):
+        return "[TNC %s@%s]" % (self.port, self.baud)
 
 class SocketDataPath(DataPath):
     def __init__(self, pathspec, timeout=0.25):
@@ -456,4 +459,5 @@ class SocketDataPath(DataPath):
         pass
 
     def __str__(self):
-        return "Network (%s:%i)" % (self.host, self.port)
+        addr, port = self._socket.getpeername()
+        return "[NET %s:%i]" % (addr, port)
