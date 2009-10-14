@@ -211,8 +211,6 @@ class DataPath(object):
         self.pathspec = pathspec
         self.can_reconnect = True
 
-        print "New data path: %s" % str(self.pathspec)
-
     def connect(self):
         raise DataPathNotConnectedError("Can't connect base class")
 
@@ -322,7 +320,6 @@ class SocketDataPath(DataPath):
             self.can_reconnect = False
             self.host = "(incoming)"
             self.port = 0
-            print "Socket was passed to me: %s" % self._socket
         elif len(pathspec) == 2:
             (self.host, self.port) = pathspec
             self.call = self.passwd = "UNKNOWN"
@@ -459,5 +456,8 @@ class SocketDataPath(DataPath):
         pass
 
     def __str__(self):
-        addr, port = self._socket.getpeername()
-        return "[NET %s:%i]" % (addr, port)
+        try:
+            addr, port = self._socket.getpeername()
+            return "[NET %s:%i]" % (addr, port)
+        except:
+            return "[NET closed]"
