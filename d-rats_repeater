@@ -97,6 +97,9 @@ class Repeater:
         self.id = id
         self.condition = threading.Condition()
 
+        # Forget port for a station after 10 minutes
+        self.__call_timeout = 600
+
     def __repeat(self, transport, frame):
 
         if frame.d_station == "!":
@@ -104,17 +107,28 @@ class Repeater:
 
         srcinfo = self.calls.get(frame.s_station, None)
         if srcinfo is None and frame.s_station != "CQCQCQ":
+            print "Adding new station %s to port %s" % (frame.s_station,
+                                                        transport)
             self.calls[frame.s_station] = CallInfo(frame.s_station,
                                                    transport)
-        elif srcinfo.last_transport() is not transport:
+        else:
+            if srcinfo.last_transport() != transport:
+                print "Station %s moved to port %s" % (frame.s_station,
+                                                       transport)
             srcinfo.just_heard(transport)
 
         dstinfo = self.calls.get(frame.d_station, None)
-        if dstinfo is not None and dstinfo.last_heard() < 600:
-            print "Delivering frame to %s at %s" % (frame.d_station,
-                                                    dstinfo.last_transport())
-            dstinfo.last_transport().send_frame(frame.get_copy())
-            return
+        if dstinfo is not None:
+            if dstinfo.last_heard() < self.__call_timeout:
+                print "Delivering frame to %s at %s" % \
+                    (frame.d_station, dstinfo.last_transport())
+                dstinfo.last_transport().send_frame(frame.get_copy())
+                return
+            else:
+                print "Last port for %s was %i sec ago (>%i sec)" % \
+                    (frame.d_station,
+                     dstinfo.last_heard(),
+                     self.__call_timeout)
                 
         print "Repeating frame to %s on all ports" % frame.d_station
 
@@ -228,7 +242,7 @@ class Repeater:
         except:
             return
 
-        print "Accepted new client %s" % str(addr)
+        print "Accepted new client %s:%i" % addr
         path = comm.SocketDataPath(csocket)
         tport = transport.Transporter(path,
                                       authfn=self.auth_user,
