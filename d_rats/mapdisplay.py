@@ -40,6 +40,7 @@ CONFIG = None
 
 CONNECTED = True
 MAX_TILE_LIFE = 0
+PROXY = None
 
 def set_connected(connected):
     global CONNECTED
@@ -51,13 +52,29 @@ def set_tile_lifetime(lifetime):
 
     MAX_TILE_LIFE = lifetime
 
+def set_proxy(proxy):
+    global PROXY
+
+    PROXY = proxy
+
 def fetch_url(url, local):
     global CONNECTED
+    global PROXY
 
-    if CONNECTED:
-        return urllib.urlretrieve(url, local)
-    else:
+    if not CONNECTED:
         raise Exception("Not connected")
+
+    if PROXY:
+        proxies = {"http" : PROXY}
+    else:
+        proxies = None
+
+    data = urllib.urlopen(url, proxies=proxies)
+    local_file = file(local, "w")
+    d = data.read()
+    local_file.write(d)
+    data.close()
+    local_file.close()
 
 class MarkerEditDialog(inputdialog.FieldDialog):
     def __init__(self):

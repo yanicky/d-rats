@@ -111,6 +111,7 @@ _DEF_SETTINGS = {
     "msg_forward" : "False",
     "form_logo_dir" : os.path.join(platform.get_platform().config_dir(), "logos"),
     "default_gps_comment" : "D-RATS Station",
+    "http_proxy" : "",
 }
 
 _DEF_STATE = {

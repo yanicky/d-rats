@@ -427,6 +427,8 @@ class MainApp(object):
                                                         "connected_inet"))
         mapdisplay.set_tile_lifetime(self.config.getint("settings",
                                                         "map_tile_ttl") * 3600)
+        proxy = self.config.get("settings", "http_proxy") or None
+        mapdisplay.set_proxy(proxy)
 
         self._refresh_comms()
         self._refresh_gps()
