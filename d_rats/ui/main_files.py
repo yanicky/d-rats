@@ -172,7 +172,7 @@ class FilesTab(MainWindowTab):
         sta = ssel.get_active_text().upper()
         prt = psel.get_active_text()
 
-        if not sta or sta == REMOTE_HINT.upper():
+        if not sta or sta.upper() == REMOTE_HINT.upper():
             return
 
         if not self._remote or self._remote.get_path() != sta:
@@ -232,6 +232,9 @@ class FilesTab(MainWindowTab):
             self._remote.outstanding[fname] = os.stat(fn).st_size
         else:
             station = ssel.get_active_text().upper()
+
+        if not station or station.upper() == REMOTE_HINT.upper():
+            return
 
         self.emit("user-send-file", station, port, fn, fname)
 
