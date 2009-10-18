@@ -56,6 +56,7 @@ class StatefulSession(base.Session):
 
         self.__attempts = 0
         self.__ack_timeout = 0
+        self.__full_acks = 0
 
         self._rtr = 0.0 # Round trip rate (bps)
         self._xmt = 0.0 # Transmit rate (bps)
@@ -103,22 +104,47 @@ class StatefulSession(base.Session):
             # after the superclass init
             return
 
-        count = self.out_limit - len(self.outstanding)
-        if len(self.outstanding) >= self.out_limit:
+        limit = self.out_limit
+        if self.__full_acks > 0:
+            limit += self.__full_acks
+        elif self.__full_acks < 0:
+            limit -= abs(self.__full_acks)
+
+        # Hard limit of 4KB outstanding (should be per-path!)
+        hardlimit = (1 << 12) / self.bsize
+
+        if limit < 2:
+            limit = 2
+        elif limit > hardlimit:
+            limit = hardlimit
+
+        count = limit - len(self.outstanding)
+        print "New limit is %i (%i/%i), queueing %i" % (limit,
+                                                        self.out_limit,
+                                                        hardlimit,
+                                                        count)
+        if count < 0:
+            # Need to requeue some blocks to shrink our window
+            print "Need to requeue %i blocks to shrink window" % abs(count)
+            for i in range(abs(count)):
+                print "  Requeuing block..."
+                b = self.outstanding[-1]
+                del self.outstanding[-1]
+                self.outq.requeue(b)
             return
+        elif count > 0:
+            for i in range(count):
+                b = self.outq.dequeue()
+                if b:
+                    if b.seq == 0 and self.outstanding:
+                        print "### Pausing at rollover boundary ###"
+                        self.outq.requeue(b)
+                        break
 
-        for i in range(count):
-            b = self.outq.dequeue()
-            if b:
-                if b.seq == 0 and self.outstanding:
-                    print "### Pausing at rollover boundary ###"
-                    self.outq.requeue(b)
+                    print "Queuing %i for send (%i)" % (b.seq, count)
+                    self.outstanding.append(b)
+                else:
                     break
-
-                print "Queuing %i for send (%i)" % (b.seq, count)
-                self.outstanding.append(b)
-            else:
-                break
 
     def is_timeout(self):
         if self._xms == 0:
@@ -188,6 +214,10 @@ class StatefulSession(base.Session):
         if self.waiting_for_ack:
             print "Didn't get last ack, asking again"
             self.send_reqack(self.waiting_for_ack)
+            if self.__full_acks > 0:
+                self.__full_acks = 0
+            else:
+                self.__full_acks -= 1
             self.__attempts += 1
             self.__ack_timeout = time.time() + 4 + (self.__attempts * 4)
             return
@@ -270,6 +300,18 @@ class StatefulSession(base.Session):
                         self.outstanding.remove(block)
                     else:
                         print "Block %i outstanding, but not acked" % block.seq
+                if len(self.outstanding) == 0:
+                    print "This ACKed every block"
+                    if self.__full_acks >= 0:
+                        self.__full_acks += 1
+                    else:
+                        self.__full_acks = 0
+                else:
+                    print "This was not a full ACK"
+                    if self.__full_acks > 0:
+                        self.__full_acks = 0
+                    else:
+                        self.__full_acks -= 1
             elif b.type == T_DAT:
                 print "Got block %i" % b.seq
                 # FIXME: For 16-bit blocks
