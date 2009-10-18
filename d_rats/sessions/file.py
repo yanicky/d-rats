@@ -78,7 +78,7 @@ class FileTransferSession(stateful.StatefulSession):
 
         offset = None
 
-        for i in range(10):
+        for i in range(40):
             print "Waiting for start"
             try:
                 resp = self.read()
@@ -105,7 +105,7 @@ class FileTransferSession(stateful.StatefulSession):
             else:
                 print "Got unknown start: `%s'" % resp
 
-            time.sleep(2)
+            time.sleep(0.5)
 
         if offset is None:
             print "Did not get start response"
@@ -135,7 +135,7 @@ class FileTransferSession(stateful.StatefulSession):
 
     def recv_file(self, dir):
         self.status(_("Waiting for transfer to start"))
-        for i in range(10):
+        for i in range(40):
             try:
                 data = self.read()
             except base.SessionClosedError, e:
@@ -145,7 +145,7 @@ class FileTransferSession(stateful.StatefulSession):
             if data:
                 break
             else:
-                time.sleep(2)
+                time.sleep(0.5)
 
         if not data:
             self.status(_("No start block received!"))
