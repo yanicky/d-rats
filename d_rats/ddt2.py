@@ -81,6 +81,20 @@ class DDT2Frame(object):
 
         self.compress = True
 
+        self._xmit_s = 0
+        self._xmit_e = 0
+        self._xmit_z = 0
+
+    def get_xmit_bps(self):
+        if not self._xmit_e:
+            print "Block not sent, can't determine BPS!"
+            return 0
+
+        if self._xmit_s == self._xmit_e:
+            return self._xmit_z * 100 # Fudge for sockets
+
+        return self._xmit_z / (self._xmit_e - self._xmit_s)
+
     def set_compress(self, compress=True):
         self.compress = compress
 
@@ -117,6 +131,8 @@ class DDT2Frame(object):
                           length,
                           s_station,
                           d_station)
+
+        self._xmit_z = len(val) + len(data)
 
         return val + data
 

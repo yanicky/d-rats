@@ -54,9 +54,19 @@ class StatefulSession(base.Session):
         self.data = transport.BlockQueue()
         self.data_waiting = threading.Condition()
 
-        self.ts = 0
-        self.attempts = 0
-        self.ack_timeout = 8
+        self.__attempts = 0
+        self.__ack_timeout = 0
+
+        self._rtr = 0.0 # Round trip rate (bps)
+        self._xmt = 0.0 # Transmit rate (bps)
+        self._xms = 0.0 # Start of last transmit of self.outstanding[]
+
+        self._rtt_measure = {
+            "bnum"  : -1,
+            "start" :  0,
+            "end"   :  0,
+            "size"  :  0,
+            }
 
         self.event = threading.Event()
         self.thread = threading.Thread(target=self.worker)
@@ -67,11 +77,6 @@ class StatefulSession(base.Session):
         self.event.set()
 
     def close(self, force=False):
-
-        import traceback
-        import sys
-        traceback.print_stack(file=sys.stdout)
-
         print "Got close request, joining thread..."
         self.enabled = False
         self.notify()
@@ -112,22 +117,43 @@ class StatefulSession(base.Session):
 
                 print "Queuing %i for send (%i)" % (b.seq, count)
                 self.outstanding.append(b)
-                self.ts = 0
-                self.attempts = 0
             else:
                 break
 
     def is_timeout(self):
-        if self.ts == 0:
+        if self._xms == 0:
             return True
 
-        if (time.time() - self._sm.last_frame) < 3:
-            return False
+        pending_size = 0
+        for block in self.outstanding:
+            pending_size += block._xmit_z
 
-        if (time.time() - self.ts) < self.ack_timeout:
-            return False
+        if pending_size == 0:
+            return True
 
-        return True
+        if self._rtr != 0:
+            rate = self._rtr
+        else:
+            # No measured rate yet so assume the minimum rate
+            rate = 80
+
+        timeout = (pending_size / rate) * 1.5
+        if timeout < 12:
+            # Don't allow small outgoing buffers to fool us into thinking
+            # there is no turnaround delay
+            timeout = 12
+
+        print "## Timeout for %i bytes @ %i bps: %.1f sec" % (pending_size,
+                                                              rate,
+                                                              timeout)
+        print "##  Remaining: %.1f sec" % (timeout - (time.time() - self._xms))
+
+        if self.__attempts:
+            print "## Waiting for ACK, timeout in %i" % (self.__ack_timeout -
+                                                         time.time())
+            return (self.__ack_timeout - time.time()) <= 0
+        else:
+            return (timeout - (time.time() - self._xms)) <= 0
 
     def send_reqack(self, blocks):
         f = DDT2EncodedFrame()
@@ -140,17 +166,17 @@ class StatefulSession(base.Session):
         self._sm.outgoing(self, f)
 
     def send_blocks(self):
+        if self.outstanding and not self.is_timeout():
+            # Not time to try again yet
+            return
+
         self.queue_next()
 
         if not self.outstanding:
             # nothing to send
             return
-
-        if self.outstanding and not self.is_timeout():
-            # Not time to try again yet
-            return
         
-        if self.stats["retries"] >= 10:
+        if self.__attempts >= 10:
             print "Too many retries, closing..."
             self.set_state(base.ST_CLSD)
             self.enabled = False
@@ -162,16 +188,20 @@ class StatefulSession(base.Session):
         if self.waiting_for_ack:
             print "Didn't get last ack, asking again"
             self.send_reqack(self.waiting_for_ack)
-            self.ts = time.time()
-            self.ack_timeout += 4
+            self.__attempts += 1
+            self.__ack_timeout = time.time() + 4 + (self.__attempts * 4)
             return
 
         toack = []
 
+        self._rtt_measure["start"] = time.time()
+        self._rtt_measure["end"] = self._rtt_measure["size"] = 0
+
+        self._xms = time.time()
+
         last_block = None
         for b in self.outstanding:
             if b.sent_event.isSet():
-                self.attempts += 1
                 self.stats["retries"] += 1
                 b.sent_event.clear()
 
@@ -182,6 +212,7 @@ class StatefulSession(base.Session):
 
             if last_block:
                 last_block.sent_event.wait()
+                self.update_xmt(last_block)
                 self.stats["sent_wire"] += len(last_block.data)
 
             last_block = b
@@ -189,11 +220,10 @@ class StatefulSession(base.Session):
         self.send_reqack(toack)
         self.waiting_for_ack = toack
 
-        self.attempts = 0
-        self.ts = 0
-
         print "Waiting for block to be sent"
         last_block.sent_event.wait()
+        self._xme = time.time()
+        self.update_xmt(last_block)
         self.stats["sent_wire"] += len(last_block.data)
         self.ts = time.time()
         print "Block sent after: %f" % (self.ts - t)
@@ -225,13 +255,16 @@ class StatefulSession(base.Session):
             self.data_waiting.release()
 
         for b in blocks:
+            self._rtt_measure["size"] += len(b.get_packed())
             if b.type == T_ACK:
+                self.__attempts = 0
+                self._rtt_measure["end"] = time.time()
                 self.waiting_for_ack = False
                 acked = [ord(x) for x in b.data]
                 print "Acked blocks: %s (/%i)" % (acked, len(self.outstanding))
                 for block in self.outstanding[:]:
+                    self._rtt_measure["size"] += block._xmit_z
                     if block.seq in acked:
-                        print "Acked block %i" % block.seq
                         block.ackd_event.set()
                         self.stats["sent_size"] += len(block.data)
                         self.outstanding.remove(block)
@@ -276,10 +309,37 @@ class StatefulSession(base.Session):
             del self.oob_queue[next(self.iseq)]
             enqueue(block)            
 
+    def update_xmt(self, block):
+        self._xmt = (self._xmt + block.get_xmit_bps()) / 2.0
+        print "Average transmit rate: %i bps" % self._xmt
+        
+    def calculate_rtt(self):
+        rtt = self._rtt_measure["end"] - self._rtt_measure["start"]
+        size = self._rtt_measure["size"]
+
+        if size > 300:
+            # Only calculate the rate if we had a reasonable amount of data
+            # queued.  We can't reliably measure small quantities, so we either
+            # keep the last-known rate or leave it zero so that is_timeout()
+            # will use a worst-case estimation
+            self._rtr = size / rtt
+            print "## Calculated rate for session %i: %.1f bps" % (self._id,
+                                                                   self._rtr)
+            print "##  %i bytes in %.1f sec" % (size,
+                                                self._rtt_measure["end"] - \
+                                                    self._rtt_measure["start"])
+
+        self._rtt_measure["start"] = self._rtt_measure["end"] = 0
+        self._rtt_measure["size"] = 0
+        self._rtt_measure["bnum"] = -1
+
     def worker(self):
         while self.enabled:
             self.send_blocks()
             self.recv_blocks()
+
+            if self._rtt_measure["end"]:
+                self.calculate_rtt()
 
             if not self.outstanding and self.outq.peek():
                 print "Short-circuit"
