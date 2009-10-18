@@ -798,8 +798,12 @@ class MainApp(object):
 
     def get_position(self):
         p = self.gps.get_position()
-        p.set_station(self.config.get("user", "callsign"),
-                      self.config.get("settings", "default_gps_comment"))
+        p.set_station(self.config.get("user", "callsign"))
+        try:
+            p.set_station(self.config.get("user", "callsign"),
+                          self.config.get("settings", "default_gps_comment"))
+        except Exception:
+            pass
         return p
 
     def load_static_routes(self):

@@ -283,8 +283,9 @@ class GPSPosition(object):
         _checksum = DPRS_checksum(self.station, self.comment[:astidx])
 
         if _checksum != checksum:
-            print "Comment: |%s|" % self.comment
-            print "Check: %s %s (%i)" % (checksum, _checksum, astidx)
+            #print "Failed to parse DPRS comment:"
+            #print "  Comment: |%s|" % self.comment
+            #print "  Check: %s %s (%i)" % (checksum, _checksum, astidx)
             raise Exception("DPRS checksum failed")
 
         self.APRSIcon = dprs_to_aprs(symbol)
