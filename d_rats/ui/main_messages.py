@@ -349,7 +349,9 @@ class MessageList(MainWindowElement):
 
         self.open_msg(path)
         self.current_info.set_msg_read(path, True)
-        self._update_message_info(iter)
+        iter = self.iter_from_fn(path)
+        if iter:
+            self._update_message_info(iter)
 
     def _dragged_from(self, view, ctx, sel, info, ts):
         store, paths = view.get_selection().get_selected_rows()
@@ -479,6 +481,16 @@ class MessageList(MainWindowElement):
                        ML_COL_DATE, ts,
                        ML_COL_READ, read)
 
+    def iter_from_fn(self, fn):
+        iter = self.store.get_iter_first()
+        while iter:
+            _fn, = self.store.get(iter, ML_COL_FILE)
+            if _fn == fn:
+                break
+            iter = self.store.iter_next(iter)
+
+        return iter
+
     def refresh(self, fn=None):
         """Refresh the current folder"""
         if fn is None:
@@ -488,13 +500,7 @@ class MessageList(MainWindowElement):
                 self.store.set(iter, ML_COL_FILE, msg)
                 self._update_message_info(iter)
         else:
-            iter = self.store.get_iter_first()
-            while iter:
-                _fn, = self.store.get(iter, ML_COL_FILE)
-                if _fn == fn:
-                    break
-                iter = self.store.iter_next(iter)
-
+            iter = self.iter_from_fn(fn)
             if not iter:
                 iter = self.store.append()
                 self.store.set(iter,
