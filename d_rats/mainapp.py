@@ -687,6 +687,10 @@ class MainApp(object):
         print "[FORMSENT %s]: %s" % (id, fn)
         event = main_events.FormEvent(id, _("Message Sent"))
         event.set_as_final()
+
+        if not msgrouting.msg_unlock(fn):
+            print "ERROR: Failed to unlock form %s" % fn
+
         self.mainwindow.tabs["messages"].message_sent(fn)
         self.mainwindow.tabs["event"].event(event)
 
@@ -830,6 +834,15 @@ class MainApp(object):
                 sm, sc = self.sm[port]
                 sm.manual_heard_station(station)
 
+    def clear_all_msg_locks(self):
+        path = os.path.join(self.config.platform.config_dir(),
+                            "messages",
+                            "*",
+                            ".lock*")
+        for lock in glob.glob(path):
+            print "Removing stale message lock %s" % lock
+            os.remove(lock)        
+
     def main(self):
         # Copy default forms before we start
 
@@ -846,6 +859,8 @@ class MainApp(object):
                     shutil.copyfile(form, user_fname)
                 except Exception, e:
                     print "FAILED: %s" % e
+
+        self.clear_all_msg_locks()
 
         if len(self.config.options("ports")) == 0 and \
                 self.config.has_option("settings", "port"):

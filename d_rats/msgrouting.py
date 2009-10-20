@@ -350,10 +350,6 @@ class MessageRouter(gobject.GObject):
                 self._station_succeeded(call)
                 self._update_path(fn, call)
 
-            if fn in self.__file_to_call.keys():
-                if not msg_unlock(fn):
-                    print "Aiee!  We unlocked something that wasn't locked!"
-
             del self.__sent_call[call]
             del self.__file_to_call[fn]
 

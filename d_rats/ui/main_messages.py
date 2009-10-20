@@ -334,9 +334,7 @@ class MessageList(MainWindowElement):
 
     def open_msg(self, filename):
         if not msgrouting.msg_lock(filename):
-            e = _("This message is currently being " +
-                  "transferred and cannot be opened")
-            display_error(e)
+            display_error(_("Unable to open: message in use by another task"))
             return gtk.RESPONSE_CANCEL
 
         parent = self._wtree.get_widget("mainwindow")
@@ -678,6 +676,10 @@ class MessagesTab(MainWindowTab):
 
         fn = sel[0]
         recip = self._messages.current_info.get_msg_recip(fn)
+
+        if not msgrouting.msg_lock(fn):
+            display_error(_("Unable to send: message in use by another task"))
+            return
 
         stations = []
         ports = self.emit("get-station-list")
