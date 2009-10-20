@@ -36,8 +36,44 @@ import gobject
 import formgui
 import signals
 import emailgw
+import utils
 
 CALL_TIMEOUT_RETRY = 300
+
+MSG_LOCK_LOCK = threading.Lock()
+
+def __msg_lockfile(fn):
+    name = os.path.basename(fn)
+    path = os.path.dirname(fn)
+    return os.path.join(path, ".lock.%s" % name)
+
+def __msg_is_locked(fn):
+    return os.path.exists(__msg_lockfile(fn))
+
+def msg_lock(fn):
+    MSG_LOCK_LOCK.acquire()
+    if not __msg_is_locked(fn):
+        file(__msg_lockfile(fn), "w").write("foo")
+        success = True
+    else:
+        success = False
+    MSG_LOCK_LOCK.release()
+
+    #print "Locked %s: %s" % (fn, success)
+    return success
+
+def msg_unlock(fn):
+    success = True
+    MSG_LOCK_LOCK.acquire()
+    try:
+        os.remove(__msg_lockfile(fn))
+    except OSError:
+        utils.log_exception()
+        success = False
+    MSG_LOCK_LOCK.release()
+
+    #print "Unlocked %s: %s" % (fn, success)
+    return success
 
 class MessageRoute(object):
     def __init__(self, line):
@@ -104,11 +140,16 @@ class MessageRouter(gobject.GObject):
         qd = os.path.join(self.__config.form_store_dir(), _("Outbox"))
         fl = glob(os.path.join(qd, "*.xml"))
         for f in fl:
+            if not msg_lock(f):
+                print "Message %s is locked, skipping" % f
+                continue
+
             form = formgui.FormFile(f)
             call = form.get_path_dst()
             del form
 
             if not call:
+                msg_unlock(f)
                 continue
             elif not queue.has_key(call):
                 queue[call] = [f]
@@ -309,10 +350,14 @@ class MessageRouter(gobject.GObject):
                 self._station_succeeded(call)
                 self._update_path(fn, call)
 
+            if fn in self.__file_to_call.keys():
+                if not msg_unlock(fn):
+                    print "Aiee!  We unlocked something that wasn't locked!"
+
             del self.__sent_call[call]
             del self.__file_to_call[fn]
 
         if self.__sent_port.has_key(port):
-            # This port is not open for another transfer
+            # This port is now open for another transfer
             del self.__sent_port[port]
 

@@ -36,6 +36,7 @@ from d_rats import formgui
 from d_rats import emailgw
 from d_rats.utils import log_exception
 from d_rats import signals
+from d_rats import msgrouting
 
 _FOLDER_CACHE = {}
 
@@ -332,6 +333,12 @@ class MessageList(MainWindowElement):
             return path
 
     def open_msg(self, filename):
+        if not msgrouting.msg_lock(filename):
+            e = _("This message is currently being " +
+                  "transferred and cannot be opened")
+            display_error(e)
+            return gtk.RESPONSE_CANCEL
+
         parent = self._wtree.get_widget("mainwindow")
         form = formgui.FormDialog(_("Form"), filename, parent=parent)
         form.configure(self._config)
@@ -339,6 +346,8 @@ class MessageList(MainWindowElement):
         form.destroy()
 
         self.refresh(filename)
+
+        msgrouting.msg_unlock(filename)
 
         return r
 
