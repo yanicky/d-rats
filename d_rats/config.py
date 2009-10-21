@@ -716,10 +716,10 @@ class DratsPrefsPanel(DratsPanel):
         eval.add_bool()
 
         self.mg(_("Blink tray on"),
-                "Incoming Messages", mval,
-                "New Chat Messages", cval,
-                "Incoming Files", fval,
-                "Received Events", eval)        
+                _("Incoming Messages"), mval,
+                _("New Chat Messages"), cval,
+                _("Incoming Files"), fval,
+                _("Received Events"), eval)        
 
 class DratsPathsPanel(DratsPanel):
     def __init__(self, config):
@@ -749,7 +749,7 @@ class DratsGPSPanel(DratsPanel):
         lon.add_coords()
         self.mv(_("Longitude"), lon)
 
-        geo = AddressLookup("Lookup", lat, lon, window)
+        geo = AddressLookup(_("Lookup"), lat, lon, window)
         self.mv(_("Lookup by address"), geo)
 
         alt = DratsConfigWidget(config, "user", "altitude")
@@ -809,11 +809,17 @@ class DratsAppearancePanel(DratsPanel):
         colors = ["Incoming", "Outgoing", "Notice",
                   "Ignore", "Callsign", "Broken"]
 
+        # Mark these strings so they get picked up and become available
+        # to the _(i) below
+        _trans_colors = [_("Incoming Color"), _("Outgoing Color"),
+                         _("Notice Color"), _("Ignore Color"),
+                         _("Callsign Color"), _("Broken Color")]
+
         for i in colors:
             low = i.lower()
             val = DratsConfigWidget(config, "prefs", "%scolor" % low)
             val.add_color()
-            self.mv("%s Color" % i, val)
+            self.mv(_("%s Color" % i), val)
 
 class DratsChatPanel(DratsPanel):
     def __init__(self, config):
