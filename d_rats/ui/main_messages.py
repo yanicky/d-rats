@@ -746,7 +746,7 @@ class MessagesTab(MainWindowTab):
         unread = lambda b: self._mrk_msg(b, False)
 
         buttons = [("msg-new.png", _("New"), self._new_msg),
-                   ("msg-send.png", _("Send"), self._snd_msg),
+                   ("msg-send.png", _("Forward"), self._snd_msg),
                    ("msg-reply.png", _("Reply"), self._rpl_msg),
                    ("msg-delete.png", _("Delete"), self._del_msg),
                    ("msg-markread.png", _("Mark Read"), read),
