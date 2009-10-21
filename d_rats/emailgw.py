@@ -78,8 +78,8 @@ class MailThread(threading.Thread, gobject.GObject):
             action = "Form"
 
         actions = {
-            "Form" : self.create_form_from_mail,
-            "Chat" : self.do_chat_from_mail,
+            _("Form") : self.create_form_from_mail,
+            _("Chat") : self.do_chat_from_mail,
             }
 
         try:
