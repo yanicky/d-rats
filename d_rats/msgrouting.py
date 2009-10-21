@@ -268,19 +268,23 @@ class MessageRouter(gobject.GObject):
         mailer.quit()
         self._emit("form-sent", -1, msgfn)
 
+        return True
+
     def _route_via_station(self, call, route, slist, msg):
         if self._sent_recently(route):
             self._p("Call %s is busy" % route)
-            return
+            return False
 
         print slist
         port = slist[route]
         if not self._port_free(port):
             self._p("I think port %s is busy" % port)
-            return # likely already a transfer going here so skip it
+            return False # likely already a transfer going here so skip it
 
         self._p("Sending %s to %s (via %s)" % (msg, call, route))
         self._send_form(route, port, msg)
+
+        return True
 
     def _run_one(self):
         plist = self.emit("get-station-list")
@@ -302,11 +306,14 @@ class MessageRouter(gobject.GObject):
             del form
             route = self._route_msg(src, dst, path, slist, routes)
             if not route:
-                continue # No route to station
+                routed = False
             elif "@" in route:
-                self._route_via_email(dst, msg)
+                routed = self._route_via_email(dst, msg)
             else:
-                self._route_via_station(dst, route, slist, msg)
+                routed = self._route_via_station(dst, route, slist, msg)
+
+            if not routed:
+                msg_unlock(msg)
 
     def _run(self):
         while self.__enabled:
