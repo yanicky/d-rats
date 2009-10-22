@@ -705,10 +705,14 @@ class PipelinedStatefulSession(StatefulSession):
         # we're still waiting for an ack from remote.  Increase the timeout
         # for the ack by four seconds each time to give some backoff
         if self.waiting_for_ack:
-            print "Didn't get last ack, asking again"
-            self.send_reqack(self.waiting_for_ack)
-            self.ts = time.time()
-            self.ack_timeout += 4
+            if self.ack_timeout > 30:
+                self.set_state(self.ST_CLSD)
+                self.enabled = False
+            else:
+                self.send_reqack(self.waiting_for_ack)
+                self.ts = time.time()
+                self.ack_timeout += 4
+                print "Didn't get last ack, asking again (timeout %i)" % self.ack_timeout
             return
 
         toack = []
