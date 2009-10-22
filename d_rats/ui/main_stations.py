@@ -27,6 +27,7 @@ from d_rats.ui import conntest
 from d_rats import station_status
 from d_rats import signals
 from d_rats import rpcsession
+from d_rats import image
 
 class StationsList(MainWindowTab):
     __gsignals__ = {
@@ -105,6 +106,13 @@ class StationsList(MainWindowTab):
             fn = self._config.platform.gui_open_file()
             if not fn:
                 return
+
+            fnl = fn.lower()
+            if fnl.endswith(".jpg") or fnl.endswith(".jpeg") or \
+                    fnl.endswith(".png") or fnl.endswith(".gif"):
+                fn = image.send_image(fn)
+                if not fn:
+                    return
 
             name = os.path.basename(fn)
             self.emit("user-send-file", station, port, fn, name)
