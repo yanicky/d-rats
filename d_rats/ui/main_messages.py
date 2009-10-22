@@ -150,7 +150,13 @@ class MessageFolderInfo(object):
         return MessageFolderInfo(path)
 
     def create_msg(self, name):
-        self._config.add_section(name)
+        exists = os.path.exists(os.path.join(self._path, name))
+        try:
+            self._config.add_section(name)
+        except ConfigParser.DuplicateSectionError, e:
+            if exists:
+                raise e
+
         return os.path.join(self._path, name)
 
     def delete(self, filename):
