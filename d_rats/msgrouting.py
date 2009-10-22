@@ -47,12 +47,12 @@ def __msg_lockfile(fn):
     path = os.path.dirname(fn)
     return os.path.join(path, ".lock.%s" % name)
 
-def __msg_is_locked(fn):
+def msg_is_locked(fn):
     return os.path.exists(__msg_lockfile(fn))
 
 def msg_lock(fn):
     MSG_LOCK_LOCK.acquire()
-    if not __msg_is_locked(fn):
+    if not msg_is_locked(fn):
         file(__msg_lockfile(fn), "w").write("foo")
         success = True
     else:
@@ -347,6 +347,9 @@ class MessageRouter(gobject.GObject):
 
     def form_xfer_done(self, fn, port, failed):
         self._p("File %s on %s done" % (fn, port))
+
+        if fn and msg_is_locked(fn):
+            msg_unlock(fn)
 
         call = self.__file_to_call.get(fn, None)
         if call and self.__sent_call.has_key(call):

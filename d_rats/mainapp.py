@@ -636,7 +636,6 @@ class MainApp(object):
             fn = restart_info[1]
 
         self.msgrouter.form_xfer_done(fn, port, True)
-        msgrouting.msg_unlock(fn)
 
     def __form_received(self, object, id, fn, port=None):
         if port:
@@ -691,9 +690,6 @@ class MainApp(object):
 
         self.mainwindow.tabs["messages"].message_sent(fn)
         self.mainwindow.tabs["event"].event(event)
-
-        if not msgrouting.msg_unlock(fn):
-            print "ERROR: Failed to unlock form %s" % fn
 
     def __file_sent(self, object, id, fn, port=None):
         if port:
