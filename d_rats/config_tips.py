@@ -41,6 +41,7 @@ TIPS_SETTINGS = {
     "sniff_packets" : _("Display information about packets seen that are destined for other stations"),
     "map_tile_ttl" : _("After this many hours, a map tile will be re-fetched, regardless of if it is already stored locally.  0 means never re-fetch.  720 hours is 30 days."),
     "msg_flush" : _("Seconds between each attempt to process forwarded messages.  Do not set this too low!"),
+    "station_msg_ttl" : _("If a station was last heard more than this many seconds ago, do not assume you have a clear path (ping it first)"),
     }
 
 sb = _("Specify a .WAV file to be played")

@@ -84,6 +84,7 @@ class MessageRouter(gobject.GObject):
         "get-station-list" : signals.GET_STATION_LIST,
         "user-send-form" : signals.USER_SEND_FORM,
         "form-sent" : signals.FORM_SENT,
+        "ping-station" : signals.PING_STATION,
         }
     _signals = __gsignals__
 
@@ -99,6 +100,7 @@ class MessageRouter(gobject.GObject):
         self.__sent_port = {}
         self.__file_to_call = {}
         self.__failed_stations = {}
+        self.__pinged_stations = {}
 
         self.__thread = None
         self.__enabled = False
@@ -177,8 +179,14 @@ class MessageRouter(gobject.GObject):
 
         emailok = emailgw.validate_incoming(self.__config, src, dst)
 
+        def old(call):
+            station = slist.get(call, None)
+            if not station:
+                return True
+            ttl = self.__config.getint("settings", "station_msg_ttl")
+            return (time.time() - station.get_heard()) > ttl
+
         while True:
-            print dst
             if "@" in dst and emailok:
                 # Out via email
                 route = dst
@@ -196,15 +204,31 @@ class MessageRouter(gobject.GObject):
                 break
 
             if route != dst and route in path:
+                print "Route %s in path" % route
                 invalid.append(route)
                 route = None # Don't route to the same location twice
             elif self._is_station_failed(route):
+                print "Route %s is failed" % route
                 invalid.append(route)
                 route = None # This one is not responding lately
+            elif old(route) and self._station_pinged_out(route):
+                print "Route %s for %s is pinged out" % (route, dst)
+                invalid.append(route)
+                route = None # This one has been pinged and isn't responding
             else:
                 break # We have a route to try
 
-        if route:
+        if old(route):
+            # This station is heard, but a long time ago.  Ping it first
+            # and consider it unrouteable for now
+            route_station = slist.get(route, None)
+            self._station_pinged_incr(route)
+            if route_station:
+                self._p("Pinging stale route %s" % route)
+                self._emit("ping-station", route, route_station.get_port())
+            route = None
+        elif route:
+            self._station_pinged_clear(dst)
             self._p("Routing message for %s to %s" % (dst, route))
         else:
             self._p("No route for station %s" % dst)
@@ -276,7 +300,7 @@ class MessageRouter(gobject.GObject):
             return False
 
         print slist
-        port = slist[route]
+        port = slist[route].get_port()
         if not self._port_free(port):
             self._p("I think port %s is busy" % port)
             return False # likely already a transfer going here so skip it
@@ -294,7 +318,7 @@ class MessageRouter(gobject.GObject):
 
         for port, stations in plist.items():
             for station in stations:
-                slist[station] = port
+                slist[str(station)] = station
 
         queue = self._get_queue()
         for dst, callq in queue.items():
@@ -344,6 +368,16 @@ class MessageRouter(gobject.GObject):
 
     def _is_station_failed(self, call):
         return self.__failed_stations.get(call, 0) >= 1
+
+    def _station_pinged_incr(self, call):
+        self.__pinged_stations[call] = self.__pinged_stations.get(call, 0) + 1
+        return self.__pinged_stations[call]
+
+    def _station_pinged_clear(self, call):
+        self.__pinged_stations[call] = 0
+
+    def _station_pinged_out(self, call):
+        return self.__pinged_stations.get(call, 0) >= 3
 
     def form_xfer_done(self, fn, port, failed):
         self._p("File %s on %s done" % (fn, port))

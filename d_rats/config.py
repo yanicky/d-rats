@@ -112,6 +112,7 @@ _DEF_SETTINGS = {
     "form_logo_dir" : os.path.join(platform.get_platform().config_dir(), "logos"),
     "default_gps_comment" : "D-RATS Station",
     "http_proxy" : "",
+    "station_msg_ttl" : "3600",
 }
 
 _DEF_STATE = {
@@ -976,6 +977,11 @@ class DratsMessagePanel(DratsPanel):
         val.add_numeric(15, 9999, 1)
         lab = gtk.Label(_("seconds"))
         self.mv(_("Queue flush interval"), val, lab)
+
+        val = DratsConfigWidget(config, "settings", "station_msg_ttl")
+        val.add_numeric(0, 99999, 1)
+        lab = gtk.Label(_("seconds"))
+        self.mv(_("Station TTL"), val, lab)
 
 class DratsNetworkPanel(DratsPanel):
     pass
