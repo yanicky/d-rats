@@ -362,7 +362,7 @@ class QSTStation(QSTGPSA):
         self.fix = gps.GPSPosition(point.get_latitude(),
                                    point.get_longitude(),
                                    point.get_name())
-        self.fix.set_station(fix.station,
+        self.fix.set_station(self.fix.station,
                              "VIA %s" % self.config.get("user", "callsign"))
 
         print "Sending position for %s/%s: %s" % (group, station, self.fix)
