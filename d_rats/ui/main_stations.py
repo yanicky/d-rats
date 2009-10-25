@@ -330,3 +330,17 @@ class StationsList(MainWindowTab):
         sval = station_status.STATUS_VALS[self.__status]
 
         return sval, self.__smsg
+
+    def get_stations(self):
+        stations = []
+        store = self.__view.get_model()
+        iter = store.get_iter_first()
+        while iter:
+            call, ts, port = store.get(iter, 0, 1, 5)
+            station = station_status.Station(call)
+            station.set_heard(ts)
+            station.set_port(port)
+            stations.append(station)
+            iter = store.iter_next(iter)
+
+        return stations

@@ -126,7 +126,7 @@ class MainWindow(MainWindowElement):
             station_list = self.emit("get-station-list")
             stations = []
             for portlist in station_list.values():
-                stations += portlist
+                stations += [str(x) for x in portlist]
             station, port = prompt_for_station(stations, self._config)
             if station:
                 self.emit("ping-station", station, port)

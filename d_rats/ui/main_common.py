@@ -39,7 +39,8 @@ def display_error(message, parent=None):
 
     return r == gtk.RESPONSE_OK
 
-def prompt_for_station(station_list, config, parent=None):
+def prompt_for_station(_station_list, config, parent=None):
+    station_list = [str(x) for x in _station_list]
     port_list = []
     for i in config.options("ports"):
         enb, port, rate, sniff, raw, name = config.get("ports", i).split(",")
@@ -48,7 +49,7 @@ def prompt_for_station(station_list, config, parent=None):
 
     defsta = defprt = ""
     if station_list:
-        defsta = station_list[0]
+        defsta = str(station_list[0])
     if port_list:
         defprt = port_list[0]
 

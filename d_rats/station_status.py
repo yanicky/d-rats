@@ -33,3 +33,24 @@ STATUS_MSGS = {
 STATUS_VALS = {}
 for k, v in STATUS_MSGS.items():
     STATUS_VALS[v] = k
+
+class Station:
+    def __init__(self, callsign):
+        self.__call = callsign
+        self.__heard = 0
+        self.__port = ""
+
+    def set_heard(self, heard):
+        self.__heard = heard
+
+    def get_heard(self):
+        return self.__heard
+
+    def set_port(self, port):
+        self.__port = port
+
+    def get_port(self):
+        return self.__port
+
+    def __str__(self):
+        return self.__call

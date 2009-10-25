@@ -344,7 +344,7 @@ class FilesTab(MainWindowTab):
             for port, stations in stationlist.items():
                 _ports.append(port)
                 for station in stations:
-                    _stations.append(station)
+                    _stations.append(str(station))
 
             for station in sorted(_stations):
                 sstore.append((station,))

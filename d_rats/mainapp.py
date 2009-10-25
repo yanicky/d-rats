@@ -525,7 +525,16 @@ class MainApp(object):
     def __get_station_list(self, object):
         stations = {}
         for port, (sm, sc) in self.sm.items():
-            stations[port] = sm.get_heard_stations().keys()
+            stations[port] = []
+
+        station_list = self.mainwindow.tabs["stations"].get_stations()
+
+        for station in station_list:
+            if station.get_port() not in stations.keys():
+                print "Station %s has unknown port %s" % (station,
+                                                          station.get_port())
+            else:
+                stations[station.get_port()].append(station)
 
         return stations
 
