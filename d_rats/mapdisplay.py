@@ -70,7 +70,7 @@ def fetch_url(url, local):
         proxies = None
 
     data = urllib.urlopen(url, proxies=proxies)
-    local_file = file(local, "w")
+    local_file = file(local, "wb")
     d = data.read()
     local_file.write(d)
     data.close()
