@@ -607,9 +607,15 @@ class MessagesTab(MainWindowTab):
             self._folders.select_folder(current)
 
     def _rpl_msg(self, button):
+        def subj_reply(subj):
+            if "RE:" in subj.upper():
+                return subj
+            else:
+                return "RE: %s" % subj
+
         save_fields = [
             ("_auto_number", "_auto_number", lambda x: str(int(x)+1)),
-            ("_auto_subject", "_auto_subject", lambda x: "RE: %s" % x),
+            ("_auto_subject", "_auto_subject", subj_reply),
             ("subject", "subject", lambda x: "RE: %s" % x),
             ("_auto_sender", "_auto_recip", None)
             ]
