@@ -75,6 +75,23 @@ def msg_unlock(fn):
     #print "Unlocked %s: %s" % (fn, success)
     return success
 
+def gratuitous_next_hop(route, path):
+    path_nodes = path[1:]
+    route_nodes = route.split(";")
+
+    if len(path_nodes) >= len(route_nodes):
+        print "Nothing left in the routes"
+        return None
+
+    for i in range(0, len(path_nodes)):
+        if path_nodes[i] != route_nodes[i]:
+            print "Path element %i (%s) does not match route %s" % \
+                (i, path_nodes[i], route_nodes[i])
+            return None
+
+    return route_nodes[len(path_nodes)]
+
+
 class MessageRoute(object):
     def __init__(self, line):
         self.dest, self.gw, self.port = line.split()
@@ -187,7 +204,12 @@ class MessageRouter(gobject.GObject):
             return (time.time() - station.get_heard()) > ttl
 
         while True:
-            if "@" in dst and emailok:
+            if ";" in dst:
+                # Gratuitous routing takes precedence
+                route = gratuitous_next_hop(dst, path)
+                print "Route for %s: %s (%s)" % (dst, route, path)
+                break
+            elif "@" in dst and emailok:
                 # Out via email
                 route = dst
             elif slist.has_key(dst) and dst not in invalid:

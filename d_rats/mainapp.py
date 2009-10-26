@@ -661,11 +661,18 @@ class MainApp(object):
 
         dst = f.get_path_dst()
         src = f.get_path_src()
+        pth = f.get_path()
 
-        if fwd_on and \
-                "@" not in src and \
-                dst != self.config.get("user", "callsign"):
-            msg += " (" + _("forwarding to") + " " + dst + ")"
+        hop = msgrouting.gratuitous_next_hop(dst, pth)
+
+        call = self.config.get("user", "callsign")
+
+        # If the message is addressed to me, or if I'm the next hop
+        # in a gratuitous routing path, then it stays here
+        for_me = (dst == call) or (hop is None)
+
+        if fwd_on and "@" not in src and not for_me:
+            msg += " (" + _("forwarding to") + " " + (hop or dst) + ")"
             newfn = os.path.join(self.config.form_store_dir(),
                                  _("Outbox"),
                                  os.path.basename(fn))
