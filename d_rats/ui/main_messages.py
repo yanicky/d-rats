@@ -613,11 +613,18 @@ class MessagesTab(MainWindowTab):
             else:
                 return "RE: %s" % subj
 
+        def msg_reply(msg):
+            if self._config.getboolean("prefs", "msg_include_reply"):
+                return "--- Original Message ---\r\n\r\n" + msg
+            else:
+                return ""
+
         save_fields = [
             ("_auto_number", "_auto_number", lambda x: str(int(x)+1)),
             ("_auto_subject", "_auto_subject", subj_reply),
             ("subject", "subject", lambda x: "RE: %s" % x),
-            ("_auto_sender", "_auto_recip", None)
+            ("message", "message", msg_reply),
+            ("_auto_sender", "_auto_recip", None),
             ]
 
         try:

@@ -75,6 +75,7 @@ _DEF_PREFS = {
     "blink_event" : "False",
     "chat_showstatus" : "True",
     "chat_timestamp" : "True",
+    "msg_include_reply" : "False",
 }
 
 _DEF_SETTINGS = {
@@ -978,6 +979,10 @@ class DratsMessagePanel(DratsPanel):
         val.add_numeric(0, 99999, 1)
         lab = gtk.Label(_("seconds"))
         self.mv(_("Station TTL"), val, lab)
+
+        val = DratsConfigWidget(config, "prefs", "msg_include_reply")
+        val.add_bool()
+        self.mv(_("Include original in reply"), val)
 
 class DratsNetworkPanel(DratsPanel):
     pass

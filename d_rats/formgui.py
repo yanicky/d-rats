@@ -700,7 +700,10 @@ class FormFile(object):
         els = self.__get_xpath("//form/field[@id='%s']/entry" % id)
         print "Setting %s to %s (%i)" % (id, value, len(els))
         if len(els) == 1:
-            self.__set_content(els[0], value.strip())
+            if els[0].prop("type") == "multiline":
+                self.__set_content(els[0], value)
+            else:
+                self.__set_content(els[0], value.strip())
 
     def _try_get_fields(self, *names):
         for field in names:

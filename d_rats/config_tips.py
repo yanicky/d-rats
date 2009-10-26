@@ -12,6 +12,7 @@ TIPS_PREFS = {
     "allow_remote_forms" : _("Allow remote stations to pull forms"),
     "allow_remote_files" : _("Allow remote stations to pull files"),
     "form_default_private" : _("Default state for private flag on new forms"),
+    "msg_include_reply" : _("Include the text of the original message when replying (not recommended as it wastes bandwidth)"),
     }
 
 TIPS_SETTINGS = {
