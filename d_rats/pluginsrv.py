@@ -23,7 +23,7 @@ import gobject
 
 import signals
 import utils
-import rpcsession
+from d_rats.sessions import rpc
 
 class DRatsChatEvent(object):
     def __init__(self, src_station=None):

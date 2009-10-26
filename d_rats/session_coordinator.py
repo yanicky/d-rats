@@ -22,11 +22,12 @@ import os
 
 import gobject
 
-import sessions
 import formgui
 import emailgw
 import signals
 from utils import run_safe, run_gtk_locked
+
+from d_rats.sessions import base, file, form, sock
 
 class SessionThread(object):
     OUTGOING = False
@@ -236,7 +237,7 @@ class SocketThread(SessionThread):
 
             try:
                 rd = self.session.read(512)
-            except sessionmgr.SessionClosedError, e:
+            except base.SessionClosedError, e:
                 print "Session closed"
                 self.enabled = False
                 break
@@ -320,7 +321,7 @@ class SessionCoordinator(gobject.GObject):
                                                               dest,
                                                               dport)
             self.socket_listeners[dport] = \
-                sessions.SocketListener(self.sm, dest, sport, dport)
+                sock.SocketListener(self.sm, dest, sport, dport)
             print "Started"
         else:
             raise Exception("Listener for %i already active" % dport)
@@ -394,11 +395,11 @@ class SessionCoordinator(gobject.GObject):
         print "New session (%s) of type: %s" % (direction, session.__class__)
         self.emit("session-started", session._id, type)
 
-        if isinstance(session, sessions.BaseFormTransferSession):
+        if isinstance(session, form.FormTransferSession):
             self.new_form_xfer(session, direction)
-        elif isinstance(session, sessions.BaseFileTransferSession):
+        elif isinstance(session, file.FileTransferSession):
             self.new_file_xfer(session, direction)
-        elif isinstance(session, sessions.SocketSession):
+        elif isinstance(session, sock.SocketSession):
             self.new_socket(session, direction)
         else:
             print "*** Unknown session type: %s" % session.__class__.__name__
@@ -430,11 +431,7 @@ class SessionCoordinator(gobject.GObject):
         self.outgoing_files.insert(0, filename)
         print "Outgoing files: %s" % self.outgoing_files
 
-        if self.config.getboolean("settings", "pipelinexfers"):
-            xfer = sessions.PipelinedFileTransfer
-        else:
-            xfer = sessions.FileTransferSession
-
+        xfer = file.FileTransferSession
         bs = self.config.getint("settings", "ddt_block_size")
         ol = self.config.getint("settings", "ddt_block_outlimit")
 
@@ -451,10 +448,7 @@ class SessionCoordinator(gobject.GObject):
         self.outgoing_forms.insert(0, filename)
         print "Outgoing forms: %s" % self.outgoing_forms
 
-        if self.config.getboolean("settings", "pipelinexfers"):
-            xfer = sessions.PipelinedFormTransfer
-        else:
-            xfer = sessions.FormTransferSession
+        xfer = form.FormTransferSession
 
         t = threading.Thread(target=self.sm.start_session,
                              kwargs={"name" : name,

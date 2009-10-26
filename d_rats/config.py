@@ -941,10 +941,6 @@ class DratsTransfersPanel(DratsPanel):
         val.add_numeric(1, 32, 1)
         self.mv(_("Pipeline blocks"), val)
 
-        val = DratsConfigWidget(config, "settings", "pipelinexfers")
-        val.add_bool()
-        self.mv(_("Pipeline transfers"), val)
-
         val = DratsConfigWidget(config, "prefs", "allow_remote_forms")
         val.add_bool()
         self.mv(_("Remote form transfers"), val)

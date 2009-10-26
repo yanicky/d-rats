@@ -262,7 +262,9 @@ class Transporter(object):
                 self.__send(warmup_f.get_packed())
 
             print "Sending block: %s" % f
+            f._xmit_s = time.time()
             self.__send(f.get_packed())
+            f._xmit_e = time.time()
             f.sent_event.set()
             self.last_xmit = time.time()
 

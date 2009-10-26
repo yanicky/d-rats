@@ -23,16 +23,14 @@ import sys
 
 import gobject
 
-import sessionmgr
-import sessions
-import ddt2
-
-import signals
+from d_rats import ddt2, signals
 
 # This feels wrong
-from ui import main_events
+from d_rats.ui import main_events
 
-from version import DRATS_VERSION
+from d_rats.sessions import base, stateless
+from d_rats.version import DRATS_VERSION
+from d_rats.utils import log_exception
 
 ASCII_FS = "\x1C"
 ASCII_GS = "\x1D"
@@ -165,8 +163,8 @@ class RPCGetVersion(RPCJob):
     def do(self, rpcactions):
         return rpcactions.RPC_get_version(self)
 
-class RPCSession(gobject.GObject, sessionmgr.StatelessSession):
-    type = sessionmgr.T_RPC
+class RPCSession(gobject.GObject, stateless.StatelessSession):
+    type = base.T_RPC
 
     T_RPCREQ = 0
     T_RPCACK = 1
@@ -180,7 +178,7 @@ class RPCSession(gobject.GObject, sessionmgr.StatelessSession):
         except KeyError:
             raise Exception("RPCSession requires RPCActionSet")
 
-        sessionmgr.StatelessSession.__init__(self, *args, **kwargs)
+        stateless.StatelessSession.__init__(self, *args, **kwargs)
         self.__jobs = {}
         self.__jobq = []
         self.__jobc = 0
