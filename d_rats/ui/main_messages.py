@@ -642,10 +642,10 @@ class MessagesTab(MainWindowTab):
         fn = sel[0]
         oform = formgui.FormFile(fn)
         tmpl = os.path.join(self._config.form_source_dir(), "%s.xml" % oform.id)
-                            
+
         nform = formgui.FormFile(tmpl)
         nform.add_path_element(self._config.get("user", "callsign"))
-        
+
         try:
             for sf, df, xf in save_fields:
                 oldval = oform.get_field_value(sf)
@@ -661,9 +661,14 @@ class MessagesTab(MainWindowTab):
             print "Failed to do reply: %s" % e
             return
 
+        if ";" in oform.get_path_dst():
+            rpath = ";".join(reversed(oform.get_path()[:-1]))
+            print "rpath: %s (%s)" % (rpath, oform.get_path())
+            nform.set_path_dst(rpath)
+        else:
+            nform.set_path_dst(oform.get_path_src())
+
         call = self._config.get("user", "callsign")
-        nform.add_path_element(call)
-        nform.set_path_dst(oform.get_path_src())
         nform.set_path_src(call)
         nform.set_path_mid(mkmsgid(call))
 
