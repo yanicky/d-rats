@@ -284,13 +284,13 @@ def __validate_access(config, callsign, emailaddr, types):
         call, access, filter = rulespec.split(",", 2)
 
         if call in [callsign, "*"] and re.search(filter, emailaddr):
-            print "%s -> %s matches %s,%s,%s" % (callsign, emailaddr,
-                                                 call, access, filter)
-            print "Access types allowed: %s" % types
+            #print "%s -> %s matches %s,%s,%s" % (callsign, emailaddr,
+            #                                     call, access, filter)
+            #print "Access types allowed: %s" % types
             return access in types
-        else:
-            print "%s -> %s does not match %s,%s,%s" % (callsign, emailaddr,
-                                                        call, access, filter)
+        #else:
+            #print "%s -> %s does not match %s,%s,%s" % (callsign, emailaddr,
+            #                                            call, access, filter)
 
     print "No match found"
 

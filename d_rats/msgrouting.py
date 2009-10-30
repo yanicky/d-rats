@@ -194,8 +194,6 @@ class MessageRouter(gobject.GObject):
     def _route_msg(self, src, dst, path, slist, routes):
         invalid = []
 
-        emailok = emailgw.validate_incoming(self.__config, src, dst)
-
         def old(call):
             station = slist.get(call, None)
             if not station:
@@ -209,7 +207,8 @@ class MessageRouter(gobject.GObject):
                 route = gratuitous_next_hop(dst, path)
                 print "Route for %s: %s (%s)" % (dst, route, path)
                 break
-            elif "@" in dst and emailok:
+            elif "@" in dst and dst not in invalid and\
+                    emailgw.validate_incoming(self.__config, src, dst):
                 # Out via email
                 route = dst
             elif slist.has_key(dst) and dst not in invalid:
@@ -240,7 +239,7 @@ class MessageRouter(gobject.GObject):
             else:
                 break # We have a route to try
 
-        if old(route):
+        if old(route) and "@" not in route:
             # This station is heard, but a long time ago.  Ping it first
             # and consider it unrouteable for now
             route_station = slist.get(route, None)
@@ -342,25 +341,36 @@ class MessageRouter(gobject.GObject):
             for station in stations:
                 slist[str(station)] = station
 
+        call = self.__config.get("user", "callsign")
+
         queue = self._get_queue()
         for dst, callq in queue.items():
-            msg = callq[0]
-
-            form = formgui.FormFile(msg)
-            path = form.get_path()
-            src = form.get_path_src()
-            del form
-            route = self._route_msg(src, dst, path, slist, routes)
-            if not route:
-                routed = False
-            elif "@" in route:
-                routed = self._route_via_email(dst, msg)
-            else:
-                routed = self._route_via_station(dst, route, slist, msg)
-
-            if not routed:
-                msg_unlock(msg)
-
+            for msg in callq:
+                form = formgui.FormFile(msg)
+                path = form.get_path()
+                emok = path[-2:] != ["EMAIL", call]
+                src = form.get_path_src()
+                del form
+    
+                route = self._route_msg(src, dst, path, slist, routes)
+                if not route:
+                    routed = False
+                elif "@" in src and "@" in dst:
+                    # Don't route a message from email to email
+                    routed = False
+                elif "@" in route:
+                    if emok:
+                        routed = self._route_via_email(dst, msg)
+                    else:
+                        # The path indicates that we received this via
+                        # email, so don't send it back out via email
+                        routed = False
+                else:
+                    routed = self._route_via_station(dst, route, slist, msg)
+    
+                if not routed:
+                    msg_unlock(msg)
+    
     def _run(self):
         while self.__enabled:
             if self.__config.getboolean("settings", "msg_forward"):
