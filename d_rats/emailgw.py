@@ -139,7 +139,11 @@ class MailThread(threading.Thread, gobject.GObject):
             recip = recip.replace(i, "")
         recip = recip.strip()
 
-        if not validate_incoming(self.config, recip, sender):
+        if not recip or "@" in recip or recip != recip.upper() or \
+                recip.split()[0] != recip:
+            print "Not sending to non-callsign recipient `%s'" % recip
+            return False
+        elif not validate_incoming(self.config, recip, sender):
             print "Not auto-sending %s -> %s (no access rule)" % (sender, recip)
             return False
         elif recip == self.config.get("user", "callsign"):
