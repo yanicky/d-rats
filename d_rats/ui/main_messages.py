@@ -782,6 +782,11 @@ class MessagesTab(MainWindowTab):
                    ("msg-sendreceive.png", _("Send/Receive"), self._sndrcv),
                    ]
 
+        tips = {
+            _("Forward") : _("Manually direct a message to another station"),
+            _("Send/Receive") : _("Send messages in the Outbox"),
+            }
+
         c = 0
         for i, l, f in buttons:
             icon = gtk.Image()
@@ -790,6 +795,8 @@ class MessagesTab(MainWindowTab):
             item = gtk.ToolButton(icon, l)
             item.show()
             item.connect("clicked", f)
+            if tips.has_key(l):
+                item.set_tooltip_text(tips[l])
             tb.insert(item, c)
             c += 1
 

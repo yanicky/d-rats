@@ -482,6 +482,9 @@ class ChatTab(MainWindowTab):
         clear = self._wtree.get_widget("main_menu_clear")
         clear.connect("activate", self._clear)
 
+        dest.set_tooltip_text(_("Choose the port where chat " +
+                                "and QST messages will be sent"))
+
         self.reconfigure()
 
     def _reconfigure_colors(self, buffer):
