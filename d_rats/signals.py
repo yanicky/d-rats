@@ -167,3 +167,7 @@ FORM_SENT = \
 GET_CHAT_PORT = \
     (gobject.SIGNAL_ACTION, gobject.TYPE_STRING,
      ())
+
+TRIGGER_MSG_ROUTER = \
+    (gobject.SIGNAL_ACTION, gobject.TYPE_NONE,
+     ())

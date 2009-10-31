@@ -720,6 +720,9 @@ class MainApp(object):
     def __get_chat_port(self, object):
         return self.mainwindow.tabs["chat"].get_selected_port()
 
+    def __trigger_msg_router(self, object):
+        self.msgrouter.trigger()
+
 # ------------ END SIGNAL HANDLERS ----------------
 
     def __connect_object(self, object, *args):
@@ -770,6 +773,7 @@ class MainApp(object):
             "file-sent" : self.__file_sent,
             "form-sent" : self.__form_sent,
             "get-chat-port" : self.__get_chat_port,
+            "trigger-msg-router" : self.__trigger_msg_router,
             }
 
         global MAINAPP

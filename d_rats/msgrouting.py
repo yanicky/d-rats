@@ -111,6 +111,8 @@ class MessageRouter(gobject.GObject):
     def __init__(self, config):
         gobject.GObject.__init__(self)
 
+        self.__event = threading.Event()
+
         self.__config = config
 
         self.__sent_call = {}
@@ -373,12 +375,19 @@ class MessageRouter(gobject.GObject):
     
     def _run(self):
         while self.__enabled:
-            if self.__config.getboolean("settings", "msg_forward"):
+            if self.__config.getboolean("settings", "msg_forward") or \
+                    self.__event.is_set():
+                print "Running routing loop"
                 self._run_one()
-            self._sleep()
+                self.__event.clear()
+            self.__event.wait(self.__config.getint("settings", "msg_flush"))
+
+    def trigger(self):
+        self.__event.set()
 
     def start(self):
         self.__enabled = True
+        self.__event.clear()
         self.__thread = threading.Thread(target=self._run)
         self.__thread.start()
 
