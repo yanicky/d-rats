@@ -565,6 +565,7 @@ class MessagesTab(MainWindowTab):
         "notice" : signals.NOTICE,
         "user-send-form" : signals.USER_SEND_FORM,
         "get-station-list" : signals.GET_STATION_LIST,
+        "trigger-msg-router" : signals.TRIGGER_MSG_ROUTER,
         }
 
     _signals = __gsignals__
@@ -763,6 +764,9 @@ class MessagesTab(MainWindowTab):
 
         shutil.copy(fn, nfn)
 
+    def _sndrcv(self, button):
+        self.emit("trigger-msg-router")
+
     def _init_toolbar(self):
         tb, = self._getw("toolbar")
 
@@ -775,6 +779,7 @@ class MessagesTab(MainWindowTab):
                    ("msg-delete.png", _("Delete"), self._del_msg),
                    ("msg-markread.png", _("Mark Read"), read),
                    ("msg-markunread.png", _("Mark Unread"), unread),
+                   ("msg-sendreceive.png", _("Send/Receive"), self._sndrcv),
                    ]
 
         c = 0
