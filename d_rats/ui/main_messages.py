@@ -24,7 +24,7 @@ from datetime import datetime
 import gobject
 import gtk
 
-from ConfigParser import ConfigParser
+from ConfigParser import ConfigParser,DuplicateSectionError
 from glob import glob
 
 from d_rats.ui.main_common import MainWindowElement, MainWindowTab
@@ -153,7 +153,7 @@ class MessageFolderInfo(object):
         exists = os.path.exists(os.path.join(self._path, name))
         try:
             self._config.add_section(name)
-        except ConfigParser.DuplicateSectionError, e:
+        except DuplicateSectionError, e:
             if exists:
                 raise e
 
