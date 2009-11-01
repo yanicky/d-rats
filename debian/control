@@ -1,0 +1,13 @@
+Source: d-rats
+Section: hamradio
+Priority: extra
+Maintainer: Dan Smith <dsmith@danplanet.com>
+Build-Depends: debhelper (>= 7)
+Standards-Version: 3.8.1
+Homepage: http://www.d-rats.com
+
+Package: d-rats
+Architecture: any
+Depends: python (>= 2.5.0), python-libxslt1, python-gtk2, python-libxml2
+Description: D-STAR Communications program
+ D-STAR Communications program
