@@ -76,11 +76,11 @@ def default_build():
     for f in _locale_files:
         locale_files.append(("/usr/share/d-rats/%s" % os.path.dirname(f), [f]))
 
-    print "LOC: %s" % str(locale_files)
+    print "LOC: %s" % str(ui_files)
 
     setup(
         name="d-rats",
-        packages=["d_rats", "d_rats.geopy", "d_rats.ui"],
+        packages=["d_rats", "d_rats.geopy", "d_rats.ui", "d_rats.sessions"],
         version=DRATS_VERSION,
         scripts=["d-rats", "d-rats_mapdownloader", "d-rats_repeater"],
         data_files=[('/usr/share/applications', desktop_files),
