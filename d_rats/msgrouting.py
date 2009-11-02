@@ -241,7 +241,9 @@ class MessageRouter(gobject.GObject):
             else:
                 break # We have a route to try
 
-        if old(route) and "@" not in route:
+        if not route:
+            self._p("No route for station %s" % dst)
+        elif old(route) and "@" not in route:
             # This station is heard, but a long time ago.  Ping it first
             # and consider it unrouteable for now
             route_station = slist.get(route, None)
@@ -250,11 +252,9 @@ class MessageRouter(gobject.GObject):
                 self._p("Pinging stale route %s" % route)
                 self._emit("ping-station", route, route_station.get_port())
             route = None
-        elif route:
-            self._station_pinged_clear(dst)
+        else :
+            self._station_pinged_clear(route)
             self._p("Routing message for %s to %s" % (dst, route))
-        else:
-            self._p("No route for station %s" % dst)
 
         return route
 
