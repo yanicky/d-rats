@@ -7,11 +7,7 @@
 # This special exception was added by Craig Small in version 0.37 of dh-make.
 
 # Uncomment this to turn on verbose mode.
-#export DH_VERBOSE=1
-
-
-
-
+export DH_VERBOSE=1
 
 configure: configure-stamp
 configure-stamp:
@@ -37,10 +33,11 @@ clean:
 install: build
 	dh_testdir
 	dh_testroot
-	dh_prep  
+	#dh_prep  
 	dh_installdirs
-	python $(CURDIR)/setup.py install --root=$(CURDIR)/debian/d-rats --prefix=/usr
-	mv $(CURDIR)/debian/d-rats/usr/lib/python2.6/site-packages $(CURDIR)/debian/d-rats/usr/lib/python2.6/dist-packages
+	python $(CURDIR)/setup.py install --root=$(CURDIR)/debian/tmp --prefix=/usr
+
+	python -V 2>&1 | grep -q 2.6 && mv $(CURDIR)/debian/tmp/usr/lib/python2.6/site-packages $(CURDIR)/debian/tmp/usr/lib/python2.6/dist-packages || true
 
 
 # Build architecture-independent files here.
