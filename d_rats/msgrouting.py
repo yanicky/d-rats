@@ -333,6 +333,30 @@ class MessageRouter(gobject.GObject):
 
         return True
 
+    def _route_message(self, msg, slist, routes):
+        form = formgui.FormFile(msg)
+        path = form.get_path()
+        emok = path[-2:] != ["EMAIL", self.__config.get("user", "callsign")]
+        src = form.get_path_src()
+        dst = form.get_path_dst()
+        del form
+
+        routed = False
+        route = self._route_msg(src, dst, path, slist, routes)
+
+        if not route:
+            pass
+        elif "@" in src and "@" in dst:
+            # Don't route a message from email to email
+            pass
+        elif "@" in route:
+            if emok:
+                routed = self._route_via_email(dst, msg)
+        else:
+            routed = self._route_via_station(dst, route, slist, msg)
+
+        return routed
+
     def _run_one(self, queue):
         plist = self.emit("get-station-list")
         slist = {}
@@ -343,34 +367,14 @@ class MessageRouter(gobject.GObject):
             for station in stations:
                 slist[str(station)] = station
 
-        call = self.__config.get("user", "callsign")
-
         for dst, callq in queue.items():
             for msg in callq:
-                form = formgui.FormFile(msg)
-                path = form.get_path()
-                emok = path[-2:] != ["EMAIL", call]
-                src = form.get_path_src()
-                del form
-    
-                routed = False
-                route = self._route_msg(src, dst, path, slist, routes)
-                if not route:
-                    pass
-                elif "@" in src and "@" in dst:
-                    # Don't route a message from email to email
-                    pass
-                elif "@" in route:
-                    if emok:
-                        try:
-                            routed = self._route_via_email(dst, msg)
-                        except Exception, e:
-                            utils.log_exception()
-                else:
-                    try:
-                        routed = self._route_via_station(dst, route, slist, msg)
-                    except Exception, e:
-                        utils.log_exception()
+
+                try:
+                    routed = self._route_message(msg, slist, routes)
+                except Exception:
+                    utils.log_exception()
+                    routed = False
     
                 if not routed:
                     msg_unlock(msg)
@@ -381,6 +385,7 @@ class MessageRouter(gobject.GObject):
                     self.__event.is_set():
                 print "Running routing loop"
                 queue = self._get_queue()
+
                 try:
                     self._run_one(queue)
                 except Exception, e:

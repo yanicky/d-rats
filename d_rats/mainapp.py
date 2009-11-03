@@ -669,9 +669,9 @@ class MainApp(object):
 
         # If the message is addressed to me, or if I'm the next hop
         # in a gratuitous routing path, then it stays here
-        for_me = (dst == call) or (hop is None)
+        for_me = (dst == call) or (";" in dst and hop is None)
 
-        if fwd_on and "@" not in src and not for_me:
+        if fwd_on and not for_me:
             msg += " (" + _("forwarding to") + " " + (hop or dst) + ")"
             newfn = os.path.join(self.config.form_store_dir(),
                                  _("Outbox"),
