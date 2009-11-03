@@ -333,7 +333,7 @@ class MessageRouter(gobject.GObject):
 
         return True
 
-    def _run_one(self):
+    def _run_one(self, queue):
         plist = self.emit("get-station-list")
         slist = {}
 
@@ -345,7 +345,6 @@ class MessageRouter(gobject.GObject):
 
         call = self.__config.get("user", "callsign")
 
-        queue = self._get_queue()
         for dst, callq in queue.items():
             for msg in callq:
                 form = formgui.FormFile(msg)
@@ -354,21 +353,24 @@ class MessageRouter(gobject.GObject):
                 src = form.get_path_src()
                 del form
     
+                routed = False
                 route = self._route_msg(src, dst, path, slist, routes)
                 if not route:
-                    routed = False
+                    pass
                 elif "@" in src and "@" in dst:
                     # Don't route a message from email to email
-                    routed = False
+                    pass
                 elif "@" in route:
                     if emok:
-                        routed = self._route_via_email(dst, msg)
-                    else:
-                        # The path indicates that we received this via
-                        # email, so don't send it back out via email
-                        routed = False
+                        try:
+                            routed = self._route_via_email(dst, msg)
+                        except Exception, e:
+                            utils.log_exception()
                 else:
-                    routed = self._route_via_station(dst, route, slist, msg)
+                    try:
+                        routed = self._route_via_station(dst, route, slist, msg)
+                    except Exception, e:
+                        utils.log_exception()
     
                 if not routed:
                     msg_unlock(msg)
@@ -378,14 +380,28 @@ class MessageRouter(gobject.GObject):
             if self.__config.getboolean("settings", "msg_forward") or \
                     self.__event.is_set():
                 print "Running routing loop"
-                self._run_one()
+                queue = self._get_queue()
+                try:
+                    self._run_one(queue)
+                except Exception, e:
+                    utils.log_exception()
+                    print "Fail-safe unlocking messages in queue:"
+                    for msgs in queue.values():
+                        for msg in msgs:
+                            print "Unlocking %s" % msg
+                            msg_unlock(msg)
+
                 self.__event.clear()
             self.__event.wait(self.__config.getint("settings", "msg_flush"))
 
     def trigger(self):
-        self.__event.set()
+        if not self.__thread.is_alive():
+            self.start()
+        else:
+            self.__event.set()
 
     def start(self):
+        self._p("Starting message router thread")
         self.__enabled = True
         self.__event.clear()
         self.__thread = threading.Thread(target=self._run)
