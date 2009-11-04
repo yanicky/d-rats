@@ -717,6 +717,7 @@ class MessagesTab(MainWindowTab):
 
         station, port = prompt_for_station(stations, self._config)
         if not station:
+            msgrouting.msg_unlock(fn)
             return
 
         self.emit("user-send-form", station, port, fn, "foo")
