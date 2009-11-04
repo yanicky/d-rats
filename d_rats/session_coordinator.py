@@ -25,6 +25,7 @@ import gobject
 import formgui
 import emailgw
 import signals
+import msgrouting
 from utils import run_safe, run_gtk_locked
 
 from d_rats.sessions import base, file, form, sock
@@ -155,6 +156,9 @@ class FormRecvThread(FileBaseThread):
     def worker(self, path):
         md = os.path.join(self.coord.config.form_store_dir(), _("Inbox"))
         newfn = time.strftime(os.path.join(md, "form_%m%d%Y_%H%M%S.xml"))
+        if not msgrouting.msg_lock(newfn):
+            print "AIEE! Unable to lock incoming new message file!"
+
         fn = self.session.recv_file(newfn)
 
         name = "%s %s %s" % (self.session.name,

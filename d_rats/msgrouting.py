@@ -19,6 +19,7 @@ import threading
 import time
 import os
 import smtplib
+import shutil
 from glob import glob
 
 try:
@@ -91,6 +92,53 @@ def gratuitous_next_hop(route, path):
 
     return route_nodes[len(path_nodes)]
 
+def is_sendable_dest(mycall, string):
+    
+    # Specifically for me
+    if string == mycall:
+        print "for me"
+        return False
+
+    # Empty string
+    if not string.strip():
+        print "empty: %s %s" % (string, string.strip())
+        return False
+
+    # Is an email address:
+    if "@" in string:
+        print "is an Email"
+        return True
+
+    # Contains lowercase characters
+    if string != string.upper():
+        print "lowercase"
+        return False
+
+    # Contains spaces
+    if string != string.split()[0]:
+        print "spaces"
+        return False
+
+    # Contains a gratuitous route and we're the last in line
+    if ";" in string and string.split(";")[-1] == mycall:
+        print "End of grat"
+        return False
+
+    print "default to call"
+
+    # Looks like it's a candidate to be routed
+    return True
+
+def move_to_folder(config, msg, folder):
+    newfn = os.path.join(config.form_store_dir(),
+                         folder,
+                         os.path.basename(msg))
+    msg_lock(newfn)
+    shutil.move(msg, newfn)
+    msg_unlock(newfn)
+
+def move_to_outgoing(config, msg):
+    return move_to_folder(config, msg, "Outbox")
 
 class MessageRoute(object):
     def __init__(self, line):
@@ -158,7 +206,7 @@ class MessageRouter(gobject.GObject):
     def _get_queue(self):
         queue = {}
 
-        qd = os.path.join(self.__config.form_store_dir(), _("Outbox"))
+        qd = os.path.join(self.__config.form_store_dir(), "Outbox")
         fl = glob(os.path.join(qd, "*.xml"))
         for f in fl:
             if not msg_lock(f):

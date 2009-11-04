@@ -40,6 +40,7 @@ import formgui
 from ui import main_events
 import signals
 import utils
+import msgrouting
 
 class MailThread(threading.Thread, gobject.GObject):
     __gsignals__ = {
@@ -134,25 +135,6 @@ class MailThread(threading.Thread, gobject.GObject):
 
         return messages
 
-    def should_send_form(self, sender, recip):
-        for i in ["'", '"']:
-            recip = recip.replace(i, "")
-        recip = recip.strip()
-
-        if not recip or "@" in recip or recip != recip.upper() or \
-                recip.split()[0] != recip:
-            print "Not sending to non-callsign recipient `%s'" % recip
-            return False
-        elif not validate_incoming(self.config, recip, sender):
-            print "Not auto-sending %s -> %s (no access rule)" % (sender, recip)
-            return False
-        elif recip == self.config.get("user", "callsign"):
-            print "Not auto-sending to myself"
-            return False
-        else:
-            print "Auto-sending form %s -> %s" % (sender, recip)
-            return True
-
     def create_form_from_mail(self, mail):
         subject = mail.get("Subject", "[no subject]")
         sender = mail.get("From", "Unknown <devnull@nowhere.com>")
@@ -186,6 +168,8 @@ class MailThread(threading.Thread, gobject.GObject):
         ffn = os.path.join(self.config.form_store_dir(),
                            _("Inbox"),
                            "%s.xml" % mid)
+        if not msgrouting.msg_lock(ffn):
+            print "AIEE: Unable to lock incoming email message file!"
 
         if xml:
             self.message("Found a D-RATS form payload")
@@ -208,21 +192,15 @@ class MailThread(threading.Thread, gobject.GObject):
             form.set_field_value("recipient", recip)
             form.set_field_value("subject", "EMAIL: %s" % subject)
             form.set_field_value("message", body)
-            form.set_path_src(sender)
-            form.set_path_dst(recip)
+            form.set_path_src(sender.strip())
+            form.set_path_dst(recip.strip())
             form.set_path_mid(messageid)
 
         form.add_path_element("EMAIL")
         form.add_path_element(self.config.get("user", "callsign"))
         form.save_to(ffn)
 
-        if self.should_send_form(sender, recip):
-            nfn = os.path.join(self.config.form_store_dir(),
-                               _("Outbox"),
-                               os.path.basename(ffn))
-            os.rename(ffn, nfn) # Move to Outbox
-        else:
-            self._emit("form-received", -999, ffn)
+        self._emit("form-received", -999, ffn)
 
         msg = "Mail received from %s" % sender
         event = main_events.Event(None, msg)

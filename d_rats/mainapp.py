@@ -652,34 +652,30 @@ class MainApp(object):
         print "[NEWFORM %s]: %s" % (id, fn)
         f = formgui.FormFile(fn)
 
-        fwd_on = self.config.getboolean("settings", "msg_forward");
-
         msg = '%s "%s" %s %s' % (_("Message"),
                                  f.get_subject_string(),
                                  _("received from"),
                                  f.get_sender_string())
 
+        myc = self.config.get("user", "callsign")
         dst = f.get_path_dst()
         src = f.get_path_src()
         pth = f.get_path()
 
-        hop = msgrouting.gratuitous_next_hop(dst, pth)
+        fwd_on = self.config.getboolean("settings", "msg_forward");
+        is_dst = msgrouting.is_sendable_dest(myc, dst)
+        nextst = msgrouting.gratuitous_next_hop(dst, pth) or dst
+        bounce = "@" in src and "@" in dst
 
-        call = self.config.get("user", "callsign")
-
-        # If the message is addressed to me, or if I'm the next hop
-        # in a gratuitous routing path, then it stays here
-        for_me = (dst == call) or (";" in dst and hop is None)
-
-        if fwd_on and not for_me:
-            msg += " (" + _("forwarding to") + " " + (hop or dst) + ")"
-            newfn = os.path.join(self.config.form_store_dir(),
-                                 _("Outbox"),
-                                 os.path.basename(fn))
-            shutil.move(fn, newfn)
-            self.mainwindow.tabs["messages"].refresh_if_folder("Outbox")
+        if fwd_on and is_dst and not bounce:
+            msg += " (%s %s)" % (_("forwarding to"), nextst)
+            msgrouting.move_to_outgoing(self.config, fn)
+            refresh_folder = "Outbox"
         else:
-            self.mainwindow.tabs["messages"].refresh_if_folder("Inbox")
+            refresh_folder = "Inbox"
+        
+        msgrouting.msg_unlock(fn)
+        self.mainwindow.tabs["messages"].refresh_if_folder(refresh_folder)
 
         event = main_events.FormEvent(id, msg)
         event.set_as_final()
