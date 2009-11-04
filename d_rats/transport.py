@@ -204,7 +204,7 @@ class Transporter(object):
         return None
 
     def _send_text_block(self, string):
-        f = ddt2.DDT2EncodedFrame()
+        f = ddt2.DDT2RawData()
         f.seq = 0
         f.session = 1 # Chat (for now)
         f.s_station = "CQCQCQ"
