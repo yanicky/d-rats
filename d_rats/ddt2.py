@@ -197,7 +197,7 @@ class DDT2Frame(object):
                                                         len(self.data))
 
     def get_copy(self):
-        f = DDT2EncodedFrame()
+        f = self.__class__()
         f.seq = self.seq
         f.session = self.session
         f.type = self.type
