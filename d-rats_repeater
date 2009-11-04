@@ -111,7 +111,7 @@ class Repeater:
                                                         transport)
             self.calls[frame.s_station] = CallInfo(frame.s_station,
                                                    transport)
-        else:
+        elif srcinfo:
             if srcinfo.last_transport() != transport:
                 print "Station %s moved to port %s" % (frame.s_station,
                                                        transport)
