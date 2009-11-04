@@ -88,7 +88,7 @@ def do_dprs_calculator(initial=""):
 
     r = d.run()
     aicon = icons[iconsel.get_active()][1]
-    mstr = msg.get_text()
+    mstr = msg.get_text().upper()
     over = oversel.get_active_text()
     d.destroy()
     if r != gtk.RESPONSE_OK:
