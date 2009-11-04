@@ -430,7 +430,7 @@ class MessageRouter(gobject.GObject):
     def _run(self):
         while self.__enabled:
             if self.__config.getboolean("settings", "msg_forward") or \
-                    self.__event.is_set():
+                    self.__event.isSet():
                 print "Running routing loop"
                 queue = self._get_queue()
 
@@ -448,7 +448,7 @@ class MessageRouter(gobject.GObject):
             self.__event.wait(self.__config.getint("settings", "msg_flush"))
 
     def trigger(self):
-        if not self.__thread.is_alive():
+        if not self.__thread.isAlive():
             self.start()
         else:
             self.__event.set()
