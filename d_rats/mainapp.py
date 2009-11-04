@@ -513,7 +513,10 @@ class MainApp(object):
         self.sc(port).send_file(station, fname, sname)
 
     def __user_send_chat(self, object, station, port, msg, raw):
-        self.chat_session(port).write(msg)
+        if raw:
+            self.chat_session(port).write_raw(msg)
+        else:
+            self.chat_session(port).write(msg)
 
     def __incoming_chat_message(self, object, src, dst, data, port=None):
         self.__chat(src, dst, data, True, port)
