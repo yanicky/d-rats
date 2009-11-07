@@ -339,7 +339,11 @@ class MainApp(object):
 
         accts = self.config.options("incoming_email")
         for acct in accts:
-            t = emailgw.MailThread(self.config, acct)
+            try:
+                t = emailgw.PeriodicMailThread(self.config, acct)
+            except Exception:
+                log_exception()
+                continue
             self.__connect_object(t)
             t.start()
             self.mail_threads.append(t)
@@ -722,14 +726,18 @@ class MainApp(object):
     def __trigger_msg_router(self, object):
         self.msgrouter.trigger()
 
+    def __register_object(self, parent, object):
+        self.__connect_object(object)
+
 # ------------ END SIGNAL HANDLERS ----------------
 
     def __connect_object(self, object, *args):
         for signal in object._signals.keys():
             handler = self.handlers.get(signal, None)
             if handler is None:
-                raise Exception("Object signal `%s' of object %s not known" % \
-                                    (signal, object))
+                pass
+            #raise Exception("Object signal `%s' of object %s not known" % \
+            #                        (signal, object))
             elif self.handlers[signal]:
                 try:
                     object.connect(signal, handler, *args)
@@ -773,6 +781,7 @@ class MainApp(object):
             "form-sent" : self.__form_sent,
             "get-chat-port" : self.__get_chat_port,
             "trigger-msg-router" : self.__trigger_msg_router,
+            "register-object" : self.__register_object,
             }
 
         global MAINAPP
