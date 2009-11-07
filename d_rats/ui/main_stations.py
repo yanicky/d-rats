@@ -28,6 +28,54 @@ from d_rats.sessions import rpc
 from d_rats import station_status
 from d_rats import signals
 from d_rats import image
+from d_rats import miscwidgets
+from d_rats import inputdialog
+
+def prompt_for_account(config):
+    accounts = {}
+    for section in config.options("incoming_email"):
+        info = config.get("incoming_email", section).split(",")
+        key = "%s on %s" % (info[1], info[0])
+        accounts[key] = info
+
+    accounts["Other"] = []
+    default = accounts.keys()[0]
+
+    account = miscwidgets.make_choice(accounts.keys(), False, default)
+    host = gtk.Entry()
+    user = gtk.Entry()
+    pasw = gtk.Entry()
+    ussl = gtk.CheckButton()
+    port = gtk.SpinButton(gtk.Adjustment(110, 1, 65535, 1), digits=0)
+
+    pasw.set_visibility(False)
+
+    def choose_account(box):
+        info = accounts[box.get_active_text()]
+        if not info:
+            info = ["", "", "", "", "", "110"]
+        host.set_text(info[0])
+        user.set_text(info[1])
+        pasw.set_text(info[2])
+        ussl.set_active(info[4] == "True")
+        port.set_value(int(info[5]))
+    account.connect("changed", choose_account)
+    choose_account(account)
+
+    d = inputdialog.FieldDialog(title="Select account")
+    d.add_field("Account", account)
+    d.add_field("Server", host)
+    d.add_field("Username", user)
+    d.add_field("Password", pasw)
+    d.add_field("Use SSL", ussl)
+    d.add_field("Port", port)
+    r = d.run()
+    d.destroy()
+    if r == gtk.RESPONSE_CANCEL:
+        return None
+
+    return host.get_text(), user.get_text(), pasw.get_text(), \
+        str(ussl.get_active()), str(int(port.get_value()))
 
 class StationsList(MainWindowTab):
     __gsignals__ = {
@@ -134,6 +182,22 @@ class StationsList(MainWindowTab):
             job = rpc.RPCGetVersion(station, "Version Request")
             job.connect("state-change", log_result)
             self.emit("submit-rpc-job", job, port)
+        elif action == "mcheck":
+            def log_result(job, state, result):
+                msg = "Mail check via %s: %s" % (job.get_dest(),
+                                                 result.get("msg",
+                                                            "No response"))
+                event = main_events.Event(None, msg)
+                self.emit("event", event)
+
+            vals = prompt_for_account(self._config)
+            if vals is None:
+                return
+
+            job = rpc.RPCCheckMail(station, "Mail Check")
+            job.set_account(vals[0], vals[1], vals[2], vals[4], vals[3])
+            job.connect("state-change", log_result)
+            self.emit("submit-rpc-job", job, port)
 
     def _make_station_menu(self, station, port):
         xml = """
@@ -144,6 +208,7 @@ class StationsList(MainWindowTab):
     <menuitem action="reqpos"/>
     <menuitem action="sendfile"/>
     <menuitem action="version"/>
+    <menuitem action="mcheck"/>
     <separator/>
     <menuitem action="remove"/>
     <menuitem action="reset"/>
@@ -161,7 +226,8 @@ class StationsList(MainWindowTab):
                    ("sendfile", _("Send file"), None),
                    ("remove", _("Remove"), gtk.STOCK_DELETE),
                    ("reset", _("Reset"), gtk.STOCK_JUMP_TO),
-                   ("version", _("Get version"), gtk.STOCK_ABOUT)]
+                   ("version", _("Get version"), gtk.STOCK_ABOUT),
+                   ("mcheck", _("Request mail check"), None)]
 
         for action, label, stock in actions:
             a = gtk.Action(action, label, None, stock)
