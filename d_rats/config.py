@@ -1200,6 +1200,7 @@ class DratsInEmailPanel(DratsPanel):
                   (_("Use SSL"), bool, False),
                   (_("Port"), int, 110),
                   (_("Action"), str, "Form"),
+                  (_("Enabled"), bool, True),
                   ]
         ret = self.prompt_for_acct(fields)
         if ret:
@@ -1211,7 +1212,8 @@ class DratsInEmailPanel(DratsPanel):
                         ret[_("Poll Interval")],
                         ret[_("Use SSL")],
                         ret[_("Port")],
-                        ret[_("Action")])
+                        ret[_("Action")],
+                        ret[_("Enabled")])
 
     def but_edit(self, button, lw):
         vals = lw.get_item(lw.get_selected())
@@ -1222,6 +1224,7 @@ class DratsInEmailPanel(DratsPanel):
                   (_("Use SSL"), bool, vals[5]),
                   (_("Port"), int, vals[6]),
                   (_("Action"), str, vals[7]),
+                  (_("Enabled"), bool, vals[8]),
                   ]
         id ="%s@%s" % (vals[1], vals[2])
         ret = self.prompt_for_acct(fields)
@@ -1235,16 +1238,21 @@ class DratsInEmailPanel(DratsPanel):
                         ret[_("Poll Interval")],
                         ret[_("Use SSL")],
                         ret[_("Port")],
-                        ret[_("Action")])
+                        ret[_("Action")],
+                        ret[_("Enabled")])
 
     def convert_018_values(self, config, section):
         options = config.options(section)
         for opt in options:
             val = config.get(section, opt)
-            if len(val.split(",")) != 7:
+            if len(val.split(",")) < 7:
                 val += ",Form"
                 config.set(section, opt, val)
-                print "Converted %s/%s" % (section, opt)
+                print "7-8 Converted %s/%s" % (section, opt)
+            if len(val.split(",")) < 8:
+                val += ",True"
+                config.set(section, opt, val)
+                print "8-9 Converted %s/%s" % (section, opt)
 
     def __init__(self, config):
         DratsPanel.__init__(self, config)
@@ -1257,6 +1265,7 @@ class DratsInEmailPanel(DratsPanel):
                 (gobject.TYPE_BOOLEAN, _("Use SSL")),
                 (gobject.TYPE_INT, _("Port")),
                 (gobject.TYPE_STRING, _("Action")),
+                (gobject.TYPE_BOOLEAN, _("Enabled"))
                 ]
 
         self.choices = {
