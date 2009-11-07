@@ -23,7 +23,7 @@ import sys
 
 import gobject
 
-from d_rats import ddt2, signals
+from d_rats import ddt2, signals, emailgw
 
 # This feels wrong
 from d_rats.ui import main_events
@@ -163,6 +163,22 @@ class RPCGetVersion(RPCJob):
     def do(self, rpcactions):
         return rpcactions.RPC_get_version(self)
 
+class RPCCheckMail(RPCJob):
+    def do(self, rpcactions):
+        return rpcactions.RPC_check_mail(self)
+
+    def set_account(self, host, user, pasw, port, ssl):
+        self._args = {"host" : host,
+                      "user" : user,
+                      "pasw" : pasw,
+                      "port" : port,
+                      "ssl"  : ssl,
+                      }
+
+    def get_account(self):
+        return self._args["host"], self._args["user"], self._args["pasw"], \
+            int(self._args["port"]), self._args["ssl"] == "True"
+
 class RPCSession(gobject.GObject, stateless.StatelessSession):
     type = base.T_RPC
 
@@ -248,7 +264,8 @@ class RPCSession(gobject.GObject, stateless.StatelessSession):
 
             job.connect("state-change", self.__job_state, frame.seq)
             result = job.do(self.__rpcactions)
-            job.set_state("complete", result)
+            if result is not None:
+                job.set_state("complete", result)
 
         elif frame.type == self.T_RPCACK:
             if self.__jobs.has_key(frame.seq):
@@ -295,6 +312,7 @@ class RPCActionSet(gobject.GObject):
         "get-current-position" : signals.GET_CURRENT_POSITION,
         "user-send-chat" : signals.USER_SEND_CHAT,
         "event" : signals.EVENT,
+        "register-object" : signals.REGISTER_OBJECT,
         }
 
     _signals = __gsignals__
@@ -426,3 +444,15 @@ class RPCActionSet(gobject.GObject):
             result["pygtkver"] = result["gtkver"] = "Unknown"
 
         return result
+
+    def RPC_check_mail(self, job):
+        def check_done(mt, success, message, job):
+            result = { "rc"  : success and "0" or "-1",
+                       "msg" : message }
+            job.set_state("complete", result)
+
+        args = job.get_account() + (job.get_dest(),)
+        mt = emailgw.CoercedMailThread(self.__config, *args)
+        self.emit("register-object", mt)
+        mt.connect("mail-thread-complete", check_done, job)
+        mt.start()
