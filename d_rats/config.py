@@ -66,8 +66,7 @@ _DEF_PREFS = {
     "restore_stations" : "True",
     "useutc" : "False",
     "language" : "English",
-    "allow_remote_forms" : "False",
-    "allow_remote_files" : "False",
+    "allow_remote_files" : "True",
     "form_default_private" : "False",
     "blink_chat" : "True",
     "blink_messages" : "True",
@@ -941,10 +940,6 @@ class DratsTransfersPanel(DratsPanel):
         val = DratsConfigWidget(config, "settings", "ddt_block_outlimit", True)
         val.add_numeric(1, 32, 1)
         self.mv(_("Pipeline blocks"), val)
-
-        val = DratsConfigWidget(config, "prefs", "allow_remote_forms")
-        val.add_bool()
-        self.mv(_("Remote form transfers"), val)
 
         val = DratsConfigWidget(config, "prefs", "allow_remote_files")
         val.add_bool()
