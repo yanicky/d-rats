@@ -49,6 +49,8 @@ class MailThread(threading.Thread, gobject.GObject):
         "form-received" : signals.FORM_RECEIVED,
         "get-station-list" : signals.GET_STATION_LIST,
         "event" : signals.EVENT,
+        "mail-thread-complete" : (gobject.SIGNAL_RUN_LAST, gobject.TYPE_NONE,
+                                  (gobject.TYPE_BOOLEAN, gobject.TYPE_STRING)),
         }
 
     _signals = __gsignals__
@@ -56,55 +58,20 @@ class MailThread(threading.Thread, gobject.GObject):
     def _emit(self, signal, *args):
         gobject.idle_add(self.emit, signal, *args)
 
-    def __init__(self, config, account):
+    def __init__(self, config, host, user, pasw, port=110, ssl=False):
         threading.Thread.__init__(self)
         gobject.GObject.__init__(self)
         self.setDaemon(True)
 
-        self.event = threading.Event()
+        self.username = user
+        self.password = pasw
+        self.server = host
+        self.port = port
+        self.use_ssl = ssl
 
-        self.enabled = True
         self.config = config
 
-        settings = config.get("incoming_email", account)
-
-        try:
-            self.server, self.username, \
-                self.password, poll, \
-                ssl, port, action = settings.split(",", 6)
-        except ValueError:
-            self.server, self.username, \
-                self.password, poll, \
-                ssl, port = settings.split(",", 6)
-            action = "Form"
-
-        actions = {
-            _("Form") : self.create_form_from_mail,
-            _("Chat") : self.do_chat_from_mail,
-            }
-
-        try:
-            self.action = actions[action]
-        except KeyError:
-            print "Unsupported action `%s' for %s@%s" % (action,
-                                                         self.username,
-                                                         self.server)
-            return
-
-        if not port:
-            self.port = self.use_tls and 995 or 110
-        else:
-            self.port = int(port)
-
-        self.use_ssl = ssl == "True"
-        self.poll = int(poll)
-
-    def trigger(self):
-        self.event.set()
-
-    def stop(self):
-        self.enabled = False
-        self.trigger()
+        self._coerce_call = None
 
     def message(self, message):
         print "[MAIL %s@%s] %s" % (self.username, self.server, message)
@@ -196,6 +163,12 @@ class MailThread(threading.Thread, gobject.GObject):
             form.set_path_dst(recip.strip())
             form.set_path_mid(messageid)
 
+        if self._coerce_call:
+            print "Coercing to %s" % self._coerce_call
+            form.set_path_dst(self._coerce_call)
+        else:
+            print "Not coercing"
+
         form.add_path_element("EMAIL")
         form.add_path_element(self.config.get("user", "callsign"))
         form.save_to(ffn)
@@ -205,6 +178,71 @@ class MailThread(threading.Thread, gobject.GObject):
         msg = "Mail received from %s" % sender
         event = main_events.Event(None, msg)
         self._emit("event", event)
+
+    def run(self):
+        self.message("One-shot thread starting")
+        mails = None
+
+        if not self.config.getboolean("state", "connected_inet"):
+            result = "Not connected to the Internet"
+        else:
+            try:
+                mails = self.fetch_mails()
+            except Exception, e:
+                result = "Failed (%s)" % e
+
+            if mails:
+                for mail in mails:
+                    self.create_form_from_mail(mail)
+                result = "Queued %i messages" % len(mails)
+            elif mails is not None:
+                result = "No messages"
+
+        self.message("Thread ended [ %s ]" % result)
+
+        self._emit("mail-thread-complete", mails != None, result)
+
+class CoercedMailThread(MailThread):
+    def __init__(self, *args):
+        call = str(args[-1])
+        args = args[:-1]
+        MailThread.__init__(self, *args)
+        self._coerce_call = call
+
+class PeriodicMailThread(MailThread):
+    def __init__(self, config, account):
+        settings = config.get("incoming_email", account)
+
+        try:
+            host, user, pasw, poll, ssl, port, action, enb = \
+                settings.split(",", 7)
+        except ValueError:
+            raise Exception("Unable to parse account settings for `%s'" % \
+                                account)
+
+        actions = {
+            _("Form") : self.create_form_from_mail,
+            _("Chat") : self.do_chat_from_mail,
+            }
+
+        try:
+            self.__action = actions[action]
+        except KeyError:
+            raise Exception("Unsupported action `%s' for %s@%s" % \
+                                (action, user, host))
+
+        ssl = ssl == "True"
+        if not port:
+            port = ssl and 995 or 110
+        else:
+            port = int(port)
+
+        self.__poll = int(poll)
+
+        self.event = threading.Event()
+        self.enabled = enb == "True"
+
+        MailThread.__init__(self, config, host, user, pasw, port, ssl)
 
     def do_chat_from_mail(self, mail):
         if mail.is_multipart():
@@ -235,7 +273,7 @@ class MailThread(threading.Thread, gobject.GObject):
         self._emit("event", event)
 
     def run(self):
-        self.message("Thread starting")
+        self.message("Periodic thread starting")
 
         while self.enabled:
             if not self.config.getboolean("state", "connected_inet"):
@@ -247,12 +285,19 @@ class MailThread(threading.Thread, gobject.GObject):
                 except Exception, e:
                     self.message("Failed to retrieve messages: %s" % e)
                 for mail in mails:
-                    self.action(mail)
+                    self.__action(mail)
 
-            self.event.wait(self.poll * 60)
+            self.event.wait(self.__poll * 60)
             self.event.clear()
 
         self.message("Thread ending")
+
+    def trigger(self):
+        self.event.set()
+
+    def stop(self):
+        self.enabled = False
+        self.trigger()
 
 def __validate_access(config, callsign, emailaddr, types):
     rules = config.options("email_access")
