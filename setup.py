@@ -69,6 +69,7 @@ def default_build():
     desktop_files = glob("share/*.desktop")
     form_files = glob("forms/*.x?l")
     image_files = glob("images/*")
+    image_files.append("d-rats2.ico")
     ui_files = glob("ui/*")
     _locale_files = glob("locale/*/LC_MESSAGES/D-RATS.mo")
 
