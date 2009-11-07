@@ -393,6 +393,10 @@ class RPCActionSet(gobject.GObject):
     def RPC_file_pull(self, job):
         result = {}
     
+        if not self.__config.getboolean("prefs", "allow_remote_files"):
+            result["rc"] = "Remote file transfers not enabled"
+            return result
+
         dir = self.__config.get("prefs", "download_dir")
         path = os.path.join(dir, job.get_file())
         print "Remote requested %s" % path
