@@ -171,3 +171,7 @@ GET_CHAT_PORT = \
 TRIGGER_MSG_ROUTER = \
     (gobject.SIGNAL_ACTION, gobject.TYPE_NONE,
      ())
+
+REGISTER_OBJECT = \
+    (gobject.SIGNAL_ACTION, gobject.TYPE_NONE,
+     (gobject.TYPE_PYOBJECT,))   # Object to register
