@@ -26,6 +26,7 @@ import gtk
 from d_rats.ui.main_common import MainWindowElement, MainWindowTab
 from d_rats.ui.main_common import ask_for_confirmation
 from d_rats.sessions import rpc
+from d_rats.ui import main_events
 from d_rats import image
 from d_rats import utils
 from d_rats import signals
@@ -132,6 +133,9 @@ class FilesTab(MainWindowTab):
         }
 
     _signals = __gsignals__
+
+    def _emit(self, *args):
+        gobject.idle_add(self.emit, *args)
 
     def _stop_throb(self):
         throbber, = self._getw("remote_throb")
@@ -245,7 +249,14 @@ class FilesTab(MainWindowTab):
         ssel, psel = self._get_ssel()
         port = psel.get_active_text()
 
+        def log_failure(job, state, result):
+            rc = result.get("rc", "Timeout")
+            if rc != "OK":
+                event = main_events.Event(None, "%s: %s" % (job.get_dest(), rc))
+                self._emit("event", event)
+
         job = rpc.RPCPullFileJob(station, "Request file %s" % fn)
+        job.connect("state-change", log_failure)
         job.set_file(fn)
 
         self.emit("submit-rpc-job", job, port)
