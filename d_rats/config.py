@@ -1472,7 +1472,7 @@ class DratsConfigUI(gtk.Dialog):
         add_panel(DratsTCPIncomingPanel, "tcpin", _("TCP Gateway"), network)
         add_panel(DratsTCPOutgoingPanel, "tcpout", _("TCP Forwarding"), network)
         add_panel(DratsOutEmailPanel, "smtp", _("Outgoing Email"), network)
-        add_panel(DratsInEmailPanel, "email", _("Incoming Email"), network)
+        add_panel(DratsInEmailPanel, "email", _("Email Accounts"), network)
         add_panel(DratsEmailAccessPanel, "email_ac", _("Email Access"), network)
 
         self.panels["prefs"].show()
