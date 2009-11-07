@@ -634,6 +634,12 @@ class MainApp(object):
     def __session_started(self, object, id, msg, port):
         print "[SESSION %i]: %s" % (id, msg)
 
+        # Don't register Chat, RPC, Sniff
+        if id and id <= 4:
+            return
+        elif id == 0:
+            msg = "Port connected"
+
         event = main_events.SessionEvent(id, port, msg)
         self.mainwindow.tabs["event"].event(event)
         return event
@@ -642,6 +648,10 @@ class MainApp(object):
         self.__session_started(object, id, msg, port)
 
     def __session_ended(self, object, id, msg, restart_info, port):
+        # Don't register Control, Chat, RPC, Sniff
+        if id <= 4:
+            return
+
         event = self.__session_started(object, id, msg, port)
         event.set_restart_info(restart_info)
         event.set_as_final()
