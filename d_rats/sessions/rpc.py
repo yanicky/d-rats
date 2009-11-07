@@ -451,8 +451,20 @@ class RPCActionSet(gobject.GObject):
                        "msg" : message }
             job.set_state("complete", result)
 
+            event = main_events.Event(None,
+                                      "%s %s: %s" % (_("Checking mail for"),
+                                                     job.get_dest(),
+                                                     message))
+            self.emit("event", event)
+
+
         args = job.get_account() + (job.get_dest(),)
         mt = emailgw.CoercedMailThread(self.__config, *args)
         self.emit("register-object", mt)
         mt.connect("mail-thread-complete", check_done, job)
         mt.start()
+
+        event = main_events.Event(None,
+                                  "%s %s" % (job.get_dest(),
+                                             _("requested a mail check")))
+        self.emit("event", event)
