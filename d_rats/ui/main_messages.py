@@ -421,6 +421,7 @@ class MessageList(MainWindowElement):
         col.set_cell_data_func(r, bold_if_unread, ML_COL_SEND)
         col.set_sort_column_id(ML_COL_SEND)
         col.set_sizing(gtk.TREE_VIEW_COLUMN_AUTOSIZE)
+        col.set_resizable(True)
         msglist.append_column(col)
 
         r = gtk.CellRendererText()
@@ -428,6 +429,7 @@ class MessageList(MainWindowElement):
         col.set_cell_data_func(r, bold_if_unread, ML_COL_RECP)
         col.set_sort_column_id(ML_COL_RECP)
         col.set_sizing(gtk.TREE_VIEW_COLUMN_AUTOSIZE)
+        col.set_resizable(True)
         msglist.append_column(col)
 
         r = gtk.CellRendererText()
@@ -436,12 +438,14 @@ class MessageList(MainWindowElement):
         col.set_expand(True)
         col.set_sort_column_id(ML_COL_SUBJ)
         col.set_sizing(gtk.TREE_VIEW_COLUMN_AUTOSIZE)
+        col.set_resizable(True)
         msglist.append_column(col)
 
         r = gtk.CellRendererText()
         col = gtk.TreeViewColumn(_("Type"), r, text=ML_COL_TYPE)
         col.set_cell_data_func(r, bold_if_unread, ML_COL_TYPE)
         col.set_sort_column_id(ML_COL_TYPE)
+        col.set_resizable(True)
         msglist.append_column(col)
 
         def render_date(col, rend, model, iter):
@@ -456,6 +460,7 @@ class MessageList(MainWindowElement):
         col = gtk.TreeViewColumn(_("Date"), r, text=ML_COL_DATE)
         col.set_cell_data_func(r, render_date)
         col.set_sort_column_id(ML_COL_DATE)
+        col.set_resizable(True)
         msglist.append_column(col)
 
         msglist.connect("row-activated", self._open_msg)
