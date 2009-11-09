@@ -38,7 +38,8 @@ def prompt_for_account(config):
         key = "%s on %s" % (info[1], info[0])
         accounts[key] = info
 
-    accounts["Other"] = []
+    accounts["Other"] = ["", "", "", "", "", "110"]
+    accounts["WL2K"] = ["@WL2K", "", "", "", "0"]
     default = accounts.keys()[0]
 
     account = miscwidgets.make_choice(accounts.keys(), False, default)
@@ -48,12 +49,14 @@ def prompt_for_account(config):
     ussl = gtk.CheckButton()
     port = gtk.SpinButton(gtk.Adjustment(110, 1, 65535, 1), digits=0)
 
+    disable = [host, user, pasw, ussl, port]
+
     pasw.set_visibility(False)
 
     def choose_account(box):
         info = accounts[box.get_active_text()]
-        if not info:
-            info = ["", "", "", "", "", "110"]
+        for i in disable:
+            i.set_sensitive(not info[0])
         host.set_text(info[0])
         user.set_text(info[1])
         pasw.set_text(info[2])

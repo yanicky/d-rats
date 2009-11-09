@@ -773,6 +773,24 @@ class MessagesTab(MainWindowTab):
     def _sndrcv(self, button):
         self.emit("trigger-msg-router")
 
+    def _make_sndrcv_menu(self):
+        menu = gtk.Menu()
+
+        mi = gtk.MenuItem("Outbox")
+        mi.set_tooltip_text("Send messages in the Outbox")
+        mi.show()
+        menu.append(mi)
+
+        for section in self._config.options("incoming_email"):
+            info = self._config.get("incoming_email", section).split(",")
+            lab = "%s on %s" % (info[1], info[0])
+            mi = gtk.MenuItem(lab)
+            mi.set_tooltip_text("Check for new mail on this account")
+            mi.show()
+            menu.append(mi)
+
+        return menu
+
     def _init_toolbar(self):
         tb, = self._getw("toolbar")
 
@@ -793,12 +811,20 @@ class MessagesTab(MainWindowTab):
             _("Send/Receive") : _("Send messages in the Outbox"),
             }
 
+        menus = {
+            "msg-sendreceive.png" : self._make_sndrcv_menu(),
+            }
+
         c = 0
         for i, l, f in buttons:
             icon = gtk.Image()
             icon.set_from_pixbuf(self._config.ship_img(i))
             icon.show()
-            item = gtk.ToolButton(icon, l)
+            if menus.has_key(i):
+                item = gtk.MenuToolButton(icon, l)
+                item.set_menu(menus[i])
+            else:
+                item = gtk.ToolButton(icon, l)
             item.show()
             item.connect("clicked", f)
             if tips.has_key(l):
