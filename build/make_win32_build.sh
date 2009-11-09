@@ -37,12 +37,13 @@ copy_lib() {
 }
 
 copy_data() {
-	mkdir -p dist/forms
+	mkdir -p dist/forms dist/libexec
 	cp -r forms/*.x[ms]l dist/forms >> $LOG
 	list="ui images COPYING build/d-rats_safe_mode.bat build/install_default_forms.bat locale"
 	for i in $list; do
 		cp -rv $i dist >> $LOG
 	done
+	cp -v libexec/LZHUF_1.EXE dist/libexec
 }
 
 make_zip() {
