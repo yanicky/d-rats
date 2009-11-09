@@ -88,6 +88,7 @@ def default_build():
                     ('/usr/share/d-rats/forms', form_files),
                     ('/usr/share/d-rats/images', image_files),
                     ('/usr/share/d-rats/ui', ui_files),
+                    ('/usr/share/d-rats', "libexec/lzhuf"),
                     ] + locale_files)
                     
 if sys.platform == "darwin":
