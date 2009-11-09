@@ -378,8 +378,10 @@ class Win32Platform(Platform):
     def os_version_string(self):
         import win32api
 
-        vers = { 4: "Win2k",
-                 5: "WinXP",
+        vers = { 4: "Windows 2000",
+                 5: "Windows XP",
+                 6: "Windows Vista",
+                 7: "Windows 7",
                  }
 
         (pform, _, build, _, _) = win32api.GetVersionEx()
