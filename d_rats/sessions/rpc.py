@@ -23,7 +23,7 @@ import sys
 
 import gobject
 
-from d_rats import ddt2, signals, emailgw
+from d_rats import ddt2, signals, emailgw, wl2k
 
 # This feels wrong
 from d_rats.ui import main_events
@@ -463,7 +463,11 @@ class RPCActionSet(gobject.GObject):
 
 
         args = job.get_account() + (job.get_dest(),)
-        mt = emailgw.CoercedMailThread(self.__config, *args)
+
+        if args[0] == "@WL2K":
+            mt = wl2k.WinLinkDownloadThread(self.__config, job.get_dest())
+        else:
+            mt = emailgw.CoercedMailThread(self.__config, *args)
         self.emit("register-object", mt)
         mt.connect("mail-thread-complete", check_done, job)
         mt.start()
