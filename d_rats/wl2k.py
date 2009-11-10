@@ -23,6 +23,9 @@ FBB_BLOCK_TYPES = { FBB_BLOCK_HDR : "header",
                     FBB_BLOCK_EOF : "eof",
                     }
 
+def escaped(string):
+    return string.replace("\n", r"\n").replace("\r", r"\r")
+
 def run_lzhuf(cmd, data):
     p = platform.get_platform()
 
@@ -151,7 +154,7 @@ class WinLinkTelnet:
 
     def __recv(self):
         resp = self.__socket.recv(1024).strip()
-        print "  <- %s" % {"":resp}
+        print "  <- %s" % escaped(resp)
         return resp
 
     def __connect(self):
@@ -203,7 +206,6 @@ class WinLinkTelnet:
                 else:
                     raise Exception("Conversation error (%s while listing)" % l)
 
-        print "Returning %i messages" % len(msgs)
         return msgs
 
     def get_messages(self):
@@ -211,16 +213,18 @@ class WinLinkTelnet:
         self.__login()
         self.__messages = self.__get_list()
 
-        self.__send("FS %s" % ("Y" * len(self.__messages)))
+        if self.__messages:
+            self.__send("FS %s" % ("Y" * len(self.__messages)))
 
-        for msg in self.__messages:
-            print "Getting message..."
-            try:
-                msg.read_from_socket(self.__socket)
-            except Exception, e:
-                print e
+            for msg in self.__messages:
+                print "Getting message..."
+                try:
+                    msg.read_from_socket(self.__socket)
+                except Exception, e:
+                    print e
+                    
+            self.__send("FQ")
 
-        self.__send("FQ")
         self.__disconnect()
 
         return len(self.__messages)
