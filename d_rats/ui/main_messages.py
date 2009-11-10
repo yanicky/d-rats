@@ -37,6 +37,7 @@ from d_rats import emailgw
 from d_rats.utils import log_exception
 from d_rats import signals
 from d_rats import msgrouting
+from d_rats import wl2k
 
 _FOLDER_CACHE = {}
 
@@ -770,14 +771,21 @@ class MessagesTab(MainWindowTab):
 
         shutil.copy(fn, nfn)
 
-    def _sndrcv(self, button):
-        self.emit("trigger-msg-router")
+    def _sndrcv(self, button, account=""):
+        self.emit("trigger-msg-router", account)
 
     def _make_sndrcv_menu(self):
         menu = gtk.Menu()
 
         mi = gtk.MenuItem("Outbox")
         mi.set_tooltip_text("Send messages in the Outbox")
+        mi.connect("activate", self._sndrcv)
+        mi.show()
+        menu.append(mi)
+
+        mi = gtk.MenuItem("WL2K")
+        mi.set_tooltip_text("Check Winlink messages")
+        mi.connect("activate", self._sndrcv, "@WL2K")
         mi.show()
         menu.append(mi)
 
@@ -786,6 +794,7 @@ class MessagesTab(MainWindowTab):
             lab = "%s on %s" % (info[1], info[0])
             mi = gtk.MenuItem(lab)
             mi.set_tooltip_text("Check for new mail on this account")
+            mi.connect("activate", self._sndrcv, section)
             mi.show()
             menu.append(mi)
 

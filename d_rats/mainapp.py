@@ -60,6 +60,7 @@ import formgui
 import station_status
 import pluginsrv
 import msgrouting
+import wl2k
 
 from ui import main_events
 
@@ -333,20 +334,23 @@ class MainApp(object):
             self.gps = self._static_gps()
 
     def _refresh_mail_threads(self):
-        for i in self.mail_threads:
-            i.stop()
-
+        for k, v in self.mail_threads.items():
+            v.stop()
+            del self.mail_threads[k]
 
         accts = self.config.options("incoming_email")
         for acct in accts:
+            data = self.config.get("incoming_email", acct)
+            if data.split(",")[-1] != "True":
+                continue
             try:
-                t = emailgw.PeriodicMailThread(self.config, acct)
+                t = emailgw.PeriodicAccountMailThread(self.config, acct)
             except Exception:
                 log_exception()
                 continue
             self.__connect_object(t)
             t.start()
-            self.mail_threads.append(t)
+            self.mail_threads[acct] = t
 
     def _refresh_lang(self):
         locales = { "English" : "en",
@@ -733,8 +737,19 @@ class MainApp(object):
     def __get_chat_port(self, object):
         return self.mainwindow.tabs["chat"].get_selected_port()
 
-    def __trigger_msg_router(self, object):
-        self.msgrouter.trigger()
+    def __trigger_msg_router(self, object, account):
+        if not account:
+            self.msgrouter.trigger()
+        elif account == "@WL2K":
+            mt = wl2k.WinLinkDownloadThread(self.config,
+                                            self.config.get("user", "callsign"))
+            self.__connect_object(mt)
+            mt.start()
+        elif account in self.mail_threads.keys():
+            self.mail_threads[account].trigger()
+        else:
+            mt = emailgw.AccountMailThread(self.config, account)
+            mt.start()
 
     def __register_object(self, parent, object):
         self.__connect_object(object)
@@ -801,7 +816,7 @@ class MainApp(object):
         self.sm = {}
         self.seen_callsigns = CallList()
         self.position = None
-        self.mail_threads = []
+        self.mail_threads = {}
 
         self.config = config.DratsConfig(self)
         self._refresh_lang()

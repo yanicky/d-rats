@@ -209,7 +209,7 @@ class CoercedMailThread(MailThread):
         MailThread.__init__(self, *args)
         self._coerce_call = call
 
-class PeriodicMailThread(MailThread):
+class AccountMailThread(MailThread):
     def __init__(self, config, account):
         settings = config.get("incoming_email", account)
 
@@ -237,7 +237,7 @@ class PeriodicMailThread(MailThread):
         else:
             port = int(port)
 
-        self.__poll = int(poll)
+        self._poll = int(poll)
 
         self.event = threading.Event()
         self.enabled = enb == "True"
@@ -273,21 +273,24 @@ class PeriodicMailThread(MailThread):
         self._emit("event", event)
 
     def run(self):
+        if not self.config.getboolean("state", "connected_inet"):
+            self.message("Not connected")
+        else:
+            mails = []
+            try:
+                mails = self.fetch_mails()
+            except Exception, e:
+                self.message("Failed to retrieve messages: %s" % e)
+            for mail in mails:
+                self.__action(mail)
+
+class PeriodicAccountMailThread(AccountMailThread):
+    def run(self):
         self.message("Periodic thread starting")
 
         while self.enabled:
-            if not self.config.getboolean("state", "connected_inet"):
-                self.message("Not connected")
-            else:
-                mails = []
-                try:
-                    mails = self.fetch_mails()
-                except Exception, e:
-                    self.message("Failed to retrieve messages: %s" % e)
-                for mail in mails:
-                    self.__action(mail)
-
-            self.event.wait(self.__poll * 60)
+            AccountMailThread.run(self)
+            self.event.wait(self._poll * 60)
             self.event.clear()
 
         self.message("Thread ending")

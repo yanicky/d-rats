@@ -170,7 +170,7 @@ GET_CHAT_PORT = \
 
 TRIGGER_MSG_ROUTER = \
     (gobject.SIGNAL_ACTION, gobject.TYPE_NONE,
-     ())
+     (gobject.TYPE_STRING,))     # account (section) to trigger, "" if msgrouter
 
 REGISTER_OBJECT = \
     (gobject.SIGNAL_ACTION, gobject.TYPE_NONE,
