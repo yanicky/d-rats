@@ -67,7 +67,6 @@ _DEF_PREFS = {
     "useutc" : "False",
     "language" : "English",
     "allow_remote_files" : "True",
-    "form_default_private" : "False",
     "blink_chat" : "True",
     "blink_messages" : "True",
     "blink_files" : "True",
@@ -391,6 +390,7 @@ class DratsConfigWidget(gtk.HBox):
         w.set_visibility(False)
         w.set_size_request(50, -1)
         w.show()
+        self._widget = w
 
         self.pack_start(w, 1, 1, 1)
 
@@ -687,12 +687,14 @@ class DratsPrefsPanel(DratsPanel):
         val2 = DratsConfigWidget(config, "prefs", "signon")
         val2.add_text()
         self.mv(_("Sign-on Message"), val1, val2)
+        disable_with_toggle(val1._widget, val2._widget)
 
         val1 = DratsConfigWidget(config, "prefs", "dosignoff")
         val1.add_bool()
         val2 = DratsConfigWidget(config, "prefs", "signoff")
         val2.add_text()
         self.mv(_("Sign-off Message"), val1, val2)
+        disable_with_toggle(val1._widget, val2._widget)
         
         val = DratsConfigWidget(config, "user", "units")
         val.add_combo([_("Imperial"), _("Metric")])
@@ -709,10 +711,6 @@ class DratsPrefsPanel(DratsPanel):
         val = DratsConfigWidget(config, "prefs", "language")
         val.add_combo(["English", "Italiano", "Dutch"])
         self.mv(_("Language"), val)
-
-        val = DratsConfigWidget(config, "prefs", "form_default_private")
-        val.add_bool()
-        self.mv(_("Private default"), val)
 
         mval = DratsConfigWidget(config, "prefs", "blink_messages")
         mval.add_bool()
@@ -769,15 +767,17 @@ class DratsGPSPanel(DratsPanel):
 
         ports = platform.get_platform().list_serial_ports()
 
+        val = DratsConfigWidget(config, "settings", "gpsenabled")
+        val.add_bool()
+        self.mv(_("Use External GPS"), val)
+
         port = DratsConfigWidget(config, "settings", "gpsport")
         port.add_combo(ports, True, 120)
         rate = DratsConfigWidget(config, "settings", "gpsportspeed")
         rate.add_combo(BAUD_RATES, False)
         self.mv(_("External GPS"), port, rate)
-
-        val = DratsConfigWidget(config, "settings", "gpsenabled")
-        val.add_bool()
-        self.mv(_("Use External GPS"), val)
+        disable_with_toggle(val._widget, port._widget)
+        disable_with_toggle(val._widget, rate._widget)
 
         val1 = DratsConfigWidget(config, "settings", "aprssymtab")
         val1.add_text(1)
@@ -1129,31 +1129,38 @@ class DratsOutEmailPanel(DratsPanel):
     def __init__(self, config):
         DratsPanel.__init__(self, config)
 
+        gw = DratsConfigWidget(config, "settings", "smtp_dogw")
+        gw.add_bool()
+        self.mv(_("SMTP Gateway"), gw)
+
         val = DratsConfigWidget(config, "settings", "smtp_server")
         val.add_text()
         self.mv(_("SMTP Server"), val)
+        disable_with_toggle(gw._widget, val._widget)
 
         port = DratsConfigWidget(config, "settings", "smtp_port")
         port.add_numeric(1, 65536, 1)
         mode = DratsConfigWidget(config, "settings", "smtp_tls")
         mode.add_bool("TLS")
         self.mv(_("Port and Mode"), port, mode)
+        disable_with_toggle(gw._widget, port._widget)
+        disable_with_toggle(gw._widget, mode._widget)
 
         val = DratsConfigWidget(config, "settings", "smtp_replyto")
         val.add_text()
         self.mv(_("Source Address"), val)
+        disable_with_toggle(gw._widget, val._widget)
         
         val = DratsConfigWidget(config, "settings", "smtp_username")
         val.add_text()
         self.mv(_("SMTP Username"), val)
+        disable_with_toggle(gw._widget, val._widget)
 
         val = DratsConfigWidget(config, "settings", "smtp_password")
         val.add_pass()
         self.mv(_("SMTP Password"), val)
+        disable_with_toggle(gw._widget, val._widget)
 
-        val = DratsConfigWidget(config, "settings", "smtp_dogw")
-        val.add_bool()
-        self.mv(_("Gateway"), val)
 
 class DratsInEmailPanel(DratsPanel):
     INITIAL_ROWS = 2
