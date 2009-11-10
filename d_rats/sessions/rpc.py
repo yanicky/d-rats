@@ -465,9 +465,18 @@ class RPCActionSet(gobject.GObject):
         args = job.get_account() + (job.get_dest(),)
 
         if args[0] == "@WL2K":
-            mt = wl2k.WinLinkDownloadThread(self.__config, job.get_dest())
+            if self.__config.getboolean("prefs", "msg_allow_wl2k"):
+                mt = wl2k.WinLinkDownloadThread(self.__config, job.get_dest())
+            else:
+                return {"rc"  : "False",
+                        "msg" : "WL2K gateway is disabled"}
         else:
-            mt = emailgw.CoercedMailThread(self.__config, *args)
+            if self.__config.getboolean("prefs", "msg_allow_pop3"):
+                mt = emailgw.CoercedMailThread(self.__config, *args)
+            else:
+                return {"rc"  : "False",
+                        "msg" : "POP3 gateway is disabled"}
+
         self.emit("register-object", mt)
         mt.connect("mail-thread-complete", check_done, job)
         mt.start()

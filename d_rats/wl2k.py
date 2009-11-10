@@ -281,7 +281,8 @@ class WinLinkDownloadThread(threading.Thread, gobject.GObject):
         form.save_to(formfn)
 
     def run(self):
-        wl = WinLinkTelnet(self.__callsign)
+        server = self.__config.get("prefs", "msg_wl2k_server")
+        wl = WinLinkTelnet(self.__callsign, server)
         count = wl.get_messages()
         for i in range(0, count):
             msg = wl.get_message(i)

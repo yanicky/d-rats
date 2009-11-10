@@ -75,6 +75,9 @@ _DEF_PREFS = {
     "chat_showstatus" : "True",
     "chat_timestamp" : "True",
     "msg_include_reply" : "False",
+    "msg_allow_wl2k" : "True",
+    "msg_allow_pop3" : "True",
+    "msg_wl2k_server" : "server.winlink.org",
 }
 
 _DEF_SETTINGS = {
@@ -269,6 +272,11 @@ def prompt_for_port(config, portspec=None, info=None, pname=None):
     else:
         return None, None, None
 
+def disable_with_toggle(toggle, widget):
+    toggle.connect("toggled",
+                   lambda t, w: w.set_sensitive(t.get_active()), widget)
+    widget.set_sensitive(toggle.get_active())
+
 class AddressLookup(gtk.Button):
     def __init__(self, caption, latw, lonw, window=None):
         gtk.Button.__init__(self, caption)
@@ -396,6 +404,7 @@ class DratsConfigWidget(gtk.HBox):
         w.connect("changed", changed)
         w.set_size_request(size, -1)
         w.show()
+        self._widget = w
 
         self.pack_start(w, 1, 1, 1)
 
@@ -961,23 +970,43 @@ class DratsMessagePanel(DratsPanel):
     def __init__(self, config):
         DratsPanel.__init__(self, config)
 
-        val = DratsConfigWidget(config, "settings", "msg_forward")
-        val.add_bool()
-        self.mv(_("Automatically forward messages"), val)
+        vala = DratsConfigWidget(config, "settings", "msg_forward")
+        vala.add_bool()
+        self.mv(_("Automatically forward messages"), vala)
 
         val = DratsConfigWidget(config, "settings", "msg_flush")
         val.add_numeric(15, 9999, 1)
         lab = gtk.Label(_("seconds"))
         self.mv(_("Queue flush interval"), val, lab)
+        disable_with_toggle(vala._widget, val._widget)
 
         val = DratsConfigWidget(config, "settings", "station_msg_ttl")
         val.add_numeric(0, 99999, 1)
         lab = gtk.Label(_("seconds"))
         self.mv(_("Station TTL"), val, lab)
+        disable_with_toggle(vala._widget, val._widget)
 
         val = DratsConfigWidget(config, "prefs", "msg_include_reply")
         val.add_bool()
         self.mv(_("Include original in reply"), val)
+
+        val = DratsConfigWidget(config, "prefs", "msg_allow_pop3")
+        val.add_bool()
+        self.mv(_("Allow POP3 Gateway"), val)
+
+        vala = DratsConfigWidget(config, "prefs", "msg_allow_wl2k")
+        vala.add_bool()
+        self.mv(_("Allow WL2K Gateway"), vala)
+
+        wl2k_servers = [x + ".winlink.org" for x in ["server",
+                                                     "perth",
+                                                     "halifax",
+                                                     "sandiego",
+                                                     "wien"]]
+        val = DratsConfigWidget(config, "prefs", "msg_wl2k_server")
+        val.add_combo(wl2k_servers, True)
+        self.mv(_("Winlink server"), val)
+        disable_with_toggle(vala._widget, val._widget)
 
 class DratsNetworkPanel(DratsPanel):
     pass
