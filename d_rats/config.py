@@ -78,6 +78,7 @@ _DEF_PREFS = {
     "msg_allow_wl2k" : "True",
     "msg_allow_pop3" : "True",
     "msg_wl2k_server" : "server.winlink.org",
+    "msg_wl2k_ssid" : "",
 }
 
 _DEF_SETTINGS = {
@@ -1007,6 +1008,12 @@ class DratsMessagePanel(DratsPanel):
         val.add_combo(wl2k_servers, True)
         self.mv(_("Winlink server"), val)
         disable_with_toggle(vala._widget, val._widget)
+
+        ssids = [""] + [str(x) for x in range(1,11)]
+
+        val = DratsConfigWidget(config, "prefs", "msg_wl2k_ssid")
+        val.add_combo(ssids, True)
+        self.mv(_("Winlink SSID"), val)
 
 class DratsNetworkPanel(DratsPanel):
     pass

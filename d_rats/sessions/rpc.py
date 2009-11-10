@@ -466,7 +466,9 @@ class RPCActionSet(gobject.GObject):
 
         if args[0] == "@WL2K":
             if self.__config.getboolean("prefs", "msg_allow_wl2k"):
-                mt = wl2k.WinLinkDownloadThread(self.__config, job.get_dest())
+                mt = wl2k.WinLinkDownloadThread(self.__config,
+                                                job.get_dest(),
+                                                args[1])
             else:
                 return {"rc"  : "False",
                         "msg" : "WL2K gateway is disabled"}

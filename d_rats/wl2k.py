@@ -242,23 +242,26 @@ class WinLinkDownloadThread(threading.Thread, gobject.GObject):
     def _emit(self, *args):
         gobject.idle_add(self.emit, *args)
 
-    def __init__(self, config, callsign):
+    def __init__(self, config, callsign, callssid=None):
         threading.Thread.__init__(self)
         gobject.GObject.__init__(self)
 
+        if callssid is None:
+            callssid = callsign
+
         self.__config = config
         self.__callsign = callsign
+        self.__callssid = callssid
 
     def __create_form(self, msg):
         mail = email.message_from_string(msg.get_content())
 
         sender = mail.get("From", "Unknown")
-        recip = mail.get("To", "Unknown")
 
         if ":" in sender:
             method, sender = sender.split(":", 1)
         
-        if recip == self.__config.get("user", "callsign"):
+        if self.__callsign == self.__config.get("user", "callsign"):
             box = "Inbox"
         else:
             box = "Outbox"
@@ -270,11 +273,11 @@ class WinLinkDownloadThread(threading.Thread, gobject.GObject):
 
         form = formgui.FormFile(template)
         form.set_field_value("_auto_sender", sender)
-        form.set_field_value("recipient", recip)
+        form.set_field_value("recipient", self.__callsign)
         form.set_field_value("subject", mail.get("Subject", "Unknown"))
         form.set_field_value("message", mail.get_payload())
         form.set_path_src(sender.strip())
-        form.set_path_dst(recip.strip())
+        form.set_path_dst(self.__callsign)
         form.set_path_mid(msg.get_id())
         form.add_path_element("@WL2K")
         form.add_path_element(self.__config.get("user", "callsign"))
@@ -282,7 +285,7 @@ class WinLinkDownloadThread(threading.Thread, gobject.GObject):
 
     def run(self):
         server = self.__config.get("prefs", "msg_wl2k_server")
-        wl = WinLinkTelnet(self.__callsign, server)
+        wl = WinLinkTelnet(self.__callssid, server)
         count = wl.get_messages()
         for i in range(0, count):
             msg = wl.get_message(i)

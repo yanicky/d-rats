@@ -38,8 +38,13 @@ def prompt_for_account(config):
         key = "%s on %s" % (info[1], info[0])
         accounts[key] = info
 
+    wl2k_call = config.get("user", "callsign")
+    wl2k_ssid = config.get("prefs", "msg_wl2k_ssid").strip()
+    if wl2k_ssid:
+        wl2k_call = "%s-%s" % (wl2k_call, wl2k_ssid)
+
     accounts["Other"] = ["", "", "", "", "", "110"]
-    accounts["WL2K"] = ["@WL2K", "", "", "", "", "0"]
+    accounts["WL2K"] = ["@WL2K", wl2k_call, "", "", "", "0"]
     default = accounts.keys()[0]
 
     account = miscwidgets.make_choice(accounts.keys(), False, default)
