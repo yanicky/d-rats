@@ -39,7 +39,7 @@ def prompt_for_account(config):
         accounts[key] = info
 
     accounts["Other"] = ["", "", "", "", "", "110"]
-    accounts["WL2K"] = ["@WL2K", "", "", "", "0"]
+    accounts["WL2K"] = ["@WL2K", "", "", "", "", "0"]
     default = accounts.keys()[0]
 
     account = miscwidgets.make_choice(accounts.keys(), False, default)
