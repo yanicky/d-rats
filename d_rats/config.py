@@ -34,7 +34,7 @@ BAUD_RATES = ["1200", "2400", "4800", "9600", "19200", "38400", "115200"]
 
 _DEF_USER = {
     "name" : "A. Mateur",
-    "callsign" : "W1AW",
+    "callsign" : "",
     "latitude" : "41.6970",
     "longitude" : "-72.7312",
     "altitude" : "0",
@@ -147,7 +147,7 @@ DEFAULTS = {
     "tcp_out" : {},
     "incoming_email" : {},
     "sounds" : _DEF_SOUNDS,
-    "ports" : {},
+    "ports" : { "ports_0" : "True,net:ref.d-rats.com:9000,,False,False,RAT" },
 }
 
 if __name__ == "__main__":

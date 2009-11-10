@@ -61,6 +61,7 @@ import station_status
 import pluginsrv
 import msgrouting
 import wl2k
+import inputdialog
 
 from ui import main_events
 
@@ -820,6 +821,21 @@ class MainApp(object):
 
         self.config = config.DratsConfig(self)
         self._refresh_lang()
+
+        message = _("Since this is your first time running D-RATS, " +
+                    "you will be taken directly to the configuration " +
+                    "dialog.  At a minimum, put your callsign in the " +
+                    "box and click 'Save'.  You will be connected to " +
+                    "the ratflector initially for testing.")
+
+        while self.config.get("user", "callsign") == "":
+            d = gtk.MessageDialog(buttons=gtk.BUTTONS_OK)
+            d.set_markup(message)
+            d.run()
+            d.destroy()
+            if not self.config.show():
+                raise Exception("User canceled configuration")
+            message = _("You must enter a callsign to continue")
 
         self.gps = self._static_gps()
 
