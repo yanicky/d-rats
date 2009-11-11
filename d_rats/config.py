@@ -42,7 +42,7 @@ _DEF_USER = {
 }
 
 _DEF_PREFS = {
-    "download_dir" : platform.get_platform().default_dir(),
+    "download_dir" : ".",
     "blinkmsg" : "False",
     "noticere" : "",
     "ignorere" : "",
@@ -1556,6 +1556,14 @@ class DratsConfig(ConfigParser.ConfigParser):
         self.widgets = []
 
         self.set_defaults()
+
+        if self.get("prefs", "download_dir") == ".":
+            default_dir = os.path.join(platform.get_platform().default_dir(),
+                                       "D-RATS Shared")
+            if not os.path.exists(default_dir):
+                print "Creating downlaod directory: %s" % default_dir
+                os.mkdir(default_dir)
+                self.set("prefs", "download_dir", default_dir)
 
     def show(self, parent=None):
         ui = DratsConfigUI(self, parent)
