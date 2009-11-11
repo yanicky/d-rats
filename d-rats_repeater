@@ -119,7 +119,9 @@ class Repeater:
 
         dstinfo = self.calls.get(frame.d_station, None)
         if dstinfo is not None:
-            if dstinfo.last_heard() < self.__call_timeout:
+            if not dstinfo.last_transport().enabled:
+                print "Last transport for %s is dead" % frame.d_station
+            elif dstinfo.last_heard() < self.__call_timeout:
                 print "Delivering frame to %s at %s" % \
                     (frame.d_station, dstinfo.last_transport())
                 dstinfo.last_transport().send_frame(frame.get_copy())
@@ -204,10 +206,11 @@ class Repeater:
 
     def auth_user(self, pipe):
         try:
-            auth = file("users.txt")
+            auth_fn = platform.get_platform().config_file("users.txt")
+            auth = file(auth_fn)
             lines = auth.readlines()
             auth.close()
-        except:
+        except Exception, e:
             pipe.write("100 Authentication not required\r\n")
             return True
 
@@ -766,8 +769,10 @@ class RepeaterConsole(RepeaterUI):
 if __name__=="__main__":
     import sys
 
+
     if not opts.debug:
-        f = file("repeater.log", "w", 0)
+        p = platform.get_platform()
+        f = file(p.config_file("repeater.log"), "w", 0)
         if f:
             sys.stdout = f
             sys.stderr = f
