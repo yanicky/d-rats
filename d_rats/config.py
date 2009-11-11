@@ -1469,6 +1469,18 @@ class DratsConfigUI(gtk.Dialog):
             v.hide()
         self.panels[selected].show()
         
+    def move_cursor(self, view, step, count):
+        try:
+            (store, iter) = view.get_selection().get_selected()
+            selected, = store.get(iter, 0)
+        except Exception, e:
+            print "Unable to find selected: %s" % e
+            return None
+
+        for v in self.panels.values():
+            v.hide()
+        self.panels[selected].show()
+
     def build_ui(self):
         hbox = gtk.HBox(False, 2)
 
@@ -1483,6 +1495,7 @@ class DratsConfigUI(gtk.Dialog):
         self.__tree.append_column(col)
         self.__tree.show()
         self.__tree.connect("button_press_event", self.mouse_event)
+        self.__tree.connect("move-cursor", self.move_cursor)
 
         def add_panel(c, s, l, par, *args):
             p = c(self.config, *args)
