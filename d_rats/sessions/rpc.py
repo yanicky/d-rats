@@ -355,6 +355,8 @@ class RPCActionSet(gobject.GObject):
         dir = self.__config.get("prefs", "download_dir")
         files = glob.glob(os.path.join(dir, "*.*"))
         for fn in files:
+            if os.path.isdir(fn):
+                continue
             size = os.path.getsize(fn)
             if size < 1024:
                 units = "B"

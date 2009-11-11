@@ -75,6 +75,8 @@ class LocalFileView(FileView):
 
         files = glob(os.path.join(self._path, "*.*"))
         for file in files:
+            if os.path.isdir(file):
+                continue
             print "Adding local file `%s'" % file
             try:
                 stat = os.stat(file)
