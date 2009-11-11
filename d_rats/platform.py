@@ -172,8 +172,7 @@ class UnixPlatform(Platform):
             return "."
 
     def default_dir(self):
-        return os.path.join(os.path.abspath(os.getenv("HOME")),
-                            "Desktop")
+        return os.path.abspath(os.getenv("HOME"))
 
     def filter_filename(self, filename):
         return filename.replace("/", "")
