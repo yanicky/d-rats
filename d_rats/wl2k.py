@@ -246,7 +246,7 @@ class WinLinkDownloadThread(threading.Thread, gobject.GObject):
         threading.Thread.__init__(self)
         gobject.GObject.__init__(self)
 
-        if callssid is None:
+        if not callssid:
             callssid = callsign
 
         self.__config = config
