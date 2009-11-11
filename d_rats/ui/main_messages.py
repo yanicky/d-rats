@@ -576,22 +576,23 @@ class MessagesTab(MainWindowTab):
 
     _signals = __gsignals__
 
-    def _new_msg(self, button):
+    def _new_msg(self, button, msgtype=None):
         types = glob(os.path.join(self._config.form_source_dir(), "*.xml"))
-
+    
         forms = {}
         for fn in types:
             forms[os.path.basename(fn).replace(".xml", "")] = fn
-
-        parent = self._wtree.get_widget("mainwindow")
-        d = inputdialog.ChoiceDialog(forms.keys(),
-                                     title=_("Choose a form"),
-                                     parent=parent)
-        r = d.run()
-        selection = d.choice.get_active_text()
-        d.destroy()
-        if r != gtk.RESPONSE_OK:
-            return
+    
+        if msgtype is None:
+            parent = self._wtree.get_widget("mainwindow")
+            d = inputdialog.ChoiceDialog(forms.keys(),
+                                         title=_("Choose a form"),
+                                         parent=parent)
+            r = d.run()
+            msgtype = d.choice.get_active_text()
+            d.destroy()
+            if r != gtk.RESPONSE_OK:
+                return
 
         current = self._messages.current_info.name()
         self._folders.select_folder(_("Outbox"))
@@ -600,7 +601,7 @@ class MessagesTab(MainWindowTab):
         newfn = self._messages.current_info.create_msg(tstamp)
 
 
-        form = formgui.FormFile(forms[selection])
+        form = formgui.FormFile(forms[msgtype])
         call = self._config.get("user", "callsign")
         form.add_path_element(call)
         form.set_path_src(call)
@@ -800,6 +801,21 @@ class MessagesTab(MainWindowTab):
 
         return menu
 
+    def _make_new_menu(self):
+        menu = gtk.Menu()
+
+        td = self._config.form_source_dir()
+        for i in sorted(glob(os.path.join(td, "*.xml"))):
+            msgtype = os.path.basename(i).replace(".xml", "")
+            label = msgtype.replace("_", " ")
+            mi = gtk.MenuItem(label)
+            mi.set_tooltip_text("New %i form")
+            mi.connect("activate", self._new_msg, msgtype)
+            mi.show()
+            menu.append(mi)
+
+        return menu
+
     def _init_toolbar(self):
         tb, = self._getw("toolbar")
 
@@ -821,6 +837,7 @@ class MessagesTab(MainWindowTab):
             }
 
         menus = {
+            "msg-new.png" : self._make_new_menu(),
             "msg-sendreceive.png" : self._make_sndrcv_menu(),
             }
 
