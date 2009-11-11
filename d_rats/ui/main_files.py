@@ -24,7 +24,7 @@ import gobject
 import gtk
 
 from d_rats.ui.main_common import MainWindowElement, MainWindowTab
-from d_rats.ui.main_common import ask_for_confirmation
+from d_rats.ui.main_common import ask_for_confirmation, set_toolbar_buttons
 from d_rats.sessions import rpc
 from d_rats.ui import main_events
 from d_rats import image
@@ -286,6 +286,7 @@ class FilesTab(MainWindowTab):
         upload = self._config.ship_img("upload.png")
 
         ltb, = self._getw("local_toolbar")
+        set_toolbar_buttons(self._config, ltb)
         lbuttons = \
             [(refresh, _("Refresh"), self._refresh_local, self._local),
              (delete, _("Delete"), self._del, self._local),
@@ -295,6 +296,7 @@ class FilesTab(MainWindowTab):
         populate_tb(ltb, lbuttons)
 
         rtb, = self._getw("remote_toolbar")
+        set_toolbar_buttons(self._config, rtb)
         rbuttons = \
             [(connect, _("Connect"), self._connect_remote, self._remote),
              (disconnect, _("Disconnect"), self._disconnect, self._remote),

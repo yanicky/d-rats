@@ -78,6 +78,7 @@ _DEF_PREFS = {
     "msg_allow_pop3" : "True",
     "msg_wl2k_server" : "server.winlink.org",
     "msg_wl2k_ssid" : "",
+    "toolbar_button_size" : "Default",
 }
 
 _DEF_SETTINGS = {
@@ -831,6 +832,11 @@ class DratsAppearancePanel(DratsPanel):
             val = DratsConfigWidget(config, "prefs", "%scolor" % low)
             val.add_color()
             self.mv(_("%s Color" % i), val)
+
+        sizes = [_("Default"), _("Large"), _("Small")]
+        val = DratsConfigWidget(config, "prefs", "toolbar_button_size")
+        val.add_combo(sizes, False)
+        self.mv(_("Toolbar buttons"), val)
 
 class DratsChatPanel(DratsPanel):
     def __init__(self, config):

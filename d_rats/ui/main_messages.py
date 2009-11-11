@@ -29,7 +29,7 @@ from glob import glob
 
 from d_rats.ui.main_common import MainWindowElement, MainWindowTab
 from d_rats.ui.main_common import prompt_for_station, ask_for_confirmation, \
-    display_error, prompt_for_string
+    display_error, prompt_for_string, set_toolbar_buttons
 from d_rats.ui import main_events
 from d_rats import inputdialog
 from d_rats import formgui
@@ -818,6 +818,8 @@ class MessagesTab(MainWindowTab):
 
     def _init_toolbar(self):
         tb, = self._getw("toolbar")
+
+        set_toolbar_buttons(self._config, tb)
 
         read = lambda b: self._mrk_msg(b, True)
         unread = lambda b: self._mrk_msg(b, False)

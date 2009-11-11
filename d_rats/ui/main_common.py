@@ -88,6 +88,18 @@ def prompt_for_string(message, parent=None):
     else:
         return None
 
+def set_toolbar_buttons(config, tb):
+    tbsize = config.get("prefs", "toolbar_button_size")
+    if tbsize == _("Default"):
+        tb.unset_style()
+        tb.unset_icon_size()
+    elif tbsize == _("Small"):
+        tb.set_style(gtk.TOOLBAR_ICONS)
+        tb.set_icon_size(gtk.ICON_SIZE_SMALL_TOOLBAR)
+    elif tbsize == _("Large"):
+        tb.set_style(gtk.TOOLBAR_BOTH)
+        tb.set_icon_size(gtk.ICON_SIZE_LARGE_TOOLBAR)
+
 class MainWindowElement(gobject.GObject):
     def __init__(self, wtree, config, prefix):
         self._prefix = prefix
