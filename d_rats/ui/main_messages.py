@@ -809,7 +809,7 @@ class MessagesTab(MainWindowTab):
             msgtype = os.path.basename(i).replace(".xml", "")
             label = msgtype.replace("_", " ")
             mi = gtk.MenuItem(label)
-            mi.set_tooltip_text("New %i form")
+            mi.set_tooltip_text("Create a new %s form" % label)
             mi.connect("activate", self._new_msg, msgtype)
             mi.show()
             menu.append(mi)
@@ -832,7 +832,12 @@ class MessagesTab(MainWindowTab):
                    ]
 
         tips = {
+            _("New") : _("Create a new message for sending"),
             _("Forward") : _("Manually direct a message to another station"),
+            _("Reply") : _("Reply to the currently selected message"),
+            _("Delete") : _("Delete the currently selected message"),
+            _("Mark Read") : _("Mark the currently selected message as read"),
+            _("Mark Unread") : _("Mark the currently selected message as unread"),
             _("Send/Receive") : _("Send messages in the Outbox"),
             }
 
