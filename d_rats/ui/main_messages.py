@@ -856,6 +856,9 @@ class MessagesTab(MainWindowTab):
             if menus.has_key(i):
                 item = gtk.MenuToolButton(icon, l)
                 item.set_menu(menus[i])
+                item.set_arrow_tooltip_text("%s %s %s" % (_("More"),
+                                                          l,
+                                                          _("Options")))
             else:
                 item = gtk.ToolButton(icon, l)
             item.show()
