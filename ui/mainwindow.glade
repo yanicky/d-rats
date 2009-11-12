@@ -406,7 +406,6 @@ C</property>
                               <widget class="GtkTextView" id="chat_entry">
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
-                                <property name="activates_default">True</property>
                               </widget>
                               <packing>
                                 <property name="position">1</property>
@@ -464,7 +463,7 @@ C</property>
                                     <property name="layout_style">center</property>
                                     <child>
                                       <widget class="GtkButton" id="chat_qm_add">
-                                        <property name="label" translatable="yes">gtk-add</property>
+                                        <property name="label">gtk-add</property>
                                         <property name="visible">True</property>
                                         <property name="can_focus">True</property>
                                         <property name="receives_default">True</property>
@@ -478,7 +477,7 @@ C</property>
                                     </child>
                                     <child>
                                       <widget class="GtkButton" id="chat_qm_remove">
-                                        <property name="label" translatable="yes">gtk-remove</property>
+                                        <property name="label">gtk-remove</property>
                                         <property name="visible">True</property>
                                         <property name="can_focus">True</property>
                                         <property name="receives_default">True</property>
@@ -545,7 +544,7 @@ C</property>
                                     <property name="layout_style">end</property>
                                     <child>
                                       <widget class="GtkButton" id="chat_qst_add">
-                                        <property name="label" translatable="yes">gtk-add</property>
+                                        <property name="label">gtk-add</property>
                                         <property name="visible">True</property>
                                         <property name="can_focus">True</property>
                                         <property name="receives_default">True</property>
@@ -559,7 +558,7 @@ C</property>
                                     </child>
                                     <child>
                                       <widget class="GtkButton" id="chat_qst_edit">
-                                        <property name="label" translatable="yes">gtk-edit</property>
+                                        <property name="label">gtk-edit</property>
                                         <property name="visible">True</property>
                                         <property name="can_focus">True</property>
                                         <property name="receives_default">True</property>
@@ -573,7 +572,7 @@ C</property>
                                     </child>
                                     <child>
                                       <widget class="GtkButton" id="chat_qst_remove">
-                                        <property name="label" translatable="yes">gtk-remove</property>
+                                        <property name="label">gtk-remove</property>
                                         <property name="visible">True</property>
                                         <property name="can_focus">True</property>
                                         <property name="receives_default">True</property>
@@ -1025,8 +1024,29 @@ Unattended</property>
           </packing>
         </child>
         <child>
-          <widget class="GtkStatusbar" id="statusbar">
+          <widget class="GtkHBox" id="hbox9">
             <property name="visible">True</property>
+            <child>
+              <widget class="GtkStatusbar" id="statusbar">
+                <property name="visible">True</property>
+                <property name="spacing">2</property>
+                <property name="has_resize_grip">False</property>
+              </widget>
+              <packing>
+                <property name="position">0</property>
+              </packing>
+            </child>
+            <child>
+              <widget class="GtkStatusbar" id="callbar">
+                <property name="width_request">100</property>
+                <property name="visible">True</property>
+                <property name="spacing">2</property>
+              </widget>
+              <packing>
+                <property name="expand">False</property>
+                <property name="position">1</property>
+              </packing>
+            </child>
           </widget>
           <packing>
             <property name="expand">False</property>
@@ -1093,7 +1113,7 @@ Unattended</property>
             </child>
             <child>
               <widget class="GtkButton" id="button1">
-                <property name="label" translatable="yes">gtk-close</property>
+                <property name="label">gtk-close</property>
                 <property name="response_id">-5</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
@@ -1157,7 +1177,7 @@ Unattended</property>
                 </child>
                 <child>
                   <widget class="GtkButton" id="srcs_add">
-                    <property name="label" translatable="yes">gtk-add</property>
+                    <property name="label">gtk-add</property>
                     <property name="width_request">75</property>
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
@@ -1172,7 +1192,7 @@ Unattended</property>
                 </child>
                 <child>
                   <widget class="GtkButton" id="srcs_edit">
-                    <property name="label" translatable="yes">gtk-edit</property>
+                    <property name="label">gtk-edit</property>
                     <property name="width_request">75</property>
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
@@ -1187,7 +1207,7 @@ Unattended</property>
                 </child>
                 <child>
                   <widget class="GtkButton" id="srcs_delete">
-                    <property name="label" translatable="yes">gtk-delete</property>
+                    <property name="label">gtk-delete</property>
                     <property name="width_request">75</property>
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
@@ -1221,7 +1241,7 @@ Unattended</property>
             </child>
             <child>
               <widget class="GtkButton" id="button2">
-                <property name="label" translatable="yes">gtk-close</property>
+                <property name="label">gtk-close</property>
                 <property name="response_id">-5</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
@@ -1325,7 +1345,7 @@ Unattended</property>
             <property name="layout_style">end</property>
             <child>
               <widget class="GtkButton" id="button1">
-                <property name="label" translatable="yes">gtk-ok</property>
+                <property name="label">gtk-ok</property>
                 <property name="response_id">-5</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
@@ -1340,7 +1360,7 @@ Unattended</property>
             </child>
             <child>
               <widget class="GtkButton" id="button2">
-                <property name="label" translatable="yes">gtk-cancel</property>
+                <property name="label">gtk-cancel</property>
                 <property name="response_id">-6</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>

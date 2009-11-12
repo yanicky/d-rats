@@ -298,12 +298,17 @@ class MainWindow(MainWindowElement):
 
     def set_status(self, msg):
         sb = self._wtree.get_widget("statusbar")
+        cb = self._wtree.get_widget("callbar")
 
         self.__last_status = time.time()
 
         id = sb.get_context_id("default")
         sb.pop(id)
         sb.push(id, msg)
+
+        call = self._config.get("user", "callsign")
+        cb.pop(0)
+        cb.push(0, call)
 
 if __name__ == "__main__":
     wtree = gtk.glade.XML("ui/mainwindow.glade", "mainwindow")
