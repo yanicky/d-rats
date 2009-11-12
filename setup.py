@@ -85,6 +85,7 @@ def default_build():
         version=DRATS_VERSION,
         scripts=["d-rats", "d-rats_mapdownloader", "d-rats_repeater"],
         data_files=[('/usr/share/applications', desktop_files),
+                    ('/usr/share/icons', ["d-rats2.ico"]),
                     ('/usr/share/d-rats/forms', form_files),
                     ('/usr/share/d-rats/images', image_files),
                     ('/usr/share/d-rats/ui', ui_files),
