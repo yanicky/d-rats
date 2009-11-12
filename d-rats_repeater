@@ -205,14 +205,17 @@ class Repeater:
         return username, password
 
     def auth_user(self, pipe):
+        if not self.config.getboolean("settings", "require_auth"):
+            pipe.write("100 Authentication not required\r\n")
+            return True
+
+        auth_fn = platform.get_platform().config_file("users.txt")
         try:
-            auth_fn = platform.get_platform().config_file("users.txt")
             auth = file(auth_fn)
             lines = auth.readlines()
             auth.close()
         except Exception, e:
-            pipe.write("100 Authentication not required\r\n")
-            return True
+            print "Failed to open %s: %s" % (auth_fn, e)
 
         pipe.write("101 Authorization required\r\n")
         username, password = self.auth_exchange(pipe)
@@ -288,8 +291,8 @@ class Repeater:
             self.repeat_thread.join()
 
         for p in self.paths:
-            print "Stopping %s" % p.id
-            p.stop()
+            print "Stopping"
+            p.disable()
 
         if self.socket:
             self.socket.close()
@@ -312,6 +315,7 @@ class RepeaterUI:
         config.set("settings", "netport", "9000")
         config.set("settings", "idstr", "D-RATS Repeater Proxy: W1AW")
         config.set("settings", "idfreq", "30")
+        config.set("settings", "require_auth", "False")
         config.read(self.config_fn)
 
         return config
@@ -461,6 +465,8 @@ class RepeaterGUI(RepeaterUI):
 
         vbox = gtk.VBox(False, 2)
         frame.add(vbox)
+        hbox = gtk.HBox(False, 2)
+
 
         self.net_enabled = gtk.CheckButton("Accept incoming connections")
         try:
@@ -471,13 +477,7 @@ class RepeaterGUI(RepeaterUI):
         self.net_enabled.set_active(accept)
         self.net_enabled.show()
 
-        vbox.pack_start(self.net_enabled, 0,0,0)
-
-        hbox = gtk.HBox(False, 2)
-
-        lab = gtk.Label("Port:")
-        lab.show()
-        hbox.pack_start(lab, 0,0,0)
+        hbox.pack_start(self.net_enabled, 0,0,0)
 
         self.entry_port = gtk.Entry()
         try:
@@ -488,7 +488,11 @@ class RepeaterGUI(RepeaterUI):
         self.entry_port.set_text(port)
         self.entry_port.set_size_request(100, -1)
         self.entry_port.show()
-        hbox.pack_start(self.entry_port, 0,0,0)
+        hbox.pack_end(self.entry_port, 0,0,0)
+
+        lab = gtk.Label("Port:")
+        lab.show()
+        hbox.pack_end(lab, 0,0,0)
 
         hbox.show()
         vbox.pack_start(hbox, 0,0,0)
@@ -551,13 +555,49 @@ class RepeaterGUI(RepeaterUI):
 
         return frame
 
+    def make_auth(self):
+        frame = gtk.Frame("Authentication")
+
+        hbox = gtk.HBox(False, 20)
+
+        def toggle_auth(cb):
+            self.config.set("settings", "require_auth", str(cb.get_active()))
+
+        self.req_auth = gtk.CheckButton("Require Authentication")
+        self.req_auth.connect("toggled", toggle_auth)
+        self.req_auth.show()
+        self.req_auth.set_active(self.config.getboolean("settings",
+                                                        "require_auth"))
+        hbox.pack_start(self.req_auth, 0, 0, 0)
+
+        def do_edit_users(but):
+            p = platform.get_platform()
+            p.open_text_file(p.config_file("users.txt"))
+
+        edit_users = gtk.Button("Edit Users")
+        edit_users.connect("clicked", do_edit_users)
+        edit_users.show()
+        edit_users.set_size_request(75, 30)
+        hbox.pack_end(edit_users, 0, 0, 0)
+
+        hbox.show()
+        frame.add(hbox)
+        frame.show()
+        return frame
+
     def make_settings(self):
         vbox = gtk.VBox(False, 5)
 
+        hbox = gtk.HBox(False, 5)
+
         vbox.pack_start(self.make_devices(), 1,1,1)
         vbox.pack_start(self.make_network(), 0,0,0)
-        vbox.pack_start(self.make_id(), 0,0,0)
+        vbox.pack_start(self.make_auth(), 0,0,0)
+        # FIXME: Later
+        # vbox.pack_start(self.make_id(), 0,0,0)
 
+        vbox.pack_start(hbox, 0, 0, 0)
+        hbox.show()
         vbox.show()
 
         self.settings = vbox
@@ -612,17 +652,19 @@ class RepeaterGUI(RepeaterUI):
         return vbox
 
     def sync_config(self):
-        idstr = self.entry_id.get_text()
-        idfreq = self.id_freq.get_active_text()
+        #idstr = self.entry_id.get_text()
+        #idfreq = self.id_freq.get_active_text()
         port = self.entry_port.get_text()
         acceptnet = str(self.net_enabled.get_active())
         devices = self.dev_list.get_values()
+        auth = self.req_auth.get_active()
 
-        self.config.set("settings", "idstr", idstr)
-        self.config.set("settings", "idfreq", idfreq)
+        #self.config.set("settings", "idstr", idstr)
+        #self.config.set("settings", "idfreq", idfreq)
         self.config.set("settings", "netport", port)
         self.config.set("settings", "acceptnet", acceptnet)
         self.config.set("settings", "devices", devices)
+        self.config.set("settings", "require_auth", auth)
 
     def button_remove(self, widget):
         self.dev_list.remove_selected()
@@ -637,8 +679,7 @@ class RepeaterGUI(RepeaterUI):
         self.but_on.set_sensitive(False)
         self.settings.set_sensitive(False)
 
-        self.add_outgoing_paths(self.entry_id.get_text(),
-                                self.dev_list.get_values())
+        self.add_outgoing_paths("DRATS", self.dev_list.get_values())
 
         try:
             port = int(self.entry_port.get_text())
@@ -678,7 +719,7 @@ class RepeaterGUI(RepeaterUI):
         if ("TAP",) in l:
             l.remove(("TAP",))
 
-        self.conn_list.set_values(l)            
+        self.conn_list.child.set_values(l)            
 
         if self.tap:
             traffic = self.tap.peek()
@@ -718,7 +759,8 @@ class RepeaterGUI(RepeaterUI):
 
         self.tabs = gtk.Notebook()
         self.tabs.append_page(self.make_settings(), gtk.Label("Settings"))
-        self.tabs.append_page(self.make_monitor(), gtk.Label("Monitor"))
+        # FIXME: later
+        # self.tabs.append_page(self.make_monitor(), gtk.Label("Monitor"))
         self.tabs.show()
 
         vbox.pack_start(self.tabs, 1,1,1)
@@ -728,7 +770,7 @@ class RepeaterGUI(RepeaterUI):
         self.window.add(vbox)
         self.window.show()
 
-        gobject.timeout_add(1000, self.update)
+        #gobject.timeout_add(1000, self.update)
 
         try:
             if self.config.get("settings", "state") == "True":
