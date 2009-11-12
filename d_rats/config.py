@@ -27,6 +27,7 @@ import inputdialog
 import platform
 import geocode_ui
 import config_tips
+import spell
 
 from d_rats.ui.main_common import display_error
 
@@ -79,6 +80,7 @@ _DEF_PREFS = {
     "msg_wl2k_server" : "server.winlink.org",
     "msg_wl2k_ssid" : "",
     "toolbar_button_size" : "Default",
+    "check_spelling" : "False",
 }
 
 _DEF_SETTINGS = {
@@ -837,6 +839,13 @@ class DratsAppearancePanel(DratsPanel):
         val = DratsConfigWidget(config, "prefs", "toolbar_button_size")
         val.add_combo(sizes, False)
         self.mv(_("Toolbar buttons"), val)
+
+        val = DratsConfigWidget(config, "prefs", "check_spelling")
+        val.add_bool()
+        self.mv(_("Check spelling"), val)
+        sp = spell.get_spell()
+        val._widget.set_sensitive(sp.test())
+
 
 class DratsChatPanel(DratsPanel):
     def __init__(self, config):

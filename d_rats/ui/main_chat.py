@@ -29,6 +29,7 @@ from d_rats.ui.main_common import ask_for_confirmation, display_error
 from d_rats import inputdialog, utils
 from d_rats import qst
 from d_rats import signals
+from d_rats import spell
 
 class LoggedTextBuffer(gtk.TextBuffer):
     def __init__(self, logfile):
@@ -368,10 +369,11 @@ class ChatTab(MainWindowTab):
 
     def _send_button(self, button, dest, entry):
         port = dest.get_active_text()
-        text = entry.get_text()
+        buffer = entry.get_buffer()
+        text = buffer.get_text(*buffer.get_bounds())
         if not text:
             return
-        entry.set_text("")
+        buffer.delete(*buffer.get_bounds())
 
         self.emit("user-send-chat", "CQCQCQ", port, text, False)
 
@@ -443,6 +445,44 @@ class ChatTab(MainWindowTab):
         fn = display.get_buffer().get_logfile()
         self._config.platform.open_text_file(fn)
 
+    def _do_spell(self, buffer):
+        if not self._config.getboolean("prefs", "check_spelling"):
+            return
+
+        cursor_mark = buffer.get_mark("insert")
+        start_iter = buffer.get_iter_at_mark(cursor_mark)
+        end_iter = buffer.get_iter_at_mark(cursor_mark)
+
+        if not start_iter.starts_word():
+            start_iter.backward_word_start()
+        if end_iter.inside_word():
+            end_iter.forward_word_end()
+
+        text = buffer.get_text(start_iter, end_iter)
+        word = text.strip()
+        print "Got: '%s' (%s)" % (text, word)
+
+        if not word:
+            return
+        
+        end_iter.backward_chars(len(text) - len(word))
+
+        if " " in word:
+            mispelled = False
+        else:
+            speller = spell.get_spell()
+            mispelled = bool(speller.lookup_word(word))
+        
+        if text.endswith(" ") and mispelled:
+            buffer.apply_tag_by_name("misspelled", start_iter, end_iter)
+        else:
+            buffer.remove_tag_by_name("misspelled", start_iter, end_iter)
+
+    def _enter_to_send(self, view, event, dest):
+        if event.keyval == 65293:
+            self._send_button(None, dest, view)
+            return True
+
     def __init__(self, wtree, config):
         MainWindowTab.__init__(self, wtree, config, "chat")
 
@@ -466,7 +506,16 @@ class ChatTab(MainWindowTab):
         send.set_flags(gtk.CAN_DEFAULT)
         send.connect("expose-event", lambda w, e: w.grab_default())
 
-        entry.set_activates_default(True)
+        tags = entry.get_buffer().get_tag_table()
+        tag = gtk.TextTag("misspelled")
+        tag.set_property("underline", pango.UNDERLINE_SINGLE)
+        tag.set_property("underline-set", True)
+        tag.set_property("foreground", "red")
+        tags.add(tag)
+
+        entry.set_wrap_mode(gtk.WRAP_WORD)
+        entry.connect("key-press-event", self._enter_to_send, dest)
+        entry.get_buffer().connect("changed", self._do_spell)
         entry.grab_focus()
 
         self._qm = ChatQM(wtree, config)
