@@ -3,9 +3,17 @@ import subprocess
 
 class Spelling:
     def __open_aspell(self):
+        kwargs = {}
+        if subprocess.mswindows:
+            su = subprocess.STARTUPINFO()
+            su.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+            su.wShowWindow = subprocess.SW_HIDE
+            kwargs["startupinfo"] = su
+
         p = subprocess.Popen([self.__aspell, "pipe"],
                              stdin=subprocess.PIPE,
-                             stdout=subprocess.PIPE)
+                             stdout=subprocess.PIPE,
+                             **kwargs)
         return p
 
     def __close_aspell(self):
