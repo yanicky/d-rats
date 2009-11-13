@@ -87,7 +87,7 @@ def call_in_list(callinfo, call):
     return False
 
 class Repeater:
-    def __init__(self, id="D-RATS Network Proxy"):
+    def __init__(self, id="D-RATS Network Proxy", reqauth=False):
         self.paths = []
         self.calls = {}
         self.thread = None
@@ -95,6 +95,7 @@ class Repeater:
         self.socket = None
         self.repeat_thread = None
         self.id = id
+        self.reqauth = reqauth
         self.condition = threading.Condition()
 
         # Forget port for a station after 10 minutes
@@ -205,7 +206,7 @@ class Repeater:
         return username, password
 
     def auth_user(self, pipe):
-        if not self.config.getboolean("settings", "require_auth"):
+        if not self.reqauth:
             pipe.write("100 Authentication not required\r\n")
             return True
 
@@ -327,7 +328,8 @@ class RepeaterUI:
         f.close()
 
     def add_outgoing_paths(self, id, paths):
-        self.repeater = Repeater(id)
+        reqauth = self.config.get("settings", "require_auth") == "True"
+        self.repeater = Repeater(id, reqauth)
         for dev,baud in paths:
             to = 0
             if dev.startswith("net:"):
@@ -664,7 +666,7 @@ class RepeaterGUI(RepeaterUI):
         self.config.set("settings", "netport", port)
         self.config.set("settings", "acceptnet", acceptnet)
         self.config.set("settings", "devices", devices)
-        self.config.set("settings", "require_auth", auth)
+        self.config.set("settings", "require_auth", str(auth))
 
     def button_remove(self, widget):
         self.dev_list.remove_selected()
