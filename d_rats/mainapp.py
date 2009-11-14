@@ -638,7 +638,7 @@ class MainApp(object):
 
     def __session_started(self, object, id, msg, port):
         # Don't register Chat, RPC, Sniff
-        if id and id <= 4:
+        if id and id <= 3:
             return
         elif id == 0:
             msg = "Port connected"
