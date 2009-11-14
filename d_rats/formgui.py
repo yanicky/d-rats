@@ -1074,16 +1074,19 @@ class FormDialog(FormFile, gtk.Dialog):
 
         print "Form ID: %s" % self.id
 
+    def update_dst(self):
+        dst = self._dstbox.get_text()
+        if "@" not in dst:
+            dst = dst.upper()
+        self.set_path_dst(dst)
+
     def run(self):
         self.vbox.set_spacing(5)
         self.build_gui(gtk.RESPONSE_CANCEL in self._buttons)
         self.set_size_request(380, 450)
 
         r = gtk.Dialog.run(self)
-        dst = self._dstbox.get_text()
-        if "@" not in dst:
-            dst = dst.upper()
-        self.set_path_dst(dst)
+        self.update_dst()
 
         return r
 
