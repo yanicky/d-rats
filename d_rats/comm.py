@@ -362,8 +362,6 @@ class SocketDataPath(DataPath):
 
             return code, string
 
-        print "Doing authentication"
-
         try:
             c, l = getline(self._socket)
         except DataPathNotConnectedError:
@@ -376,6 +374,7 @@ class SocketDataPath(DataPath):
         elif c != 101:
             raise DataPathNotConnectedError("Unknown response code %i" % c)
 
+        print "Doing authentication"
         print "Sending username: %s" % self.call
         self._socket.send("USER %s\r\n" % self.call)
 

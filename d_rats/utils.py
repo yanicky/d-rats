@@ -18,7 +18,6 @@ import re
 import os
 import tempfile
 import urllib
-import popen2
 
 import platform
 
@@ -138,6 +137,10 @@ def run_or_error(f):
 
     return runner
 
+def print_stack():
+    import traceback, sys
+    traceback.print_stack(file=sys.stdout)
+
 def get_sub_image(iconmap, i, j, size=20):
     import gtk
 
@@ -216,6 +219,7 @@ class ExternalHash(object):
         self.hval = ""
 
     def update(self, val):
+        import popen2
         stdout, stdin = popen2.popen2("md5sum")
         stdin.write(val)
         stdin.close()

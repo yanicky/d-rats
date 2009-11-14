@@ -396,6 +396,9 @@ class SessionCoordinator(gobject.GObject):
 
     @run_gtk_locked
     def _new_session(self, type, session, direction):
+        if session._id <= 3:
+            return # Skip control, chat, sniff, rpc
+
         print "New session (%s) of type: %s" % (direction, session.__class__)
         self.emit("session-started", session._id, type)
 

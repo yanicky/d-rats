@@ -265,8 +265,6 @@ class FilesTab(MainWindowTab):
         # FIXME: Need an event here
 
     def _init_toolbar(self):
-        tips = gtk.Tooltips()
-
         def populate_tb(tb, buttons):
             c = 0
             for i, l, f, d in buttons:
@@ -275,7 +273,7 @@ class FilesTab(MainWindowTab):
                 icon.show()
                 item = gtk.ToolButton(icon, l)
                 item.connect("clicked", f, d)
-                item.set_tooltip(tips, l)
+                item.set_tooltip_text(l)
                 item.show()
                 tb.insert(item, c)
                 c += 1

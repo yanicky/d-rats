@@ -24,8 +24,7 @@ import util
 try:
     from BeautifulSoup import BeautifulSoup
 except ImportError:
-    print "BeautifulSoup was not found. " \
-          "Geocoders assuming malformed markup will not work."
+    pass
 
 try:
     import simplejson

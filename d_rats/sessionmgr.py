@@ -165,8 +165,6 @@ class SessionManager(object):
             # FIXME
             print "No free slots?  I can't believe it!"
 
-        print "Registered session %i: %s" % (id, session.name)
-
         session._sm = self
         session._id = id
         session._st = dest

@@ -377,7 +377,8 @@ class MapFileSource(MapSource):
 
         point = MapStation(id, float(lat), float(lon), float(alt), comment)
         point.set_visible(show.upper().strip() == "TRUE")
-        point.set_icon_from_aprs_sym(icon)
+        if icon and icon != "None":
+            point.set_icon_from_aprs_sym(icon)
 
         return point
 

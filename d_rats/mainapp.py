@@ -637,13 +637,13 @@ class MainApp(object):
             raise Exception("Station not found")
 
     def __session_started(self, object, id, msg, port):
-        print "[SESSION %i]: %s" % (id, msg)
-
         # Don't register Chat, RPC, Sniff
         if id and id <= 4:
             return
         elif id == 0:
             msg = "Port connected"
+
+        print "[SESSION %i]: %s" % (id, msg)
 
         event = main_events.SessionEvent(id, port, msg)
         self.mainwindow.tabs["event"].event(event)

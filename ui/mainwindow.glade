@@ -62,7 +62,7 @@
                       <widget class="GtkImageMenuItem" id="main_menu_bcast">
                         <property name="label">Broadcast Text File</property>
                         <property name="use_underline">True</property>
-                        <property name="use_stock">True</property>
+                        <property name="use_stock">False</property>
                         <accelerator key="b" signal="activate" modifiers="GDK_CONTROL_MASK"/>
                       </widget>
                     </child>
@@ -71,7 +71,7 @@
                         <property name="label">Import Message</property>
                         <property name="visible">True</property>
                         <property name="use_underline">True</property>
-                        <property name="use_stock">True</property>
+                        <property name="use_stock">False</property>
                       </widget>
                     </child>
                     <child>
@@ -79,7 +79,7 @@
                         <property name="label">Export Message</property>
                         <property name="visible">True</property>
                         <property name="use_underline">True</property>
-                        <property name="use_stock">True</property>
+                        <property name="use_stock">False</property>
                       </widget>
                     </child>
                     <child>
@@ -87,7 +87,7 @@
                         <property name="label">Message Templates</property>
                         <property name="visible">True</property>
                         <property name="use_underline">True</property>
-                        <property name="use_stock">True</property>
+                        <property name="use_stock">False</property>
                       </widget>
                     </child>
                     <child>
@@ -95,7 +95,7 @@
                         <property name="label">Ping Station</property>
                         <property name="visible">True</property>
                         <property name="use_underline">True</property>
-                        <property name="use_stock">True</property>
+                        <property name="use_stock">False</property>
                         <accelerator key="p" signal="activate" modifiers="GDK_CONTROL_MASK"/>
                       </widget>
                     </child>
@@ -200,14 +200,14 @@
                       <widget class="GtkImageMenuItem" id="main_menu_addfilter">
                         <property name="label">Add filter</property>
                         <property name="use_underline">True</property>
-                        <property name="use_stock">True</property>
+                        <property name="use_stock">False</property>
                       </widget>
                     </child>
                     <child>
                       <widget class="GtkImageMenuItem" id="main_menu_delfilter">
                         <property name="label">Delete Filter</property>
                         <property name="use_underline">True</property>
-                        <property name="use_stock">True</property>
+                        <property name="use_stock">False</property>
                       </widget>
                     </child>
                     <child>
@@ -222,7 +222,7 @@
                       <widget class="GtkImageMenuItem" id="main_menu_viewlog">
                         <property name="label">Log</property>
                         <property name="use_underline">True</property>
-                        <property name="use_stock">True</property>
+                        <property name="use_stock">False</property>
                       </widget>
                     </child>
                     <child>
@@ -230,7 +230,7 @@
                         <property name="label">Map</property>
                         <property name="visible">True</property>
                         <property name="use_underline">True</property>
-                        <property name="use_stock">True</property>
+                        <property name="use_stock">False</property>
                         <accelerator key="m" signal="activate" modifiers="GDK_CONTROL_MASK"/>
                       </widget>
                     </child>
@@ -250,7 +250,7 @@
                         <property name="label">Show debug log</property>
                         <property name="visible">True</property>
                         <property name="use_underline">True</property>
-                        <property name="use_stock">True</property>
+                        <property name="use_stock">False</property>
                       </widget>
                     </child>
                     <child>

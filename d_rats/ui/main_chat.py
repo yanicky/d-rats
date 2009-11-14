@@ -649,7 +649,6 @@ class ChatTab(MainWindowTab):
             model = gtk.ListStore(gobject.TYPE_STRING)
             dest.set_model(model)
         for port in ports:
-            print "Appending %s" % port
             model.append((port,))
         if ports:
             utils.combo_select(dest, ports[0])
