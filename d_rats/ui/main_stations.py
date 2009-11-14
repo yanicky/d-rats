@@ -30,6 +30,7 @@ from d_rats import signals
 from d_rats import image
 from d_rats import miscwidgets
 from d_rats import inputdialog
+from d_rats import utils
 
 def prompt_for_account(config):
     accounts = {}
@@ -333,6 +334,7 @@ class StationsList(MainWindowTab):
 
         def set_status(cb):
             self.__status = cb.get_active_text()
+            self._config.set("state", "status_state", self.__status)
 
         def set_smsg(e):
             self.__smsg = e.get_text()
@@ -341,7 +343,7 @@ class StationsList(MainWindowTab):
         status.connect("changed", set_status)
         msg.connect("changed", set_smsg)
 
-        status.set_active(0)
+        utils.combo_select(status, self._config.get("state", "status_state"))
         msg.set_text(self._config.get("state", "status_msg"))
         set_status(status)
         set_smsg(msg)

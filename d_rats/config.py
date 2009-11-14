@@ -131,6 +131,7 @@ _DEF_STATE = {
     "qsts_enabled" : "True",
     "sidepane_visible" : "True",
     "status_msg" : "Online (D-RATS)",
+    "status_state" : "Online",
     "events_sort" : str(int(gtk.SORT_DESCENDING)),
 }
 
