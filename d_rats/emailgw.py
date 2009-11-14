@@ -124,7 +124,7 @@ class MailThread(threading.Thread, gobject.GObject):
             if not body:
                 body = html
         else:
-            body = mail.get_payload()
+            body = mail.get_payload(decode=True)
 
         if not body and not xml:
             self.message("Unable to find a usable part")
