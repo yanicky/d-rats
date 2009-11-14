@@ -307,6 +307,7 @@ class MainWindow(MainWindowElement):
         sb.push(id, msg)
 
         call = self._config.get("user", "callsign")
+        self.__window.set_title("D-RATS: %s" % call)
         cb.pop(0)
         cb.push(0, call)
 
