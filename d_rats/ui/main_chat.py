@@ -668,6 +668,9 @@ class ChatTab(MainWindowTab):
             item = self._wtree.get_widget(name)
             item.set_property("visible", True)
 
+        entry, = self._getw("entry")
+        gobject.idle_add(entry.grab_focus)
+
     def deselected(self):
         MainWindowTab.deselected(self)
 
