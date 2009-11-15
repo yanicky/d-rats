@@ -402,15 +402,22 @@ C</property>
                                 <property name="position">0</property>
                               </packing>
                             </child>
-                            <child>
-                              <widget class="GtkTextView" id="chat_entry">
-                                <property name="visible">True</property>
-                                <property name="can_focus">True</property>
-                              </widget>
-                              <packing>
-                                <property name="position">1</property>
-                              </packing>
-                            </child>
+			    <child>
+			      <widget class="GtkFrame" id="frame1">
+				<property name="visible">True</property>
+				<property name="label_xalign">0</property>
+				<property name="shadow_type">in</property>
+				<child>
+				  <widget class="GtkTextView" id="chat_entry">
+                                    <property name="visible">True</property>
+                                    <property name="can_focus">True</property>
+				  </widget>
+				  <packing>
+                                    <property name="position">1</property>
+				  </packing>
+				</child>
+			      </widget>
+			    </child>
                             <child>
                               <widget class="GtkButton" id="chat_send">
                                 <property name="label" translatable="yes">Send</property>
