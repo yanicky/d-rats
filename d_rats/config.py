@@ -16,6 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import gtk
+import gtk.glade
 import gobject
 import ConfigParser
 import os
@@ -190,9 +191,9 @@ def load_portspec(wtree, portspec, info, name):
         wtree.get_widget("serial_port").child.set_text(portspec)
         utils.combo_select(wtree.get_widget("serial_rate"), info)
         
-def prompt_for_port(config, portspec=None, info=None, pname=None):
-    wtree = gtk.glade.XML(config.ship_obj_fn("ui/addport.glade"),
-                          "addport", "D-RATS")
+def prompt_for_port(portspec=None, info=None, pname=None):
+    p = os.path.join(platform.get_platform().source_dir(), "ui/addport.glade")
+    wtree = gtk.glade.XML(p, "addport", "D-RATS")
 
     ports = platform.get_platform().list_serial_ports()
     
@@ -910,15 +911,14 @@ class DratsRadioPanel(DratsPanel):
             self.attach(box, 0, 2, 1, 2, yoptions=gtk.SHRINK)
 
     def but_add(self, button, lw):
-        name, port, info = prompt_for_port(self.config)
+        name, port, info = prompt_for_port()
         if name:
             lw.set_item(name, True, port, info, False, False, name)
 
     def but_mod(self, button, lw):
         values = lw.get_item(lw.get_selected())
         print "Values: %s" % str(values)
-        name, port, info = prompt_for_port(self.config,
-                                           values[2], values[3], values[6])
+        name, port, info = prompt_for_port(values[2], values[3], values[6])
         if name:
             lw.set_item(values[6], values[1], port, info, values[4], values[5], values[6])
 
