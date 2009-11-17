@@ -249,6 +249,8 @@ def prompt_for_port(portspec=None, info=None, pname=None):
 
     if portspec:
         load_portspec(wtree, portspec, info, pname)
+    elif pname is False:
+        name.set_sensitive(False)
 
     d = wtree.get_widget("addport")
 

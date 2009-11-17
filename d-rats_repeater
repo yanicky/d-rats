@@ -372,7 +372,7 @@ class RepeaterUI:
 
 class RepeaterGUI(RepeaterUI):
     def add_serial(self, widget):
-        name, portspec, param = prompt_for_port(None)
+        name, portspec, param = prompt_for_port(None, pname=False)
         if portspec is None:
             return
 
