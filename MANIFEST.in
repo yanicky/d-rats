@@ -7,3 +7,4 @@ include ui/*.glade
 include d_rats/version.py
 include d-rats2.ico
 include libexec/lzhuf
+include MANIFEST.in
