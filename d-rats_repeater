@@ -91,7 +91,7 @@ def call_in_list(callinfo, call):
     return False
 
 class Repeater:
-    def __init__(self, id="D-RATS Network Proxy", reqauth=False):
+    def __init__(self, id="D-RATS Network Proxy", reqauth=False, trustlocal=False):
         self.paths = []
         self.calls = {}
         self.thread = None
@@ -100,6 +100,7 @@ class Repeater:
         self.repeat_thread = None
         self.id = id
         self.reqauth = reqauth
+        self.trustlocal = trustlocal
         self.condition = threading.Condition()
 
         # Forget port for a station after 10 minutes
@@ -210,8 +211,13 @@ class Repeater:
         return username, password
 
     def auth_user(self, pipe):
+        host, port = pipe._socket.getpeername()
+
         if not self.reqauth:
             pipe.write("100 Authentication not required\r\n")
+            return True
+        elif self.trustlocal and host == "127.0.0.1":
+            pipe.write("100 Authentication not required for localhost\r\n")
             return True
 
         auth_fn = platform.get_platform().config_file("users.txt")
@@ -321,6 +327,7 @@ class RepeaterUI:
         config.set("settings", "id", "W1AW")
         config.set("settings", "idfreq", "30")
         config.set("settings", "require_auth", "False")
+        config.set("settings", "trust_local", "True")
         config.read(self.config_fn)
 
         return config
@@ -333,8 +340,9 @@ class RepeaterUI:
 
     def add_outgoing_paths(self, id, paths):
         reqauth = self.config.get("settings", "require_auth") == "True"
+        trustlocal = self.config.get("settings", "trust_local") == "True"
         print "Repeater id is %s" % id
-        self.repeater = Repeater(id, reqauth)
+        self.repeater = Repeater(id, reqauth, trustlocal)
         for dev,param in paths:
             to = 0
             if dev.startswith("net:"):
@@ -545,15 +553,22 @@ class RepeaterGUI(RepeaterUI):
 
         hbox = gtk.HBox(False, 20)
 
-        def toggle_auth(cb):
-            self.config.set("settings", "require_auth", str(cb.get_active()))
+        def toggle_option(cb, option):
+            self.config.set("settings", option, str(cb.get_active()))
 
         self.req_auth = gtk.CheckButton("Require Authentication")
-        self.req_auth.connect("toggled", toggle_auth)
+        self.req_auth.connect("toggled", toggle_option, "require_auth")
         self.req_auth.show()
         self.req_auth.set_active(self.config.getboolean("settings",
                                                         "require_auth"))
         hbox.pack_start(self.req_auth, 0, 0, 0)
+
+        self.trust_local = gtk.CheckButton("Trust localhost")
+        self.trust_local.connect("toggled", toggle_option, "trust_local")
+        self.trust_local.show()
+        self.trust_local.set_active(self.config.getboolean("settings",
+                                                           "trust_local"))
+        hbox.pack_start(self.trust_local, 0, 0, 0)
 
         def do_edit_users(but):
             p = platform.get_platform()
@@ -642,6 +657,7 @@ class RepeaterGUI(RepeaterUI):
         acceptnet = str(self.net_enabled.get_active())
         devices = self.dev_list.get_values()
         auth = self.req_auth.get_active()
+        local = self.trust_local.get_active()
 
         self.config.set("settings", "id", id)
         #self.config.set("settings", "idfreq", idfreq)
@@ -649,6 +665,7 @@ class RepeaterGUI(RepeaterUI):
         self.config.set("settings", "acceptnet", acceptnet)
         self.config.set("settings", "devices", devices)
         self.config.set("settings", "require_auth", str(auth))
+        self.config.set("settings", "trust_local", str(local))
 
     def button_remove(self, widget):
         self.dev_list.remove_selected()
