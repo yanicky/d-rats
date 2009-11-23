@@ -81,6 +81,10 @@ def default_build():
 
     setup(
         name="d-rats",
+        description="D-RATS",
+        long_description="A communications tool for D-STAR",
+        author="Dan Smith, KK7DS",
+        author_email="kk7ds@danplanet.com",
         packages=["d_rats", "d_rats.geopy", "d_rats.ui", "d_rats.sessions"],
         version=DRATS_VERSION,
         scripts=["d-rats", "d-rats_mapdownloader", "d-rats_repeater"],
