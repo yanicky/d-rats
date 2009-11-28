@@ -170,7 +170,10 @@ class ChatQST(MainWindowElement):
 
         def render_remaining(col, rend, model, iter):
             id, e = model.get(iter, 0, 5)
-            q, c = self._qsts[id]
+            try:
+                q, c = self._qsts[id]
+            except KeyError:
+                e = None
 
             if not e:
                 s = ""
