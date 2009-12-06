@@ -158,7 +158,7 @@ class MailThread(threading.Thread, gobject.GObject):
             form.set_field_value("_auto_sender", sender)
             form.set_field_value("recipient", recip)
             form.set_field_value("subject", "EMAIL: %s" % subject)
-            form.set_field_value("message", body)
+            form.set_field_value("message", utils.filter_to_ascii(body))
             form.set_path_src(sender.strip())
             form.set_path_dst(recip.strip())
             form.set_path_mid(messageid)
