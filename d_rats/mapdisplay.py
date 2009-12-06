@@ -1148,9 +1148,9 @@ class MapWindow(gtk.Window):
 
         items = self.marker_list.get_selected()
 
+        self.center_mark = items[1]
         self.recenter(items[2], items[3])
 
-        self.center_mark = items[1]
         self.sb_center.pop(self.STATUS_CENTER)
         self.sb_center.push(self.STATUS_CENTER, _("Center") + ": %s" % self.center_mark)
 
@@ -1367,9 +1367,10 @@ class MapWindow(gtk.Window):
         for point in source.get_points():
             self.add_point(source, point)
 
-        source.connect("point-updated", self.update_point)
+        #source.connect("point-updated", self.update_point)
         source.connect("point-added", self.add_point)
         source.connect("point-deleted", self.del_point)
+        source.connect("point-updated", self.maybe_recenter_on_updated_point)
 
     def update_points_visible(self):
         for src in self.map_sources:
@@ -1377,6 +1378,13 @@ class MapWindow(gtk.Window):
                 self.update_point(src, point)
 
         self.map.queue_draw()
+
+    def maybe_recenter_on_updated_point(self, source, point):
+        if point.get_name() == self.center_mark and \
+                self.tracking_enabled:
+            print "Center updated"
+            self.recenter(point.get_latitude(), point.get_longitude())
+        self.update_point(source, point)
 
     def clear_map_sources(self):
         self.marker_list.clear()
