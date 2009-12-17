@@ -311,7 +311,7 @@ class Win32Platform(Platform):
         return
 
     def open_html_file(self, path):
-        os.system("explorer %s" % path)
+        subprocess.Popen(["explorer", path])
     
     def list_serial_ports(self):
         import win32file
