@@ -29,6 +29,7 @@ import gobject
 
 from miscwidgets import make_choice, KeyedListWidget
 from utils import run_or_error
+from ui.main_common import ask_for_confirmation
 import platform
 
 test = """
@@ -56,6 +57,16 @@ xml_escapes = [("<", "&lt;"),
                ("&", "&amp;"),
                ('"', "&quot;"),
                ("'", "&apos;")]
+
+RESPONSE_SEND = -900
+RESPONSE_SAVE = -901
+
+style = gtk.Style()
+for i in [style.fg, style.bg, style.base]:
+            i[gtk.STATE_INSENSITIVE] = i[gtk.STATE_NORMAL]
+STYLE_BRIGHT_INSENSITIVE = style
+del style
+del i
 
 def xml_escape(string):
     d = {}
@@ -172,6 +183,11 @@ class FieldWidget(object):
         value = xml_escape(self.get_value())
         if value:
             self.node.addContent(value)
+
+    def set_editable(self, editable):
+        if self.widget:
+            self.widget.set_sensitive(editable)
+            self.widget.set_style(STYLE_BRIGHT_INSENSITIVE)
 
 class TextWidget(FieldWidget):
     def __init__(self, node):
@@ -526,6 +542,9 @@ class FormField(object):
     "multiselect" : MultiselectWidget,
     "label" : LabelWidget,
     }
+
+    def set_editable(self, editable):
+        self.entry.set_editable(editable)
 
     def get_caption_string(self, node):
         return node.getContent().strip()
@@ -989,7 +1008,58 @@ class FormDialog(FormFile, gtk.Dialog):
 
         return attexp
 
-    def build_gui(self, allow_export=True):
+    def build_toolbar(self, editable):
+        tb = gtk.Toolbar()
+
+        def close(but, *args):
+            print "Closing"
+            if editable:
+                d = ask_for_confirmation("Close without saving?", self)
+                if not d:
+                    return True
+            self.response(gtk.RESPONSE_CLOSE)
+            return False
+        def save(but):
+            self.response(RESPONSE_SAVE)
+        def send(but):
+            self.response(RESPONSE_SEND)
+
+        if editable:
+            buttons = [(gtk.STOCK_SAVE, "", save),
+                       ("msg-send.png", _("Send"), send),
+                       (gtk.STOCK_PRINT, "", self.but_printable),
+                       ]
+        else:
+            buttons = [("msg-send.png", _("Forward"), send),
+                       (gtk.STOCK_PRINT, "", self.but_printable),
+                       ]
+
+        #self.connect("destroy", close)
+        self.connect("delete_event", close)
+
+        import mainapp
+        config = mainapp.get_mainapp().config
+
+        i = 0
+        for img, lab, func in buttons:
+            if not lab:
+                ti = gtk.ToolButton(img)
+            else:
+                icon = gtk.Image()
+                icon.set_from_pixbuf(config.ship_img(img))
+                icon.show()
+                ti = gtk.ToolButton(icon, lab)
+            ti.show()
+            ti.connect("clicked", func)
+            tb.insert(ti, i)
+            i += 1
+
+        tb.show()
+        return tb
+
+    def build_gui(self, editable=True):
+        self.vbox.pack_start(self.build_toolbar(editable), 0, 0, 0)
+
         tlabel = gtk.Label()
         tlabel.set_markup("<big><b>%s</b></big>" % self.title_text)
         tlabel.show()
@@ -1047,16 +1117,7 @@ class FormDialog(FormFile, gtk.Dialog):
 
             mw.connect("changed", self.calc_check, cw)
 
-        if allow_export:
-            save = gtk.Button("Export")
-            save.connect("clicked", self.but_save, None)
-            save.show()
-            self.action_area.pack_start(save, 0,0,0)
-
-        printable = gtk.Button("Printable")
-        printable.connect("clicked", self.but_printable, None)
-        printable.show()
-        self.action_area.pack_start(printable, 0,0,0)
+        self.set_editable(editable)
 
     def __init__(self, title, filename, buttons=None, parent=None):
         self._buttons = (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
@@ -1064,11 +1125,11 @@ class FormDialog(FormFile, gtk.Dialog):
         if buttons:
             self._buttons += buttons
 
-        gtk.Dialog.__init__(self, buttons=self._buttons, parent=parent,
-                            title=title)
+        gtk.Dialog.__init__(self, buttons=(), parent=parent)
         FormFile.__init__(self, filename)
 
         self.process_fields(self.doc)
+        self.set_title(self.title_text)
 
         self.set_default_size(300,500)
 
@@ -1082,7 +1143,7 @@ class FormDialog(FormFile, gtk.Dialog):
 
     def run(self):
         self.vbox.set_spacing(5)
-        self.build_gui(gtk.RESPONSE_CANCEL in self._buttons)
+        self.build_gui()
         self.set_size_request(380, 450)
 
         r = gtk.Dialog.run(self)
@@ -1092,6 +1153,10 @@ class FormDialog(FormFile, gtk.Dialog):
 
     def configure(self, config):
         self.xsl_dir = config.form_source_dir()
+
+    def set_editable(self, editable):
+        for field in self.fields:
+            field.set_editable(editable)
         
 if __name__ == "__main__":
     f = file(sys.argv[1])

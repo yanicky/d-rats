@@ -34,7 +34,7 @@ from d_rats.ui import main_events
 from d_rats import inputdialog
 from d_rats import formgui
 from d_rats import emailgw
-from d_rats.utils import log_exception
+from d_rats.utils import log_exception, print_stack
 from d_rats import signals
 from d_rats import msgrouting
 from d_rats import wl2k
@@ -330,6 +330,10 @@ ML_COL_READ = 6
 ML_COL_RECP = 7
 
 class MessageList(MainWindowElement):
+    __gsignals__ = {"prompt-send-form" : (gobject.SIGNAL_RUN_LAST,
+                                          gobject.TYPE_NONE,
+                                          (gobject.TYPE_STRING,))}
+
     def _folder_path(self, folder):
         path = os.path.join(self._config.platform.config_dir(),
                             "messages",
@@ -339,7 +343,7 @@ class MessageList(MainWindowElement):
         else:
             return path
 
-    def open_msg(self, filename):
+    def open_msg(self, filename, editable, cb=None, cbdata=None):
         if not msgrouting.msg_lock(filename):
             display_error(_("Unable to open: message in use by another task"))
             return gtk.RESPONSE_CANCEL
@@ -347,23 +351,46 @@ class MessageList(MainWindowElement):
         parent = self._wtree.get_widget("mainwindow")
         form = formgui.FormDialog(_("Form"), filename, parent=parent)
         form.configure(self._config)
-        r = form.run_auto()
-        form.destroy()
 
-        self.refresh(filename)
+        def form_done(dlg, response):
+            dlg.hide()
+            dlg.update_dst()
+            msgrouting.msg_unlock(filename)
+            if response == formgui.RESPONSE_SAVE:
+                print "Saving to %s" % filename
+                dlg.save_to(filename)
+            else:
+                print "Not saving"
+            dlg.destroy()
+            self.refresh(filename)
+            if cb:
+                cb(response, cbdata)
+            if response == formgui.RESPONSE_SEND:
+                self.emit("prompt-send-form", filename)
 
-        msgrouting.msg_unlock(filename)
-
-        return r
+        form.build_gui(editable)
+        form.show()
+        form.connect("response", form_done)
 
     def _open_msg(self, view, path, col):
         store = view.get_model()
         iter = store.get_iter(path)
         path, = store.get(iter, ML_COL_FILE)
 
-        self.open_msg(path)
+        def close_msg_cb(response, info):
+            if self.current_info == info:
+                iter = self.iter_from_fn(path)
+                print "Updating iter %s" % iter
+                if iter:
+                    self._update_message_info(iter)
+            else:
+                print "Not current, not updating"
+
+        editable = "Outbox" in path # Dirty hack
+        self.open_msg(path, editable, close_msg_cb, self.current_info)
         self.current_info.set_msg_read(path, True)
         iter = self.iter_from_fn(path)
+        print "Updating iter %s" % iter
         if iter:
             self._update_message_info(iter)
 
@@ -476,11 +503,12 @@ class MessageList(MainWindowElement):
         fn, = self.store.get(iter, ML_COL_FILE)
 
         subj = self.current_info.get_msg_subject(fn)
+        read = self.current_info.get_msg_read(fn)
         if subj == _("Unknown") or force:
             # Not registered, so update the registry
             form = formgui.FormFile(fn)
             self.current_info.set_msg_type(fn, form.id)
-            self.current_info.set_msg_read(fn, False)
+            self.current_info.set_msg_read(fn, read)
             self.current_info.set_msg_subject(fn, form.get_subject_string())
             self.current_info.set_msg_sender(fn, form.get_sender_string())
             self.current_info.set_msg_recip(fn, form.get_recipient_string())
@@ -608,11 +636,16 @@ class MessagesTab(MainWindowTab):
         form.set_path_mid(mkmsgid(call))
         form.save_to(newfn)
 
-        if self._messages.open_msg(newfn) != gtk.RESPONSE_CANCEL:
-            self._messages.refresh(newfn)
-        else:
-            self._messages.current_info.delete(newfn)
-            self._folders.select_folder(current)
+        def close_msg_cb(response, info):
+            if self._messages.current_info == info:
+                if response != gtk.RESPONSE_CLOSE:
+                    self._messages.refresh(newfn)
+                else:
+                    info.delete(newfn)
+                    self._folders.select_folder(current)
+
+        self._messages.open_msg(newfn, True,
+                                close_msg_cb, self._messages.current_info)
 
     def _rpl_msg(self, button):
         def subj_reply(subj):
@@ -684,11 +717,13 @@ class MessagesTab(MainWindowTab):
         newfn = self._messages.current_info.create_msg(tstamp)
         nform.save_to(newfn)
 
-        if self._messages.open_msg(newfn) != gtk.RESPONSE_CANCEL:
-            self._messages.refresh(newfn)
-        else:
-            self._messages.current_info.delete(newfn)
-            self._folders.select_folder(current)
+        def close_msg_cb(response, info):
+            if self._messages.current_info == info:
+                if response != gtk.RESPONSE_CANCEL:
+                    self._messages.refresh(newfn)
+                else:
+                    info.delete(newfn)
+                    self._folders.select_folder(current)
 
     def _del_msg(self, button):
         if self._messages.current_info.name() == _("Trash"):
@@ -696,17 +731,18 @@ class MessagesTab(MainWindowTab):
         else:
             self._messages.move_selected_messages(_("Trash"))
 
-    def _snd_msg(self, button):
-        try:
-            sel = self._messages.get_selected_messages()
-        except TypeError:
-            return
-
-        if len(sel) > 1:
-            print "FIXME: Warn about multiple send"
-            return
-
-        fn = sel[0]
+    def _snd_msg(self, button, fn=None):
+        if not fn:
+            try:
+                sel = self._messages.get_selected_messages()
+            except TypeError:
+                return
+    
+            if len(sel) > 1:
+                print "FIXME: Warn about multiple send"
+                return
+    
+            fn = sel[0]
         recip = self._messages.current_info.get_msg_recip(fn)
 
         if not msgrouting.msg_lock(fn):
@@ -874,6 +910,7 @@ class MessagesTab(MainWindowTab):
         self._init_toolbar()
         self._folders = MessageFolders(wtree, config)
         self._messages = MessageList(wtree, config)
+        self._messages.connect("prompt-send-form", self._snd_msg)
 
         self._folders.connect("user-selected-folder",
                               lambda x, y: self._messages.open_folder(y))
