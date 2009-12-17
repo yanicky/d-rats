@@ -332,7 +332,11 @@ ML_COL_RECP = 7
 class MessageList(MainWindowElement):
     __gsignals__ = {"prompt-send-form" : (gobject.SIGNAL_RUN_LAST,
                                           gobject.TYPE_NONE,
-                                          (gobject.TYPE_STRING,))}
+                                          (gobject.TYPE_STRING,)),
+                    "reply-form" : (gobject.SIGNAL_RUN_LAST,
+                                    gobject.TYPE_NONE,
+                                     (gobject.TYPE_STRING,)),
+                    }
 
     def _folder_path(self, folder):
         path = os.path.join(self._config.platform.config_dir(),
@@ -367,6 +371,8 @@ class MessageList(MainWindowElement):
                 cb(response, cbdata)
             if response == formgui.RESPONSE_SEND:
                 self.emit("prompt-send-form", filename)
+            elif response == formgui.RESPONSE_REPLY:
+                self.emit("reply-form", filename)
 
         form.build_gui(editable)
         form.show()
@@ -637,17 +643,16 @@ class MessagesTab(MainWindowTab):
         form.save_to(newfn)
 
         def close_msg_cb(response, info):
+            if response == int(gtk.RESPONSE_CLOSE):
+                info.delete(newfn)
             if self._messages.current_info == info:
-                if response != gtk.RESPONSE_CLOSE:
-                    self._messages.refresh(newfn)
-                else:
-                    info.delete(newfn)
-                    self._folders.select_folder(current)
+                self._messages.refresh()
+                self._folders.select_folder(current)
 
         self._messages.open_msg(newfn, True,
                                 close_msg_cb, self._messages.current_info)
 
-    def _rpl_msg(self, button):
+    def _rpl_msg(self, button, fn=None):
         def subj_reply(subj):
             if "RE:" in subj.upper():
                 return subj
@@ -668,19 +673,21 @@ class MessagesTab(MainWindowTab):
             ("_auto_sender", "_auto_recip", None),
             ]
 
-        try:
-            sel = self._messages.get_selected_messages()
-        except TypeError:
-            return
+        if not fn:
+            try:
+                sel = self._messages.get_selected_messages()
+            except TypeError:
+                return
+    
+            if len(sel) > 1:
+                print "FIXME: Warn about multiple reply"
+                return
+    
+            current = self._messages.current_info.name()
+            self._folders.select_folder(_("Outbox"))
+    
+            fn = sel[0]
 
-        if len(sel) > 1:
-            print "FIXME: Warn about multiple reply"
-            return
-
-        current = self._messages.current_info.name()
-        self._folders.select_folder(_("Outbox"))
-
-        fn = sel[0]
         oform = formgui.FormFile(fn)
         tmpl = os.path.join(self._config.form_source_dir(), "%s.xml" % oform.id)
 
@@ -724,6 +731,9 @@ class MessagesTab(MainWindowTab):
                 else:
                     info.delete(newfn)
                     self._folders.select_folder(current)
+
+        self._messages.open_msg(newfn, True,
+                                close_msg_cb, self._messages.current_info)
 
     def _del_msg(self, button):
         if self._messages.current_info.name() == _("Trash"):
@@ -911,6 +921,7 @@ class MessagesTab(MainWindowTab):
         self._folders = MessageFolders(wtree, config)
         self._messages = MessageList(wtree, config)
         self._messages.connect("prompt-send-form", self._snd_msg)
+        self._messages.connect("reply-form", self._rpl_msg)
 
         self._folders.connect("user-selected-folder",
                               lambda x, y: self._messages.open_folder(y))

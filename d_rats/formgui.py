@@ -58,8 +58,9 @@ xml_escapes = [("<", "&lt;"),
                ('"', "&quot;"),
                ("'", "&apos;")]
 
-RESPONSE_SEND = -900
-RESPONSE_SAVE = -901
+RESPONSE_SEND  = -900
+RESPONSE_SAVE  = -901
+RESPONSE_REPLY = -902
 
 style = gtk.Style()
 for i in [style.fg, style.bg, style.base]:
@@ -1023,25 +1024,45 @@ class FormDialog(FormFile, gtk.Dialog):
             self.response(RESPONSE_SAVE)
         def send(but):
             self.response(RESPONSE_SEND)
+        def reply(but):
+            self.response(RESPONSE_REPLY)
+
+        # We have to get in the way of the RESPONSE_DELETE_EVENT signal
+        # to be able to catch the save
+        # http://faq.pygtk.org/index.py?req=show&file=faq10.013.htp
+        def reject_delete_response(dialog, response, *args):
+            if response == gtk.RESPONSE_DELETE_EVENT:
+                dialog.emit_stop_by_name("response")
+
+        send_tip = "Save this message to the Outbox and send it immediately " +\
+            "to a specific station for relay"
+        save_tip = "Save this message to the Outbox for automatic sending " +\
+            "to the destination station, when it becomes available"
+        prnt_tip = "View the printable version of this form"
+        rply_tip = "Compose a reply to this message"
 
         if editable:
-            buttons = [(gtk.STOCK_SAVE, "", save),
-                       ("msg-send.png", _("Send"), send),
-                       (gtk.STOCK_PRINT, "", self.but_printable),
-                       ]
+            buttons = [
+                (gtk.STOCK_SAVE,  "",        save_tip, save),
+                ("msg-send.png",  _("Send"), send_tip, send),
+                (gtk.STOCK_PRINT, "",        prnt_tip, self.but_printable),
+                ]
         else:
-            buttons = [("msg-send.png", _("Forward"), send),
-                       (gtk.STOCK_PRINT, "", self.but_printable),
-                       ]
+            buttons = [
+                ("msg-reply.png", _("Reply"),   rply_tip, reply),
+                ("msg-send.png",  _("Forward"), send_tip, send),
+                (gtk.STOCK_PRINT, "",           prnt_tip, self.but_printable),
+                ]
 
         #self.connect("destroy", close)
-        self.connect("delete_event", close)
+        self.connect("delete-event", close)
+        self.connect("response", reject_delete_response)
 
         import mainapp
         config = mainapp.get_mainapp().config
 
         i = 0
-        for img, lab, func in buttons:
+        for img, lab, tip, func in buttons:
             if not lab:
                 ti = gtk.ToolButton(img)
             else:
@@ -1050,6 +1071,7 @@ class FormDialog(FormFile, gtk.Dialog):
                 icon.show()
                 ti = gtk.ToolButton(icon, lab)
             ti.show()
+            ti.set_tooltip_text(tip)
             ti.connect("clicked", func)
             tb.insert(ti, i)
             i += 1
