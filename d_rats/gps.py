@@ -157,7 +157,7 @@ def DPRS_checksum(callsign, msg):
     for i in string:
         csum ^= ord(i)
 
-    return "*%X" % csum
+    return "*%02X" % csum
 
 def deg2rad(deg):
     return deg * (pi / 180)
