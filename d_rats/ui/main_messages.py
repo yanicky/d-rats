@@ -742,7 +742,6 @@ class MessagesTab(MainWindowTab):
 
     def _del_msg(self, button, fn=None):
         if fn:
-            #self._messages.current_info.delete(fn)
             try:
                 os.remove(fn)
             except Exception, e:
