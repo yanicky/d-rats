@@ -336,6 +336,9 @@ class MessageList(MainWindowElement):
                     "reply-form" : (gobject.SIGNAL_RUN_LAST,
                                     gobject.TYPE_NONE,
                                      (gobject.TYPE_STRING,)),
+                    "delete-form" : (gobject.SIGNAL_RUN_LAST,
+                                     gobject.TYPE_NONE,
+                                     (gobject.TYPE_STRING,)),
                     }
 
     def _folder_path(self, folder):
@@ -373,6 +376,8 @@ class MessageList(MainWindowElement):
                 self.emit("prompt-send-form", filename)
             elif response == formgui.RESPONSE_REPLY:
                 self.emit("reply-form", filename)
+            elif response == formgui.RESPONSE_DELETE:
+                self.emit("delete-form", filename)
 
         form.build_gui(editable)
         form.show()
@@ -735,11 +740,19 @@ class MessagesTab(MainWindowTab):
         self._messages.open_msg(newfn, True,
                                 close_msg_cb, self._messages.current_info)
 
-    def _del_msg(self, button):
-        if self._messages.current_info.name() == _("Trash"):
-            self._messages.delete_selected_messages()
+    def _del_msg(self, button, fn=None):
+        if fn:
+            #self._messages.current_info.delete(fn)
+            try:
+                os.remove(fn)
+            except Exception, e:
+                print "Unable to delete %s: %s" % (fn, e)
+            self._messages.refresh()
         else:
-            self._messages.move_selected_messages(_("Trash"))
+            if self._messages.current_info.name() == _("Trash"):
+                self._messages.delete_selected_messages()
+            else:
+                self._messages.move_selected_messages(_("Trash"))
 
     def _snd_msg(self, button, fn=None):
         if not fn:
@@ -922,6 +935,7 @@ class MessagesTab(MainWindowTab):
         self._messages = MessageList(wtree, config)
         self._messages.connect("prompt-send-form", self._snd_msg)
         self._messages.connect("reply-form", self._rpl_msg)
+        self._messages.connect("delete-form", self._del_msg)
 
         self._folders.connect("user-selected-folder",
                               lambda x, y: self._messages.open_folder(y))

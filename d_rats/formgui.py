@@ -58,9 +58,10 @@ xml_escapes = [("<", "&lt;"),
                ('"', "&quot;"),
                ("'", "&apos;")]
 
-RESPONSE_SEND  = -900
-RESPONSE_SAVE  = -901
-RESPONSE_REPLY = -902
+RESPONSE_SEND   = -900
+RESPONSE_SAVE   = -901
+RESPONSE_REPLY  = -902
+RESPONSE_DELETE = -903
 
 style = gtk.Style()
 for i in [style.fg, style.bg, style.base]:
@@ -1026,6 +1027,8 @@ class FormDialog(FormFile, gtk.Dialog):
             self.response(RESPONSE_SEND)
         def reply(but):
             self.response(RESPONSE_REPLY)
+        def delete(but):
+            self.response(RESPONSE_DELETE)
 
         # We have to get in the way of the RESPONSE_DELETE_EVENT signal
         # to be able to catch the save
@@ -1040,6 +1043,7 @@ class FormDialog(FormFile, gtk.Dialog):
             "to the destination station, when it becomes available"
         prnt_tip = "View the printable version of this form"
         rply_tip = "Compose a reply to this message"
+        dele_tip = "Delete this message"
 
         if editable:
             buttons = [
@@ -1049,9 +1053,10 @@ class FormDialog(FormFile, gtk.Dialog):
                 ]
         else:
             buttons = [
-                ("msg-reply.png", _("Reply"),   rply_tip, reply),
-                ("msg-send.png",  _("Forward"), send_tip, send),
-                (gtk.STOCK_PRINT, "",           prnt_tip, self.but_printable),
+                ("msg-reply.png", _("Reply"),    rply_tip, reply),
+                ("msg-send.png",  _("Forward"),  send_tip, send),
+                (gtk.STOCK_PRINT, "",            prnt_tip, self.but_printable),
+                (gtk.STOCK_DELETE, "",           dele_tip, delete),
                 ]
 
         #self.connect("destroy", close)
