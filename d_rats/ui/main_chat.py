@@ -448,39 +448,6 @@ class ChatTab(MainWindowTab):
         fn = display.get_buffer().get_logfile()
         self._config.platform.open_text_file(fn)
 
-    def _do_spell(self, buffer):
-        if not self._config.getboolean("prefs", "check_spelling"):
-            return
-
-        cursor_mark = buffer.get_mark("insert")
-        start_iter = buffer.get_iter_at_mark(cursor_mark)
-        end_iter = buffer.get_iter_at_mark(cursor_mark)
-
-        if not start_iter.starts_word():
-            start_iter.backward_word_start()
-        if end_iter.inside_word():
-            end_iter.forward_word_end()
-
-        text = buffer.get_text(start_iter, end_iter)
-        word = text.strip()
-        print "Got: '%s' (%s)" % (text, word)
-
-        if not word:
-            return
-        
-        end_iter.backward_chars(len(text) - len(word))
-
-        if " " in word:
-            mispelled = False
-        else:
-            speller = spell.get_spell()
-            mispelled = bool(speller.lookup_word(word))
-        
-        if text.endswith(" ") and mispelled:
-            buffer.apply_tag_by_name("misspelled", start_iter, end_iter)
-        else:
-            buffer.remove_tag_by_name("misspelled", start_iter, end_iter)
-
     def _enter_to_send(self, view, event, dest):
         if event.keyval == 65293:
             self._send_button(None, dest, view)
@@ -509,16 +476,11 @@ class ChatTab(MainWindowTab):
         send.set_flags(gtk.CAN_DEFAULT)
         send.connect("expose-event", lambda w, e: w.grab_default())
 
-        tags = entry.get_buffer().get_tag_table()
-        tag = gtk.TextTag("misspelled")
-        tag.set_property("underline", pango.UNDERLINE_SINGLE)
-        tag.set_property("underline-set", True)
-        tag.set_property("foreground", "red")
-        tags.add(tag)
+        if self._config.getboolean("prefs", "check_spelling"):
+            spell.prepare_TextBuffer(entry.get_buffer())
 
         entry.set_wrap_mode(gtk.WRAP_WORD)
         entry.connect("key-press-event", self._enter_to_send, dest)
-        entry.get_buffer().connect("changed", self._do_spell)
         entry.grab_focus()
 
         self._qm = ChatQM(wtree, config)
