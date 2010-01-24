@@ -150,6 +150,13 @@ class MessageFolderInfo(object):
         os.mkdir(path)
         return MessageFolderInfo(path)
 
+    def delete_self(self):
+        try:
+            os.remove(os.path.join(self._path, ".db"))
+        except OSError:
+            pass # Don't freak if no .db
+        os.rmdir(self._path)
+
     def create_msg(self, name):
         exists = os.path.exists(os.path.join(self._path, name))
         try:
@@ -164,6 +171,12 @@ class MessageFolderInfo(object):
         filename = os.path.basename(filename)
         self._config.remove_section(filename)
         os.remove(os.path.join(self._path, filename))
+
+    def rename(self, new_name):
+        newpath = os.path.join(os.path.dirname(self._path), new_name)
+        print "Renaming %s -> %s" % (self._path, newpath)
+        os.rename(self._path, newpath)
+        self._path = newpath
 
     def __str__(self):
         return self.name()
@@ -244,21 +257,75 @@ class MessageFolders(MainWindowElement):
         for info in root.subfolders():
             self._add_folders(store, iter, info)
 
-    def _select_folder(self, view, event):
-        if event.button != 1:
-            return
-
+    def _get_selected_folder(self, view, event):
         if event.window == view.get_bin_window():
             x, y = event.get_coords()
             pathinfo = view.get_path_at_pos(int(x), int(y))
             if pathinfo is None:
-                return
+                return view.get_model(), None
             else:
                 view.set_cursor_on_cell(pathinfo[0])
 
-        store, iter = view.get_selection().get_selected()
-        
+        return view.get_selection().get_selected()
+
+    def _mh(self, _action, store, iter):
+        action = _action.get_name()
+
+        if action == "delete":
+            info = self.get_folder(self._get_folder_by_iter(store, iter))
+            try:
+                info.delete_self()
+            except OSError, e:
+                display_error("Unable to delete folder: %s" % e)
+                return
+            store.remove(iter)
+        elif action == "create":
+            store.insert(iter, 0, ("New Folder", self.folder_pixbuf))
+            parent = self.get_folder(self._get_folder_by_iter(store, iter))
+            self._create_folder(parent, "New Folder")
+
+    def _select_folder(self, view, event):
+        store, iter = self._get_selected_folder(view, event)
+        if not iter:
+            return
         self.emit("user-selected-folder", self._get_folder_by_iter(store, iter))
+
+    def _folder_menu(self, view, event):
+        xml = """
+<ui>
+  <popup name="menu">
+    <menuitem action="delete"/>
+    <menuitem action="create"/>
+  </popup>
+</ui>
+"""
+        store, iter = self._get_selected_folder(view, event)
+        folder = self._get_folder_by_iter(store, iter)
+
+        base_folders = ["Inbox", "Outbox", "Sent", "Trash"]
+        can_del = bool(folder and (folder not in base_folders))
+
+        ag = gtk.ActionGroup("menu")
+        actions = [("delete", _("Delete"), gtk.STOCK_DELETE, can_del),
+                   ("create", _("Create"), gtk.STOCK_NEW, True)]
+
+        for action, label, stock, sensitive in actions:
+            a = gtk.Action(action, label, None, stock)
+            a.set_sensitive(sensitive)
+            a.connect("activate", self._mh, store, iter)
+            ag.add_action(a)
+
+        uim = gtk.UIManager()
+        uim.insert_action_group(ag, 0)
+        uim.add_ui_from_string(xml)
+        uim.get_widget("/menu").popup(None, None, None,
+                                      event.button, event.time)
+
+    def _mouse_cb(self, view, event):
+        if event.button == 1:
+            return self._select_folder(view, event)
+        elif event.button == 3:
+            return self._folder_menu(view, event)
 
     def _dragged_to(self, view, ctx, x, y, sel, info, ts):
         (path, place) = view.get_dest_row_at_pos(x, y)
@@ -267,7 +334,8 @@ class MessageFolders(MainWindowElement):
         msgs = data[1:]
 
         src_folder = data[0]
-        dst_folder = view.get_model()[path][0]
+        dst_folder = self._get_folder_by_iter(view.get_model(),
+                                              view.get_model().get_iter(path))
 
         if src_folder == dst_folder:
             return
@@ -294,6 +362,23 @@ class MessageFolders(MainWindowElement):
             dst.set_msg_sender(fn, send)
             dst.set_msg_recip(fn, recp)
 
+    def _folder_rename(self, render, path, new_text, store):
+        base_folders = ["Inbox", "Outbox", "Sent", "Trash"]
+        iter = store.get_iter(path)
+        orig = store.get(iter, 0)[0]
+        if orig == new_text:
+            return
+        elif orig in base_folders:
+            return
+        info = self.get_folder(self._get_folder_by_iter(store, iter))
+        try:
+            info.rename(new_text)
+        except Exception, e:
+            display_error("Unable to rename: %s" % e)
+            return
+
+        store.set(iter, 0, new_text)
+
     # MessageFolders
     def __init__(self, wtree, config):
         MainWindowElement.__init__(self, wtree, config, "msg")
@@ -306,12 +391,15 @@ class MessageFolders(MainWindowElement):
         folderlist.enable_model_drag_dest([("text/d-rats_message", 0, 0)],
                                           gtk.gdk.ACTION_DEFAULT)
         folderlist.connect("drag-data-received", self._dragged_to)
-        folderlist.connect("button_press_event", self._select_folder)
+        folderlist.connect("button_press_event", self._mouse_cb)
 
         col = gtk.TreeViewColumn("", gtk.CellRendererPixbuf(), pixbuf=1)
         folderlist.append_column(col)
 
-        col = gtk.TreeViewColumn("", gtk.CellRendererText(), text=0)
+        rnd = gtk.CellRendererText()
+        rnd.set_property("editable", True)
+        rnd.connect("edited", self._folder_rename, store)
+        col = gtk.TreeViewColumn("", rnd, text=0)
         folderlist.append_column(col)
 
         self.folder_pixbuf = self._config.ship_img("folder.png")
@@ -407,7 +495,8 @@ class MessageList(MainWindowElement):
 
     def _dragged_from(self, view, ctx, sel, info, ts):
         store, paths = view.get_selection().get_selected_rows()
-        msgs = [self.current_info.name()]
+       
+        msgs = [os.path.dirname(store[paths[0]][ML_COL_FILE])]
         for path in paths:
             data = "%s\0%s\0%s\0%s\0%s\0%s" % (store[path][ML_COL_FILE],
                                                store[path][ML_COL_SUBJ],
