@@ -26,11 +26,13 @@ import libxslt
 
 import gtk
 import gobject
+import pango
 
 from miscwidgets import make_choice, KeyedListWidget
 from utils import run_or_error
 from ui.main_common import ask_for_confirmation
 import platform
+import spell
 
 test = """
 <xml>
@@ -231,6 +233,43 @@ class ToggleWidget(FieldWidget):
         return str(self.widget.get_active())
 
 class MultilineWidget(FieldWidget):
+    # replicated from main_chat.py
+    def _do_spell(self, buffer):
+        import mainapp
+        config = mainapp.get_mainapp().config
+        if not config.getboolean("prefs", "check_spelling"):
+            return
+
+        cursor_mark = buffer.get_mark("insert")
+        start_iter = buffer.get_iter_at_mark(cursor_mark)
+        end_iter = buffer.get_iter_at_mark(cursor_mark)
+
+        if not start_iter.starts_word():
+            start_iter.backward_word_start()
+        if end_iter.inside_word():
+            end_iter.forward_word_end()
+
+        text = buffer.get_text(start_iter, end_iter)
+        word = text.strip()
+        print "Got: '%s' (%s)" % (text, word)
+
+        if not word:
+            return
+        
+        end_iter.backward_chars(len(text) - len(word))
+
+        if " " in word:
+            mispelled = False
+        else:
+            speller = spell.get_spell()
+            mispelled = bool(speller.lookup_word(word))
+        
+        if text.endswith(" ") and mispelled:
+            buffer.apply_tag_by_name("misspelled", start_iter, end_iter)
+        else:
+            buffer.remove_tag_by_name("misspelled", start_iter, end_iter)
+
+
     def __init__(self, node):
         FieldWidget.__init__(self, node)
 
@@ -241,10 +280,18 @@ class MultilineWidget(FieldWidget):
 
         self.buffer = gtk.TextBuffer()
         self.buffer.set_text(text)
+        self.buffer.connect("changed", self._do_spell)
         self.widget = gtk.TextView(self.buffer)
         self.widget.show()
         self.widget.set_size_request(175, 200)
         self.widget.set_wrap_mode(gtk.WRAP_WORD)
+
+        tags = self.buffer.get_tag_table()
+        tag = gtk.TextTag("misspelled")
+        tag.set_property("underline", pango.UNDERLINE_SINGLE)
+        tag.set_property("underline-set", True)
+        tag.set_property("foreground", "red")
+        tags.add(tag)
 
     def make_container(self):
         vbox = gtk.VBox(False, 2)
