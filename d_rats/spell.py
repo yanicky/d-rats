@@ -101,7 +101,7 @@ def __do_fly_spell(buffer):
 
     text = buffer.get_text(start_iter, end_iter)
     word = text.strip()
-    print "Got: '%s' (%s)" % (text, word)
+    #print "Got: '%s' (%s)" % (text, word)
 
     if not word:
         return
