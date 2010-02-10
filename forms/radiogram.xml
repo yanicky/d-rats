@@ -32,11 +32,11 @@
 </field>
 <field id='time'>
 <caption>Time</caption>
-<entry type='time'>15:12:46</entry>
+<entry type='time'></entry>
 </field>
 <field id='date'>
 <caption>Date</caption>
-<entry type='date'>08-Mar-2008</entry>
+<entry type='date'></entry>
 </field>
 <field id='recip'>
 <caption>To</caption>
@@ -60,11 +60,11 @@
 </field>
 <field id='recv_t'>
 <caption>Received Time</caption>
-<entry type='time'>15:12:46</entry>
+<entry type='time'></entry>
 </field>
 <field id='recv_d'>
 <caption>Received Date</caption>
-<entry type='date'>08-Mar-2008</entry>
+<entry type='date'></entry>
 </field>
 <field id='sent_to'>
 <caption>Sent To</caption>
@@ -72,11 +72,11 @@
 </field>
 <field id='sent_t'>
 <caption>Sent Time</caption>
-<entry type='time'>15:12:46</entry>
+<entry type='time'></entry>
 </field>
 <field id='sent_d'>
 <caption>Sent Date</caption>
-<entry type='date'>08-Mar-2008</entry>
+<entry type='date'></entry>
 </field>
 </form>
 </xml>
