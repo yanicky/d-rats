@@ -742,8 +742,8 @@ class MainApp(object):
         if not account:
             self.msgrouter.trigger()
         elif account == "@WL2K":
-            mt = wl2k.WinLinkDownloadThread(self.config,
-                                            self.config.get("user", "callsign"))
+            mt = wl2k.WinLinkThread(self.config,
+                                    self.config.get("user", "callsign"))
             self.__connect_object(mt)
             mt.start()
         elif account in self.mail_threads.keys():

@@ -26,11 +26,13 @@ try:
     from email.mime.multipart import MIMEMultipart
     from email.mime.base import MIMEBase
     from email.mime.text import MIMEText
+    from email.message import Message
 except ImportError:
     # Python 2.4
     from email import MIMEMultipart
     from email import MIMEBase
     from email import MIMEText 
+    from email import Message 
 
 import gobject
 
@@ -38,6 +40,7 @@ import formgui
 import signals
 import emailgw
 import utils
+import wl2k
 
 CALL_TIMEOUT_RETRY = 300
 
@@ -252,12 +255,15 @@ class MessageRouter(gobject.GObject):
             return (time.time() - station.get_heard()) > ttl
 
         while True:
+            # Choose the @route for @dst
+
             if ";" in dst:
                 # Gratuitous routing takes precedence
                 route = gratuitous_next_hop(dst, path)
                 print "Route for %s: %s (%s)" % (dst, route, path)
                 break
-            elif "@" in dst and dst not in invalid and\
+            elif "@" in dst and dst not in invalid and \
+                    not ":" in dst and \
                     emailgw.validate_incoming(self.__config, src, dst):
                 # Out via email
                 route = dst
@@ -270,11 +276,17 @@ class MessageRouter(gobject.GObject):
             elif routes.has_key("*") and routes["*"] not in invalid:
                 # Default route
                 route = routes["*"]
+            elif dst.upper().startswith("WL2K:"):
+                route = dst
             else:
                 route = None
                 break
 
-            if route != dst and route in path:
+            # Validate the @route
+
+            if route.upper().startswith("WL2K:"):
+                break # WL2K is easy
+            elif route != dst and route in path:
                 print "Route %s in path" % route
                 invalid.append(route)
                 route = None # Don't route to the same location twice
@@ -339,6 +351,28 @@ class MessageRouter(gobject.GObject):
 
         return msg
 
+    def _form_to_wl2k_em(self, dst, msgfn):
+        form = formgui.FormFile(msgfn)
+
+        if form.id != "email":
+            raise Exception("WL2K support requires email type message")
+
+        payload = form.get_field_value("message")
+
+        mid = time.strftime("D%H%M%S") + self.__config.get("user", "callsign")
+
+        msg = "Mid: %s\r\n" % mid + \
+            "Subject: %s\r\n" % form.get_subject_string() + \
+            "From: %s\r\n" % form.get_path_src() + \
+            "To: %s\r\n" % dst + \
+            "Body: %i\r\n" % len(payload) + \
+            "Date: %s\r\n" % time.strftime("%Y/%m/%d %H:%M", time.gmtime()) + \
+            "\r\n" + \
+            payload + "\r\n" + \
+            "\r\n"
+
+        return msg
+
     def _route_via_email(self, call, msgfn):
         server = self.__config.get("settings", "smtp_server")
         replyto = self.__config.get("settings", "smtp_replyto")
@@ -381,6 +415,22 @@ class MessageRouter(gobject.GObject):
 
         return True
 
+    def _route_via_wl2k(self, src, dst, msgfn):
+        foo, addr = dst.split(":")
+        msg = self._form_to_wl2k_em(addr, msgfn)
+
+        def complete(thread, status, error):
+            if status:
+                self._emit("form-sent", -1, msgfn)
+            else:
+                print "Failed to send via WL2K: %s" % error
+
+        mt = wl2k.WinLinkThread(self.__config, src, send_msgs=[msg])
+        mt.connect("mail-thread-complete", complete)
+        mt.start()
+
+        return True
+
     def _route_message(self, msg, slist, routes):
         form = formgui.FormFile(msg)
         path = form.get_path()
@@ -394,6 +444,8 @@ class MessageRouter(gobject.GObject):
 
         if not route:
             pass
+        elif route.upper().startswith("WL2K:"):
+            routed = self._route_via_wl2k(src, route, msg)
         elif "@" in src and "@" in dst:
             # Don't route a message from email to email
             pass

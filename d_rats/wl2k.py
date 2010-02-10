@@ -7,12 +7,17 @@ import shutil
 import email
 import threading
 import gobject
+import struct
+import time
+import re
 
 sys.path.insert(0, "..")
 
 from d_rats import version
 from d_rats import platform
 from d_rats import formgui
+from d_rats import utils
+from d_rats.ddt2 import calc_checksum
 
 FBB_BLOCK_HDR = 1
 FBB_BLOCK_DAT = 2
@@ -69,20 +74,32 @@ def run_lzhuf(cmd, data):
 def run_lzhuf_decode(data):
     return run_lzhuf("d", data[2:])
 
-class WinLinkMessage:
-    def __init__(self, header):
-        fc, self.__type, self.__id, us, cs, off = header.split()
-        self.__usize = int(us)
-        self.__csize = int(cs)
+def run_lzhuf_encode(data):
+    lzh = run_lzhuf("e", data)
+    lzh = struct.pack("<H", calc_checksum(lzh)) + lzh
+    return lzh
 
+class WinLinkMessage:
+    def __init__(self, header=None):
         self.__name = ""
         self.__content = ""
+        self.__usize = self.__csize = 0
+        self.__id = ""
+        self.__type = "P"
 
-        if int(off) != 0:
-            raise Exception("Offset support not implemented")
+        if header:
+            fc, self.__type, self.__id, us, cs, off = header.split()
+            self.__usize = int(us)
+            self.__csize = int(cs)
+
+            if int(off) != 0:
+                raise Exception("Offset support not implemented")
 
     def __decode_lzhuf(self, data):
         return run_lzhuf_decode(data)
+
+    def __encode_lzhuf(self, data):
+        return run_lzhuf_encode(data)
 
     def read_from_socket(self, s):
         data = ""
@@ -116,7 +133,11 @@ class WinLinkMessage:
                 i += size
             elif t == FBB_BLOCK_EOF:
                 cs = size
-                # FIXME: Check this?
+                for i in data:
+                    cs += ord(i)
+                if (cs % 256) != 0:
+                    print "Ack! %i left from cs %i" % (cs, size)
+                
                 break
 
         print "Got data: %i bytes" % len(data)
@@ -130,11 +151,46 @@ class WinLinkMessage:
             print "Uncompressed size %i != %i" % (len(self.__content),
                                                   self.__usize)
 
+    def send_to_socket(self, s):
+        data = self.__lzh_content
+
+        # filename \0 length(0) \0
+        header = self.__name + "\x00" + chr(len(data) & 0xFF) + "\x00"
+        s.send(struct.pack("BB", FBB_BLOCK_HDR, len(header)) + header)
+
+        sum = 0
+        while data:
+            chunk = data[:128]
+            data = data[128:]
+
+            for i in chunk:
+                sum += ord(i)
+
+            s.send(struct.pack("BB", FBB_BLOCK_DAT, len(chunk)) + chunk)
+
+        # Checksum, mod 256, two's complement
+        sum = (~sum & 0xFF) + 1
+        s.send(struct.pack("BB", FBB_BLOCK_EOF, sum))
+
     def get_content(self):
         return self.__content
 
+    def set_content(self, content, name="message"):
+        self.__name = name
+        self.__content = content
+        self.__lzh_content = self.__encode_lzhuf(content)
+        self.__usize = len(self.__content)
+        self.__csize = len(self.__lzh_content)
+
     def get_id(self):
         return self.__id
+
+    def set_id(self, id):
+        self.__id = id
+
+    def get_proposal(self):
+        return "FC %s %s %i %i 0" % (self.__type, self.__id,
+                                     self.__usize, self.__csize)
 
 class WinLinkTelnet:
     def __init__(self, callsign, server="server.winlink.org", port=8772):
@@ -232,7 +288,41 @@ class WinLinkTelnet:
     def get_message(self, index):
         return self.__messages[index]
 
-class WinLinkDownloadThread(threading.Thread, gobject.GObject):
+    def send_messages(self, messages):
+        if len(messages) != 1:
+            raise Exception("Sorry, batch not implemented yet")
+
+        self.__connect()
+        self.__login()
+
+        cs = 0
+        for msg in messages:
+            p = msg.get_proposal()
+            for i in p:
+                cs += ord(i)
+            cs += ord("\r")
+            self.__send(p)
+
+        cs = ((~cs & 0xFF) + 1)
+        self.__send("F> %02X" % cs)
+        resp = self.__recv()
+
+        if not resp.startswith("FS"):
+            raise Exception("Error talking to server: %s" % resp)
+
+        fs, accepts = resp.split()
+        if len(accepts) != len(messages):
+            raise Exception("Server refused some of my messages?!")
+
+        for msg in messages:
+            msg.send_to_socket(self.__socket)
+
+        resp = self.__recv()
+        self.__disconnect()
+
+        return 1
+
+class WinLinkThread(threading.Thread, gobject.GObject):
     __gsignals__ = {
         "mail-thread-complete" : (gobject.SIGNAL_RUN_LAST, gobject.TYPE_NONE,
                                   (gobject.TYPE_BOOLEAN, gobject.TYPE_STRING)),
@@ -242,7 +332,7 @@ class WinLinkDownloadThread(threading.Thread, gobject.GObject):
     def _emit(self, *args):
         gobject.idle_add(self.emit, *args)
 
-    def __init__(self, config, callsign, callssid=None):
+    def __init__(self, config, callsign, callssid=None, send_msgs=[]):
         threading.Thread.__init__(self)
         gobject.GObject.__init__(self)
 
@@ -252,6 +342,7 @@ class WinLinkDownloadThread(threading.Thread, gobject.GObject):
         self.__config = config
         self.__callsign = callsign
         self.__callssid = callssid
+        self.__send_msgs = send_msgs
 
     def __create_form(self, msg):
         mail = email.message_from_string(msg.get_content())
@@ -283,7 +374,7 @@ class WinLinkDownloadThread(threading.Thread, gobject.GObject):
         form.add_path_element(self.__config.get("user", "callsign"))
         form.save_to(formfn)
 
-    def run(self):
+    def _run_incoming(self):
         server = self.__config.get("prefs", "msg_wl2k_server")
         wl = WinLinkTelnet(self.__callssid, server)
         count = wl.get_messages()
@@ -296,12 +387,59 @@ class WinLinkDownloadThread(threading.Thread, gobject.GObject):
         else:
             result = "No messages"
 
+        return result
+
+    def _run_outgoing(self):
+        server = self.__config.get("prefs", "msg_wl2k_server")
+        wl = WinLinkTelnet(self.__callssid, server)
+        for mt in self.__send_msgs:
+
+            m = re.search("Mid: (.*)\r\nSubject: (.*)\r\n", mt)
+            if m:
+                mid = m.groups()[0]
+                subj = m.groups()[1]
+            else:
+                mid = time.strftime("%H%M%S%d%m%y_DRATS")
+                subj = "Message"
+
+            wlm = WinLinkMessage()
+            wlm.set_id(mid)
+            wlm.set_content(mt, subj)
+            print m
+            print mt
+            wl.send_messages([wlm])
+
+        return "Complete"
+
+    def run(self):
+        if self.__send_msgs:
+            result = self._run_outgoing()
+        else:
+            result = self._run_incoming()
+
         self._emit("mail-thread-complete", True, result)
 
 if __name__=="__main__":
-    wl = WinLinkTelnet("CALL", "sandiego.winlink.org")
-    count = wl.get_messages()
-    print "%i messages" % count
-    for i in range(0, count):
-        print "--Message %i--\n%s\n--End--\n\n" % (i, wl.get_message(i))
+    if False:
+      wl = WinLinkTelnet("KK7DS", "sandiego.winlink.org")
+      count = wl.get_messages()
+      print "%i messages" % count
+      for i in range(0, count):
+          print "--Message %i--\n%s\n--End--\n\n" % (i, wl.get_message(i))
+    else:
+        text = "This is a test!"
+        _m = """Mid: 12345_KK7DS\r
+From: KK7DS\r
+To: dsmith@danplanet.com\r
+Subject: This is a test\r
+Body: %i\r
+\r
+%s
+""" % (len(text), text)
+
+        m = WinLinkMessage()
+        m.set_id("1234_KK7DS")
+        m.set_content(_m)
+        wl = WinLinkTelnet("KK7DS")
+        wl.send_messages([m])
 
