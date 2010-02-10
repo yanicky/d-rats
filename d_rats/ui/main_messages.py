@@ -268,7 +268,7 @@ class MessageFolders(MainWindowElement):
 
         return view.get_selection().get_selected()
 
-    def _mh(self, _action, store, iter):
+    def _mh(self, _action, store, iter, view):
         action = _action.get_name()
 
         if action == "delete":
@@ -283,6 +283,24 @@ class MessageFolders(MainWindowElement):
             store.insert(iter, 0, ("New Folder", self.folder_pixbuf))
             parent = self.get_folder(self._get_folder_by_iter(store, iter))
             self._create_folder(parent, "New Folder")
+        elif action == "rename":
+            info = self.get_folder(self._get_folder_by_iter(store, iter))
+
+            new_text = prompt_for_string("Rename folder `%s' to:" % info.name(),
+                                         orig=info.name())
+            if not new_text:
+                return
+            elif new_text == info.name():
+                return
+
+            try:
+                info.rename(new_text)
+            except Exception, e:
+                display_error("Unable to rename: %s" % e)
+                return
+
+            store.set(iter, 0, new_text)
+
 
     def _select_folder(self, view, event):
         store, iter = self._get_selected_folder(view, event)
@@ -291,11 +309,21 @@ class MessageFolders(MainWindowElement):
         self.emit("user-selected-folder", self._get_folder_by_iter(store, iter))
 
     def _folder_menu(self, view, event):
+        x = int(event.x)
+        y = int(event.y)
+        time = event.time
+        pthinfo = view.get_path_at_pos(x, y)
+        if pthinfo is not None:
+            path, col, cellx, celly = pthinfo
+            view.grab_focus()
+            view.set_cursor(path, col, 0)
+
         xml = """
 <ui>
   <popup name="menu">
     <menuitem action="delete"/>
     <menuitem action="create"/>
+    <menuitem action="rename"/>
   </popup>
 </ui>
 """
@@ -307,12 +335,13 @@ class MessageFolders(MainWindowElement):
 
         ag = gtk.ActionGroup("menu")
         actions = [("delete", _("Delete"), gtk.STOCK_DELETE, can_del),
-                   ("create", _("Create"), gtk.STOCK_NEW, True)]
+                   ("create", _("Create"), gtk.STOCK_NEW, True),
+                   ("rename", _("Rename"), None, can_del)]
 
         for action, label, stock, sensitive in actions:
             a = gtk.Action(action, label, None, stock)
             a.set_sensitive(sensitive)
-            a.connect("activate", self._mh, store, iter)
+            a.connect("activate", self._mh, store, iter, view)
             ag.add_action(a)
 
         uim = gtk.UIManager()
@@ -397,7 +426,7 @@ class MessageFolders(MainWindowElement):
         folderlist.append_column(col)
 
         rnd = gtk.CellRendererText()
-        rnd.set_property("editable", True)
+        #rnd.set_property("editable", True)
         rnd.connect("edited", self._folder_rename, store)
         col = gtk.TreeViewColumn("", rnd, text=0)
         folderlist.append_column(col)
