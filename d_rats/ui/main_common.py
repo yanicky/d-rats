@@ -72,11 +72,12 @@ def prompt_for_station(_station_list, config, parent=None):
     else:
         return None, None
 
-def prompt_for_string(message, parent=None):
+def prompt_for_string(message, parent=None, orig=""):
     d = gtk.MessageDialog(buttons=gtk.BUTTONS_OK_CANCEL,
                           parent=parent,
                           message_format=message)
     e = gtk.Entry()
+    e.set_text(orig)
     e.show()
     d.vbox.pack_start(e, 1, 1, 1)
 
