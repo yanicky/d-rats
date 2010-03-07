@@ -60,10 +60,11 @@ xml_escapes = [("<", "&lt;"),
                ('"', "&quot;"),
                ("'", "&apos;")]
 
-RESPONSE_SEND   = -900
-RESPONSE_SAVE   = -901
-RESPONSE_REPLY  = -902
-RESPONSE_DELETE = -903
+RESPONSE_SEND     = -900
+RESPONSE_SAVE     = -901
+RESPONSE_REPLY    = -902
+RESPONSE_DELETE   = -903
+RESPONSE_SEND_VIA = -904
 
 style = gtk.Style()
 for i in [style.fg, style.bg, style.base]:
@@ -1032,6 +1033,8 @@ class FormDialog(FormFile, gtk.Dialog):
             self.response(RESPONSE_SAVE)
         def send(but):
             self.response(RESPONSE_SEND)
+        def svia(but):
+            self.response(RESPONSE_SEND_VIA)
         def reply(but):
             self.response(RESPONSE_REPLY)
         def delete(but):
@@ -1044,24 +1047,26 @@ class FormDialog(FormFile, gtk.Dialog):
             if response == gtk.RESPONSE_DELETE_EVENT:
                 dialog.emit_stop_by_name("response")
 
-        send_tip = "Save this message to the Outbox and send it immediately " +\
+        send_tip = "Place this message in the Outbox for sending"
+        svia_tip = "Place this message in the Outbox and send it directly " +\
             "to a specific station for relay"
-        save_tip = "Save this message to the Outbox for automatic sending " +\
-            "to the destination station, when it becomes available"
+        save_tip = "Save changes to this message"
         prnt_tip = "View the printable version of this form"
         rply_tip = "Compose a reply to this message"
         dele_tip = "Delete this message"
 
         if editable:
             buttons = [
-                (gtk.STOCK_SAVE,  "",        save_tip, save),
-                ("msg-send.png",  _("Send"), send_tip, send),
-                (gtk.STOCK_PRINT, "",        prnt_tip, self.but_printable),
+                (gtk.STOCK_SAVE, "",            save_tip, save),
+                ("msg-send.png", _("Send"),     send_tip, send),
+                ("msg-send-via.png", _("Send via"), svia_tip, svia),
+                (gtk.STOCK_PRINT, "",           prnt_tip, self.but_printable),
                 ]
         else:
             buttons = [
                 ("msg-reply.png", _("Reply"),    rply_tip, reply),
-                ("msg-send.png",  _("Forward"),  send_tip, send),
+                #("msg-send.png",  _("Forward"),  send_tip, send),
+                ("msg-send-via.png",  _("Forward via"), svia_tip, svia),
                 (gtk.STOCK_PRINT, "",            prnt_tip, self.but_printable),
                 (gtk.STOCK_DELETE, "",           dele_tip, delete),
                 ]
