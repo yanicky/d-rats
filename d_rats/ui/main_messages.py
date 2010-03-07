@@ -41,6 +41,9 @@ from d_rats import wl2k
 
 _FOLDER_CACHE = {}
 
+BASE_FOLDERS = [_("Inbox"), _("Outbox"), _("Sent"), _("Trash"), _("Drafts")]
+
+
 def mkmsgid(callsign):
     r = random.SystemRandom().randint(0,100000)
     return "%s.%x.%x" % (callsign, int(time.time()) - 1114880400, r)
@@ -242,10 +245,9 @@ class MessageFolders(MainWindowElement):
             iter = store.iter_next(iter)
 
     def _ensure_default_folders(self):
-        defaults = [_("Inbox"), _("Outbox"), _("Sent"), _("Trash")]
         root = MessageFolderInfo(self._folders_path())
 
-        for folder in defaults:
+        for folder in BASE_FOLDERS:
             try:
                 info = self._create_folder(root, folder)
                 print info.subfolders()
@@ -330,8 +332,7 @@ class MessageFolders(MainWindowElement):
         store, iter = self._get_selected_folder(view, event)
         folder = self._get_folder_by_iter(store, iter)
 
-        base_folders = ["Inbox", "Outbox", "Sent", "Trash"]
-        can_del = bool(folder and (folder not in base_folders))
+        can_del = bool(folder and (folder not in BASE_FOLDERS))
 
         ag = gtk.ActionGroup("menu")
         actions = [("delete", _("Delete"), gtk.STOCK_DELETE, can_del),
@@ -392,12 +393,11 @@ class MessageFolders(MainWindowElement):
             dst.set_msg_recip(fn, recp)
 
     def _folder_rename(self, render, path, new_text, store):
-        base_folders = ["Inbox", "Outbox", "Sent", "Trash"]
         iter = store.get_iter(path)
         orig = store.get(iter, 0)[0]
         if orig == new_text:
             return
-        elif orig in base_folders:
+        elif orig in BASE_FOLDERS:
             return
         info = self.get_folder(self._get_folder_by_iter(store, iter))
         try:
@@ -476,11 +476,15 @@ class MessageList(MainWindowElement):
         form = formgui.FormDialog(_("Form"), filename, parent=parent)
         form.configure(self._config)
 
-        def form_done(dlg, response):
+        def form_done(dlg, response, info):
+            saveable_actions = [formgui.RESPONSE_SAVE,
+                                formgui.RESPONSE_SEND,
+                                formgui.RESPONSE_SEND_VIA,
+                                ]
             dlg.hide()
             dlg.update_dst()
             msgrouting.msg_unlock(filename)
-            if response == formgui.RESPONSE_SAVE:
+            if response in saveable_actions:
                 print "Saving to %s" % filename
                 dlg.save_to(filename)
             else:
@@ -490,7 +494,10 @@ class MessageList(MainWindowElement):
             if cb:
                 cb(response, cbdata)
             if response == formgui.RESPONSE_SEND:
-                self.emit("prompt-send-form", filename)
+                self.move_message(info, filename, _("Outbox"))
+            elif response == formgui.RESPONSE_SEND_VIA:
+                fn = self.move_message(info, filename, _("Outbox"))
+                self.emit("prompt-send-form", fn)
             elif response == formgui.RESPONSE_REPLY:
                 self.emit("reply-form", filename)
             elif response == formgui.RESPONSE_DELETE:
@@ -498,7 +505,7 @@ class MessageList(MainWindowElement):
 
         form.build_gui(editable)
         form.show()
-        form.connect("response", form_done)
+        form.connect("response", form_done, self.current_info)
 
     def _open_msg(self, view, path, col):
         store = view.get_model()
@@ -514,7 +521,7 @@ class MessageList(MainWindowElement):
             else:
                 print "Not current, not updating"
 
-        editable = "Outbox" in path # Dirty hack
+        editable = "Outbox" in path or "Drafts" in path # Dirty hack
         self.open_msg(path, editable, close_msg_cb, self.current_info)
         self.current_info.set_msg_read(path, True)
         iter = self.iter_from_fn(path)
@@ -702,15 +709,26 @@ class MessageList(MainWindowElement):
             store.remove(iter)
             self.current_info.delete(fn)
 
+    def move_message(self, info, path, new_folder):
+        dest = MessageFolderInfo(self._folder_path(new_folder))
+        try:
+            newfn = dest.create_msg(os.path.basename(path))
+        except Exception:
+            # Same folder, or duplicate message id
+            return path
+
+        print "Moving %s -> %s" % (path, newfn)
+        shutil.copy(path, newfn)
+        info.delete(path)
+
+        if info == self.current_info:
+            self.refresh()
+
+        return newfn
+
     def move_selected_messages(self, folder):
-        dest = MessageFolderInfo(self._folder_path(folder))
         for msg in self.get_selected_messages():
-            newfn = dest.create_msg(os.path.basename(msg))
-            print "Moving %s -> %s" % (msg, newfn)
-            shutil.copy(msg, newfn)
-            self.current_info.delete(msg)
-            
-        self.refresh()
+            self.move_message(self.current_info, msg, folder)
 
     def get_selected_messages(self):
         msglist, = self._getw("msglist")
@@ -752,7 +770,7 @@ class MessagesTab(MainWindowTab):
                 return
 
         current = self._messages.current_info.name()
-        self._folders.select_folder(_("Outbox"))
+        self._folders.select_folder(_("Drafts"))
 
         tstamp = time.strftime("form_%m%d%Y_%H%M%S.xml")
         newfn = self._messages.current_info.create_msg(tstamp)
@@ -807,9 +825,10 @@ class MessagesTab(MainWindowTab):
                 return
     
             current = self._messages.current_info.name()
-            self._folders.select_folder(_("Outbox"))
     
             fn = sel[0]
+
+        self._folders.select_folder(_("Drafts"))
 
         oform = formgui.FormFile(fn)
         tmpl = os.path.join(self._config.form_source_dir(), "%s.xml" % oform.id)
@@ -849,11 +868,12 @@ class MessagesTab(MainWindowTab):
 
         def close_msg_cb(response, info):
             if self._messages.current_info == info:
-                if response != gtk.RESPONSE_CANCEL:
-                    self._messages.refresh(newfn)
-                else:
+                print "Respone was %i (%i)" % (response, gtk.RESPONSE_CANCEL)
+                if response in [gtk.RESPONSE_CANCEL, gtk.RESPONSE_CLOSE]:
                     info.delete(newfn)
                     self._folders.select_folder(current)
+                else:
+                    self._messages.refresh(newfn)
 
         self._messages.open_msg(newfn, True,
                                 close_msg_cb, self._messages.current_info)
@@ -1001,7 +1021,7 @@ class MessagesTab(MainWindowTab):
         unread = lambda b: self._mrk_msg(b, False)
 
         buttons = [("msg-new.png", _("New"), self._new_msg),
-                   ("msg-send.png", _("Forward"), self._snd_msg),
+                   ("msg-send-via.png", _("Forward"), self._snd_msg),
                    ("msg-reply.png", _("Reply"), self._rpl_msg),
                    ("msg-delete.png", _("Delete"), self._del_msg),
                    ("msg-markread.png", _("Mark Read"), read),
