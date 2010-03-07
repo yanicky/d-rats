@@ -918,7 +918,8 @@ class MainApp(object):
             fname = os.path.basename(form)
             user_fname = os.path.join(userdir, fname)
             
-            if not os.path.exists(user_fname):
+            needupd = (os.path.getmtime(form) > os.path.getmtime(user_fname))
+            if not os.path.exists(user_fname) or needupd:
                 print "Installing dist form %s -> %s" % (fname, user_fname)
                 try:
                     shutil.copyfile(form, user_fname)
