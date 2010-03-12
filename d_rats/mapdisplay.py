@@ -1395,6 +1395,8 @@ class MapWindow(gtk.Window):
     def clear_map_sources(self):
         self.marker_list.clear()
         self.map_sources = []
+        self.points_visible = []
+        self.update_points_visible()
 
     def get_map_sources(self):
         return self.map_sources
