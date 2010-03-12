@@ -62,6 +62,7 @@ import pluginsrv
 import msgrouting
 import wl2k
 import inputdialog
+import version
 
 from ui import main_events
 
@@ -771,6 +772,13 @@ class MainApp(object):
                     print "Failed to attach signal %s" % signal
                     raise
 
+    def _announce_self(self):
+        print ("-" * 75)
+        print "D-RATS v%s starting at %s" % (version.DRATS_VERSION,
+                                             time.asctime())
+        print platform.get_platform()
+        print ("-" * 75)
+
     def __init__(self, **args):
         self.handlers = {
             "status" : self.__status,
@@ -821,6 +829,8 @@ class MainApp(object):
 
         self.config = config.DratsConfig(self)
         self._refresh_lang()
+
+        self._announce_self()
 
         message = _("Since this is your first time running D-RATS, " +
                     "you will be taken directly to the configuration " +
