@@ -599,6 +599,10 @@ class MainApp(object):
 
         self.mainwindow.tabs["stations"].saw_station(fix.station, port)
 
+        if self.config.getboolean("settings", "timestamp_positions"):
+            fix.station = "%s.%s" % (fix.station,
+                                     time.strftime("%Y%m%d%H%M%S"))
+
         point = map_sources.MapStation(fix.station,
                                        fix.latitude,
                                        fix.longitude,
