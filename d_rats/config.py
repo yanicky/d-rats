@@ -120,6 +120,7 @@ _DEF_SETTINGS = {
     "default_gps_comment" : "D-RATS Station",
     "http_proxy" : "",
     "station_msg_ttl" : "3600",
+    "timestamp_positions" : "False",
 }
 
 _DEF_STATE = {
@@ -811,6 +812,10 @@ class DratsGPSPanel(DratsPanel):
         but = gtk.Button(_("DPRS"))
         but.connect("clicked", gps_comment_from_dprs, val)
         self.mv(_("Default GPS comment"), val, but)
+
+        val = DratsConfigWidget(config, "settings", "timestamp_positions")
+        val.add_bool()
+        self.mv(_("Timestamp Positions"), val)
 
 class DratsAppearancePanel(DratsPanel):
     def __init__(self, config):
