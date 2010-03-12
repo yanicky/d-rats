@@ -354,11 +354,14 @@ class MapFileSource(MapSource):
 
     enumerate = Callable(_enumerate)
 
-    def _open_source_by_name(config, name):
+    def _open_source_by_name(config, name, create=False):
         dirpath = os.path.join(config.platform.config_dir(),
                                "static_locations")
 
         path = os.path.join(dirpath, "%s.csv" % name)
+
+        if create and not os.path.exists(path):
+            f = file(path, "a").close()
 
         return MapFileSource(name, "Static file", path)
 
@@ -397,7 +400,7 @@ class MapFileSource(MapSource):
                                                 os.linesep))
         f.close()                  
 
-    def __init__(self, name, description, fn):
+    def __init__(self, name, description, fn, create=False):
         MapSource.__init__(self, name, description)
 
         self._fn = fn

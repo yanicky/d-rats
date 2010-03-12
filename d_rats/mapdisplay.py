@@ -1359,6 +1359,12 @@ class MapWindow(gtk.Window):
 
         self.map.queue_draw()
 
+    def get_map_source(self, name):
+        for source in self.get_map_sources():
+            if source.get_name() == name:
+                return source
+        return None
+
     def add_map_source(self, source):
         self.map_sources.append(source)
         self.marker_list.add_item(None,

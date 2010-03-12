@@ -599,9 +599,29 @@ class MainApp(object):
 
         self.mainwindow.tabs["stations"].saw_station(fix.station, port)
 
+        def source_for_station(station):
+            s = self.map.get_map_source(station)
+            if s:
+                return s
+
+            try:
+                s = map_sources.MapFileSource.open_source_by_name(self.config,
+                                                                  station,
+                                                                  True)
+            except Exception, e:
+                # Unable to create or add so use "Stations" overlay
+                return self.stations_overlay
+
+            self.map.add_map_source(s)
+
+            return s
+
         if self.config.getboolean("settings", "timestamp_positions"):
+            source = source_for_station(fix.station)
             fix.station = "%s.%s" % (fix.station,
                                      time.strftime("%Y%m%d%H%M%S"))
+        else:
+            source = self.stations_overlay
 
         point = map_sources.MapStation(fix.station,
                                        fix.latitude,
@@ -609,8 +629,8 @@ class MainApp(object):
                                        fix.altitude,
                                        fix.comment)
         point.set_icon_from_aprs_sym(fix.APRSIcon)
-        self.stations_overlay.add_point(point)
-        self.stations_overlay.save()
+        source.add_point(point)
+        source.save()
 
     def __station_status(self, object, sta, stat, msg, port):
         self.mainwindow.tabs["stations"].saw_station(sta, port, stat, msg)
