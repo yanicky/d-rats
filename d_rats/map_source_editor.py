@@ -84,8 +84,11 @@ class MapSourcesEditor(object):
         return choice
 
     def __init__(self, config):
-        wtree = gtk.glade.XML(config.ship_obj_fn("ui/mainwindow.glade"),
-                              "srcs_dialog", "D-RATS")
+        fn = config.ship_obj_fn("ui/mainwindow.glade")
+        if not os.path.exists(fn):
+            print fn
+            raise Exception("Unable to load UI file")
+        wtree = gtk.glade.XML(fn, "srcs_dialog", "D-RATS")
 
         self.__config = config
         self.__dialog = wtree.get_widget("srcs_dialog")
@@ -124,9 +127,11 @@ class MapSourceEditor(object):
         self._config = config
         self.__source = source
 
-        self._wtree = gtk.glade.XML(config.ship_obj_fn("ui/mainwindow.glade"),
-                                    "src_dialog", "D-RATS")
-
+        fn = config.ship_obj_fn("ui/mainwindow.glade")
+        if not os.path.exists(fn):
+            print fn
+            raise Exception("Unable to load UI file")
+        self._wtree = gtk.glade.XML(fn, "src_dialog", "D-RATS")
 
         self.__dialog = self._wtree.get_widget("src_dialog")
         self._name = self._wtree.get_widget("src_name")
