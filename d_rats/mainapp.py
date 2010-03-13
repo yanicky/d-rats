@@ -713,8 +713,16 @@ class MainApp(object):
         is_dst = msgrouting.is_sendable_dest(myc, dst)
         nextst = msgrouting.gratuitous_next_hop(dst, pth) or dst
         bounce = "@" in src and "@" in dst
+        isseen = myc in f.get_path()[:-1]
 
-        if fwd_on and is_dst and not bounce:
+        print "Decision: " + \
+            "fwd:%s " % fwd_on + \
+            "sendable:%s " % is_dst + \
+            "next:%s " % nextst + \
+            "bounce:%s " % bounce + \
+            "seen:%s " % isseen
+
+        if fwd_on and is_dst and not bounce and not isseen:
             msg += " (%s %s)" % (_("forwarding to"), nextst)
             msgrouting.move_to_outgoing(self.config, fn)
             refresh_folder = "Outbox"
