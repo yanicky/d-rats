@@ -30,6 +30,7 @@ class Platform(object):
 
     def __init__(self, basepath):
         self._base = basepath
+        self._source_dir = os.path.abspath(".")
         self._connected = True
 
     def __str__(self):
@@ -44,7 +45,7 @@ class Platform(object):
         return self._base
 
     def source_dir(self):
-        return os.path.abspath(".")
+        return self._source_dir
 
     def log_dir(self):
         logdir = os.path.join(self.config_dir(), "logs")
@@ -177,7 +178,7 @@ class UnixPlatform(Platform):
         elif "dist-packages" in find_me():
             return "/usr/share/d-rats"
         else:
-            return os.path.abspath(".")
+            return self._source_dir
 
     def default_dir(self):
         return os.path.abspath(os.getenv("HOME"))
@@ -289,7 +290,7 @@ class MacOSXPlatform(UnixPlatform):
         if "site-packages" in find_me():
             return "../Resources"
         else:
-            return os.path.abspath(".")
+            return self._source_dir
 
 class Win32Platform(Platform):
     def __init__(self, basepath=None):
