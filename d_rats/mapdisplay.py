@@ -1540,6 +1540,12 @@ class MapWindow(gtk.Window):
                     source.add_point(point)
                     source.save()
                     return
+            # No matching group
+            s = map_sources.MapFileSource.open_source_by_name(self.config,
+                                                              group,
+                                                              True)
+            s.add_point(point)
+            self.add_map_source(s)
 
         self.add_popup_handler(_("New marker here"), set_mark_at)
 

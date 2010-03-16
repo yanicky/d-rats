@@ -264,6 +264,10 @@ class WinLinkTelnet:
 
         return msgs
 
+    def __log_end(self):
+        while self.__recv():
+            pass
+
     def get_messages(self):
         self.__connect()
         self.__login()
@@ -317,7 +321,7 @@ class WinLinkTelnet:
         for msg in messages:
             msg.send_to_socket(self.__socket)
 
-        resp = self.__recv()
+        self.__log_end()
         self.__disconnect()
 
         return 1

@@ -605,6 +605,7 @@ class MainApp(object):
                 return s
 
             try:
+                print "Creating a map source for %s" % station
                 s = map_sources.MapFileSource.open_source_by_name(self.config,
                                                                   station,
                                                                   True)
