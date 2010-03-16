@@ -15,11 +15,15 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import re
+
 import gobject
 import gtk
 
 from d_rats import inputdialog, miscwidgets
 from d_rats import signals
+
+STATION_REGEX = "^[A-Z0-9- /_]+$"
 
 def ask_for_confirmation(question, parent=None):
     d = gtk.MessageDialog(buttons=gtk.BUTTONS_YES_NO,
@@ -63,8 +67,20 @@ def prompt_for_station(_station_list, config, parent=None):
     d.add_field(_("Station"), station)
     d.add_field(_("Port"), port)
 
-    res = d.run()
-    s = station.get_active_text().upper()
+    while True:
+        res = d.run()
+        if res != gtk.RESPONSE_OK:
+            break
+        s = station.get_active_text().upper()
+        if "@" in s:
+            display_error(_("You must enter a station callsign.  " +
+                            "You cannot use an email address here"), d)
+            continue
+        elif not re.match(STATION_REGEX, s):
+            display_error(_("Invalid character in callsign"), d)
+            continue
+        break
+
     p = port.get_active_text()
     d.destroy()
     if res == gtk.RESPONSE_OK:
