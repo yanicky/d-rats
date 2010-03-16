@@ -23,6 +23,8 @@ import map_sources
 import map_source_editor
 import signals
 
+from ui.main_common import ask_for_confirmation
+
 from gps import GPSPosition, distance, value_with_units, DPRS_TO_APRS
 
 CROSSHAIR = "+"
@@ -1541,6 +1543,12 @@ class MapWindow(gtk.Window):
                     source.save()
                     return
             # No matching group
+                q = "%s %s %s" % \
+                    (_("Group"), group,
+                     _("does not exist.  Do you want to create it?"))
+            if not ask_for_confirmation(q):
+                return
+                                            
             s = map_sources.MapFileSource.open_source_by_name(self.config,
                                                               group,
                                                               True)
