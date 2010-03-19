@@ -496,8 +496,12 @@ class ChatTab(MainWindowTab):
         clear = self._wtree.get_widget("main_menu_clear")
         clear.connect("activate", self._clear)
 
-        dest.set_tooltip_text(_("Choose the port where chat " +
-                                "and QST messages will be sent"))
+        try:
+            dest.set_tooltip_text(_("Choose the port where chat " +
+                                    "and QST messages will be sent"))
+        except AttributeError:
+            # Old PyGTK doesn't have this
+            pass
 
         self.reconfigure()
 
