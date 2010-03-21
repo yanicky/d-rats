@@ -963,7 +963,7 @@ class FormDialog(FormFile, gtk.Dialog):
             fn = platform.get_platform().gui_open_file()
             if fn:
                 name = os.path.basename(fn)
-                f = file(fn)
+                f = file(fn, "rb")
                 data = f.read()
                 f.close()
                 self.add_attachment(name, data)
@@ -993,7 +993,7 @@ class FormDialog(FormFile, gtk.Dialog):
                 return
             fn = platform.get_platform().gui_save_file(default_name=name)
             if fn:
-                f = file(fn, "w")
+                f = file(fn, "wb")
                 data = self.get_attachment(name)
                 if not data:
                     raise Exception("Unable to extract attachment")
