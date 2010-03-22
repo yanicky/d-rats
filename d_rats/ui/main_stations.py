@@ -327,10 +327,13 @@ class StationsList(MainWindowTab):
 
         status, msg = self._getw("stations_status", "stations_smsg")
 
-        status.set_tooltip_text(_("This is the state other stations will " +
-                                  "see when requesting your status"))
-        msg.set_tooltip_text(_("This is the message other stations will " +
-                               "see when requesting your status"))
+        try:
+            status.set_tooltip_text(_("This is the state other stations will " +
+                                      "see when requesting your status"))
+            msg.set_tooltip_text(_("This is the message other stations will " +
+                                   "see when requesting your status"))
+        except AttributeError:
+            pass
 
         def set_status(cb):
             self.__status = cb.get_active_text()

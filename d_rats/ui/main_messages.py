@@ -975,13 +975,19 @@ class MessagesTab(MainWindowTab):
         menu = gtk.Menu()
 
         mi = gtk.MenuItem("Outbox")
-        mi.set_tooltip_text("Send messages in the Outbox")
+        try:
+            mi.set_tooltip_text("Send messages in the Outbox")
+        except AttributeError:
+            pass
         mi.connect("activate", self._sndrcv)
         mi.show()
         menu.append(mi)
 
         mi = gtk.MenuItem("WL2K")
-        mi.set_tooltip_text("Check Winlink messages")
+        try:
+            mi.set_tooltip_text("Check Winlink messages")
+        except AttributeError:
+            pass
         mi.connect("activate", self._sndrcv, "@WL2K")
         mi.show()
         menu.append(mi)
@@ -990,7 +996,10 @@ class MessagesTab(MainWindowTab):
             info = self._config.get("incoming_email", section).split(",")
             lab = "%s on %s" % (info[1], info[0])
             mi = gtk.MenuItem(lab)
-            mi.set_tooltip_text("Check for new mail on this account")
+            try:
+                mi.set_tooltip_text("Check for new mail on this account")
+            except AttributeError:
+                pass
             mi.connect("activate", self._sndrcv, section)
             mi.show()
             menu.append(mi)
@@ -1005,7 +1014,10 @@ class MessagesTab(MainWindowTab):
             msgtype = os.path.basename(i).replace(".xml", "")
             label = msgtype.replace("_", " ")
             mi = gtk.MenuItem(label)
-            mi.set_tooltip_text("Create a new %s form" % label)
+            try:
+                mi.set_tooltip_text("Create a new %s form" % label)
+            except AttributeError:
+                pass
             mi.connect("activate", self._new_msg, msgtype)
             mi.show()
             menu.append(mi)
@@ -1052,15 +1064,21 @@ class MessagesTab(MainWindowTab):
             if menus.has_key(i):
                 item = gtk.MenuToolButton(icon, l)
                 item.set_menu(menus[i])
-                item.set_arrow_tooltip_text("%s %s %s" % (_("More"),
-                                                          l,
-                                                          _("Options")))
+                try:
+                    item.set_arrow_tooltip_text("%s %s %s" % (_("More"),
+                                                              l,
+                                                              _("Options")))
+                except AttributeError:
+                    pass
             else:
                 item = gtk.ToolButton(icon, l)
             item.show()
             item.connect("clicked", f)
             if tips.has_key(l):
-                item.set_tooltip_text(tips[l])
+                try:
+                    item.set_tooltip_text(tips[l])
+                except AttributeError:
+                    pass
             tb.insert(item, c)
             c += 1
 

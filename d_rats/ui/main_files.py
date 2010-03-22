@@ -273,7 +273,10 @@ class FilesTab(MainWindowTab):
                 icon.show()
                 item = gtk.ToolButton(icon, l)
                 item.connect("clicked", f, d)
-                item.set_tooltip_text(l)
+                try:
+                    item.set_tooltip_text(l)
+                except AttributeError:
+                    pass
                 item.show()
                 tb.insert(item, c)
                 c += 1

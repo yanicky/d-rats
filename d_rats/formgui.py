@@ -1088,7 +1088,10 @@ class FormDialog(FormFile, gtk.Dialog):
                 icon.show()
                 ti = gtk.ToolButton(icon, lab)
             ti.show()
-            ti.set_tooltip_text(tip)
+            try:
+                ti.set_tooltip_text(tip)
+            except AttributeError:
+                pass
             ti.connect("clicked", func)
             tb.insert(ti, i)
             i += 1
