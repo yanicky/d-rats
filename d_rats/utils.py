@@ -275,3 +275,30 @@ def port_for_station(ports, station):
             return port
     return None
 
+def make_error_dialog(msg, stack, buttons, type, extra):
+    import gtk
+    d = gtk.MessageDialog(buttons=buttons, type=type)
+
+    if extra:
+        extra(d)
+
+    dvbox = gtk.VBox(False, 3)
+
+    sv = gtk.TextView()
+    sv.get_buffer().set_text(stack)
+
+    dvbox.pack_start(sv, 1, 1, 1)
+    sv.show()
+
+    se = gtk.Expander(_("Details"))
+    se.add(dvbox)
+    dvbox.show()
+
+    d.vbox.pack_start(se, 1, 1, 1)
+    se.show()
+
+    d.set_markup(msg)
+    r = d.run()
+    d.destroy()
+
+    return r

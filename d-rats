@@ -16,7 +16,54 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import sys
+import os
 from optparse import OptionParser
+
+import traceback
+import gtk
+
+from d_rats import utils
+
+def handle_exception(exctyp, value, tb):
+    if exctyp is KeyboardInterrupt:
+        return original_excepthook(exctyp, value, tb)
+
+    gtk.gdk.pointer_ungrab()
+    gtk.gdk.keyboard_ungrab()
+
+    _trace = traceback.format_exception(exctyp, value, tb)
+    trace = os.linesep.join(_trace)
+
+    msg = "D-RATS has encountered an error.  This may be non-fatal, so " + \
+    "you may click 'Ignore' below to attempt to continue running.  " + \
+    "Otherwise, click 'Quit' to terminate D-RATS now.  If you are planning " + \
+    "to file a bug for this issue, please click 'Debug Log' below and " + \
+    "include the contents in the bug tracker."
+
+    def extra(dialog):
+        dialog.add_button(_("Ignore"), gtk.RESPONSE_CLOSE);
+        dialog.add_button(gtk.STOCK_QUIT, gtk.RESPONSE_CANCEL);
+        dialog.add_button(_("Debug Log"), gtk.RESPONSE_HELP);
+        dialog.set_default_response(gtk.RESPONSE_CANCEL)
+
+    while True:
+        r = utils.make_error_dialog(msg, trace,
+                                    gtk.BUTTONS_NONE,
+                                    gtk.MESSAGE_ERROR,
+                                    extra=extra)
+        if r == gtk.RESPONSE_CANCEL:
+            sys.exit(1)
+        elif r == gtk.RESPONSE_CLOSE:
+            break
+        elif r == gtk.RESPONSE_HELP:
+            p = platform.get_platform()
+            p.open_text_file(p.config_file("debug.log"))
+
+
+def install_excepthook():
+    global original_excepthook
+    original_excepthook = sys.excepthook
+    sys.excepthook = handle_exception
 
 if __name__ == "__main__":
     o = OptionParser()
@@ -39,6 +86,8 @@ if __name__ == "__main__":
         platform.get_platform(opts.config)
 
     from d_rats import mainapp
+
+    install_excepthook()
 
     app = mainapp.MainApp(safe=opts.safe)
     if opts.profile:
