@@ -20,7 +20,7 @@ import gtk
 from miscwidgets import make_choice
 
 class TextInputDialog(gtk.Dialog):
-    def respond_ok(self, _):
+    def respond_ok(self, *args):
         self.response(gtk.RESPONSE_OK)
 
     def __init__(self, **args):
