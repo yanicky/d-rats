@@ -67,11 +67,14 @@ class ChatQM(MainWindowElement):
         d.destroy()
 
     def _rem_qm(self, button, view):
+        (store, iter) = view.get_selection().get_selected()
+        if not iter:
+            return
+
         if not ask_for_confirmation(_("Really delete?"),
                                     self._wtree.get_widget("mainwindow")):
             return
 
-        (store, iter) = view.get_selection().get_selected()
         key, = store.get(iter, 1)
         store.remove(iter)
         self._config.remove_option("quick", key)
@@ -130,11 +133,13 @@ class ChatQST(MainWindowElement):
         d.destroy()
 
     def _rem_qst(self, button, view):
+        (model, iter) = view.get_selection().get_selected()
+        if not iter:
+            return
+
         if not ask_for_confirmation(_("Really delete?"),
                                     self._wtree.get_widget("mainwindow")):
             return
-
-        (model, iter) = view.get_selection().get_selected()
 
         ident, = model.get(iter, 0)
         self._config.remove_section(ident)
@@ -142,6 +147,8 @@ class ChatQST(MainWindowElement):
 
     def _edit_qst(self, button, view):
         (model, iter) = view.get_selection().get_selected()
+        if not iter:
+            return
 
         ident, = model.get(iter, 0)
 
@@ -428,6 +435,9 @@ class ChatTab(MainWindowTab):
         r = d.run()
         text = d.text.get_text()
         d.destroy()
+
+        if not text:
+            return
 
         if r == gtk.RESPONSE_OK:
             self._build_filter(text)

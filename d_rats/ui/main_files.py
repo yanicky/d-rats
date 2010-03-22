@@ -61,6 +61,8 @@ class FileView(object):
 
     def get_selected_filename(self):
         (model, iter) = self._view.get_selection().get_selected()
+        if not iter:
+            return None
         return model.get(iter, 1)[0]
 
     def add_explicit(self, name, size, stamp):
@@ -207,6 +209,8 @@ class FilesTab(MainWindowTab):
 
     def _del(self, button, fileview):
         fname = self._local.get_selected_filename()
+        if not fname:
+            return
 
         question = _("Really delete %s?") % fname
         mainwin = self._wtree.get_widget("mainwindow")
@@ -219,6 +223,9 @@ class FilesTab(MainWindowTab):
 
     def _upload(self, button, lfview):
         fname = self._local.get_selected_filename()
+        if not fname:
+            return
+
         fn = os.path.join(self._config.get("prefs", "download_dir"), fname)
 
         fnl = fn.lower()
@@ -245,6 +252,9 @@ class FilesTab(MainWindowTab):
         self.emit("user-send-file", station, port, fn, fname)
 
     def _download(self, button, rfview):
+        if not self._remote:
+            return
+
         station = self._remote.get_path()
         fn = self._remote.get_selected_filename()
 
