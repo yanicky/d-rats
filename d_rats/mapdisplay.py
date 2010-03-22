@@ -1214,8 +1214,9 @@ class MapWindow(gtk.Window):
                 menu.popup(None, None, None, event.button, event.time)
         elif event.type == gtk.gdk.BUTTON_PRESS:
             print "Clicked: %.4f,%.4f" % (lat, lon)
-            self.set_marker(GPSPosition(station=CROSSHAIR,
-                                        lat=lat, lon=lon))
+            # The crosshair marker has been missing since 0.3.0
+            #self.set_marker(GPSPosition(station=CROSSHAIR,
+            #                            lat=lat, lon=lon))
         elif event.type == gtk.gdk._2BUTTON_PRESS:
             print "Recenter on %.4f, %.4f" % (lat,lon)
 
