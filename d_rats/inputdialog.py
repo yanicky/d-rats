@@ -90,6 +90,7 @@ class FieldDialog(gtk.Dialog):
         self.__fields = {}
 
         gtk.Dialog.__init__(self, **kwargs)
+        self.set_default_response(gtk.RESPONSE_OK)
 
         self.set_modal(True)
         self.set_type_hint(gtk.gdk.WINDOW_TYPE_HINT_DIALOG)        

@@ -66,6 +66,7 @@ def prompt_for_station(_station_list, config, parent=None):
     d = inputdialog.FieldDialog(title=_("Enter destination"), parent=parent)
     d.add_field(_("Station"), station)
     d.add_field(_("Port"), port)
+    station.child.set_activates_default(True)
 
     while True:
         res = d.run()
