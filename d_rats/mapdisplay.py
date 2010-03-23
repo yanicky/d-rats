@@ -1554,6 +1554,7 @@ class MapWindow(gtk.Window):
                                                               group,
                                                               True)
             s.add_point(point)
+            s.save()
             self.add_map_source(s)
 
         self.add_popup_handler(_("New marker here"), set_mark_at)
