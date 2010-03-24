@@ -1512,7 +1512,7 @@ class DratsConfigUI(gtk.Dialog):
         self.__tree.append_column(col)
         self.__tree.show()
         self.__tree.connect("button_press_event", self.mouse_event)
-        self.__tree.connect("move-cursor", self.move_cursor)
+        self.__tree.connect_after("move-cursor", self.move_cursor)
 
         def add_panel(c, s, l, par, *args):
             p = c(self.config, *args)
