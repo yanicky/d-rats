@@ -152,12 +152,20 @@ class MessageRouter(gobject.GObject):
         "get-station-list" : signals.GET_STATION_LIST,
         "user-send-form" : signals.USER_SEND_FORM,
         "form-sent" : signals.FORM_SENT,
+        "form-received" : signals.FORM_RECEIVED,
         "ping-station" : signals.PING_STATION,
+        "event" : signals.EVENT,
         }
     _signals = __gsignals__
 
     def _emit(self, signal, *args):
         gobject.idle_add(self.emit, signal, *args)
+
+    def __proxy_emit(self, signal):
+        def handler(obj, *args):
+            print "Proxy emit %s: %s" % (signal, args)
+            self._emit(signal, *args)
+        return handler
 
     def __init__(self, config):
         gobject.GObject.__init__(self)
@@ -427,6 +435,9 @@ class MessageRouter(gobject.GObject):
 
         mt = wl2k.WinLinkThread(self.__config, src, send_msgs=[msg])
         mt.connect("mail-thread-complete", complete)
+        mt.connect("event", self.__proxy_emit("event"))
+        mt.connect("form-received", self.__proxy_emit("form-received"))
+        mt.connect("form-sent", self.__proxy_emit("form-sent"))
         mt.start()
 
         return True

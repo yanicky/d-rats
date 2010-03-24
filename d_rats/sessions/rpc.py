@@ -313,6 +313,8 @@ class RPCActionSet(gobject.GObject):
         "user-send-chat" : signals.USER_SEND_CHAT,
         "event" : signals.EVENT,
         "register-object" : signals.REGISTER_OBJECT,
+        "form-received" : signals.FORM_RECEIVED,
+        "form-sent" : signals.FORM_SENT,
         }
 
     _signals = __gsignals__
@@ -322,6 +324,13 @@ class RPCActionSet(gobject.GObject):
         self.__port = port
 
         gobject.GObject.__init__(self)
+
+    def __proxy_emit(self, signal):
+        def handler(obj, *args):
+            print "Proxy emit %s: %s" % (signal, args)
+            gobject.idle_add(self.emit, signal, *args)
+
+        return handler
 
     def RPC_pos_report(self, job):
         result = {}
@@ -471,6 +480,9 @@ class RPCActionSet(gobject.GObject):
                 mt = wl2k.WinLinkThread(self.__config,
                                         job.get_dest(),
                                         args[1])
+                mt.connect("event", self.__proxy_emit("event"))
+                mt.connect("form-received", self.__proxy_emit("form-received"))
+                mt.connect("form-sent", self.__proxy_emit("form-sent"))
             else:
                 return {"rc"  : "False",
                         "msg" : "WL2K gateway is disabled"}

@@ -17,7 +17,9 @@ from d_rats import version
 from d_rats import platform
 from d_rats import formgui
 from d_rats import utils
+from d_rats import signals
 from d_rats.ddt2 import calc_checksum
+from d_rats.ui import main_events
 
 FBB_BLOCK_HDR = 1
 FBB_BLOCK_DAT = 2
@@ -326,6 +328,9 @@ class WinLinkThread(threading.Thread, gobject.GObject):
     __gsignals__ = {
         "mail-thread-complete" : (gobject.SIGNAL_RUN_LAST, gobject.TYPE_NONE,
                                   (gobject.TYPE_BOOLEAN, gobject.TYPE_STRING)),
+        "event" : signals.EVENT,
+        "form-received" : signals.FORM_RECEIVED,
+        "form-sent" : signals.FORM_SENT,
         }
     _signals = __gsignals__
 
@@ -374,13 +379,17 @@ class WinLinkThread(threading.Thread, gobject.GObject):
         form.add_path_element(self.__config.get("user", "callsign"))
         form.save_to(formfn)
 
+        return formfn
+
     def _run_incoming(self):
         server = self.__config.get("prefs", "msg_wl2k_server")
         wl = WinLinkTelnet(self.__callssid, server)
         count = wl.get_messages()
         for i in range(0, count):
             msg = wl.get_message(i)
-            self.__create_form(msg)        
+            formfn = self.__create_form(msg)        
+
+            self._emit("form-received", -999, formfn)
 
         if count:
             result = "Queued %i messages" % count
@@ -408,6 +417,8 @@ class WinLinkThread(threading.Thread, gobject.GObject):
             print m
             print mt
             wl.send_messages([wlm])
+
+            #self._emit("form-sent", -999, 
 
         return "Complete"
 
