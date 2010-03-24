@@ -123,10 +123,10 @@ class MarkerEditDialog(inputdialog.FieldDialog):
             symlist = [y for x,y in self.icons]
             try:
                 iidx = symlist.index(point.get_aprs_symbol())
+                iconsel.set_active(iidx)
             except ValueError:
                 print "No such symbol `%s'" % point.get_aprs_symbol()
-                raise
-            iconsel.set_active(iidx)
+
         else:
             iconsel.set_sensitive(False)
 
@@ -749,10 +749,12 @@ class MapWindow(gtk.Window):
             if not point:
                 return
 
+            _point = point.dup()
             upoint, foo = self.prompt_to_set_marker(point, source.get_name())
             if upoint:
+                self.del_point(source, _point)
+                self.add_point(source, upoint)
                 source.save()
-                self.update_point(source, upoint)
 
     def _make_marker_menu(self, store, iter):
         menu_xml = """
@@ -1334,13 +1336,20 @@ class MapWindow(gtk.Window):
         center = GPSPosition(*self.map.get_center())
         this = GPSPosition(point.get_latitude(), point.get_longitude())
 
-        self.marker_list.set_item(source.get_name(),
-                                  point.get_visible(),
-                                  point.get_name(),
-                                  point.get_latitude(),
-                                  point.get_longitude(),
-                                  center.distance_from(this),
-                                  center.bearing_to(this))
+        try:
+            self.marker_list.set_item(source.get_name(),
+                                      point.get_visible(),
+                                      point.get_name(),
+                                      point.get_latitude(),
+                                      point.get_longitude(),
+                                      center.distance_from(this),
+                                      center.bearing_to(this))
+        except Exception, e:
+            if str(e) == "Item not found":
+                # this is evil
+                print "Adding point instead of updating"
+                return self.add_point(source, point)
+                
         self.add_point_visible(point)
         self.map.queue_draw()
 
