@@ -57,7 +57,6 @@ class MapPoint(gobject.GObject):
     def dup(self):
         p = MapPoint()
 
-        print self.__dict__
         for i in ["latitude", "longitude", "altitude", "name",
                   "comment", "icon", "timestamp", "visible"]:
             k = "_MapPoint__" + i
