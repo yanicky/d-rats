@@ -121,7 +121,11 @@ class MarkerEditDialog(inputdialog.FieldDialog):
         iconsel = self.get_field(_("Icon"))
         if isinstance(point, map_sources.MapStation):
             symlist = [y for x,y in self.icons]
-            iidx = symlist.index(point.get_aprs_symbol())
+            try:
+                iidx = symlist.index(point.get_aprs_symbol())
+            except ValueError:
+                print "No such symbol `%s'" % point.get_aprs_symbol()
+                raise
             iconsel.set_active(iidx)
         else:
             iconsel.set_sensitive(False)

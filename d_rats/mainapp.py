@@ -460,6 +460,12 @@ class MainApp(object):
             self.__map_point.set_comment(fix.comment)
             self.__map_point.set_name(fix.station)
             
+        try:
+            comment = self.config.get("settings", "default_gps_comment")
+            fix.APRSIcon = gps.dprs_to_aprs(comment);
+        except Exception, e:
+            log_exception()
+            fix.APRSIcon = "\?"
         self.__map_point.set_icon_from_aprs_sym(fix.APRSIcon)
 
         self.stations_overlay.add_point(self.__map_point)
