@@ -54,6 +54,17 @@ class MapPoint(gobject.GObject):
         self.__timestamp = time.time()
         self.__visible = True
 
+    def dup(self):
+        p = MapPoint()
+
+        print self.__dict__
+        for i in ["latitude", "longitude", "altitude", "name",
+                  "comment", "icon", "timestamp", "visible"]:
+            k = "_MapPoint__" + i
+            p.__dict__[k] = self.__dict__[k]
+
+        return p
+
     def __getattr__(self, name):
         _get, name = name.split("_", 1)
 
