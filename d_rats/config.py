@@ -82,6 +82,7 @@ _DEF_PREFS = {
     "msg_wl2k_ssid" : "",
     "toolbar_button_size" : "Default",
     "check_spelling" : "False",
+    "confirm_exit" : "False",
 }
 
 _DEF_SETTINGS = {
@@ -855,6 +856,9 @@ class DratsAppearancePanel(DratsPanel):
         sp = spell.get_spell()
         val._widget.set_sensitive(sp.test())
 
+        val = DratsConfigWidget(config, "prefs", "confirm_exit")
+        val.add_bool()
+        self.mv(_("Confirm exit"), val)
 
 class DratsChatPanel(DratsPanel):
     def __init__(self, config):

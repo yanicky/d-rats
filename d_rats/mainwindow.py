@@ -41,7 +41,8 @@ from d_rats.ui.main_chat import ChatTab
 from d_rats.ui.main_events import EventTab
 from d_rats.ui.main_files import FilesTab
 from d_rats.ui.main_stations import StationsList
-from d_rats.ui.main_common import MainWindowElement, prompt_for_station
+from d_rats.ui.main_common import MainWindowElement, prompt_for_station, \
+    ask_for_confirmation
 from d_rats.version import DRATS_VERSION
 from d_rats import formbuilder
 from d_rats import signals
@@ -58,6 +59,10 @@ class MainWindow(MainWindowElement):
     _signals = __gsignals__
 
     def _delete(self, window, event):
+        if self._config.getboolean("prefs", "confirm_exit"):
+            if not ask_for_confirmation("Really exit D-RATS?", window):
+                return True
+
         window.set_default_size(*window.get_size())
 
     def _destroy(self, window):
