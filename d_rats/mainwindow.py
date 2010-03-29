@@ -92,7 +92,7 @@ class MainWindow(MainWindowElement):
 
             d.set_name("D-RATS")
             d.set_version(DRATS_VERSION)
-            d.set_copyright("Copyright 2009 Dan Smith (KK7DS)")
+            d.set_copyright("Copyright 2010 Dan Smith (KK7DS)")
             d.set_website("http://www.d-rats.com")
             d.set_authors(("Dan Smith <dsmith@danplanet.com>",))
             d.set_comments(verinfo)
@@ -273,7 +273,7 @@ class MainWindow(MainWindowElement):
         self._current_tab = "messages"
 
         ic = "incomingcolor"
-        cpr = "Copyright 2009 Dan Smith (KK7DS)"
+        cpr = "Copyright 2010 Dan Smith (KK7DS)"
         self.tabs["chat"]._display_line("D-RATS v%s" % DRATS_VERSION, True, ic)
         self.tabs["chat"]._display_line(cpr, True, ic)
         self.tabs["chat"]._display_line("", True)        
