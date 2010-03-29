@@ -89,10 +89,16 @@ if __name__ == "__main__":
 
     install_excepthook()
 
+    import libxml2
+
+    libxml2.debugMemory(1)
+
     app = mainapp.MainApp(safe=opts.safe)
     if opts.profile:
         import cProfile
         cProfile.run('app.main()')
     else:
-        sys.exit(app.main())
+        rc = app.main()
+        libxml2.dumpMemory()
+        sys.exit(rc)
 

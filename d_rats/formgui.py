@@ -612,6 +612,9 @@ class FormFile(object):
         self.doc = libxml2.parseMemory(data, len(data))
         self.process_form(self.doc)
 
+    def __del__(self):
+        self.doc.freeDoc()
+
     def save_to(self, filename):
         f = file(filename, "w")
         print >>f, self.doc.serialize()
@@ -647,6 +650,8 @@ class FormFile(object):
         else:
             self.logo_path = None
 
+        ctx.xpathFreeContext()
+
     def __set_content(self, node, content):
         child = node.children
         while child:
@@ -657,7 +662,9 @@ class FormFile(object):
 
     def __get_xpath(self, path):
         ctx = self.doc.xpathNewContext()
-        return ctx.xpathEval(path)
+        result = ctx.xpathEval(path)
+        ctx.xpathFreeContext()
+        return result
 
     def get_path(self):
         pathels = []
@@ -670,6 +677,7 @@ class FormFile(object):
         if not els:
             ctx = self.doc.xpathNewContext()
             form, = ctx.xpathEval("//form")
+            ctx.xpathFreeContext()
             return form.newChild(None, "path", None)
         else:
             return els[0]
@@ -817,6 +825,7 @@ class FormDialog(FormFile, gtk.Dialog):
     def process_fields(self, doc):
         ctx = doc.xpathNewContext()
         fields = ctx.xpathEval("//form/field")
+        ctx.xpathFreeContext()
         for f in fields:
             try:
                 self.fields.append(FormField(f))

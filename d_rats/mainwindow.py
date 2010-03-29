@@ -85,9 +85,10 @@ class MainWindow(MainWindowElement):
             d = gtk.AboutDialog()
             d.set_transient_for(self._wtree.get_widget("mainwindow"))
 
-            verinfo = "GTK %s\nPyGTK %s\n" % ( \
+            verinfo = "GTK %s\nPyGTK %s\nLibXML using %.1f KB\n" % ( \
                 ".".join([str(x) for x in gtk.gtk_version]),
-                ".".join([str(x) for x in gtk.pygtk_version]))
+                ".".join([str(x) for x in gtk.pygtk_version]),
+                libxml2.memoryUsed() / 1024.0)
 
             d.set_name("D-RATS")
             d.set_version(DRATS_VERSION)
