@@ -383,7 +383,8 @@ class WinLinkThread(threading.Thread, gobject.GObject):
 
     def _run_incoming(self):
         server = self.__config.get("prefs", "msg_wl2k_server")
-        wl = WinLinkTelnet(self.__callssid, server)
+        port = self.__config.getint("prefs", "msg_wl2k_port")
+        wl = WinLinkTelnet(self.__callssid, server, port)
         count = wl.get_messages()
         for i in range(0, count):
             msg = wl.get_message(i)
@@ -400,7 +401,8 @@ class WinLinkThread(threading.Thread, gobject.GObject):
 
     def _run_outgoing(self):
         server = self.__config.get("prefs", "msg_wl2k_server")
-        wl = WinLinkTelnet(self.__callssid, server)
+        port = self.__config.getint("prefs", "msg_wl2k_port")
+        wl = WinLinkTelnet(self.__callssid, server, port)
         for mt in self.__send_msgs:
 
             m = re.search("Mid: (.*)\r\nSubject: (.*)\r\n", mt)

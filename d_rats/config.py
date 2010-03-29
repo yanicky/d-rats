@@ -80,6 +80,7 @@ _DEF_PREFS = {
     "msg_allow_pop3" : "True",
     "msg_wl2k_server" : "server.winlink.org",
     "msg_wl2k_ssid" : "",
+    "msg_wl2k_port" : "8772",
     "toolbar_button_size" : "Default",
     "check_spelling" : "False",
     "confirm_exit" : "False",
@@ -1031,9 +1032,12 @@ class DratsMessagePanel(DratsPanel):
                                                      "halifax",
                                                      "sandiego",
                                                      "wien"]]
-        val = DratsConfigWidget(config, "prefs", "msg_wl2k_server")
-        val.add_combo(wl2k_servers, True)
-        self.mv(_("Winlink server"), val)
+        srv = DratsConfigWidget(config, "prefs", "msg_wl2k_server")
+        srv.add_combo(wl2k_servers, True)
+        prt = DratsConfigWidget(config, "prefs", "msg_wl2k_port")
+        prt.add_numeric(1, 65535, 1)
+        lab = gtk.Label(_("Port"))
+        self.mv(_("Winlink server"), srv, lab, prt)
         disable_with_toggle(vala._widget, val._widget)
 
         ssids = [""] + [str(x) for x in range(1,11)]
@@ -1041,6 +1045,7 @@ class DratsMessagePanel(DratsPanel):
         val = DratsConfigWidget(config, "prefs", "msg_wl2k_ssid")
         val.add_combo(ssids, True)
         self.mv(_("Winlink SSID"), val)
+
 
 class DratsNetworkPanel(DratsPanel):
     pass
