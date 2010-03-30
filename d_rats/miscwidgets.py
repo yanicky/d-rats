@@ -186,10 +186,8 @@ class KeyedListWidget(gtk.HBox):
         rend.connect("edited", self._edited, column + 1)
 
     def set_sort_column(self, column, value=None):
-        if not value:
-            value = column
-        col = self.__view.get_column(column)
-        col.set_sort_column_id(value)
+        self.__view.get_model().set_sort_column_id(column,
+                                                   gtk.SORT_ASCENDING)
     
     def set_resizable(self, column, resizable, ellipsize=False):
         col = self.__view.get_column(column)
