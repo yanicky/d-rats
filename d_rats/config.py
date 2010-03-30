@@ -558,6 +558,9 @@ class DratsListConfigWidget(DratsConfigWidget):
 
         return newvals
 
+    def set_sort_column(self, col):
+        self.listw.set_sort_column(col)
+
     def add_list(self, cols, make_key=None):
         def item_set(lw, key):
             pass
@@ -963,6 +966,8 @@ class DratsRadioPanel(DratsPanel):
         rem = gtk.Button(_("Remove"), gtk.STOCK_DELETE)
         rem.connect("clicked", self.but_rem, lw)
 
+        val.set_sort_column(6);
+
         self.mv(_("Paths"), val, add, mod, rem)
 
         lw.set_resizable(1, False)
@@ -1358,6 +1363,9 @@ class DratsInEmailPanel(DratsPanel):
         edit.connect("clicked", self.but_edit, lw)
         rem = gtk.Button(_("Remove"), gtk.STOCK_DELETE)
         rem.connect("clicked", self.but_rem, lw)
+
+        lw.set_sort_column(1)
+
         self.mv(_("Incoming Accounts"), val, add, edit, rem)
 
 class DratsEmailAccessPanel(DratsPanel):
@@ -1474,6 +1482,9 @@ class DratsEmailAccessPanel(DratsPanel):
         edit.connect("clicked", self.but_edit, lw)
         rem = gtk.Button(_("Remove"), gtk.STOCK_DELETE)
         rem.connect("clicked", self.but_rem, lw)
+
+        lw.set_sort_column(1)
+
         self.mv(_("Email Access"), val, add, edit, rem)
 
 class DratsConfigUI(gtk.Dialog):
