@@ -24,8 +24,12 @@ import gtk
 
 from d_rats import utils
 
+IGNORE_ALL=False
+
 def handle_exception(exctyp, value, tb):
-    if exctyp is KeyboardInterrupt:
+    global IGNORE_ALL
+
+    if exctyp is KeyboardInterrupt or IGNORE_ALL:
         return original_excepthook(exctyp, value, tb)
 
     gtk.gdk.pointer_ungrab()
@@ -34,16 +38,19 @@ def handle_exception(exctyp, value, tb):
     _trace = traceback.format_exception(exctyp, value, tb)
     trace = os.linesep.join(_trace)
 
-    msg = "D-RATS has encountered an error.  This may be non-fatal, so " + \
-    "you may click 'Ignore' below to attempt to continue running.  " + \
-    "Otherwise, click 'Quit' to terminate D-RATS now.  If you are planning " + \
-    "to file a bug for this issue, please click 'Debug Log' below and " + \
-    "include the contents in the bug tracker."
+    msg = """
+<b><big>D-RATS has encountered an error.</big></b>
+
+This may be non-fatal, so you may click <b>Ignore</b> below to attempt to continue running.  Otherwise, click 'Quit' to terminate D-RATS now. If you are planning to file a bug for this issue, please click <b>Debug Log</b> below and include the contents in the bug tracker.
+
+If you need to ignore all additional warnings for this session, click <b>Ignore All</b>.  However, please reproduce and report the issue when possible.
+"""
 
     def extra(dialog):
-        dialog.add_button(_("Ignore"), gtk.RESPONSE_CLOSE);
-        dialog.add_button(gtk.STOCK_QUIT, gtk.RESPONSE_CANCEL);
         dialog.add_button(_("Debug Log"), gtk.RESPONSE_HELP);
+        dialog.add_button(_("Ignore"), gtk.RESPONSE_CLOSE);
+        dialog.add_button(_("Ignore All"), -1);
+        dialog.add_button(gtk.STOCK_QUIT, gtk.RESPONSE_CANCEL);
         dialog.set_default_response(gtk.RESPONSE_CANCEL)
 
     while True:
@@ -54,6 +61,9 @@ def handle_exception(exctyp, value, tb):
         if r == gtk.RESPONSE_CANCEL:
             sys.exit(1)
         elif r == gtk.RESPONSE_CLOSE:
+            break
+        elif r == -1:
+            IGNORE_ALL=True
             break
         elif r == gtk.RESPONSE_HELP:
             p = platform.get_platform()
