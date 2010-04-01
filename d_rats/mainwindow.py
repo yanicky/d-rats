@@ -163,7 +163,7 @@ class MainWindow(MainWindowElement):
                 self.emit("user-send-chat", "CQCQCQ", port, "?D*%s?" % d, True)
 
         def do_proxy(but):
-            if sys.platform == "nt":
+            if sys.platform != "darwin":
                 args = []
             else:
                 args = [sys.executable]
