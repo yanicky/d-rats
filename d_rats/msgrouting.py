@@ -311,7 +311,7 @@ class MessageRouter(gobject.GObject):
 
         if not route:
             self._p("No route for station %s" % dst)
-        elif old(route) and "@" not in route:
+        elif old(route) and "@" not in route and ":" not in route:
             # This station is heard, but a long time ago.  Ping it first
             # and consider it unrouteable for now
             route_station = slist.get(route, None)
