@@ -357,6 +357,8 @@ class WinLinkThread(threading.Thread, gobject.GObject):
         if ":" in sender:
             method, sender = sender.split(":", 1)
         
+        sender = "WL2K:" + sender
+
         if self.__callsign == self.__config.get("user", "callsign"):
             box = "Inbox"
         else:
