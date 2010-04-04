@@ -310,6 +310,15 @@ class MessageFolders(MainWindowElement):
             return
         self.emit("user-selected-folder", self._get_folder_by_iter(store, iter))
 
+    def _move_cursor(self, view, step, count):
+        try:
+            (store, iter) = view.get_selection().get_selected()
+        except Exception, e:
+            print "Unable to find selected: %s" % e
+            return
+
+        self.emit("user-selected-folder", self._get_folder_by_iter(store, iter))
+
     def _folder_menu(self, view, event):
         x = int(event.x)
         y = int(event.y)
@@ -421,6 +430,7 @@ class MessageFolders(MainWindowElement):
                                           gtk.gdk.ACTION_DEFAULT)
         folderlist.connect("drag-data-received", self._dragged_to)
         folderlist.connect("button_press_event", self._mouse_cb)
+        folderlist.connect_after("move-cursor", self._move_cursor)
 
         col = gtk.TreeViewColumn("", gtk.CellRendererPixbuf(), pixbuf=1)
         folderlist.append_column(col)
