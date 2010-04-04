@@ -272,8 +272,11 @@ class ConnTestAssistant(baseclass):
                 self.set_test_val("ps", ctx.ps, "bs", ctx.ps * size)
                 self.set_test_val("pr", ctx.pr, "br", ctx.pr * size)
 
-                copy = ctx.pr / float(ctx.cycle)
-                done = ctx.pr / float(packets)
+                try:
+                    copy = ctx.pr / float(ctx.cycle)
+                    done = ctx.pr / float(packets)
+                except ZeroDivisionError:
+                    return
                 if ctx.complete():
                     self.set_test_complete()
                     self.set_test_status("Complete", done, copy)
