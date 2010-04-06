@@ -2,6 +2,7 @@ import serial
 import socket
 import time
 import struct
+import select
 
 import utils
 
@@ -155,6 +156,9 @@ class SWFSerial(serial.Serial):
         self.open()
 
     def is_xon(self):
+        time.sleep(0.01)
+        if serial.Serial.inWaiting(self) == 0:
+            return self.state
         char = serial.Serial.read(self, 1)
         if char == ASCII_XOFF:
             if self.__swf_debug:
@@ -266,6 +270,11 @@ class SerialDataPath(DataPath):
             utils.log_exception()
             raise DataPathIOError("Failed to read from serial port")
 
+        return data
+
+    def read_all_waiting(self):
+        data = self.read(1)
+        data += self.read(self._serial.inWaiting())
         return data
 
     def write(self, buf):
@@ -417,6 +426,9 @@ class SocketDataPath(DataPath):
         if not self._socket:
             raise DataPathIOError("Socket closed")
 
+        self._socket.setblocking(True)
+        self._socket.settimeout(self.timeout)
+
         while len(data) < count:
 
             try:
@@ -436,6 +448,25 @@ class SocketDataPath(DataPath):
             end = time.time() + self.timeout
             data += inp
 
+
+        return data
+
+    def read_all_waiting(self):
+        self._socket.setblocking(False)
+
+        r, w, x = select.select([self._socket], [], [], self.timeout)
+        if not r:
+            return ""
+
+        data = ""
+        while True:
+            try:
+                d = self._socket.recv(4096)
+            except Exception, e:
+                break
+            if not d:
+                raise DataPathIOError("Socket disconnected")
+            data += d
 
         return data
 

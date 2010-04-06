@@ -123,11 +123,11 @@ class Transporter(object):
 
         raise comm.DataPathIOError("Unable to reconnect")
 
-    def __recv(self, size):
+    def __recv(self):
         data = ""
         for i in range(0, 10):
             try:
-                return self.pipe.read(size - len(data))
+                return self.pipe.read_all_waiting()
             except comm.DataPathIOError, e:
                 if not self.pipe.can_reconnect:
                     break
@@ -142,13 +142,10 @@ class Transporter(object):
         raise comm.DataPathIOError("Unable to reconnect")
 
     def get_input(self):
-        while True:
-            chunk = self.__recv(64)
-            if not chunk:
-                break
-            else:
-                self.inbuf += chunk
-                self.last_recv = time.time()
+        chunk = self.__recv()
+        if chunk:
+            self.inbuf += chunk
+            self.last_recv = time.time()
 
     def _handle_frame(self, frame):
         if self.inhandler:
@@ -281,6 +278,7 @@ class Transporter(object):
                 self.get_input()
             except Exception, e:
                 print "Exception while getting input: %s" % e
+                utils.log_exception()
                 self.enabled = False
                 break
 
