@@ -13,6 +13,10 @@ import re
 
 sys.path.insert(0, "..")
 
+if __name__=="__main__":
+    import gettext
+    gettext.install("D-RATS")
+
 from d_rats import version
 from d_rats import platform
 from d_rats import formgui
@@ -20,6 +24,7 @@ from d_rats import utils
 from d_rats import signals
 from d_rats.ddt2 import calc_checksum
 from d_rats.ui import main_events
+from d_rats import agw
 
 FBB_BLOCK_HDR = 1
 FBB_BLOCK_DAT = 2
@@ -103,13 +108,20 @@ class WinLinkMessage:
     def __encode_lzhuf(self, data):
         return run_lzhuf_encode(data)
 
+    def recv_exactly(self, s, l):
+        data = ""
+        while len(data) < l:
+            data += s.recv(l - len(data))
+
+        return data
+
     def read_from_socket(self, s):
         data = ""
 
         i = 0
         while True:
             print "Reading at %i" % i
-            t = ord(s.recv(1))
+            t = ord(self.recv_exactly(s, 1))
 
             if chr(t) == "*":
                 msg = s.recv(1024)
@@ -121,17 +133,17 @@ class WinLinkMessage:
                 continue
 
             print "Found %s at %i" % (FBB_BLOCK_TYPES.get(t, "unknown"), i)
-            size = ord(s.recv(1))
+            size = ord(self.recv_exactly(s, 1))
             i += 2 # Account for the type and size
 
             if t == FBB_BLOCK_HDR:
-                header = s.recv(size)
+                header = self.recv_exactly(s, size)
                 self.__name, offset, foo = header.split("\0")
                 print "Name is `%s' offset %s\n" % (self.__name, offset)
                 i += size
             elif t == FBB_BLOCK_DAT:
                 print "Reading data block %i bytes" % size
-                data += s.recv(size)
+                data += self.recv_exactly(s, size)
                 i += size
             elif t == FBB_BLOCK_EOF:
                 cs = size
@@ -194,63 +206,44 @@ class WinLinkMessage:
         return "FC %s %s %i %i 0" % (self.__type, self.__id,
                                      self.__usize, self.__csize)
 
-class WinLinkTelnet:
-    def __init__(self, callsign, server="server.winlink.org", port=8772):
-        self.__callsign = callsign
-        self.__server = server
-        self.__port = port
-
-        self.__socket = None
+class WinLinkCMS:
+    def __init__(self, callsign):
+        self._callsign = callsign
         self.__messages = []
+        self._conn = None
 
     def __ssid(self):
         return "[DRATS-%s-B2FHIM$]" % version.DRATS_VERSION
 
-    def __send(self, string):
+    def _send(self, string):
         print "  -> %s" % string
-        self.__socket.send(string + "\r")
+        self._conn.send(string + "\r")
 
-    def __recv(self):
-        resp = self.__socket.recv(1024).strip()
+    def _recv(self):
+        resp = ""
+        while not resp.endswith("\r"):
+            resp += self._conn.recv(1)
         print "  <- %s" % escaped(resp)
         return resp
 
-    def __connect(self):
-        self.__socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.__socket.connect((self.__server, self.__port))
-
-    def __disconnect(self):
-        self.__socket.close()
-
-    def __login(self):
-        resp = self.__recv()
-        if not resp.startswith("Callsign :"):
-            raise Exception("Conversation error (never saw login)")
-
-        self.__send(self.__callsign)
-        resp = self.__recv()
-        if not resp.startswith("Password :"):
-            raise Exception("Conversation error (never saw password)")
-
-        self.__send("CMSTELNET")
-        resp = self.__recv()
+    def _send_ssid(self, recv_ssid):
         try:
-            sw, ver, caps = resp[1:-1].split("-")
+            sw, ver, caps = recv_ssid[1:-1].split("-")
         except Exception:
             raise Exception("Conversation error (unparsable SSID `%s')" % resp)
 
-        self.__send(self.__ssid())
-        prompt = self.__recv()
+        self._send(self.__ssid())
+        prompt = self._recv().strip()
         if not prompt.endswith(">"):
             raise Exception("Conversation error (never got prompt)")
 
     def __get_list(self):
-        self.__send("FF")
+        self._send("FF")
 
         msgs = []
         reading = True
         while reading:
-            resp = self.__recv()
+            resp = self._recv()
             for l in resp.split("\r"):
                 if l.startswith("FC"):
                     print "Creating message for %s" % l
@@ -261,29 +254,33 @@ class WinLinkTelnet:
                 elif l.startswith("FQ"):
                     reading = False
                     break
+                elif not l:
+                    pass
                 else:
+                    print "Invalid line: %s" % l
                     raise Exception("Conversation error (%s while listing)" % l)
 
         return msgs
 
     def get_messages(self):
-        self.__connect()
-        self.__login()
+        self._connect()
+        self._login()
         self.__messages = self.__get_list()
 
         if self.__messages:
-            self.__send("FS %s" % ("Y" * len(self.__messages)))
+            self._send("FS %s" % ("Y" * len(self.__messages)))
 
             for msg in self.__messages:
                 print "Getting message..."
                 try:
-                    msg.read_from_socket(self.__socket)
+                    msg.read_from_socket(self._conn)
                 except Exception, e:
-                    print e
+                    raise
+                    #print e
                     
-            self.__send("FQ")
+            self._send("FQ")
 
-        self.__disconnect()
+        self._disconnect()
 
         return len(self.__messages)
 
@@ -294,8 +291,8 @@ class WinLinkTelnet:
         if len(messages) != 1:
             raise Exception("Sorry, batch not implemented yet")
 
-        self.__connect()
-        self.__login()
+        self._connect()
+        self._login()
 
         cs = 0
         for msg in messages:
@@ -303,11 +300,11 @@ class WinLinkTelnet:
             for i in p:
                 cs += ord(i)
             cs += ord("\r")
-            self.__send(p)
+            self._send(p)
 
         cs = ((~cs & 0xFF) + 1)
-        self.__send("F> %02X" % cs)
-        resp = self.__recv()
+        self._send("F> %02X" % cs)
+        resp = self._recv()
 
         if not resp.startswith("FS"):
             raise Exception("Error talking to server: %s" % resp)
@@ -317,12 +314,78 @@ class WinLinkTelnet:
             raise Exception("Server refused some of my messages?!")
 
         for msg in messages:
-            msg.send_to_socket(self.__socket)
+            msg.send_to_socket(self._conn)
 
-        resp = self.__recv()
-        self.__disconnect()
+        resp = self._recv()
+        self._disconnect()
 
         return 1
+
+class WinLinkTelnet(WinLinkCMS):
+    def __init__(self, callsign, server="server.winlink.org", port=8772):
+        self.__server = server
+        self.__port = port
+        WinLinkCMS.__init__(self, callsign)
+
+    def _connect(self):
+        class sock_file:
+            def __init__(self):
+                self.__s = 0
+
+            def read(self, len):
+                return self.__s.recv(len)
+
+            def write(self, buf):
+                return self.__s.send(buf)
+
+            def connect(self, spec):
+                return self.__s.connect(spec)
+
+            def close(self):
+                self.__s.close()
+
+        self._conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self._conn.connect((self.__server, self.__port))
+
+    def _disconnect(self):
+        self._conn.close()
+
+    def _login(self):
+        resp = self._recv()
+
+        resp = self._recv()
+        if not resp.startswith("Callsign :"):
+            raise Exception("Conversation error (never saw login)")
+
+        self._send(self._callsign)
+        resp = self._recv()
+        if not resp.startswith("Password :"):
+            raise Exception("Conversation error (never saw password)")
+
+        self._send("CMSTELNET")
+        resp = self._recv()
+
+        self._send_ssid(resp)
+
+class WinLinkRMSPacket(WinLinkCMS):
+    def __init__(self, callsign, remote, agw):
+        self.__remote = remote
+        self.__agw = agw
+        WinLinkCMS.__init__(self, callsign)
+
+    def _connect(self):
+        print "Connecting via AX.25"
+        self._conn = agw.AGW_AX25_Connection(self.__agw, self._callsign)
+        print "Got connection"
+        self._conn.connect(self.__remote)
+        print "Connected"
+
+    def _disconnect(self):
+        self._conn.disconnect()
+
+    def _login(self):
+        resp = self._recv()
+        self._send_ssid(resp)
 
 class WinLinkThread(threading.Thread, gobject.GObject):
     __gsignals__ = {
@@ -344,9 +407,9 @@ class WinLinkThread(threading.Thread, gobject.GObject):
         if not callssid:
             callssid = callsign
 
-        self.__config = config
-        self.__callsign = callsign
-        self.__callssid = callssid
+        self._config = config
+        self._callsign = callsign
+        self._callssid = callssid
         self.__send_msgs = send_msgs
 
     def __create_form(self, msg):
@@ -359,34 +422,32 @@ class WinLinkThread(threading.Thread, gobject.GObject):
         
         sender = "WL2K:" + sender
 
-        if self.__callsign == self.__config.get("user", "callsign"):
+        if self._callsign == self._config.get("user", "callsign"):
             box = "Inbox"
         else:
             box = "Outbox"
 
-        template = os.path.join(self.__config.form_source_dir(),
+        template = os.path.join(self._config.form_source_dir(),
                                 "email.xml")
-        formfn = os.path.join(self.__config.form_store_dir(),
+        formfn = os.path.join(self._config.form_store_dir(),
                               box, "%s.xml" % msg.get_id())
 
         form = formgui.FormFile(template)
         form.set_field_value("_auto_sender", sender)
-        form.set_field_value("recipient", self.__callsign)
+        form.set_field_value("recipient", self._callsign)
         form.set_field_value("subject", mail.get("Subject", "Unknown"))
         form.set_field_value("message", mail.get_payload())
         form.set_path_src(sender.strip())
-        form.set_path_dst(self.__callsign)
+        form.set_path_dst(self._callsign)
         form.set_path_mid(msg.get_id())
         form.add_path_element("@WL2K")
-        form.add_path_element(self.__config.get("user", "callsign"))
+        form.add_path_element(self._config.get("user", "callsign"))
         form.save_to(formfn)
 
         return formfn
 
     def _run_incoming(self):
-        server = self.__config.get("prefs", "msg_wl2k_server")
-        port = self.__config.getint("prefs", "msg_wl2k_port")
-        wl = WinLinkTelnet(self.__callssid, server, port)
+        wl = self.wl2k_connect()
         count = wl.get_messages()
         for i in range(0, count):
             msg = wl.get_message(i)
@@ -402,9 +463,9 @@ class WinLinkThread(threading.Thread, gobject.GObject):
         return result
 
     def _run_outgoing(self):
-        server = self.__config.get("prefs", "msg_wl2k_server")
-        port = self.__config.getint("prefs", "msg_wl2k_port")
-        wl = WinLinkTelnet(self.__callssid, server, port)
+        server = self._config.get("prefs", "msg_wl2k_server")
+        port = self._config.getint("prefs", "msg_wl2k_port")
+        wl = self.wl2k_connect()
         for mt in self.__send_msgs:
 
             m = re.search("Mid: (.*)\r\nSubject: (.*)\r\n", mt)
@@ -434,13 +495,54 @@ class WinLinkThread(threading.Thread, gobject.GObject):
 
         self._emit("mail-thread-complete", True, result)
 
+class WinLinkTelnetThread(WinLinkThread):
+    def __init__(self, *args, **kwargs):
+        WinLinkThread.__init__(self, *args, **kwargs)
+
+    def wl2k_connect(self):
+        server = self._config.get("prefs", "msg_wl2k_server")
+        port = self._config.getint("prefs", "msg_wl2k_port")
+        return WinLinkTelnet(self._callssid, server, port)
+
+class WinLinkAGWThread(WinLinkThread):
+    def __init__(self, *args, **kwargs):
+        WinLinkThread.__init__(self, *args, **kwargs)
+        self.__agwconn = None
+
+    def set_agw_conn(self, agwconn):
+        self.__agwconn = agwconn
+
+    def wl2k_connect(self):
+        remote = self._config.get("prefs", "msg_wl2k_rmscall")
+        return WinLinkRMSPacket(self._callssid, remote, self.__agwconn)
+
+def wl2k_auto_thread(config, *args, **kwargs):
+    #May need for AGW
+    #call = config.get("user", "callsign")
+    mode = config.get("settings", "msg_wl2k_mode")
+    print "WL2K Mode is: %s" % mode
+    if mode == "Network":
+        mt = WinLinkTelnetThread(config, *args, **kwargs)
+    elif mode == "RMS":
+        # TEMPORARY
+        a = agw.AGWConnection("127.0.0.1", 8000, 0.5)
+        mt = WinLinkAGWThread(config, *args, **kwargs)
+        mt.set_agw_conn(a)
+    else:
+        raise Exception("Unknown WL2K mode: %s" % mode)
+    
+    return mt
+
 if __name__=="__main__":
-    if False:
-      wl = WinLinkTelnet("KK7DS", "sandiego.winlink.org")
-      count = wl.get_messages()
-      print "%i messages" % count
-      for i in range(0, count):
-          print "--Message %i--\n%s\n--End--\n\n" % (i, wl.get_message(i))
+    
+    if True:
+      #wl = WinLinkTelnet("KK7DS", "sandiego.winlink.org")
+        agwc = agw.AGWConnection("127.0.0.1", 8000, 0.5)
+        wl = WinLinkRMSPacket("KK7DS", "N7AAM-11", agwc)
+        count = wl.get_messages()
+        print "%i messages" % count
+        for i in range(0, count):
+            print "--Message %i--\n%s\n--End--\n\n" % (i, wl.get_message(i).get_content())
     else:
         text = "This is a test!"
         _m = """Mid: 12345_KK7DS\r
