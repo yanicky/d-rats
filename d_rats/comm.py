@@ -5,6 +5,7 @@ import struct
 import select
 
 import utils
+import agw
 
 class DataPathError(Exception):
     pass
@@ -235,6 +236,47 @@ class DataPath(object):
 
     def __str__(self):
         return "--"
+
+class AGWDataPath(DataPath):
+    def __init__(self, pathspec, timeout=0):
+        DataPath.__init__(self, pathspec, timeout)
+
+        agw, self._addr, self._port = pathspec.split(":")
+        self.connect()
+
+    def connect(self):
+        try:
+            self._agw = agw.AGWConnection(self._addr, int(self._port), self.timeout)
+            self._agw.enable_raw()
+        except Exception, e:
+            print "AGWPE exception on connect: %s" % e
+            raise DataPathNotConnectedError("Unable to connect to AGWPE")
+
+    def disconnect(self):
+        if self._agw:
+            self._agw.close()
+
+    def reconnect(self):
+        self.disconnect()
+        self.connect()
+
+    def read(self, count):
+        f = self._agw.recv_frame()
+        if f:
+            utils.hexprint(f.get_payload())
+            return f.get_payload()
+
+    def write(self, buf):
+        print "Writing %i" % len(buf)
+        f = agw.AGWFrame_K()
+        f.set_payload(buf)
+        self._agw.send_frame(f)
+
+    def is_connected(self):
+        return bool(self._agw)
+
+    def __str__(self):
+        return "[AGWPE %s:%s]" % (self._addr, self._port)
 
 class SerialDataPath(DataPath):
     def __init__(self, pathspec, timeout=0.25):
