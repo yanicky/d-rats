@@ -63,6 +63,7 @@ import msgrouting
 import wl2k
 import inputdialog
 import version
+import agw
 
 from ui import main_events
 
@@ -180,6 +181,9 @@ class MainApp(object):
             path = comm.TNCDataPath((_port, int(rate)))
         elif port.startswith("dongle:"):
             path = comm.SocketDataPath(("127.0.0.1", 20003, call, None))
+        elif port.startswith("agwpe:"):
+            path = comm.AGWDataPath(port, 0.5)
+            print "Opening AGW: %s" % path
         elif ":" in port:
             try:
                 (mode, host, port) = port.split(":")
@@ -782,8 +786,8 @@ class MainApp(object):
         if not account:
             self.msgrouter.trigger()
         elif account == "@WL2K":
-            mt = wl2k.WinLinkThread(self.config,
-                                    self.config.get("user", "callsign"))
+            call = self.config.get("user", "callsign")
+            mt = wl2k.wl2k_auto_thread(self.config, call)
             self.__connect_object(mt)
             mt.start()
         elif account in self.mail_threads.keys():
