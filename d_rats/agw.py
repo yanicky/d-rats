@@ -1,0 +1,271 @@
+import struct
+import utils
+import sys
+import socket
+
+class AGWFrame:
+    kind = 0
+
+    def __init__(self):
+        self.port = 0
+        self.res1 = self.res2 = self.res3 = 0
+        self.res4 = self.res5 = self.res6 = 0
+        self.pid = 0;
+        self.call_from = "".ljust(10)
+        self.call_to = "".ljust(10)
+        self.len = 0
+        self.payload = ""
+
+    def packed(self):
+        p = struct.pack("BBBBBBBB10s10sII",
+                        self.port,
+                        self.res1, self.res2, self.res3,
+                        self.kind,
+                        self.res4,
+                        self.pid,
+                        self.res5,
+                        self.call_from, self.call_to,
+                        self.len,
+                        self.res6);
+
+        return p + self.payload;
+
+    def unpack(self, data):
+        self.port,\
+            self.res1, self.res2, self.res3, \
+            self.kind, \
+            self.res4, \
+            self.pid, \
+            self.res5, \
+            self.call_from, self.call_to, \
+            self.len, \
+            self.res6 = struct.unpack("BBBBBBBB10s10sII", data[:36]);
+
+        self.payload = data[36:]
+        if len(self.payload) != self.len:
+            raise Exception("Expecting payload of %i, got %i" % \
+                                (self.len, len(self.payload)))
+
+    def set_payload(self, data):
+        self.payload = data
+        self.len = len(self.payload)
+
+    def get_payload(self):
+        return self.payload
+
+    def set_from(self, call):
+        self.call_from = call[:9].ljust(9, '\0') + '\0'
+
+    def get_from(self):
+        return self.call_from
+
+    def set_to(self, call):
+        self.call_to = call[:10].ljust(9, '\0') + '\0'
+
+    def get_to(self):
+        return self.call_to
+
+    def __str__(self):
+        return "%s -> %s [%s]: %s" % (self.call_from, self.call_to,
+                                      self.kind,
+                                      utils.filter_to_ascii(self.payload))
+
+class AGWFrame_k(AGWFrame):
+    kind = ord("k")
+
+class AGWFrame_K(AGWFrame):
+    kind = ord('K')
+
+class AGWFrame_C(AGWFrame):
+    kind = ord('C')
+
+class AGWFrame_d(AGWFrame):
+    kind = ord('d')
+
+class AGWFrame_D(AGWFrame):
+    kind = ord('D')
+
+class AGWFrame_X(AGWFrame):
+    kind = ord('X')
+
+class AGWFrame_x(AGWFrame):
+    kind = ord('x')
+
+AGW_FRAMES = {
+    "k" : AGWFrame_k,
+    "K" : AGWFrame_K,
+    "C" : AGWFrame_C,
+    "d" : AGWFrame_d,
+    "D" : AGWFrame_D,
+    "X" : AGWFrame_X,
+    "x" : AGWFrame_x,
+}
+
+class AGWConnection:
+    def __init__(self, addr, port, timeout=0):
+        self._s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        if timeout:
+            self._s.settimeout(timeout)
+        self._s.connect((addr, port))
+        self._buf = ""
+
+    def _detect_frame(self, data):
+        kind = data[4]
+        return AGW_FRAMES[kind]()
+
+    def send_frame(self, f):
+        self._s.send(f.packed())
+
+    def recv_frame(self, poll=False):
+        while True:
+            try:
+                c = self._s.recv(1)
+            except socket.timeout:
+                if poll:
+                    continue
+                else:
+                    break
+
+            if len(c) == 0: # Socket closed
+                self.close()
+                break
+
+            self._buf += c
+            if len(self._buf) >= 36:
+                f = self._detect_frame(self._buf)
+                try:
+                    f.unpack(self._buf)
+                    self._buf = ""
+                except Exception, e:
+                    continue
+                return f
+
+        return None
+
+    def close(self):
+        self._s.close()
+
+    def enable_raw(self):
+        kf = AGWFrame_k()
+        self.send_frame(kf)
+
+class AGW_AX25_Connection:
+    def __init__(self, agw, mycall):
+        self._agw = agw
+        self._mycall = mycall
+        self._inbuf = ""
+
+        xf = AGWFrame_X()
+        xf.set_from(mycall)
+        self._agw.send_frame(xf)
+
+        f = self._agw.recv_frame(True)
+        print f
+
+    def connect(self, tocall):
+        cf = AGWFrame_C()
+        cf.set_from(self._mycall)
+        cf.set_to(tocall)
+        self._agw.send_frame(cf)
+
+        f = self._agw.recv_frame(True)
+        print f.get_payload()
+
+    def disconnect(self):
+        df = AGWFrame_d()
+        df.set_from(self._mycall)
+        self._agw.send_frame(df)
+
+        f = self._agw.recv_frame(True)
+        print f.get_payload()
+
+    def send(self, data):
+        df = AGWFrame_D()
+        df.set_payload(data)
+        self._agw.send_frame(df)
+
+    def recv(self, length=0):
+        def consume(count):
+            b = self._inbuf[:count]
+            self._inbuf = self._inbuf[count:]
+            return b
+
+        if length and length < len(self._inbuf):
+            return consume(length)
+
+        f = self._agw.recv_frame()
+        if f:
+            self._inbuf += f.get_payload()
+
+        if not length:
+            return consume(len(self._inbuf))
+        else:
+            return consume(length)
+
+    def recv_text(self):
+        return self.recv().replace("\r", "\n")
+
+def agw_recv_frame(s):
+    data = ""
+    while True:
+        data += s.recv(1)
+        if len(data) >= 36:
+            f = AGWFrame_K()
+            try:
+                f.unpack(data)
+                data = ""
+            except Exception, e:
+                #print "Failed: %s" % e
+                continue
+            print "%s -> %s [%s]" % (f.get_from(), f.get_to(), chr(f.kind))
+            utils.hexprint(f.get_payload())
+            return
+
+def test_raw_recv(s):
+    f = AGWFrame_k()
+
+    s.send(f.packed())
+    while True:
+        agw_recv_frame(s)
+
+def test_connect(s):
+    xf = AGWFrame_X()
+    xf.set_from("KK7DS")
+    s.send(xf.packed())
+    agw_recv_frame(s)
+
+    cf = AGWFrame_C()
+    cf.set_from("KK7DS")
+    cf.set_to("PSVNOD")
+    s.send(cf.packed())
+    agw_recv_frame(s)
+
+    while True:
+        agw_recv_frame(s)
+
+def test_class_connect():
+    agw = AGWConnection("127.0.0.1", 8000, 0.5)
+    axc = AGW_AX25_Connection(agw, "KK7DS")
+    axc.connect("N7AAM-11")
+    print axc.recv_text()
+
+    while True:
+        print "packet> ",
+        l = sys.stdin.readline().strip()
+        if len(l) > 0:
+            axc.send(l + "\r")
+        r = True
+        while r:
+            r = axc.recv_text()
+            print r
+
+    axc.disconnect()
+
+if __name__ == "__main__":
+
+    #s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    #s.connect(("127.0.0.1", 8000))
+    #test_raw_recv(s)
+    #test_connect(s)
+
+    test_class_connect()
