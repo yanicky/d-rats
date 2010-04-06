@@ -84,6 +84,7 @@ _DEF_PREFS = {
     "toolbar_button_size" : "Default",
     "check_spelling" : "False",
     "confirm_exit" : "False",
+    "msg_wl2k_rmscall" : "",
 }
 
 _DEF_SETTINGS = {
@@ -123,6 +124,7 @@ _DEF_SETTINGS = {
     "http_proxy" : "",
     "station_msg_ttl" : "3600",
     "timestamp_positions" : "False",
+    "msg_wl2k_mode" : "Network",
 }
 
 _DEF_STATE = {
@@ -189,6 +191,11 @@ def load_portspec(wtree, portspec, info, name):
         wtree.get_widget("tnc_port").child.set_text(port)
         wtree.get_widget("tnc_tncport").set_value(int(tncport))
         utils.combo_select(wtree.get_widget("tnc_rate"), info)
+    elif portspec.startswith("agwpe:"):
+        tsel.set_active(4)
+        agw, addr, port = portspec.split(":")
+        wtree.get_widget("agw_addr").set_text(addr)
+        wtree.get_widget("agw_port").set_value(int(port))
     else:
         tsel.set_active(0)
         wtree.get_widget("serial_port").child.set_text(portspec)
@@ -225,14 +232,19 @@ def prompt_for_port(portspec=None, info=None, pname=None):
     netport = wtree.get_widget("net_port")
     netpass = wtree.get_widget("net_pass")
 
+    agwaddr = wtree.get_widget("agw_addr")
+    agwport = wtree.get_widget("agw_port")
+    agwport.set_value(8000)
+
     descriptions = [
         "A D-STAR radio connected to a serial port",
         "A network link to a ratflector instance",
         "A KISS-mode TNC connected to a serial port",
         "A locally-attached dongle",
+        "A TNC attached to an AGWPE server",
         ]
 
-    tablist = [_("Serial"), _("Network"), _("TNC"), _("Dongle")]
+    tablist = [_("Serial"), _("Network"), _("TNC"), _("Dongle"), _("AGWPE")]
 
     def chg_type(tsel, tabs, desc):
         print "Changed to %s" % tsel.get_active_text()
@@ -272,6 +284,8 @@ def prompt_for_port(portspec=None, info=None, pname=None):
                                   tratesel.get_active_text()
     elif t == _("Dongle"):
         portspec = "dongle:", ""
+    elif t == _("AGWPE"):
+        portspec = "agwpe:%s:%i" % (agwaddr.get_text(), agwport.get_value()), ""
 
     d.destroy()
 
@@ -387,6 +401,7 @@ class DratsConfigWidget(gtk.HBox):
         w.set_text(self.value)
         w.set_size_request(50, -1)
         w.show()
+        self._widget = w
 
         self.pack_start(w, 1, 1, 1)
 
@@ -1032,6 +1047,11 @@ class DratsMessagePanel(DratsPanel):
         vala.add_bool()
         self.mv(_("Allow WL2K Gateway"), vala)
 
+        wlm = DratsConfigWidget(config, "settings", "msg_wl2k_mode")
+        wlm.add_combo(["Network", "RMS"], False)
+        self.mv(_("WL2K Connection"), wlm)
+        disable_with_toggle(vala._widget, wlm._widget)
+
         wl2k_servers = [x + ".winlink.org" for x in ["server",
                                                      "perth",
                                                      "halifax",
@@ -1042,15 +1062,21 @@ class DratsMessagePanel(DratsPanel):
         prt = DratsConfigWidget(config, "prefs", "msg_wl2k_port")
         prt.add_numeric(1, 65535, 1)
         lab = gtk.Label(_("Port"))
-        self.mv(_("Winlink server"), srv, lab, prt)
+        self.mv(_("WL2K Network Server"), srv, lab, prt)
         disable_with_toggle(vala._widget, val._widget)
 
-        ssids = [""] + [str(x) for x in range(1,11)]
+        val = DratsConfigWidget(config, "prefs", "msg_wl2k_rmscall")
+        val.add_upper_text(10)
+        self.mv(_("WL2K RMS Station"), val)
+        disable_with_toggle(vala._widget, val._widget)
 
+
+        ssids = [""] + [str(x) for x in range(1,11)]
         val = DratsConfigWidget(config, "prefs", "msg_wl2k_ssid")
         val.add_combo(ssids, True)
         self.mv(_("Winlink SSID"), val)
 
+        
 
 class DratsNetworkPanel(DratsPanel):
     pass
