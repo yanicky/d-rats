@@ -23,6 +23,7 @@ from datetime import datetime
 
 import gobject
 import gtk
+import pango
 
 from ConfigParser import ConfigParser,DuplicateSectionError
 from glob import glob
@@ -591,6 +592,7 @@ class MessageList(MainWindowElement):
                 rend.set_property("markup", "<b>%s</b>" % val)
 
         r = gtk.CellRendererText()
+        r.set_property("ellipsize", pango.ELLIPSIZE_END)
         col = gtk.TreeViewColumn(_("Sender"), r, text=ML_COL_SEND)
         col.set_cell_data_func(r, bold_if_unread, ML_COL_SEND)
         col.set_sort_column_id(ML_COL_SEND)
@@ -599,6 +601,7 @@ class MessageList(MainWindowElement):
         msglist.append_column(col)
 
         r = gtk.CellRendererText()
+        r.set_property("ellipsize", pango.ELLIPSIZE_END)
         col = gtk.TreeViewColumn(_("Recipient"), r, text=ML_COL_RECP)
         col.set_cell_data_func(r, bold_if_unread, ML_COL_RECP)
         col.set_sort_column_id(ML_COL_RECP)
@@ -607,6 +610,7 @@ class MessageList(MainWindowElement):
         msglist.append_column(col)
 
         r = gtk.CellRendererText()
+        r.set_property("ellipsize", pango.ELLIPSIZE_END)
         col = gtk.TreeViewColumn(_("Subject"), r, text=ML_COL_SUBJ)
         col.set_cell_data_func(r, bold_if_unread, ML_COL_SUBJ)
         col.set_expand(True)
@@ -616,6 +620,7 @@ class MessageList(MainWindowElement):
         msglist.append_column(col)
 
         r = gtk.CellRendererText()
+        r.set_property("ellipsize", pango.ELLIPSIZE_END)
         col = gtk.TreeViewColumn(_("Type"), r, text=ML_COL_TYPE)
         col.set_cell_data_func(r, bold_if_unread, ML_COL_TYPE)
         col.set_sort_column_id(ML_COL_TYPE)
@@ -631,6 +636,7 @@ class MessageList(MainWindowElement):
                 rend.set_property("markup", "<b>%s</b>" % stamp)
 
         r = gtk.CellRendererText()
+        r.set_property("ellipsize", pango.ELLIPSIZE_END)
         col = gtk.TreeViewColumn(_("Date"), r, text=ML_COL_DATE)
         col.set_cell_data_func(r, render_date)
         col.set_sort_column_id(ML_COL_DATE)
