@@ -278,6 +278,13 @@ class AGWDataPath(DataPath):
     def __str__(self):
         return "[AGWPE %s:%s]" % (self._addr, self._port)
 
+    def get_agw_connection(self):
+        return self._agw
+
+    def read_all_waiting(self):
+        time.sleep(1)
+        return "" # FIXME
+
 class SerialDataPath(DataPath):
     def __init__(self, pathspec, timeout=0.25):
         DataPath.__init__(self, pathspec, timeout)
