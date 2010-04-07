@@ -2,6 +2,7 @@ import struct
 import utils
 import sys
 import socket
+import threading
 
 class AGWFrame:
     kind = 0
@@ -103,6 +104,8 @@ AGW_FRAMES = {
 
 class AGWConnection:
     def __init__(self, addr, port, timeout=0):
+        self.__lock = threading.Lock()
+
         self._s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         if timeout:
             self._s.settimeout(timeout)
@@ -119,29 +122,24 @@ class AGWConnection:
     def send_frame(self, f):
         self._s.send(f.packed())
 
-    def __recv_frame(self, poll=False):
-        while True:
+    def __recv_frame(self):
+        try:
+            c = self._s.recv(1)
+        except socket.timeout:
+            return None
+        
+        if len(c) == 0: # Socket closed
+            self.close()
+
+        self._buf += c
+        if len(self._buf) >= 36:
+            f = self._detect_frame(self._buf)
             try:
-                c = self._s.recv(1)
-            except socket.timeout:
-                if poll:
-                    continue
-                else:
-                    break
-
-            if len(c) == 0: # Socket closed
-                self.close()
-                break
-
-            self._buf += c
-            if len(self._buf) >= 36:
-                f = self._detect_frame(self._buf)
-                try:
-                    f.unpack(self._buf)
-                    self._buf = ""
-                except Exception, e:
-                    continue
-                return f
+                f.unpack(self._buf)
+                self._buf = ""
+            except Exception, e:
+                return None
+            return f
 
         return None
 
@@ -151,11 +149,13 @@ class AGWConnection:
             if buffered:
                 return buffered.pop()
 
-            f = self.__recv_frame(poll)
+            self.__lock.acquire()
+            f = self.__recv_frame()
+            self.__lock.release()
             if f:
                 print "Got %s frame while waiting for %s" % (chr(f.kind), kind)
                 self._framebuf[f.kind].insert(0, f)
-            elif not f and not buffered:
+            elif not poll:
                 return None
         
     def close(self):
@@ -176,7 +176,6 @@ class AGW_AX25_Connection:
         self._agw.send_frame(xf)
 
         f = self._agw.recv_frame_type("X", True)
-        print f
 
     def connect(self, tocall):
         cf = AGWFrame_C()
