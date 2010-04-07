@@ -199,15 +199,6 @@ class MainApp(object):
         else:
             path = comm.SerialDataPath((port, int(rate)))
                                    
-        try:
-            path.connect()
-        except comm.DataPathNotConnectedError, e:
-            print "COMM did not connect: %s" % e
-            event = main_events.Event(None,
-                                      "Failed to connect (%s)" % e)
-            self.mainwindow.tabs["event"].event(event)
-            return False
-
         transport_args = {
             "compat" : raw,
             "warmup_length" : self.config.getint("settings", "warmup_length"),
