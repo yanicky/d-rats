@@ -137,10 +137,17 @@ class HTMLFormWriter(FormWriter):
         style = libxslt.parseStylesheetDoc(styledoc)
         result = style.applyStylesheet(doc, None)
         style.saveResultToFilename(outfile, result, 0)
+        # FIXME!!
         #style.freeStylesheet()
         #styledoc.freeDoc()
         #doc.freeDoc()
         #result.freeDoc()
+
+    def writeString(self, doc):
+        styledoc = libxml2.parseFile(self.xslpath)
+        style = libxslt.parseStylesheetDoc(styledoc)
+        result = style.applyStylesheet(doc, None)
+        return style.saveResultToString(result)
 
 class FieldWidget(object):
     def __init__(self, node):
@@ -149,6 +156,8 @@ class FieldWidget(object):
         self.id = "unknown"
         self.type = (self.__class__.__name__.replace("Widget", "")).lower()
         self.widget = None
+        self.vertical = False
+        self.nolabel = False
 
     def set_caption(self, caption):
         self.caption = caption
@@ -157,16 +166,7 @@ class FieldWidget(object):
         self.id = id
 
     def make_container(self):
-        hbox = gtk.HBox(True, 2)
-
-        label = gtk.Label(self.caption)
-        hbox.pack_start(label, 0,0,0)
-        hbox.pack_start(self.widget, 1,1,0)
-
-        label.show()
-        hbox.show()
-
-        return hbox
+        return self.widget
 
     def get_widget(self):
         return self.make_container()
@@ -236,6 +236,7 @@ class ToggleWidget(FieldWidget):
 class MultilineWidget(FieldWidget):
     def __init__(self, node):
         FieldWidget.__init__(self, node)
+        self.vertical = True
 
         if node.children:
             text = xml_unescape(node.children.getContent().strip())
@@ -255,11 +256,13 @@ class MultilineWidget(FieldWidget):
             spell.prepare_TextBuffer(self.buffer)
 
     def make_container(self):
-        vbox = gtk.VBox(False, 2)
 
         sw = gtk.ScrolledWindow()
         sw.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
         sw.add(self.widget)
+        return sw
+
+        vbox = gtk.VBox(False, 2)
 
         label = gtk.Label(self.caption)
         vbox.pack_start(label, 0,0,0)
@@ -527,6 +530,7 @@ class MultiselectWidget(FieldWidget):
 class LabelWidget(FieldWidget):
     def __init__(self, node):
         FieldWidget.__init__(self, node)
+        self.nolabel = True
 
     def update_node(self):
         pass
@@ -612,6 +616,9 @@ class FormFile(object):
         self.doc = libxml2.parseMemory(data, len(data))
         self.process_form(self.doc)
 
+    def configure(self, config):
+        self.xsl_dir = config.form_source_dir()
+
     def __del__(self):
         self.doc.freeDoc()
 
@@ -619,6 +626,10 @@ class FormFile(object):
         f = file(filename, "w")
         print >>f, self.doc.serialize()
         f.close()
+
+    def export_to_string(self):
+        w = HTMLFormWriter(self.id, self.xsl_dir)
+        return w.writeString(self.doc)
         
     def get_xml(self):
         return self.doc.serialize()
@@ -881,41 +892,33 @@ class FormDialog(FormFile, gtk.Dialog):
         checkwidget.set_text("%i" % len(message.split()))
 
     def build_routing_widget(self):
-        shbox = gtk.HBox(True, 2)
-        shbox.show()
-
-        dhbox = gtk.HBox(True, 2)
-        dhbox.show()
+        tab = gtk.Table(2, 2)
 
         lab = gtk.Label(_("Source Callsign"))
         lab.show()
-        shbox.pack_start(lab, 0, 0, 0)
+        tab.attach(lab, 0, 1, 0, 1, 0, 0, 2, 5)
 
         lab = gtk.Label(_("Destination Callsign"))
         lab.show()
-        dhbox.pack_start(lab, 0, 0, 0)
+        tab.attach(lab, 0, 1, 1, 2, 0, 0, 2, 5)
 
         srcbox = gtk.Entry()
         srcbox.set_text(self.get_path_src())
         srcbox.set_editable(False)
         srcbox.show()
         self._srcbox = srcbox
-        shbox.pack_start(srcbox, 1, 1, 0)
+        tab.attach(srcbox, 1, 2, 0, 1, gtk.EXPAND|gtk.FILL, 0)
 
         dstbox = gtk.Entry()
         dstbox.set_text(self.get_path_dst())
         dstbox.show()
         self._dstbox = dstbox
-        dhbox.pack_start(dstbox, 1, 1, 0)
-
-        vbox = gtk.VBox(True, 0)
-        vbox.pack_start(shbox, 0, 0, 0)
-        vbox.pack_start(dhbox, 0, 0 ,0)
-        vbox.show()
+        tab.attach(dstbox, 1, 2, 1, 2, gtk.EXPAND|gtk.FILL, 0)
 
         exp = gtk.Expander()
         exp.set_label(_("Routing Information"))
-        exp.add(vbox)
+        exp.add(tab)
+        tab.show()
         exp.set_expanded(True)
         exp.show()
 
@@ -1036,6 +1039,9 @@ class FormDialog(FormFile, gtk.Dialog):
                 d = ask_for_confirmation("Close without saving?", self)
                 if not d:
                     return True
+            w, h = self.get_size()
+            self._config.set("state", "form_%s_x" % self.id, str(w))
+            self._config.set("state", "form_%s_y" % self.id, str(h))
             self.response(gtk.RESPONSE_CLOSE)
             return False
         def save(but):
@@ -1084,16 +1090,13 @@ class FormDialog(FormFile, gtk.Dialog):
         self.connect("delete-event", close)
         self.connect("response", reject_delete_response)
 
-        import mainapp
-        config = mainapp.get_mainapp().config
-
         i = 0
         for img, lab, tip, func in buttons:
             if not lab:
                 ti = gtk.ToolButton(img)
             else:
                 icon = gtk.Image()
-                icon.set_from_pixbuf(config.ship_img(img))
+                icon.set_from_pixbuf(self._config.ship_img(img))
                 icon.show()
                 ti = gtk.ToolButton(icon, lab)
             ti.show()
@@ -1118,9 +1121,7 @@ class FormDialog(FormFile, gtk.Dialog):
         if self.logo_path:
             image = gtk.Image()
             try:
-                import mainapp
-                base = mainapp.get_mainapp().config.get("settings",
-                                                        "form_logo_dir")
+                base = self._config.get("settings", "form_logo_dir")
                 print "Logo path: %s" % os.path.join(base, self.logo_path)
                 image.set_from_file(os.path.join(base, self.logo_path))
                 self.vbox.pack_start(image, 0,0,0)
@@ -1132,7 +1133,9 @@ class FormDialog(FormFile, gtk.Dialog):
 
         self.vbox.pack_start(self.build_routing_widget(), 0, 0, 0)
 
-        field_box = gtk.VBox(False, 2)
+        #field_box = gtk.VBox(False, 2)
+        field_box = gtk.Table(len(self.fields), 2)
+        row = 0
 
         sw = gtk.ScrolledWindow()
         sw.set_policy(gtk.POLICY_NEVER,
@@ -1152,12 +1155,25 @@ class FormDialog(FormFile, gtk.Dialog):
             elif f.id == "_auto_message":
                 msg_field = f
             elif f.id == "_auto_senderX": # FIXME
-                config = mainapp.get_mainapp().config
                 if not f.entry.widget.get_text():
-                    f.entry.widget.set_text(config.get("user", "callsign"))
+                    call = self._config.get("user", "callsign")
+                    f.entry.widget.set_text(call)
                 f.entry.widget.set_property("editable", False)
             
-            field_box.pack_start(f.get_widget(), 0,0,0)
+            l = gtk.Label(f.caption)
+            l.show()
+            w = f.get_widget()
+            if f.entry.vertical:
+                field_box.attach(l, 0, 2, row, row+1, gtk.SHRINK, gtk.SHRINK)
+                row += 1
+                field_box.attach(w, 0, 2, row, row+1)
+            elif f.entry.nolabel:
+                field_box.attach(w, 0, 2, row, row+1, gtk.SHRINK, gtk.SHRINK)
+            else:
+                field_box.attach(l, 0, 1, row, row+1, gtk.SHRINK, gtk.SHRINK, 5)
+                field_box.attach(w, 1, 2, row, row+1, yoptions=0)
+            row += 1
+            
 
         self.vbox.pack_start(self.build_att_widget(), 0, 0, 0)
         self.vbox.pack_start(self.build_path_widget(), 0, 0, 0)
@@ -1179,10 +1195,21 @@ class FormDialog(FormFile, gtk.Dialog):
         gtk.Dialog.__init__(self, buttons=(), parent=parent)
         FormFile.__init__(self, filename)
 
+        import mainapp
+        self._config = mainapp.get_mainapp().config
+
         self.process_fields(self.doc)
         self.set_title(self.title_text)
 
-        self.set_default_size(300,500)
+        try:
+            x = self._config.getint("state", "form_%s_x" % self.id)
+            y = self._config.getint("state", "form_%s_y" % self.id)
+        except Exception, e:
+            print "Unable to get form_%s_*: %s" % (self.id, e)
+            x = 300
+            y = 500
+
+        self.set_default_size(x, y)
 
         print "Form ID: %s" % self.id
 
@@ -1201,9 +1228,6 @@ class FormDialog(FormFile, gtk.Dialog):
         self.update_dst()
 
         return r
-
-    def configure(self, config):
-        self.xsl_dir = config.form_source_dir()
 
     def set_editable(self, editable):
         for field in self.fields:

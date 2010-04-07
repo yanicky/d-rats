@@ -139,6 +139,8 @@ _DEF_STATE = {
     "status_msg" : "Online (D-RATS)",
     "status_state" : "Online",
     "events_sort" : str(int(gtk.SORT_DESCENDING)),
+    "form_email_x" : "600",
+    "form_email_y" : "500",
 }
 
 _DEF_SOUNDS = {
