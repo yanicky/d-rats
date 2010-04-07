@@ -787,7 +787,7 @@ class MainApp(object):
             self.msgrouter.trigger()
         elif account == "@WL2K":
             call = self.config.get("user", "callsign")
-            mt = wl2k.wl2k_auto_thread(self.config, call)
+            mt = wl2k.wl2k_auto_thread(self, call)
             self.__connect_object(mt)
             mt.start()
         elif account in self.mail_threads.keys():

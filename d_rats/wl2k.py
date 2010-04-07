@@ -374,11 +374,8 @@ class WinLinkRMSPacket(WinLinkCMS):
         WinLinkCMS.__init__(self, callsign)
 
     def _connect(self):
-        print "Connecting via AX.25"
         self._conn = agw.AGW_AX25_Connection(self.__agw, self._callsign)
-        print "Got connection"
         self._conn.connect(self.__remote)
-        print "Connected"
 
     def _disconnect(self):
         self._conn.disconnect()
@@ -516,17 +513,23 @@ class WinLinkAGWThread(WinLinkThread):
         remote = self._config.get("prefs", "msg_wl2k_rmscall")
         return WinLinkRMSPacket(self._callssid, remote, self.__agwconn)
 
-def wl2k_auto_thread(config, *args, **kwargs):
+def wl2k_auto_thread(ma, *args, **kwargs):
+    mode = ma.config.get("settings", "msg_wl2k_mode")
+
     #May need for AGW
     #call = config.get("user", "callsign")
-    mode = config.get("settings", "msg_wl2k_mode")
     print "WL2K Mode is: %s" % mode
     if mode == "Network":
-        mt = WinLinkTelnetThread(config, *args, **kwargs)
+        mt = WinLinkTelnetThread(ma.config, *args, **kwargs)
     elif mode == "RMS":
         # TEMPORARY
-        a = agw.AGWConnection("127.0.0.1", 8000, 0.5)
-        mt = WinLinkAGWThread(config, *args, **kwargs)
+        port = ma.config.get("prefs", "msg_wl2k_rmsport")
+        if not ma.sm.has_key(port):
+            raise Exception("No such AGW port %s for WL2K" % port)
+
+        a = ma.sm[port][0].pipe.get_agw_connection()
+        #a = agw.AGWConnection("127.0.0.1", 8000, 0.5)
+        mt = WinLinkAGWThread(ma.config, *args, **kwargs)
         mt.set_agw_conn(a)
     else:
         raise Exception("Unknown WL2K mode: %s" % mode)
