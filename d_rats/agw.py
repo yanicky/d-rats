@@ -108,6 +108,9 @@ class AGWConnection:
             self._s.settimeout(timeout)
         self._s.connect((addr, port))
         self._buf = ""
+        self._framebuf = {}
+        for i in AGW_FRAMES.keys():
+            self._framebuf[ord(i)] = []
 
     def _detect_frame(self, data):
         kind = data[4]
@@ -116,7 +119,7 @@ class AGWConnection:
     def send_frame(self, f):
         self._s.send(f.packed())
 
-    def recv_frame(self, poll=False):
+    def __recv_frame(self, poll=False):
         while True:
             try:
                 c = self._s.recv(1)
@@ -142,6 +145,19 @@ class AGWConnection:
 
         return None
 
+    def recv_frame_type(self, kind, poll=False):
+        while True:
+            buffered = self._framebuf.get(ord(kind), [])
+            if buffered:
+                return buffered.pop()
+
+            f = self.__recv_frame(poll)
+            if f:
+                print "Got %s frame while waiting for %s" % (chr(f.kind), kind)
+                self._framebuf[f.kind].insert(0, f)
+            elif not f and not buffered:
+                return None
+        
     def close(self):
         self._s.close()
 
@@ -159,7 +175,7 @@ class AGW_AX25_Connection:
         xf.set_from(mycall)
         self._agw.send_frame(xf)
 
-        f = self._agw.recv_frame(True)
+        f = self._agw.recv_frame_type("X", True)
         print f
 
     def connect(self, tocall):
@@ -168,7 +184,7 @@ class AGW_AX25_Connection:
         cf.set_to(tocall)
         self._agw.send_frame(cf)
 
-        f = self._agw.recv_frame(True)
+        f = self._agw.recv_frame_type("C", True)
         print f.get_payload()
 
     def disconnect(self):
@@ -176,7 +192,7 @@ class AGW_AX25_Connection:
         df.set_from(self._mycall)
         self._agw.send_frame(df)
 
-        f = self._agw.recv_frame(True)
+        f = self._agw.recv_frame_type("d", True)
         print f.get_payload()
 
     def send(self, data):
@@ -193,7 +209,7 @@ class AGW_AX25_Connection:
         if length and length < len(self._inbuf):
             return consume(length)
 
-        f = self._agw.recv_frame()
+        f = self._agw.recv_frame_type("D")
         if f:
             self._inbuf += f.get_payload()
 
