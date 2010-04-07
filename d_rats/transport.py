@@ -97,6 +97,7 @@ class Transporter(object):
         self.warmup_timeout = kwargs.get("warmup_timeout", 3)
         self.force_delay = kwargs.get("force_delay", 0)
         self.compat_delay = kwargs.get("compat_delay", 5)
+        self.msg_fn = kwargs.get("msg_fn", None)
 
         self.thread = threading.Thread(target=self.worker,
                                        args=(authfn,))
@@ -269,15 +270,23 @@ class Transporter(object):
         return (time.time() - self.last_recv) > self.compat_delay
 
     def worker(self, authfn):
+        if self.msg_fn:
+            self.msg_fn("Connecting")
+
         try:
             self.pipe.connect()
         except comm.DataPathNotConnectedError, e:
-            print "Comm %s did not connect" % self.pipe
-            self.enabled = False
+            if self.msg_fn:
+                self.msg_fn("Unable to connect (%s)" % e)
+            print "Comm %s did not connect: %s" % (self.pipe, e)
+            return
 
         if authfn and not authfn(self.pipe):
-            print "Transport exiting due to failed authfn"
+            if self.msg_fn:
+                self.msg_fn("Authentication failed")
             self.enabled = False
+        elif self.msg_fn:
+            self.msg_fn("Connected")
 
         while self.enabled:
             try:

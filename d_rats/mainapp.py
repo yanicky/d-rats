@@ -198,12 +198,18 @@ class MainApp(object):
             path = comm.SocketDataPath((host, int(port), call, rate))
         else:
             path = comm.SerialDataPath((port, int(rate)))
+
+        def transport_msg(msg):
+            _port = name
+            event = main_events.Event(None, "%s: %s" % (_port, msg))
+            gobject.idle_add(self.mainwindow.tabs["event"].event, event)
                                    
         transport_args = {
             "compat" : raw,
             "warmup_length" : self.config.getint("settings", "warmup_length"),
             "warmup_timeout" : self.config.getint("settings", "warmup_timeout"),
             "force_delay" : self.config.getint("settings", "force_delay"),
+            "msg_fn" : transport_msg,
             }
 
         if not self.sm.has_key(name):
@@ -261,8 +267,6 @@ class MainApp(object):
 
             sm.set_comm(path, **transport_args)
             sm.set_call(call)
-
-
 
         return True
 
