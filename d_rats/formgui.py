@@ -766,7 +766,7 @@ class FormFile(object):
     def get_subject_string(self):
         subj = self._try_get_fields("_auto_subject", "subject")
         if subj != "Unknown":
-            return subj
+            return subj.replace("\r", "").replace("\n", "")
 
         return "%s#%s" % (self.get_path_src(),
                           self._try_get_fields("_auto_number"))
