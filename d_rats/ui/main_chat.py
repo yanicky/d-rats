@@ -79,6 +79,19 @@ class ChatQM(MainWindowElement):
         store.remove(iter)
         self._config.remove_option("quick", key)
 
+    def _reorder_rows(self, model, path):
+        for i in self._config.options("quick"):
+            self._config.remove_option("quick", i)
+        
+        i = 0
+        iter = model.get_iter_first()
+        while iter:
+            msg, = model.get(iter, 0)
+            print "Setting %i: %s" % (i, msg)
+            self._config.set("quick", "msg_%i" % i, msg)
+            iter = model.iter_next(iter)
+            i += 1
+
     def __init__(self, wtree, config):
         MainWindowElement.__init__(self, wtree, config, "chat")
 
@@ -86,16 +99,18 @@ class ChatQM(MainWindowElement):
                                              "qm_list")
 
         store = gtk.ListStore(gobject.TYPE_STRING, gobject.TYPE_STRING)
+        store.connect("row-deleted", self._reorder_rows)
         qm_list.set_model(store)
         qm_list.set_headers_visible(False)
+        qm_list.set_reorderable(True)
         qm_list.connect("row-activated", self._send_qm)
 
         r = gtk.CellRendererText()
         col = gtk.TreeViewColumn("", r, text=0)
         qm_list.append_column(col)
 
-        for key, msg in self._config.items("quick"):
-            store.append((msg, key))
+        for key in sorted(self._config.options("quick")):
+            store.append((self._config.get("quick", key), key))
 
         qm_add.connect("clicked", self._add_qm, store)
         qm_rem.connect("clicked", self._rem_qm, qm_list)
@@ -462,6 +477,13 @@ class ChatTab(MainWindowTab):
         if event.keyval == 65293:
             self._send_button(None, dest, view)
             return True
+        elif event.keyval >= 65470 and event.keyval <= 65482:
+            index = event.keyval - 65470
+            msgs = sorted(self._config.options("quick"))
+            port = dest.get_active_text()
+            if index < len(msgs):
+                msg = self._config.get("quick", msgs[index])
+                self.emit("user-send-chat", "CQCQCQ", port, msg, False)
 
     def __init__(self, wtree, config):
         MainWindowTab.__init__(self, wtree, config, "chat")
