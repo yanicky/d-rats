@@ -85,6 +85,7 @@ _DEF_PREFS = {
     "check_spelling" : "False",
     "confirm_exit" : "False",
     "msg_wl2k_rmscall" : "",
+    "msg_wl2k_rmsport" : "",
 }
 
 _DEF_SETTINGS = {
@@ -302,6 +303,21 @@ def disable_with_toggle(toggle, widget):
     toggle.connect("toggled",
                    lambda t, w: w.set_sensitive(t.get_active()), widget)
     widget.set_sensitive(toggle.get_active())
+
+def disable_by_combo(combo, map):
+    # Expects a map like:
+    # map = {
+    #   "value1" : [el1, el2],
+    #   "value2" : [el3, el4],
+    # }
+    def set_disables(combo, map):
+        for i in map.values():
+            for j in i:
+                j.set_sensitive(False)
+        for i in map[combo.get_active_text()]:
+            i.set_sensitive(True)
+    combo.connect("changed", set_disables, map)
+    set_disables(combo, map)
 
 class AddressLookup(gtk.Button):
     def __init__(self, caption, latw, lonw, window=None):
@@ -1052,7 +1068,6 @@ class DratsMessagePanel(DratsPanel):
         wlm = DratsConfigWidget(config, "settings", "msg_wl2k_mode")
         wlm.add_combo(["Network", "RMS"], False)
         self.mv(_("WL2K Connection"), wlm)
-        disable_with_toggle(vala._widget, wlm._widget)
 
         wl2k_servers = [x + ".winlink.org" for x in ["server",
                                                      "perth",
@@ -1065,18 +1080,33 @@ class DratsMessagePanel(DratsPanel):
         prt.add_numeric(1, 65535, 1)
         lab = gtk.Label(_("Port"))
         self.mv(_("WL2K Network Server"), srv, lab, prt)
-        disable_with_toggle(vala._widget, val._widget)
 
-        val = DratsConfigWidget(config, "prefs", "msg_wl2k_rmscall")
-        val.add_upper_text(10)
-        self.mv(_("WL2K RMS Station"), val)
-        disable_with_toggle(vala._widget, val._widget)
+        rms = DratsConfigWidget(config, "prefs", "msg_wl2k_rmscall")
+        rms.add_upper_text(10)
 
+        lab = gtk.Label(_(" on port "))
+
+        ports = []
+        for port in self.config.options("ports"):
+            spec = self.config.get("ports", port).split(",")
+            if "agwpe" in spec[1]:
+                ports.append(spec[-1])
+
+        rpt = DratsConfigWidget(config, "prefs", "msg_wl2k_rmsport")
+        rpt.add_combo(ports, False)
+        self.mv(_("WL2K RMS Station"), rms, lab, rpt)
+
+        map = {
+            "Network" : [srv._widget, prt._widget],
+            "RMS"     : [rms._widget, rpt._widget],
+            }
+        disable_by_combo(wlm._widget, map)
+        disable_with_toggle(vala._widget, wlm._widget)
 
         ssids = [""] + [str(x) for x in range(1,11)]
         val = DratsConfigWidget(config, "prefs", "msg_wl2k_ssid")
         val.add_combo(ssids, True)
-        self.mv(_("Winlink SSID"), val)
+        self.mv(_("My Winlink SSID"), val)
 
         
 
