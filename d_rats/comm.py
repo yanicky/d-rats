@@ -261,16 +261,10 @@ class AGWDataPath(DataPath):
         self.connect()
 
     def read(self, count):
-        f = self._agw.recv_frame()
-        if f:
-            utils.hexprint(f.get_payload())
-            return f.get_payload()
+        return agw.receive_data(self._agw)
 
     def write(self, buf):
-        print "Writing %i" % len(buf)
-        f = agw.AGWFrame_K()
-        f.set_payload(buf)
-        self._agw.send_frame(f)
+        agw.transmit_data(self._agw, "CQ", ["SRC", "RELAY"], buf)
 
     def is_connected(self):
         return bool(self._agw)
@@ -282,8 +276,7 @@ class AGWDataPath(DataPath):
         return self._agw
 
     def read_all_waiting(self):
-        time.sleep(1)
-        return "" # FIXME
+        return agw.receive_data(self._agw)
 
 class SerialDataPath(DataPath):
     def __init__(self, pathspec, timeout=0.25):

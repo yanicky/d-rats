@@ -68,7 +68,7 @@ class AGWFrame:
 
     def __str__(self):
         return "%s -> %s [%s]: %s" % (self.call_from, self.call_to,
-                                      self.kind,
+                                      chr(self.kind),
                                       utils.filter_to_ascii(self.payload))
 
 class AGWFrame_k(AGWFrame):
@@ -276,6 +276,83 @@ def test_class_connect():
 
     axc.disconnect()
 
+def ssid(call):
+    if "-" in call:
+        try:
+            c, s = call.split("-", 1)
+        except Exception, e:
+            raise Exception("Callsign `%s' not in CCCCCC-N format" % call)
+    else:
+        c = call
+        s = 0
+
+    if len(c) > 6:
+        raise Exception("Callsign `%s' is too long" % c)
+
+    c = c.ljust(6)
+
+    try:
+        s = int(s)
+    except Exception, e:
+        raise Exception("Invalid SSID `%s'" % s)
+
+    if s < 0 or s > 7:
+        raise Exception("Invalid SSID `%i'" % s)
+
+    return c, s
+
+def encode_ssid(s, last=False):
+    if last:
+        l = 0x61
+    else:
+        l = 0x60
+    return chr((s << 1) | l)
+
+
+# conn is the AGWConnection
+# dcall is the destination
+# spath is a list of either the source, or source + digis
+# data is the data to transmit
+def transmit_data(conn, dcall, spath, data):
+    c, s = ssid(dcall)
+
+    # Encode the call by grabbing each character and shifting
+    # left one bit
+    dst = "".join([chr(ord(x) << 1) for x in c])
+    dst += encode_ssid(s)
+
+    src = ""
+    for scall in spath:
+        c, s = ssid(scall)
+        src += "".join([chr(ord(x) << 1) for x in c])
+        src += encode_ssid(s, spath[-1] == scall)
+    
+    d = struct.pack("B7s%isBB" % len(src),
+                    0x00,    # Space for flag (?)
+                    dst,     # Dest Call
+                    src,     # Source Path
+                    0x3E,    # Info
+                    0xF0)    # PID: No layer 3
+    d += data
+
+    utils.hexprint(d)
+
+    f = AGWFrame_K()
+    f.set_payload(d)
+    conn.send_frame(f)
+    
+def receive_data(conn, blocking=False):
+    f = conn.recv_frame_type("K", blocking)
+    if f:
+        return f.get_payload()
+    else:
+        return ""
+
+def test(conn):
+    f = AGWFrame_K()
+    
+    conn.send_frame(f)
+
 if __name__ == "__main__":
 
     #s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -283,4 +360,9 @@ if __name__ == "__main__":
     #test_raw_recv(s)
     #test_connect(s)
 
-    test_class_connect()
+    agw = AGWConnection("127.0.0.1", 8000, 0.5)
+    agw.enable_raw()
+
+    #test_class_connect()
+    #test_ui()
+    transmit_data(agw, "CQ", ["KK7DS", "KK7DS-3"], "foo")
