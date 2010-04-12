@@ -126,23 +126,18 @@ class QSTText(gobject.GObject):
         self.emit("qst-fired", val)
 
 class QSTExec(QSTText):
-    size_limit = 2048
-
     def do_qst(self):
+        size_limit = self.config.getint("settings", "qst_size_limit")
         pform = platform.get_platform()
         s, o = pform.run_sync(self.text)
         if s:
             print "Command failed with status %i" % s
 
-        if o and len(o) <= self.size_limit:
-            print "Sending command output: %s" % o
-            return o
-        else:
-            print "Command output length %i exceeds limit of %i" % (len(o),
-                                                                    self.size_limit)
+        return o[:size_limit]
 
 class QSTFile(QSTText):
     def do_qst(self):
+        size_limit = self.config.getint("settings", "qst_size_limit")
         try:
             f = NetFile(self.text)
         except:
@@ -152,7 +147,7 @@ class QSTFile(QSTText):
         text = f.read()
         f.close()
 
-        return text
+        return text[:size_limit]
 
 class QSTGPS(QSTText):
     def __init__(self, config, content):

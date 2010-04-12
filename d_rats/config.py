@@ -126,6 +126,7 @@ _DEF_SETTINGS = {
     "station_msg_ttl" : "3600",
     "timestamp_positions" : "False",
     "msg_wl2k_mode" : "Network",
+    "qst_size_limit" : "2048",
 }
 
 _DEF_STATE = {
@@ -924,6 +925,10 @@ class DratsChatPanel(DratsPanel):
         val = DratsConfigWidget(config, "prefs", "chat_timestamp")
         val.add_bool()
         self.mv(_("Timestamp chat messages"), val)
+
+        val = DratsConfigWidget(config, "settings", "qst_size_limit")
+        val.add_numeric(1, 9999, 1)
+        self.mv(_("QST Size Limit"), val)
 
 class DratsSoundPanel(DratsPanel):
     def __init__(self, config):
