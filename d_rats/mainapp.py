@@ -64,6 +64,7 @@ import wl2k
 import inputdialog
 import version
 import agw
+import mailsrv
 
 from ui import main_events
 
@@ -352,6 +353,18 @@ class MainApp(object):
             self.__connect_object(t)
             t.start()
             self.mail_threads[acct] = t
+
+        if self.pop3srv:
+            self.pop3srv.stop()
+            self.pop3srv = None
+
+        try:
+            if self.config.getboolean("settings", "msg_pop3_server"):
+                self.pop3srv = mailsrv.DRATS_POP3ServerThread(self.config)
+                self.pop3srv.start()
+        except Exception, e:
+            print "Unable to start POP3 server: %s" % e
+            log_exception()
 
     def _refresh_lang(self):
         locales = { "English" : "en",
@@ -864,6 +877,7 @@ class MainApp(object):
         self.seen_callsigns = CallList()
         self.position = None
         self.mail_threads = {}
+        self.pop3srv = None
 
         self.config = config.DratsConfig(self)
         self._refresh_lang()

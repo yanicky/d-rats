@@ -132,6 +132,49 @@ def is_sendable_dest(mycall, string):
     # Looks like it's a candidate to be routed
     return True
 
+def form_to_email(config, msgfn, replyto=None):
+    form = formgui.FormFile(msgfn)
+    form.configure(config)
+
+    if not replyto:
+        replyto = "DO_NOT_REPLY@d-rats.com"
+
+    sender = form.get_path_src()
+    for i in "<>\"'":
+        if i in sender:
+            sender = sender.replace(i, "")
+
+    root = MIMEMultipart("related")
+    root["Subject"] = form.get_subject_string()
+    root["From"] = '"%s" <%s>' % (sender, replyto)
+    root["To"] = form.get_path_dst()
+    root["Reply-To"] = root["From"]
+    root["Message-id"] = form.get_path_mid()
+    root.preamble = "This is a multi-part message in MIME format"
+
+    altp = MIMEMultipart("alternative")
+    root.attach(altp)
+
+    warn = "This message is a D-RATS rich form and is only viewable " +\
+        "in D_RATS itself or in an HTML-capable email client"
+
+    if form.id == "email":
+        altp.attach(MIMEText(form.get_field_value("message"), "plain"))
+    else:
+        altp.attach(MIMEText(warn, "plain"))
+        altp.attach(MIMEText(form.export_to_string(), "html"))
+
+    payload = MIMEBase("d-rats", "form_xml")
+    payload.set_payload(form.get_xml())
+    payload.add_header("Content-Disposition",
+                       "attachment",
+                       filename="do_not_open_me")
+    root.attach(payload)
+
+    del form
+
+    return root
+
 def move_to_folder(config, msg, folder):
     newfn = os.path.join(config.form_store_dir(),
                          folder,
@@ -326,46 +369,6 @@ class MessageRouter(gobject.GObject):
 
         return route
 
-    def _form_to_email(self, msgfn, replyto):
-        form = formgui.FormFile(msgfn)
-        form.configure(self.__config)
-
-        if not replyto:
-            replyto = "DO_NOT_REPLY@d-rats.com"
-
-        sender = form.get_path_src()
-        for i in "<>\"'":
-            if i in sender:
-                sender = sender.replace(i, "")
-
-        root = MIMEMultipart("related")
-        root["Subject"] = form.get_subject_string()
-        root["From"] = '"%s" <%s>' % (sender, replyto)
-        root["To"] = form.get_path_dst()
-        root["Reply-To"] = root["From"]
-        root.preamble = "This is a multi-part message in MIME format"
-
-        altp = MIMEMultipart("alternative")
-        root.attach(altp)
-
-        warn = "This message is a D-RATS rich form and is only viewable " +\
-            "in D_RATS itself or in an HTML-capable email client"
-
-        if form.id == "email":
-            altp.attach(MIMEText(form.get_field_value("message"), "plain"))
-        else:
-            altp.attach(MIMEText(warn, "plain"))
-            altp.attach(MIMEText(form.export_to_string(), "html"))
-    
-        payload = MIMEBase("d-rats", "form_xml")
-        payload.set_payload(form.get_xml())
-        payload.add_header("Content-Disposition",
-                           "attachment",
-                           filename="do_not_open_me")
-        root.attach(payload)
-
-        return root
-
     def _form_to_wl2k_em(self, dst, msgfn):
         form = formgui.FormFile(msgfn)
 
@@ -396,7 +399,7 @@ class MessageRouter(gobject.GObject):
         pwrd = self.__config.get("settings", "smtp_password")
         port = self.__config.getint("settings", "smtp_port")
 
-        msg = self._form_to_email(msgfn, replyto)
+        msg = form_to_email(self.__config, msgfn, replyto)
 
         mailer = smtplib.SMTP(server, port)
         mailer.set_debuglevel(1)
