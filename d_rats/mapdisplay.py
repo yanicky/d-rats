@@ -243,9 +243,7 @@ class MapTile(object):
     def __add__(self, count):
         (x, y) = count
 
-        lat, lon = num2deg(self.x + x, self.y + y, self.zoom)
-
-        return MapTile(lat, lon, self.zoom)
+        return MapTile(self.x+x, self.y+y, self.zoom)
 
     def __sub__(self, tile):
         return (self.x - tile.x, self.y - tile.y)
@@ -263,11 +261,15 @@ class MapTile(object):
         return lat_match and lon_match
 
     def __init__(self, lat, lon, zoom):
-        self.lat = lat
-        self.lon = lon
         self.zoom = zoom
-
-        self.x, self.y = self.path_els()
+        if isinstance(lat, int) and isinstance(lon, int):
+            self.x = lat
+            self.y = lon
+            self.lat, self.lon = num2deg(self.x, self.y, self.zoom)
+        else:
+            self.lat = lat
+            self.lon = lon
+            self.x, self.y = deg2num(self.lat, self.lon, self.zoom)
 
         if BASE_DIR:
             self.dir = BASE_DIR
@@ -277,6 +279,9 @@ class MapTile(object):
 
         if not os.path.isdir(self.dir):
             os.mkdir(self.dir)
+
+    def __str__(self):
+        return "%.4f,%.4f (%i,%i)" % (self.lat, self.lon, self.x, self.y)
 
 class LoadContext(object):
     pass
