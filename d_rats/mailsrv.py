@@ -215,6 +215,17 @@ class DRATS_POP3Handler(POP3Handler):
             msg = msgrouting.form_to_email(self.__config, f)
             if not allmsg and msg["To"] != user.upper():
                 continue
+
+            name, addr = email.utils.parseaddr(msg["From"])
+            if addr == "DO_NOT_REPLY@d-rats.com":
+                addr = "%s@d-rats.com" % name.upper()
+                msg.replace_header("From", addr)
+                del msg["Reply-To"]
+
+            name, addr = email.utils.parseaddr(msg["To"])
+            if not name and "@" not in addr:
+                msg.replace_header("To", "%s@d-rats.com" % addr.upper())
+
             msg["X-DRATS-Source"] = f
             self.__msgcache.append(msg)
 
