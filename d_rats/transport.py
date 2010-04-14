@@ -270,16 +270,17 @@ class Transporter(object):
         return (time.time() - self.last_recv) > self.compat_delay
 
     def worker(self, authfn):
-        if self.msg_fn:
-            self.msg_fn("Connecting")
-
-        try:
-            self.pipe.connect()
-        except comm.DataPathNotConnectedError, e:
+        if not self.pipe.is_connected():
             if self.msg_fn:
-                self.msg_fn("Unable to connect (%s)" % e)
-            print "Comm %s did not connect: %s" % (self.pipe, e)
-            return
+                self.msg_fn("Connecting")
+    
+            try:
+                self.pipe.connect()
+            except comm.DataPathNotConnectedError, e:
+                if self.msg_fn:
+                    self.msg_fn("Unable to connect (%s)" % e)
+                print "Comm %s did not connect: %s" % (self.pipe, e)
+                return
 
         if authfn and not authfn(self.pipe):
             if self.msg_fn:
