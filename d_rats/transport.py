@@ -314,8 +314,6 @@ class Transporter(object):
                 self.enabled = False
                 break
 
-        self.pipe.disconnect()
-
     def disable(self):
         self.inhandler = None
         self.enabled = False
