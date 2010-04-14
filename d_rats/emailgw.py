@@ -42,6 +42,66 @@ import signals
 import utils
 import msgrouting
 
+
+def create_form_from_mail(config, mail, tmpfn):
+    subject = mail.get("Subject", "[no subject]")
+    sender = mail.get("From", "Unknown <devnull@nowhere.com>")
+    
+    xml = None
+    body = ""
+
+    if mail.is_multipart():
+        html = None
+        for part in mail.walk():
+            if part.get_content_maintype() == "multipart":
+                continue
+            elif part.get_content_type() == "d-rats/form_xml":
+                xml = str(part.get_payload())
+                break # A form payload trumps all
+            elif part.get_content_type() == "text/plain":
+                body += part.get_payload(decode=True)
+            elif part.get_content_type() == "text/html":
+                html = part.get_payload(decode=True)
+        if not body:
+            body = html
+    else:
+        body = mail.get_payload(decode=True)
+
+    if not body and not xml:
+        raise Exception("Unable to find a usable part")
+
+    messageid = mail.get("Message-ID", time.strftime("%m%d%Y%H%M%S"))
+    if not msgrouting.msg_lock(tmpfn):
+        print "AIEE: Unable to lock incoming email message file!"
+
+    if xml:
+        f = file(tmpfn, "w")
+        f.write(xml)
+        f.close()
+        form = formgui.FormFile(tmpfn)
+        recip = form.get_recipient_string()
+        if "%" in recip:
+            recip, addr = recip.split("%", 1)
+            recip = recip.upper()
+    else:
+        print "Email from %s: %s" % (sender, subject)
+
+        recip, addr = rfc822.parseaddr(mail.get("To", "UNKNOWN"))
+
+        efn = os.path.join(config.form_source_dir(), "email.xml")
+        form = formgui.FormFile(efn)
+        form.set_field_value("_auto_sender", sender)
+        form.set_field_value("recipient", recip)
+        form.set_field_value("subject", "EMAIL: %s" % subject)
+        form.set_field_value("message", utils.filter_to_ascii(body))
+        form.set_path_src(sender.strip())
+        form.set_path_dst(recip.strip())
+        form.set_path_mid(messageid)
+
+    form.save_to(tmpfn)
+
+    return form
+
 class MailThread(threading.Thread, gobject.GObject):
     __gsignals__ = {
         "user-send-chat" : signals.USER_SEND_CHAT,
@@ -76,6 +136,35 @@ class MailThread(threading.Thread, gobject.GObject):
     def message(self, message):
         print "[MAIL %s@%s] %s" % (self.username, self.server, message)
 
+    def create_form_from_mail(self, mail):
+        id = self.config.get("user", "callsign") + \
+            time.strftime("%m%d%Y%H%M%S")
+        mid = platform.get_platform().filter_filename(id)
+        ffn = os.path.join(self.config.form_store_dir(),
+                           _("Inbox"),
+                           "%s.xml" % mid)
+        try:
+            form = create_form_from_mail(self.config, mail, ffn)
+        except Exception, e:
+            print "Failed to create form from mail: %s" % e
+            return    
+
+        if self._coerce_call:
+            print "Coercing to %s" % self._coerce_call
+            form.set_path_dst(self._coerce_call)
+        else:
+            print "Not coercing"
+    
+        form.add_path_element("EMAIL")
+        form.add_path_element(self.config.get("user", "callsign"))
+        form.save_to(ffn)
+    
+        self._emit("form-received", -999, ffn)
+    
+        msg = "Mail received from %s" % form.get_path_src()
+        event = main_events.Event(None, msg)
+        self._emit("event", event)
+
     def fetch_mails(self):
         self.message("Querying %s:%i" % (self.server, self.port))
 
@@ -101,83 +190,6 @@ class MailThread(threading.Thread, gobject.GObject):
         server.quit()
 
         return messages
-
-    def create_form_from_mail(self, mail):
-        subject = mail.get("Subject", "[no subject]")
-        sender = mail.get("From", "Unknown <devnull@nowhere.com>")
-        
-        xml = None
-        body = ""
-
-        if mail.is_multipart():
-            html = None
-            for part in mail.walk():
-                if part.get_content_maintype() == "multipart":
-                    continue
-                elif part.get_content_type() == "d-rats/form_xml":
-                    xml = str(part.get_payload())
-                    break # A form payload trumps all
-                elif part.get_content_type() == "text/plain":
-                    body += part.get_payload(decode=True)
-                elif part.get_content_type() == "text/html":
-                    html = part.get_payload(decode=True)
-            if not body:
-                body = html
-        else:
-            body = mail.get_payload(decode=True)
-
-        if not body and not xml:
-            self.message("Unable to find a usable part")
-            return
-
-        messageid = mail.get("Message-ID", time.strftime("%m%d%Y%H%M%S"))
-        mid = platform.get_platform().filter_filename(messageid)
-        ffn = os.path.join(self.config.form_store_dir(),
-                           _("Inbox"),
-                           "%s.xml" % mid)
-        if not msgrouting.msg_lock(ffn):
-            print "AIEE: Unable to lock incoming email message file!"
-
-        if xml:
-            self.message("Found a D-RATS form payload")
-            f = file(ffn, "w")
-            f.write(xml)
-            f.close()
-            form = formgui.FormFile(ffn)
-            recip = form.get_recipient_string()
-            if "%" in recip:
-                recip, addr = recip.split("%", 1)
-                recip = recip.upper()
-        else:
-            self.message("Email from %s: %s" % (sender, subject))
-
-            recip, addr = rfc822.parseaddr(mail.get("To", "UNKNOWN"))
-
-            efn = os.path.join(self.config.form_source_dir(), "email.xml")
-            form = formgui.FormFile(efn)
-            form.set_field_value("_auto_sender", sender)
-            form.set_field_value("recipient", recip)
-            form.set_field_value("subject", "EMAIL: %s" % subject)
-            form.set_field_value("message", utils.filter_to_ascii(body))
-            form.set_path_src(sender.strip())
-            form.set_path_dst(recip.strip())
-            form.set_path_mid(messageid)
-
-        if self._coerce_call:
-            print "Coercing to %s" % self._coerce_call
-            form.set_path_dst(self._coerce_call)
-        else:
-            print "Not coercing"
-
-        form.add_path_element("EMAIL")
-        form.add_path_element(self.config.get("user", "callsign"))
-        form.save_to(ffn)
-
-        self._emit("form-received", -999, ffn)
-
-        msg = "Mail received from %s" % sender
-        event = main_events.Event(None, msg)
-        self._emit("event", event)
 
     def run(self):
         self.message("One-shot thread starting")
