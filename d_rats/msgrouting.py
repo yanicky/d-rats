@@ -550,7 +550,7 @@ class MessageRouter(gobject.GObject):
         print "Fail count for %s is %i" % (call, self.__failed_stations[call])
 
     def _is_station_failed(self, call):
-        return self.__failed_stations.get(call, 0) >= 1
+        return self.__failed_stations.get(call, 0) >= 3
 
     def _station_pinged_incr(self, call):
         self.__pinged_stations[call] = self.__pinged_stations.get(call, 0) + 1
