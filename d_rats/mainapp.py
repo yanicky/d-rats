@@ -150,8 +150,12 @@ class MainApp(object):
         if self.sm.has_key(portid):
             sm, sc = self.sm[portid]
             sm.shutdown(True)
-            sm.pipe.disconnect()
             del self.sm[portid]
+
+            portspec, pipe = self.__pipes[portid]
+            del self.__pipes[portid]
+            self.__unused_pipes[portspec] = pipe
+
             return True
         else:
             return False
@@ -177,7 +181,11 @@ class MainApp(object):
 
         call = self.config.get("user", "callsign")
 
-        if port.startswith("tnc:"):
+        if self.__unused_pipes.has_key(port):
+            path = self.__unused_pipes[port]
+            del self.__unused_pipes[port]
+            print "Re-using path %s for port %s" % (path, port)
+        elif port.startswith("tnc:"):
             _port = port.replace("tnc:", "")
             path = comm.TNCDataPath((_port, int(rate)))
         elif port.startswith("dongle:"):
@@ -187,7 +195,7 @@ class MainApp(object):
             print "Opening AGW: %s" % path
         elif ":" in port:
             try:
-                (mode, host, port) = port.split(":")
+                (mode, host, sport) = port.split(":")
             except ValueError:
                 event = main_events.Event(None,
                                           _("Failed to connect to") + \
@@ -196,9 +204,13 @@ class MainApp(object):
                 self.mainwindow.tabs["event"].event(event)
                 return False
 
-            path = comm.SocketDataPath((host, int(port), call, rate))
+            path = comm.SocketDataPath((host, int(sport), call, rate))
         else:
             path = comm.SerialDataPath((port, int(rate)))
+
+        if self.__pipes.has_key(name):
+            raise Exception("Port %s already started!" % name)
+        self.__pipes[name] = (port, path)
 
         def transport_msg(msg):
             _port = name
@@ -294,7 +306,14 @@ class MainApp(object):
             time.sleep(0.25)
 
         for portid in self.config.options("ports"):
+            print "Starting %s" % portid
             self.start_comms(portid)
+
+        for spec, path in self.__unused_pipes.items():
+            print "Path %s for port %s no longer needed" % (path, spec)
+            path.disconnect()
+
+        self.__unused_pipes = {}
 
     def _static_gps(self):
         lat = 0.0
@@ -354,14 +373,11 @@ class MainApp(object):
             t.start()
             self.mail_threads[acct] = t
 
-        if self.pop3srv:
-            self.pop3srv.stop()
-            self.pop3srv = None
-
         try:
             if self.config.getboolean("settings", "msg_pop3_server"):
-                self.pop3srv = mailsrv.DRATS_POP3ServerThread(self.config)
-                self.pop3srv.start()
+                pop3srv = mailsrv.DRATS_POP3ServerThread(self.config)
+                pop3srv.start()
+                self.mail_threads["POP3SRV"] = pop3srv
         except Exception, e:
             print "Unable to start POP3 server: %s" % e
             log_exception()
@@ -877,6 +893,8 @@ class MainApp(object):
         self.seen_callsigns = CallList()
         self.position = None
         self.mail_threads = {}
+        self.__unused_pipes = {}
+        self.__pipes = {}
         self.pop3srv = None
 
         self.config = config.DratsConfig(self)
