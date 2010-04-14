@@ -374,6 +374,15 @@ class MainApp(object):
             self.mail_threads[acct] = t
 
         try:
+            if self.config.getboolean("settings", "msg_smtp_server"):
+                smtpsrv = mailsrv.DRATS_SMTPServerThread(self.config)
+                smtpsrv.start()
+                self.mail_threads["SMTPSRV"] = smtpsrv
+        except Exception, e:
+            print "Unable to start SMTP server: %s" % e
+            log_exception()
+
+        try:
             if self.config.getboolean("settings", "msg_pop3_server"):
                 pop3srv = mailsrv.DRATS_POP3ServerThread(self.config)
                 pop3srv.start()

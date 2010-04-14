@@ -129,6 +129,8 @@ _DEF_SETTINGS = {
     "qst_size_limit" : "2048",
     "msg_pop3_server" : "False",
     "msg_pop3_port" : "9110",
+    "msg_smtp_server" : "False",
+    "msg_smtp_port" : "9025",
 }
 
 _DEF_STATE = {
@@ -1122,6 +1124,14 @@ class DratsMessagePanel(DratsPanel):
         p3p.add_numeric(1, 65535, 1)
         self.mv(_("POP3 Server"), p3s, lab, p3p)
         disable_with_toggle(p3s._widget, p3p._widget)
+
+        sms = DratsConfigWidget(config, "settings", "msg_smtp_server")
+        sms.add_bool()
+        lab = gtk.Label(_("on port"))
+        smp = DratsConfigWidget(config, "settings", "msg_smtp_port")
+        smp.add_numeric(1, 65535, 1)
+        self.mv(_("SMTP Server"), sms, lab, smp)
+        disable_with_toggle(sms._widget, smp._widget)
 
 class DratsNetworkPanel(DratsPanel):
     pass

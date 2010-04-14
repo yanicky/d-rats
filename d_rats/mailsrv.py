@@ -20,9 +20,36 @@ from glob import glob
 
 import SocketServer
 import threading
+import smtpd
+import asyncore
+import email
+import random
+import time
+import re
 
 from d_rats import utils
 from d_rats import msgrouting
+from d_rats import emailgw
+
+def mkmsgid(callsign):
+    r = random.SystemRandom().randint(0,100000)
+    return "%s.%x.%x" % (callsign, int(time.time()) - 1114880400, r)
+
+class TCPServerThread(threading.Thread):
+    name = "[UNNAMEDSERVER]"
+
+    def __init__(self, config, server, spec, handler):
+        self.__server = server(spec, handler)
+        self.__server.set_config(config)
+        threading.Thread.__init__(self)
+
+    def run(self):
+        self.__server.serve_forever()
+        print "%s Exiting" % self.name
+
+    def stop(self):
+        self.__server.shutdown()
+        print "%s Shutdown" % self.name
 
 class POP3Exception(Exception):
     pass
@@ -216,22 +243,6 @@ class DRATS_POP3Server(SocketServer.TCPServer):
     def set_config(self, config):
         self.__config = config
 
-class TCPServerThread(threading.Thread):
-    name = "[UNNAMEDSERVER]"
-
-    def __init__(self, config, server, spec, handler):
-        self.__server = server(spec, handler)
-        self.__server.set_config(config)
-        threading.Thread.__init__(self)
-
-    def run(self):
-        self.__server.serve_forever()
-        print "%s Exiting" % self.name
-
-    def stop(self):
-        self.__server.shutdown()
-        print "%s Shutdown" % self.name
-
 class DRATS_POP3ServerThread(TCPServerThread):
     name = "[POP3]"
 
@@ -240,6 +251,60 @@ class DRATS_POP3ServerThread(TCPServerThread):
         print "[POP3] Starting server on port %i" % port
         TCPServerThread.__init__(self, config, DRATS_POP3Server,
                                  ("0.0.0.0", port), DRATS_POP3Handler)
+
+class DRATS_SMTPServer(smtpd.SMTPServer):
+    def __init__(self, config):
+        self.__config = config
+        port = config.getint("settings", "msg_smtp_port")
+        smtpd.SMTPServer.__init__(self, ("0.0.0.0", port), None)
+
+    def process_message(self, peer, mailfrom, rcpttos, data):
+        msg = email.message_from_string(data)
+        if "@" in mailfrom:
+            sender, foo = mailfrom.split("@", 1)
+        else:
+            sender = mailfrom
+        sender = sender.upper()
+
+        if not re.match("[A-Z0-9]+", sender):
+            raise Exception("Sender must be alphanumeric string")
+
+        recip = rcpttos[0]
+        if recip.lower().endswith("@d-rats.com"):
+            recip, host = recip.upper().split("@", 1)
+
+        print "Sender is %s" % sender
+        print "Recip  is %s" % recip
+
+        mid = mkmsgid(self.__config.get("user", "callsign"))
+        ffn = os.path.join(self.__config.form_store_dir(),
+                           "Outbox", "%s.xml" % mid)
+        print "Storing mail at %s" % ffn
+
+        form = emailgw.create_form_from_mail(self.__config, msg, ffn)
+        form.set_path_src(sender)
+        form.set_path_dst(recip)
+        form.save_to(ffn)
+
+        msgrouting.msg_unlock(ffn)
+
+class DRATS_SMTPServerThread(threading.Thread):
+    def __init__(self, config):
+        threading.Thread.__init__(self)
+        self.__config = config
+        self.__server = None
+
+    def run(self):
+        print "[SMTP] Starting server"
+        self.__server = DRATS_SMTPServer(self.__config)
+        asyncore.loop(timeout=1)
+        print "[SMTP] Stopped"
+
+    def stop(self):
+        if self.__server:
+            self.__server.close()
+        self.join()
+        
 
 if __name__ == "__main__":
     s = DRATS_POP3Server(("localhost", 9090), DRATS_POP3Handler)
