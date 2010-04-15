@@ -494,6 +494,9 @@ class SocketDataPath(DataPath):
         return data
 
     def read_all_waiting(self):
+        if not self._socket:
+            raise DataPathIOError("Socket disconnected")
+
         self._socket.setblocking(False)
 
         r, w, x = select.select([self._socket], [], [], self.timeout)
