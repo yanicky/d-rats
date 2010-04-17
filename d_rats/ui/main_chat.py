@@ -363,8 +363,19 @@ class ChatTab(MainWindowTab):
         # the start and the end
         buffer.apply_tag_by_name("bold", start, end)
         
+    def _display_for_group(self, group):
+        if self.__filters.has_key(group):
+            return self.__filters[group]
+        else:
+            return -1, None
+
     def _display_line(self, text, apply_filters, *attrs):
-        if apply_filters:
+        match = re.match("^([^#].*)(#[^/]+)//(.*)$", text)
+        if match and apply_filters:
+            group = match.group(2)
+            text = match.group(1) + match.group(3)
+            tabnum, display = self._display_for_group(group)
+        elif apply_filters:
             tabnum, display = self._display_matching_filter(text)
             noticere = self._config.get("prefs", "noticere")
             ignorere = self._config.get("prefs", "ignorere")
@@ -375,12 +386,12 @@ class ChatTab(MainWindowTab):
         else:
             tabnum, display = self._display_selected()
 
+        if not display:
+            # We don't have anywhere to display this, so ignore it
+            return
+
         buffer = display.get_buffer()
         sw = display.parent
-
-        match = re.match("^([^#].*)#[^/]+//(.*)$", text)
-        if match:
-            text = match.group(1) + match.group(2)
 
         (start, end) = buffer.get_bounds()
         mark = buffer.create_mark(None, end, True)
@@ -516,7 +527,7 @@ class ChatTab(MainWindowTab):
                 return
 
             if text.startswith("#"):
-                test = test[1:]
+                text = text[1:]
 
             if re.match("^[A-z0-9_-]+$", text):
                 self._build_filter("#" + text)
