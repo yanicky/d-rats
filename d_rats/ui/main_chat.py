@@ -419,16 +419,20 @@ class ChatTab(MainWindowTab):
         if not text:
             return
 
+        dcall = "CQCQCQ"
+
         num = self.__filtertabs.get_current_page()
         child = self.__filtertabs.get_nth_page(num)
         channel = self.__filtertabs.get_tab_label(child).get_text()
         if channel.startswith("#"):
             text = channel + "//" + text
+        elif channel.startswith("@"):
+            dcall = channel[1:]
 
         port = dest.get_active_text()
         buffer.delete(*buffer.get_bounds())
 
-        self.emit("user-send-chat", "CQCQCQ", port, text, False)
+        self.emit("user-send-chat", dcall, port, text, False)
 
     def _send_msg(self, qm, msg, raw, dest):
         port = dest.get_active_text()
@@ -537,11 +541,36 @@ class ChatTab(MainWindowTab):
             display_error(_("Channel names must be a single-word " +
                             "alphanumeric string"))
 
+    def _query_user(self, button):
+        while True:
+            d = inputdialog.TextInputDialog(title=_("Query User"))
+            d.label.set_text(_("Enter station:"))
+            r = d.run()
+            text = d.text.get_text()
+            d.destroy()
+    
+            if not text:
+                return
+            elif r != gtk.RESPONSE_OK:
+                return
+
+            if text.startswith("@"):
+                text = text[1:]
+
+            if re.match("^[A-z0-9_-]+$", text):
+                self._build_filter("@" + text.upper())
+                self._save_filters()
+                break
+
+            display_error(_("Station must be a plain " +
+                            "alphanumeric string"))
+
 
     def _init_toolbar(self):
         jnchannel = self._config.ship_img("chat-joinchannel.png")
         addfilter = self._config.ship_img("chat-addfilter.png")
         delfilter = self._config.ship_img("chat-delfilter.png")
+        queryuser = self._config.ship_img("chat-query.png")
 
         tb, = self._getw("toolbar")
         set_toolbar_buttons(self._config, tb)
@@ -550,6 +579,7 @@ class ChatTab(MainWindowTab):
             [(addfilter, _("Add Filter"), self._add_filter),
              (delfilter, _("Remove Filter"), self._del_filter),
              (jnchannel, _("Join Channel"), self._join_channel),
+             (queryuser, _("Open Private Chat"), self._query_user),
              ]
 
         c = 0
