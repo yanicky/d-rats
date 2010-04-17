@@ -955,7 +955,7 @@ Pings</property>
                       </widget>
                     </child>
                     <child>
-                      <widget class="GtkLabel" id="label3">
+                      <widget class="GtkLabel" id="main_stations_header">
                         <property name="height_request">25</property>
                         <property name="visible">True</property>
                         <property name="label" translatable="yes">&lt;b&gt;Stations&lt;/b&gt;</property>

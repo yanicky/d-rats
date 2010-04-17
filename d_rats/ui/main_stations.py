@@ -126,6 +126,7 @@ class StationsList(MainWindowTab):
             ct.run()
         elif action == "remove":
             self.__calls.remove(station)
+            self._update_station_count()
             model.remove(iter)
         elif action == "reset":
             model.set(iter, 1, time.time())
@@ -148,6 +149,7 @@ class StationsList(MainWindowTab):
         elif action == "clearall":
             model.clear()
             self.__calls = []
+            self._update_station_count()
         elif action == "pingall":
             stationlist = self.emit("get-station-list")
             for port in stationlist.keys():
@@ -324,6 +326,7 @@ class StationsList(MainWindowTab):
         self.__view.append_column(col)
 
         self.__calls = []
+        self._update_station_count()
 
         status, msg = self._getw("stations_status", "stations_smsg")
 
@@ -353,6 +356,10 @@ class StationsList(MainWindowTab):
 
         gobject.timeout_add(30000, self._update)
 
+    def _update_station_count(self):
+            hdr, = self._getw("stations_header")
+            hdr.set_markup("<b>Stations (%i)</b>" % len(self.__calls))
+
     def saw_station(self, station, port, status=0, smsg=""):
         status_changed = False
 
@@ -380,6 +387,7 @@ class StationsList(MainWindowTab):
             store.append((station, ts, msg, status, smsg, port))
             self.__view.queue_draw()
             status_changed = True
+            self._update_station_count()
         else:
             iter = store.get_iter_first()
             while iter:
