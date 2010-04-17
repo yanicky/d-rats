@@ -25,7 +25,8 @@ import gtk
 import pango
 
 from d_rats.ui.main_common import MainWindowElement, MainWindowTab
-from d_rats.ui.main_common import ask_for_confirmation, display_error
+from d_rats.ui.main_common import ask_for_confirmation, display_error, \
+    set_toolbar_buttons
 from d_rats import inputdialog, utils
 from d_rats import qst
 from d_rats import signals
@@ -376,6 +377,10 @@ class ChatTab(MainWindowTab):
 
         buffer = display.get_buffer()
 
+        match = re.match("^([^#].*)#[^/]+//(.*)$", text)
+        if match:
+            text = match.group(1) + match.group(2)
+
         (start, end) = buffer.get_bounds()
         mark = buffer.create_mark(None, end, True)
         buffer.insert_with_tags_by_name(end, text + os.linesep, *attrs)
@@ -393,11 +398,18 @@ class ChatTab(MainWindowTab):
             self._notice()
 
     def _send_button(self, button, dest, entry):
-        port = dest.get_active_text()
         buffer = entry.get_buffer()
         text = buffer.get_text(*buffer.get_bounds())
         if not text:
             return
+
+        num = self.__filtertabs.get_current_page()
+        child = self.__filtertabs.get_nth_page(num)
+        group = self.__filtertabs.get_tab_label(child).get_text()
+        if group.startswith("#"):
+            text = group + "//" + text
+
+        port = dest.get_active_text()
         buffer.delete(*buffer.get_bounds())
 
         self.emit("user-send-chat", "CQCQCQ", port, text, False)
@@ -485,6 +497,60 @@ class ChatTab(MainWindowTab):
                 msg = self._config.get("quick", msgs[index])
                 self.emit("user-send-chat", "CQCQCQ", port, msg, False)
 
+    def _join_group(self, button):
+        while True:
+            d = inputdialog.TextInputDialog(title=_("Join group"))
+            d.label.set_text(_("Enter group name:"))
+            r = d.run()
+            text = d.text.get_text()
+            d.destroy()
+    
+            if not text:
+                return
+            elif r != gtk.RESPONSE_OK:
+                return
+
+            if text.startswith("#"):
+                test = test[1:]
+
+            if re.match("^[A-z0-9_-]+$", text):
+                self._build_filter("#" + text)
+                self._save_filters()
+                break
+
+            display_error(_("Group names must be a single-word " +
+                            "alphanumeric string"))
+
+
+    def _init_toolbar(self):
+        joingroup = self._config.ship_img("chat-joingroup.png")
+        addfilter = self._config.ship_img("chat-addfilter.png")
+        delfilter = self._config.ship_img("chat-delfilter.png")
+
+        tb, = self._getw("toolbar")
+        set_toolbar_buttons(self._config, tb)
+
+        buttons = \
+            [(addfilter, _("Add Filter"), self._add_filter),
+             (delfilter, _("Remove Filter"), self._del_filter),
+             (joingroup, _("Join Group"), self._join_group),
+             ]
+
+        c = 0
+        for i, l, f in buttons:
+            icon = gtk.Image()
+            icon.set_from_pixbuf(i)
+            icon.show()
+            item = gtk.ToolButton(icon, l)
+            item.connect("clicked", f)
+            try:
+                item.set_tooltip_text(l)
+            except AttributeError:
+                pass
+            item.show()
+            tb.insert(item, c)
+            c += 1
+
     def __init__(self, wtree, config):
         MainWindowTab.__init__(self, wtree, config, "chat")
 
@@ -534,6 +600,8 @@ class ChatTab(MainWindowTab):
         except AttributeError:
             # Old PyGTK doesn't have this
             pass
+
+        self._init_toolbar()
 
         self.reconfigure()
 

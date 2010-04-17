@@ -10,6 +10,7 @@
     <child>
       <widget class="GtkVBox" id="vbox1">
         <property name="visible">True</property>
+        <property name="orientation">vertical</property>
         <child>
           <widget class="GtkMenuBar" id="menubar1">
             <property name="visible">True</property>
@@ -362,6 +363,16 @@
                     <child>
                       <widget class="GtkVBox" id="vbox2">
                         <property name="visible">True</property>
+                        <property name="orientation">vertical</property>
+                        <child>
+                          <widget class="GtkToolbar" id="chat_toolbar">
+                            <property name="visible">True</property>
+                          </widget>
+                          <packing>
+                            <property name="expand">False</property>
+                            <property name="position">0</property>
+                          </packing>
+                        </child>
                         <child>
                           <widget class="GtkNotebook" id="chat_filtertabs">
                             <property name="visible">True</property>
@@ -382,7 +393,7 @@
                             </child>
                           </widget>
                           <packing>
-                            <property name="position">0</property>
+                            <property name="position">1</property>
                           </packing>
                         </child>
                         <child>
@@ -402,29 +413,29 @@ C</property>
                                 <property name="position">0</property>
                               </packing>
                             </child>
-			    <child>
-			      <widget class="GtkFrame" id="frame1">
-				<property name="visible">True</property>
-				<property name="label_xalign">0</property>
-				<property name="shadow_type">in</property>
-				<child>
-				  <widget class="GtkTextView" id="chat_entry">
+                            <child>
+                              <widget class="GtkFrame" id="frame2">
+                                <property name="visible">True</property>
+                                <property name="label_xalign">0</property>
+                                <property name="shadow_type">in</property>
+                                <child>
+                                  <widget class="GtkTextView" id="chat_entry">
                                     <property name="visible">True</property>
                                     <property name="can_focus">True</property>
-				  </widget>
-				  <packing>
-                                    <property name="position">1</property>
-				  </packing>
-				</child>
-			      </widget>
-			    </child>
+                                  </widget>
+                                </child>
+                              </widget>
+                              <packing>
+                                <property name="position">1</property>
+                              </packing>
+                            </child>
                             <child>
                               <widget class="GtkButton" id="chat_send">
                                 <property name="label" translatable="yes">Send</property>
                                 <property name="width_request">50</property>
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
-                                <property name="receives_default">False</property>
+                                <property name="receives_default">True</property>
                               </widget>
                               <packing>
                                 <property name="expand">False</property>
@@ -436,7 +447,7 @@ C</property>
                           </widget>
                           <packing>
                             <property name="expand">False</property>
-                            <property name="position">1</property>
+                            <property name="position">2</property>
                           </packing>
                         </child>
                         <child>
@@ -466,6 +477,7 @@ C</property>
                                 <child>
                                   <widget class="GtkVButtonBox" id="vbuttonbox1">
                                     <property name="visible">True</property>
+                                    <property name="orientation">vertical</property>
                                     <property name="spacing">2</property>
                                     <property name="layout_style">center</property>
                                     <child>
@@ -516,7 +528,7 @@ C</property>
                           </widget>
                           <packing>
                             <property name="expand">False</property>
-                            <property name="position">2</property>
+                            <property name="position">3</property>
                           </packing>
                         </child>
                         <child>
@@ -547,6 +559,7 @@ C</property>
                                 <child>
                                   <widget class="GtkVButtonBox" id="vbuttonbox2">
                                     <property name="visible">True</property>
+                                    <property name="orientation">vertical</property>
                                     <property name="spacing">2</property>
                                     <property name="layout_style">end</property>
                                     <child>
@@ -611,7 +624,7 @@ C</property>
                           </widget>
                           <packing>
                             <property name="expand">False</property>
-                            <property name="position">3</property>
+                            <property name="position">4</property>
                           </packing>
                         </child>
                       </widget>
@@ -932,6 +945,7 @@ Pings</property>
             <child>
               <widget class="GtkVBox" id="main_stations_frame">
                 <property name="visible">True</property>
+                <property name="orientation">vertical</property>
                 <child>
                   <widget class="GtkFrame" id="main_stations_subframe">
                     <property name="visible">True</property>
@@ -971,7 +985,7 @@ Pings</property>
                   </packing>
                 </child>
                 <child>
-                  <widget class="GtkFrame" id="frame2">
+                  <widget class="GtkFrame" id="frame3">
                     <property name="visible">True</property>
                     <property name="label_xalign">0.5</property>
                     <property name="shadow_type">none</property>
