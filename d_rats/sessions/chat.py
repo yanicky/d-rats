@@ -166,9 +166,9 @@ class ChatSession(stateless.StatelessSession, gobject.GObject):
 
         self._sm.outgoing(self, f)
 
-    def write(self, data):
+    def write(self, data, dest="CQCQCQ"):
         self._emit("outgoing-chat-message", self._sm.station, self._st, data)
-        stateless.StatelessSession.write(self, data)
+        stateless.StatelessSession.write(self, data, dest)
 
     def ping_station(self, station):
         f = DDT2EncodedFrame()

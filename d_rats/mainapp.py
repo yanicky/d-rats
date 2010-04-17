@@ -569,7 +569,7 @@ class MainApp(object):
         if raw:
             self.chat_session(port).write_raw(msg)
         else:
-            self.chat_session(port).write(msg)
+            self.chat_session(port).write(msg, station)
 
     def __incoming_chat_message(self, object, src, dst, data, port=None):
         self.__chat(src, dst, data, True, port)
