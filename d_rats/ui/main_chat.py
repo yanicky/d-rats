@@ -376,6 +376,7 @@ class ChatTab(MainWindowTab):
             tabnum, display = self._display_selected()
 
         buffer = display.get_buffer()
+        sw = display.parent
 
         match = re.match("^([^#].*)#[^/]+//(.*)$", text)
         if match:
@@ -387,8 +388,12 @@ class ChatTab(MainWindowTab):
         self._maybe_highlight_header(buffer, mark)
         buffer.delete_mark(mark)
 
+        adj = sw.get_vadjustment()
+        bot_scrolled = (adj.get_value() == (adj.upper - adj.page_size))
+
         endmark = buffer.get_mark("end")
-        display.scroll_to_mark(endmark, 0.0, True, 0, 1)
+        if bot_scrolled:
+            display.scroll_to_mark(endmark, 0.0, True, 0, 1)
 
         if tabnum != self.__filtertabs.get_current_page() and \
                 "ignorecolor" not in attrs:
