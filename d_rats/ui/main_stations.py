@@ -303,10 +303,17 @@ class StationsList(MainWindowTab):
             call, ts, status = model.get(iter, 0, 1, 3)
             sec = time.time() - ts
 
+            hour = 3600
+            day = (hour*24)
+
             if sec < 60:
                 msg = call
+            elif sec < hour:
+                msg = "%s (%im)" % (call, (sec / 60))
+            elif sec < day:
+                msg = "%s (%ih %im)" % (call, sec / 3600, (sec % 3600) / 60)
             else:
-                msg = "%s (%02i:%02i)" % (call, sec / 3600, (sec % 3600) / 60)
+                msg = "%s (%id %ih)" % (call, sec / day, (sec % day) / 3600)
 
             if status == station_status.STATUS_ONLINE:
                 color = "blue"
