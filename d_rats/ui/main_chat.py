@@ -363,18 +363,18 @@ class ChatTab(MainWindowTab):
         # the start and the end
         buffer.apply_tag_by_name("bold", start, end)
         
-    def _display_for_group(self, group):
-        if self.__filters.has_key(group):
-            return self.__filters[group]
+    def _display_for_channel(self, channel):
+        if self.__filters.has_key(channel):
+            return self.__filters[channel]
         else:
             return -1, None
 
     def _display_line(self, text, apply_filters, *attrs):
         match = re.match("^([^#].*)(#[^/]+)//(.*)$", text)
         if match and apply_filters:
-            group = match.group(2)
+            channel = match.group(2)
             text = match.group(1) + match.group(3)
-            tabnum, display = self._display_for_group(group)
+            tabnum, display = self._display_for_channel(channel)
         elif apply_filters:
             tabnum, display = self._display_matching_filter(text)
             noticere = self._config.get("prefs", "noticere")
@@ -421,9 +421,9 @@ class ChatTab(MainWindowTab):
 
         num = self.__filtertabs.get_current_page()
         child = self.__filtertabs.get_nth_page(num)
-        group = self.__filtertabs.get_tab_label(child).get_text()
-        if group.startswith("#"):
-            text = group + "//" + text
+        channel = self.__filtertabs.get_tab_label(child).get_text()
+        if channel.startswith("#"):
+            text = channel + "//" + text
 
         port = dest.get_active_text()
         buffer.delete(*buffer.get_bounds())
@@ -513,10 +513,10 @@ class ChatTab(MainWindowTab):
                 msg = self._config.get("quick", msgs[index])
                 self.emit("user-send-chat", "CQCQCQ", port, msg, False)
 
-    def _join_group(self, button):
+    def _join_channel(self, button):
         while True:
-            d = inputdialog.TextInputDialog(title=_("Join group"))
-            d.label.set_text(_("Enter group name:"))
+            d = inputdialog.TextInputDialog(title=_("Join Channel"))
+            d.label.set_text(_("Enter channel name:"))
             r = d.run()
             text = d.text.get_text()
             d.destroy()
@@ -534,12 +534,12 @@ class ChatTab(MainWindowTab):
                 self._save_filters()
                 break
 
-            display_error(_("Group names must be a single-word " +
+            display_error(_("Channel names must be a single-word " +
                             "alphanumeric string"))
 
 
     def _init_toolbar(self):
-        joingroup = self._config.ship_img("chat-joingroup.png")
+        jnchannel = self._config.ship_img("chat-joinchannel.png")
         addfilter = self._config.ship_img("chat-addfilter.png")
         delfilter = self._config.ship_img("chat-delfilter.png")
 
@@ -549,7 +549,7 @@ class ChatTab(MainWindowTab):
         buttons = \
             [(addfilter, _("Add Filter"), self._add_filter),
              (delfilter, _("Remove Filter"), self._del_filter),
-             (joingroup, _("Join Group"), self._join_group),
+             (jnchannel, _("Join Channel"), self._join_channel),
              ]
 
         c = 0
