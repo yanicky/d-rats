@@ -470,6 +470,8 @@ class ChatTab(MainWindowTab):
         delf = self._wtree.get_widget("main_menu_delfilter")
         delf.set_sensitive(num != 0)
 
+        self.__tb_buttons[_("Remove Filter")].set_sensitive(num != 0)
+
     def _save_filters(self):
         f = self.__filters.keys()
         while None in f:
@@ -595,6 +597,7 @@ class ChatTab(MainWindowTab):
                 pass
             item.show()
             tb.insert(item, c)
+            self.__tb_buttons[l] = item
             c += 1
 
     def __init__(self, wtree, config):
@@ -606,6 +609,8 @@ class ChatTab(MainWindowTab):
 
         self.__filtertabs.remove_page(0)
         self.__filtertabs.connect("switch-page", self._tab_selected)
+
+        self.__tb_buttons = {}
 
         addf = self._wtree.get_widget("main_menu_addfilter")
         addf.connect("activate", self._add_filter)
