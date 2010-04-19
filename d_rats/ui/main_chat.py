@@ -309,7 +309,7 @@ class ChatTab(MainWindowTab):
 
     _signals = __gsignals__
 
-    def display_line(self, text, incoming, *attrs):
+    def display_line(self, text, incoming, *attrs, **kwargs):
         """Display a single line of text with datestamp"""
 
         if (time.time() - self._last_date) > 600:
@@ -324,7 +324,7 @@ class ChatTab(MainWindowTab):
 
         self._last_date = time.time()
 
-        self._display_line(line, incoming, "default", *attrs)
+        self._display_line(line, incoming, "default", *attrs, **kwargs)
 
     def _highlight_tab(self, num):
         child = self.__filtertabs.get_nth_page(num)
@@ -369,9 +369,17 @@ class ChatTab(MainWindowTab):
         else:
             return -1, None
 
-    def _display_line(self, text, apply_filters, *attrs):
+    def _display_line(self, text, apply_filters, *attrs, **kwargs):
         match = re.match("^([^#].*)(#[^/]+)//(.*)$", text)
-        if match and apply_filters:
+        if "priv_src" in kwargs.keys():
+            channel = "@%s" % kwargs["priv_src"]
+            tabnum, display = self._display_for_channel(channel)
+            if not display:
+                print "Creating channel %s" % channel
+                self._build_filter(channel)
+                self._save_filters()
+                tabnum, display = self._display_for_channel(channel)
+        elif match and apply_filters:
             channel = match.group(2)
             text = match.group(1) + match.group(3)
             tabnum, display = self._display_for_channel(channel)

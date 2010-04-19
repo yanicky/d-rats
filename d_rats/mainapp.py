@@ -517,8 +517,11 @@ class MainApp(object):
         if src != "CQCQCQ":
             self.seen_callsigns.set_call_time(src, time.time())
 
+        kwargs = {}
+
         if dst != "CQCQCQ":
             to = " -> %s:" % dst
+            kwargs["priv_src"] = src
         else:
             to = ":"
 
@@ -538,7 +541,8 @@ class MainApp(object):
 
         @run_gtk_locked
         def do_incoming():
-            self.mainwindow.tabs["chat"].display_line(line, incoming, color)
+            self.mainwindow.tabs["chat"].display_line(line, incoming, color,
+                                                      **kwargs)
 
         gobject.idle_add(do_incoming)
 
