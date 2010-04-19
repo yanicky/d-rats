@@ -123,7 +123,7 @@ class QSTText(gobject.GObject):
 
     def fire(self):
         val = self.do_qst()
-        self.emit("qst-fired", val)
+        self.emit("qst-fired", self.prefix + val)
 
 class QSTExec(QSTText):
     def do_qst(self):
