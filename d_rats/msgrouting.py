@@ -41,6 +41,7 @@ import signals
 import emailgw
 import utils
 import wl2k
+import mainapp
 
 CALL_TIMEOUT_RETRY = 300
 
@@ -443,7 +444,7 @@ class MessageRouter(gobject.GObject):
             else:
                 print "Failed to send via WL2K: %s" % error
 
-        mt = wl2k.wl2k_auto_thread(self.__config, src, send_msgs=[msg])
+        mt = wl2k.wl2k_auto_thread(mainapp.get_mainapp(), src, send_msgs=[msg])
         mt.connect("mail-thread-complete", complete)
         mt.connect("event", self.__proxy_emit("event"))
         mt.connect("form-received", self.__proxy_emit("form-received"))
