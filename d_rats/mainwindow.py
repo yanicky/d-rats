@@ -292,6 +292,8 @@ class MainWindow(MainWindowElement):
         else:
             self.__window.resize(h, w)
 
+        self.__window.show()
+
         gobject.timeout_add(3000, self.__update_status)
 
     def __update_status(self):
