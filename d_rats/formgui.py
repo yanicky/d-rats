@@ -611,6 +611,9 @@ class FormFile(object):
         data = f.read()
         f.close()
 
+        if not data:
+            raise Exception("Form file %s is empty!" % filename)
+
         self.fields = []
 
         self.doc = libxml2.parseMemory(data, len(data))
