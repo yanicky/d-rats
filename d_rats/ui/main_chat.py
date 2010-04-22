@@ -338,9 +338,9 @@ class ChatTab(MainWindowTab):
         label.set_markup(label.get_text())
 
     def _display_matching_filter(self, text):
-        for filter, (tabnum, display) in self.__filters.items():
+        for filter, display in self.__filters.items():
             if filter and filter in text:
-                return tabnum, display
+                return display
 
         return self.__filters[None]
 
@@ -367,24 +367,24 @@ class ChatTab(MainWindowTab):
         if self.__filters.has_key(channel):
             return self.__filters[channel]
         else:
-            return -1, None
+            return None
 
     def _display_line(self, text, apply_filters, *attrs, **kwargs):
         match = re.match("^([^#].*)(#[^/]+)//(.*)$", text)
         if "priv_src" in kwargs.keys():
             channel = "@%s" % kwargs["priv_src"]
-            tabnum, display = self._display_for_channel(channel)
+            display = self._display_for_channel(channel)
             if not display:
                 print "Creating channel %s" % channel
                 self._build_filter(channel)
                 self._save_filters()
-                tabnum, display = self._display_for_channel(channel)
+                display = self._display_for_channel(channel)
         elif match and apply_filters:
             channel = match.group(2)
             text = match.group(1) + match.group(3)
-            tabnum, display = self._display_for_channel(channel)
+            display = self._display_for_channel(channel)
         elif apply_filters:
-            tabnum, display = self._display_matching_filter(text)
+            display = self._display_matching_filter(text)
             noticere = self._config.get("prefs", "noticere")
             ignorere = self._config.get("prefs", "ignorere")
             if noticere and re.search(noticere, text):
@@ -392,7 +392,7 @@ class ChatTab(MainWindowTab):
             elif ignorere and re.search(ignorere, text):
                 attrs += ("ignorecolor",)
         else:
-            tabnum, display = self._display_selected()
+            display = self._display_selected()
 
         if not display:
             # We don't have anywhere to display this, so ignore it
@@ -414,6 +414,7 @@ class ChatTab(MainWindowTab):
         if bot_scrolled:
             display.scroll_to_mark(endmark, 0.0, True, 0, 1)
 
+        tabnum = self.__filtertabs.page_num(display.parent)
         if tabnum != self.__filtertabs.get_current_page() and \
                 "ignorecolor" not in attrs:
             self._highlight_tab(tabnum)
@@ -734,16 +735,16 @@ class ChatTab(MainWindowTab):
             lab = gtk.Label(_("Main"))
 
         lab.show()
-        tabnum = self.__filtertabs.append_page(sw, lab)
 
-        self.__filters[text] = (tabnum, display)
+        self.__filtertabs.append_page(sw, lab)
+        self.__filters[text] = display
 
         self._reconfigure_colors(buffer)
         self._reconfigure_font(display)
 
     def _configure_filters(self):
-        for filter, (tabnum, display) in self.__filters.items():
-            self.__filtertabs.remove_page(tabnum)
+        for i in range(0, self.__filtertabs.get_n_pages()):
+            self.__filtertabs.remove_page(i)
 
         self.__filters = {}
 
@@ -760,7 +761,7 @@ class ChatTab(MainWindowTab):
             # First time only
             self._configure_filters()
 
-        for num, display in self.__filters.values():
+        for display in self.__filters.values():
             self._reconfigure_colors(display.get_buffer())
             self._reconfigure_font(display)
 
