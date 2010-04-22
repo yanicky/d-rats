@@ -576,6 +576,9 @@ class MainApp(object):
             self.chat_session(port).write(msg, station)
 
     def __incoming_chat_message(self, object, src, dst, data, port=None):
+        if dst not in ["CQCQCQ", self.config.get("user", "callsign")]:
+            # This is not destined for us
+            return
         self.__chat(src, dst, data, True, port)
 
     def __outgoing_chat_message(self, object, src, dst, data, port=None):
