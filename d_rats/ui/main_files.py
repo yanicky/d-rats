@@ -75,7 +75,7 @@ class LocalFileView(FileView):
     def refresh(self):
         self._store.clear()
 
-        files = glob(os.path.join(self._path, "*.*"))
+        files = glob(os.path.join(self._path, "*"))
         for file in files:
             if os.path.isdir(file):
                 continue
