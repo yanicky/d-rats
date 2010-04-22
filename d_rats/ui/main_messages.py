@@ -840,10 +840,9 @@ class MessagesTab(MainWindowTab):
                 print "FIXME: Warn about multiple reply"
                 return
     
-            current = self._messages.current_info.name()
-    
             fn = sel[0]
 
+        current = self._messages.current_info.name()
         self._folders.select_folder(_("Drafts"))
 
         oform = formgui.FormFile(fn)
