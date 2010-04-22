@@ -701,6 +701,12 @@ class ChatTab(MainWindowTab):
             elif i in reverse:
                 tag.set_property("background", self._config.get("prefs", i))
 
+
+    def _reconfigure_font(self, display):
+        fontname = self._config.get("prefs", "font")
+        font = pango.FontDescription(fontname)
+        display.modify_font(font)
+
     def _build_filter(self, text):
         if text is not None:
             ffn = self._config.platform.filter_filename(text)
@@ -733,8 +739,9 @@ class ChatTab(MainWindowTab):
         self.__filters[text] = (tabnum, display)
 
         self._reconfigure_colors(buffer)
+        self._reconfigure_font(display)
 
-    def _reconfigure_filters(self):
+    def _configure_filters(self):
         for filter, (tabnum, display) in self.__filters.items():
             self.__filtertabs.remove_page(tabnum)
 
@@ -751,14 +758,11 @@ class ChatTab(MainWindowTab):
     def reconfigure(self):
         if not self.__filters.has_key(None):
             # First time only
-            self._reconfigure_filters()
+            self._configure_filters()
 
         for num, display in self.__filters.values():
             self._reconfigure_colors(display.get_buffer())
-
-        fontname = self._config.get("prefs", "font")
-        font = pango.FontDescription(fontname)
-        display.modify_font(font)
+            self._reconfigure_font(display)
 
         dest, = self._getw("destination")
 
