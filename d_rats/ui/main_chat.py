@@ -481,11 +481,21 @@ class ChatTab(MainWindowTab):
 
         self.__tb_buttons[_("Remove Filter")].set_sensitive(num != 0)
 
+    def _tab_reordered(self, tabs, page, num):
+        self._save_filters()
+
     def _save_filters(self):
-        f = self.__filters.keys()
-        while None in f:
-            f.remove(None)
-        self._config.set("state", "filters", str(f))
+        rev = {}
+        for key, val in self.__filters.items():
+            rev[val] = key
+
+        filters = []
+        for i in range(0, self.__filtertabs.get_n_pages()):
+            display = self.__filtertabs.get_nth_page(i).child
+            if rev.get(display, None):
+                filters.append(rev[display])
+
+        self._config.set("state", "filters", str(filters))
 
     def _add_filter(self, but):
         d = inputdialog.TextInputDialog(title=_("Create filter"))
@@ -618,6 +628,7 @@ class ChatTab(MainWindowTab):
 
         self.__filtertabs.remove_page(0)
         self.__filtertabs.connect("switch-page", self._tab_selected)
+        self.__filtertabs.connect("page-reordered", self._tab_reordered)
 
         self.__tb_buttons = {}
 
@@ -737,6 +748,8 @@ class ChatTab(MainWindowTab):
         lab.show()
 
         self.__filtertabs.append_page(sw, lab)
+        if text is not None:
+            self.__filtertabs.set_tab_reorderable(sw, True)
         self.__filters[text] = display
 
         self._reconfigure_colors(buffer)
