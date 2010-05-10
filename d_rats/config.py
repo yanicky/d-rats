@@ -295,9 +295,8 @@ def prompt_for_port(portspec=None, info=None, pname=None):
     elif t == _("AGWPE"):
         portspec = "agwpe:%s:%i" % (agwaddr.get_text(), agwport.get_value()), ""
 
-    d.destroy()
-
     portspec = (name.get_text(),) + portspec
+    d.destroy()
 
     if r:
         return portspec
