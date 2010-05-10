@@ -346,7 +346,7 @@ class ChatTab(MainWindowTab):
 
     def _display_selected(self):
         cur = self.__filtertabs.get_current_page()
-        return cur, self.__filtertabs.get_nth_page(cur).child
+        return self.__filtertabs.get_nth_page(cur).child
 
     def _maybe_highlight_header(self, buffer, mark):
         start = buffer.get_iter_at_mark(mark)
