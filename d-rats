@@ -77,6 +77,13 @@ def install_excepthook():
     original_excepthook = sys.excepthook
     sys.excepthook = handle_exception
 
+def ignore_exception(exctyp, value, tb):
+    return
+
+def uninstall_excepthook():
+    global original_excepthook
+    sys.excepthook = ignore_exception
+
 if __name__ == "__main__":
     o = OptionParser()
     o.add_option("-s", "--safe",
@@ -111,6 +118,7 @@ if __name__ == "__main__":
         cProfile.run('app.main()')
     else:
         rc = app.main()
+        uninstall_excepthook()
         libxml2.dumpMemory()
         sys.exit(rc)
 

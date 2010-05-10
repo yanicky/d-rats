@@ -277,6 +277,7 @@ if __name__ == "__main__":
                 print "Receiving file"
                 t = threading.Thread(target=session.recv_file,
                                      args=("/tmp",))
+                t.setDaemon(True)
                 t.start()
                 print "Done"
 

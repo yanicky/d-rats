@@ -213,6 +213,7 @@ class QSTThreadedText(QSTText):
 
         # This is a race, but probably pretty safe :)
         self.thread = threading.Thread(target=self.threaded_fire)
+        self.thread.setDaemon(True)
         self.thread.start()
         print "Started a thread for QST data..."
 

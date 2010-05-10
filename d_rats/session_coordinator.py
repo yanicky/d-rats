@@ -448,6 +448,7 @@ class SessionCoordinator(gobject.GObject):
                                      "cls"       : xfer,
                                      "blocksize" : bs,
                                      "outlimit"  : ol})
+        t.setDaemon(True)
         t.start()
         print "Started Session"
         
@@ -461,6 +462,7 @@ class SessionCoordinator(gobject.GObject):
                              kwargs={"name" : name,
                                      "dest" : dest,
                                      "cls"  : xfer})
+        t.setDaemon(True)
         t.start()
         print "Started form session"
 

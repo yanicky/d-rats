@@ -399,6 +399,7 @@ class WinLinkThread(threading.Thread, gobject.GObject):
 
     def __init__(self, config, callsign, callssid=None, send_msgs=[]):
         threading.Thread.__init__(self)
+        self.setDaemon(True)
         gobject.GObject.__init__(self)
 
         if not callssid:

@@ -532,6 +532,7 @@ class MessageRouter(gobject.GObject):
         self.__enabled = True
         self.__event.clear()
         self.__thread = threading.Thread(target=self._run)
+        self.__thread.setDaemon(True)
         self.__thread.start()
 
     def stop(self):
