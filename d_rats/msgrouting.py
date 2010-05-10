@@ -378,7 +378,9 @@ class MessageRouter(gobject.GObject):
 
         payload = form.get_field_value("message")
 
-        mid = time.strftime("D%H%M%S") + self.__config.get("user", "callsign")
+        call = self.__config.get("user", "callsign")
+        call = "".join([x for x in call if x.isalpha()])
+        mid = time.strftime("D%H%M%S") + call[:12]
 
         msg = "Mid: %s\r\n" % mid + \
             "Subject: %s\r\n" % form.get_subject_string() + \

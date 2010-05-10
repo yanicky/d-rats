@@ -471,7 +471,7 @@ class WinLinkThread(threading.Thread, gobject.GObject):
                 mid = m.groups()[0]
                 subj = m.groups()[1]
             else:
-                mid = time.strftime("%H%M%S%d%m%y_DRATS")
+                mid = time.strftime("%H%M%SDRATS")
                 subj = "Message"
 
             wlm = WinLinkMessage()
