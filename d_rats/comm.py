@@ -242,7 +242,7 @@ class AGWDataPath(DataPath):
         DataPath.__init__(self, pathspec, timeout)
 
         agw, self._addr, self._port = pathspec.split(":")
-        self.connect()
+        self._agw = None
 
     def connect(self):
         try:
