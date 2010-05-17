@@ -108,6 +108,11 @@ class SessionManager(object):
             # Not CQ, not us, and not chat
             print "Received frame for station `%s'" % frame.d_station
             return
+        elif frame.s_station == self.station:
+            # Either there is another station using our callsign, or
+            # this packet arrived back at us due to a loop
+            print "Received looped frame"
+            return
 
         if not frame.session in self.sessions.keys():
             print "Incoming frame for unknown session `%i'" % frame.session
