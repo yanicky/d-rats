@@ -68,8 +68,8 @@ class FileTransferSession(stateful.StatefulSession):
             return False
 
         try:
-            self.write(struct.pack("I", len(data)) + \
-                           os.path.basename(filename))
+            offer = struct.pack("I", len(data)) + os.path.basename(filename)
+            self.write(offer)
         except base.SessionClosedError, e:
             print "Session closed while sending file information"
             return False
@@ -111,10 +111,9 @@ class FileTransferSession(stateful.StatefulSession):
             print "Did not get start response"
             return False
 
-        self.stats["total_size"] = len(data)
-        self.stats["sent_size"] = offset
+        self.stats["total_size"] = len(data) + len(offer) - offset
         self.stats["start_time"] = time.time()
-        
+
         try:
             self.status("Sending")
             self.write(data[offset:], timeout=120)
@@ -122,9 +121,11 @@ class FileTransferSession(stateful.StatefulSession):
             print "Session closed while doing write"
             pass
 
+        sent = self.stats["sent_size"]
+
         self.close()
 
-        if self.stats["sent_size"] != self.stats["total_size"]:
+        if sent != self.stats["total_size"]:
             self.status(_("Failed to send file (incomplete)"))
             return False
         else:
