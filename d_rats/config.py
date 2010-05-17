@@ -1526,6 +1526,8 @@ class DratsEmailAccessPanel(DratsPanel):
 
     def but_edit(self, button, lw):
         vals = lw.get_item(lw.get_selected())
+        if not vals:
+            return
         fields = [(_("Callsign"), str, vals[1]),
                   (_("Access"), str, vals[2]),
                   (_("Email Filter"), str, vals[3])]
