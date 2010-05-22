@@ -42,6 +42,7 @@ import emailgw
 import utils
 import wl2k
 import mainapp
+import traceback
 
 CALL_TIMEOUT_RETRY = 300
 
@@ -58,9 +59,14 @@ def msg_is_locked(fn):
 def msg_lock(fn):
     MSG_LOCK_LOCK.acquire()
     if not msg_is_locked(fn):
-        file(__msg_lockfile(fn), "w").write("foo")
+        lf = file(__msg_lockfile(fn), "w")
+        traceback.print_stack(file=lf)
+        lf.close()
         success = True
     else:
+        lf = file(__msg_lockfile(fn), "r")
+        print "------ LOCK OWNED BY -------\n%s------------\n" % lf.read()
+        lf.close()
         success = False
     MSG_LOCK_LOCK.release()
 
