@@ -304,7 +304,7 @@ class DRATS_SMTPServer(smtpd.SMTPServer):
 class DRATS_SMTPServerThread(threading.Thread):
     def __init__(self, config):
         threading.Thread.__init__(self)
-        self.setDaemon(true)
+        self.setDaemon(True)
         self.__config = config
         self.__server = None
 
