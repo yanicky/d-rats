@@ -94,6 +94,8 @@ def default_build():
                     ('/usr/share/d-rats/images', image_files),
                     ('/usr/share/d-rats/ui', ui_files),
                     ('/usr/share/d-rats/libexec', ["libexec/lzhuf"]),
+                    ('/usr/share/man/man1', ['share/d-rats.1']),
+                    ('/usr/share/doc/d-rats', ['COPYING']),
                     ] + locale_files)
                     
 if sys.platform == "darwin":
