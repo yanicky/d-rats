@@ -177,6 +177,8 @@ class UnixPlatform(Platform):
             return "/usr/share/d-rats"
         elif "dist-packages" in find_me():
             return "/usr/share/d-rats"
+        elif "/usr/share/d-rats" in find_me():
+            return "/usr/share/d-rats"
         else:
             return self._source_dir
 

@@ -22,6 +22,7 @@ from optparse import OptionParser
 import traceback
 import gtk
 
+sys.path.insert(0, os.path.join("/usr/share", "d-rats"))
 from d_rats import utils
 
 IGNORE_ALL=False
