@@ -1,5 +1,5 @@
 include share/*.desktop
-include share/d-rats.1
+include share/*.1
 include forms/*.xml
 include forms/*.xsl
 include images/*
