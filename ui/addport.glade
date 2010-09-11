@@ -270,13 +270,15 @@ b
                         <child>
                           <widget class="GtkTable" id="table4">
                             <property name="visible">True</property>
-                            <property name="n_rows">4</property>
+                            <property name="n_rows">5</property>
                             <property name="n_columns">2</property>
                             <property name="column_spacing">4</property>
                             <property name="row_spacing">4</property>
                             <child>
                               <widget class="GtkComboBox" id="tnc_rate">
                                 <property name="visible">True</property>
+                                <property name="tooltip" translatable="yes">The baud rate used to communicate with
+the TNC (not the rate over the air)</property>
                                 <property name="active">3</property>
                                 <property name="items" translatable="yes">1200
 2400
@@ -310,6 +312,9 @@ b
                               <widget class="GtkSpinButton" id="tnc_tncport">
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
+                                <property name="tooltip" translatable="yes">If the TNC is a multi-port unit, this
+specifies which port will be used
+(starting with 0 as the first one)</property>
                                 <property name="adjustment">0 0 15 1 10 10</property>
                               </widget>
                               <packing>
@@ -359,6 +364,9 @@ b
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
                                 <property name="receives_default">False</property>
+                                <property name="tooltip" translatable="yes">When enabled, D-RATS will encapsulate
+its packets in AX.25 UI frames which can be
+passed through a digipeater</property>
                                 <property name="draw_indicator">True</property>
                               </widget>
                               <packing>
@@ -378,6 +386,31 @@ b
                                 <property name="top_attach">3</property>
                                 <property name="bottom_attach">4</property>
                                 <property name="y_options">GTK_FILL</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <widget class="GtkLabel" id="label24">
+                                <property name="visible">True</property>
+                                <property name="label" translatable="yes">Digi Path</property>
+                              </widget>
+                              <packing>
+                                <property name="top_attach">4</property>
+                                <property name="bottom_attach">5</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <widget class="GtkEntry" id="tnc_ax25path">
+                                <property name="visible">True</property>
+                                <property name="sensitive">False</property>
+                                <property name="can_focus">True</property>
+                                <property name="tooltip" translatable="yes">AX.25 Digi path (CALL1,CALL2,...)</property>
+                                <property name="invisible_char">&#x25CF;</property>
+                              </widget>
+                              <packing>
+                                <property name="left_attach">1</property>
+                                <property name="right_attach">2</property>
+                                <property name="top_attach">4</property>
+                                <property name="bottom_attach">5</property>
                               </packing>
                             </child>
                           </widget>

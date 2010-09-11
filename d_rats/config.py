@@ -195,10 +195,15 @@ def load_portspec(wtree, portspec, info, name):
         wtree.get_widget("net_pass").set_text(info)
     elif portspec.startswith("tnc"):
         tsel.set_active(2)
-        tnc, port, tncport = portspec.split(":")
+        if len(portspec.split(":")) == 3:
+            tnc, port, tncport = portspec.split(":", 2)
+            path = ""
+        else:
+            tnc, port, tncport, path = portspec.split(":", 3)
         wtree.get_widget("tnc_port").child.set_text(port)
         wtree.get_widget("tnc_tncport").set_value(int(tncport))
         utils.combo_select(wtree.get_widget("tnc_rate"), info)
+        wtree.get_widget("tnc_ax25path").set_text(path.replace(";", ","))
         if portspec.startswith("tnc-ax25"):
             wtree.get_widget("tnc_ax25").set_active(True)
     elif portspec.startswith("agwpe:"):
@@ -235,6 +240,10 @@ def prompt_for_port(portspec=None, info=None, pname=None):
     sratesel = wtree.get_widget("serial_rate")
     tratesel = wtree.get_widget("tnc_rate")
     tprotsel = wtree.get_widget("tnc_ax25")
+    tnc_ax25 = wtree.get_widget("tnc_ax25")
+    tnc_path = wtree.get_widget("tnc_ax25path")
+    tnc_ax25.connect("toggled",
+                     lambda b: tnc_path.set_sensitive(b.get_active()))
 
     sratesel.set_active(3)
     tratesel.set_active(3)
@@ -291,13 +300,16 @@ def prompt_for_port(portspec=None, info=None, pname=None):
             netpass.get_text()
     elif t == _("TNC"):
         if tprotsel.get_active():
-            type = "tnc-ax25"
+            digi_path = tnc_path.get_text().replace(",", ";")
+            portspec = "tnc-ax25:%s:%i:%s" % (tportsel.get_active_text(),
+                                              ttncport.get_value(),
+                                              digi_path), \
+                                              tratesel.get_active_text()
         else:
-            type = "tnc"
-        portspec = "%s:%s:%i" % (type,
-                                 tportsel.get_active_text(),
-                                 ttncport.get_value()), \
-                                 tratesel.get_active_text()
+            portspec = "%s:%s:%i" % (type,
+                                     tportsel.get_active_text(),
+                                     ttncport.get_value()), \
+                                     tratesel.get_active_text()
     elif t == _("Dongle"):
         portspec = "dongle:", ""
     elif t == _("AGWPE"):

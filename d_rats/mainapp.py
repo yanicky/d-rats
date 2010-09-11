@@ -186,8 +186,10 @@ class MainApp(object):
             del self.__unused_pipes[port]
             print "Re-using path %s for port %s" % (path, port)
         elif port.startswith("tnc-ax25:"):
-            _port = port.replace("tnc-ax25:", "")
-            path = "RELAY"
+            print port
+            tnc, _port, tncport, path = port.split(":")
+            path = path.replace(";", ",")
+            _port = "%s:%s" % (_port, tncport)
             path = comm.TNCAX25DataPath((_port, int(rate), call, path))
         elif port.startswith("tnc:"):
             _port = port.replace("tnc:", "")

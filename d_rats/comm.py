@@ -411,7 +411,7 @@ class TNCAX25DataPath(TNCDataPath):
         TNCDataPath.__init__(self, (port, rate), **kwargs)
 
     def __str__(self):
-        return "[TNC-AX25 %s@%s]" % (self.port, self.baud)
+        return "[TNC-AX25 %s@%s>%s]" % (self.port, self.baud, self.__path)
 
     def write(self, buf):
         spath = [self.__call,] + self.__path.split(",")
