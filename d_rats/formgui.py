@@ -373,7 +373,7 @@ class NumericWidget(FieldWidget):
         try:
             max = float(node.prop("max"))
         except:
-            max = 10000.0
+            max = 1000000.0
 
         try:
             initial = float(node.children.getContent())
