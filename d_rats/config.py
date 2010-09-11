@@ -1038,7 +1038,7 @@ class DratsTransfersPanel(DratsPanel):
         DratsPanel.__init__(self, config)
 
         val = DratsConfigWidget(config, "settings", "ddt_block_size", True)
-        val.add_numeric(128, 4096, 128)
+        val.add_numeric(32, 4096, 32)
         self.mv(_("Block size"), val)
 
         val = DratsConfigWidget(config, "settings", "ddt_block_outlimit", True)
