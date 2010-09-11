@@ -193,12 +193,14 @@ def load_portspec(wtree, portspec, info, name):
         wtree.get_widget("net_host").set_text(host)
         wtree.get_widget("net_port").set_value(int(port))
         wtree.get_widget("net_pass").set_text(info)
-    elif portspec.startswith("tnc:"):
+    elif portspec.startswith("tnc"):
         tsel.set_active(2)
         tnc, port, tncport = portspec.split(":")
         wtree.get_widget("tnc_port").child.set_text(port)
         wtree.get_widget("tnc_tncport").set_value(int(tncport))
         utils.combo_select(wtree.get_widget("tnc_rate"), info)
+        if portspec.startswith("tnc-ax25"):
+            wtree.get_widget("tnc_ax25").set_active(True)
     elif portspec.startswith("agwpe:"):
         tsel.set_active(4)
         agw, addr, port = portspec.split(":")
@@ -232,6 +234,7 @@ def prompt_for_port(portspec=None, info=None, pname=None):
 
     sratesel = wtree.get_widget("serial_rate")
     tratesel = wtree.get_widget("tnc_rate")
+    tprotsel = wtree.get_widget("tnc_ax25")
 
     sratesel.set_active(3)
     tratesel.set_active(3)
@@ -287,9 +290,14 @@ def prompt_for_port(portspec=None, info=None, pname=None):
         portspec = "net:%s:%i" % (netaddr.get_text(), netport.get_value()), \
             netpass.get_text()
     elif t == _("TNC"):
-        portspec = "tnc:%s:%i" % (tportsel.get_active_text(),
-                                  ttncport.get_value()), \
-                                  tratesel.get_active_text()
+        if tprotsel.get_active():
+            type = "tnc-ax25"
+        else:
+            type = "tnc"
+        portspec = "%s:%s:%i" % (type,
+                                 tportsel.get_active_text(),
+                                 ttncport.get_value()), \
+                                 tratesel.get_active_text()
     elif t == _("Dongle"):
         portspec = "dongle:", ""
     elif t == _("AGWPE"):
