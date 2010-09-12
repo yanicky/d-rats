@@ -470,7 +470,7 @@ class ChatTab(MainWindowTab):
         self.emit("user-send-chat", "CQCQCQ", port, "\r\n" + data, False)
 
     def _clear(self, but):
-        num, display = self._display_selected()
+        display = self._display_selected()
         display.get_buffer().set_text("")
 
     def _tab_selected(self, tabs, page, num):
@@ -522,7 +522,7 @@ class ChatTab(MainWindowTab):
         self._save_filters()
 
     def _view_log(self, but):
-        num, display = self._display_selected()
+        display = self._display_selected()
         fn = display.get_buffer().get_logfile()
         self._config.platform.open_text_file(fn)
 
