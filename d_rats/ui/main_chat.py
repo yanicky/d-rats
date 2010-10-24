@@ -783,9 +783,9 @@ class ChatTab(MainWindowTab):
         ports = []
         for p in self._config.options("ports"):
             spec = self._config.get("ports", p)
-            e, p, r, s, raw, name = spec.split(",")
-            if e == "True":
-                ports.append(name)
+            vals = spec.split(",")
+            if vals[0] == "True":
+                ports.append(vals[-1])
         ports.sort()
 
         model = dest.get_model()
