@@ -297,9 +297,10 @@ class AccountMailThread(MailThread):
                 self.message("Failed to retrieve messages: %s" % e)
             for mail in mails:
                 self.__action(mail)
-            event = main_events.Event(None,
-                                      "Received %i email(s)" % len(mails))
-            self._emit("event", event)
+            if mails:
+                event = main_events.Event(None,
+                                          "Received %i email(s)" % len(mails))
+                self._emit("event", event)
 
 class PeriodicAccountMailThread(AccountMailThread):
     def run(self):
