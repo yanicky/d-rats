@@ -73,6 +73,12 @@ def default_build():
     image_files.append("share/d-rats2.xpm")
     ui_files = glob("ui/*")
     _locale_files = glob("locale/*/LC_MESSAGES/D-RATS.mo")
+    _man_files = glob("share/*.1")
+
+    man_files = []
+    for f in _man_files:
+        os.system("gzip -c %s > %s" % (f, f+".gz"))
+	man_files.append(f+".gz")
 
     locale_files = []
     for f in _locale_files:
@@ -95,9 +101,7 @@ def default_build():
                     ('/usr/share/d-rats/images', image_files),
                     ('/usr/share/d-rats/ui', ui_files),
                     ('/usr/share/d-rats/libexec', ["libexec/lzhuf"]),
-                    ('/usr/share/man/man1', ['share/d-rats.1.gz']),
-                    ('/usr/share/man/man1', ['share/d-rats_repeater.1.gz']),
-                    ('/usr/share/man/man1', ['share/d-rats_mapdownloader.1.gz']),
+                    ('/usr/share/man/man1', man_files),
                     ('/usr/share/doc/d-rats', ['COPYING']),
                     ] + locale_files)
                     
