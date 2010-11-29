@@ -90,7 +90,7 @@ def call_in_list(callinfo, call):
     return False
 
 class Repeater:
-    def __init__(self, id="D-RATS Network Proxy", reqauth=False, trustlocal=False):
+    def __init__(self, id="D-RATS Network Proxy", reqauth=False, trustlocal=False, gps_okay_ports=[]):
         self.paths = []
         self.calls = {}
         self.thread = None
@@ -103,9 +103,16 @@ class Repeater:
         self.condition = threading.Condition()
         self.gps_socket = None
         self.gps_sockets = []
+        self.gps_okay_ports = gps_okay_ports
 
         # Forget port for a station after 10 minutes
         self.__call_timeout = 600
+
+    def __should_repeat_gps(self, transport, frame):
+        if not self.gps_okay_ports:
+            return True
+        else:
+            return transport.name in self.gps_okay_ports
 
     def __repeat(self, transport, frame):
         if frame.d_station == "!":
@@ -113,7 +120,8 @@ class Repeater:
 
         if frame.s_station == frame.d_station == "CQCQCQ" and \
                 frame.session == 1 and \
-                frame.data.startswith("$"):
+                frame.data.startswith("$") and \
+                self.__should_repeat_gps(transport, frame):
             for s in self.gps_sockets:
                 s.send(frame.data)
 
@@ -350,6 +358,10 @@ class RepeaterUI:
         config.set("settings", "require_auth", "False")
         config.set("settings", "trust_local", "True")
         config.set("settings", "gpsport", "9500")
+
+        config.add_section("tweaks")
+        config.set("tweaks",  "allow_gps", "")
+
         config.read(self.config_fn)
 
         return config
@@ -363,8 +375,9 @@ class RepeaterUI:
     def add_outgoing_paths(self, id, paths):
         reqauth = self.config.get("settings", "require_auth") == "True"
         trustlocal = self.config.get("settings", "trust_local") == "True"
+        gps_okay_ports = self.config.get("tweaks", "allow_gps").split(",")
         print "Repeater id is %s" % id
-        self.repeater = Repeater(id, reqauth, trustlocal)
+        self.repeater = Repeater(id, reqauth, trustlocal, gps_okay_ports)
         for dev,param in paths:
             to = 0
             if dev.startswith("net:"):
@@ -396,7 +409,8 @@ class RepeaterUI:
                 to = 3
 
             path.connect()
-            tport = transport.Transporter(path, warmup_timout=to)
+            tport = transport.Transporter(path, warmup_timout=to,
+                                          name=dev)
             self.repeater.add_new_transport(tport)
 
 
