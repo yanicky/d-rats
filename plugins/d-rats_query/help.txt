@@ -1,0 +1,7 @@
+Comandi:
+        info/help.. questa pagina di info/aiuto
+        wx......... situazione e previsioni meteo locali
+        qst........ visualizza comunicazioni di Sezione
+        qst-re..... visualizza comunicazioni ARI-RE
+
+by Leo IZ5FSA
