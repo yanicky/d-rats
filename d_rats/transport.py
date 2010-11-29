@@ -188,7 +188,7 @@ class Transporter(object):
 
     def _match_gps(self):
         # NMEA-style
-        m = re.search("((?:\$GP[^\*]+\*[0-9A-F]{2}\r?\n?){2}.{8},.{20})",
+        m = re.search("((?:\$GP[^\*]+\*[0-9A-f]{2}\r?\n?){2}.{8},.{20})",
                       self.inbuf)
         if m:
             return m.group(1)
