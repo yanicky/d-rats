@@ -283,6 +283,7 @@ class RPCSession(gobject.GObject, stateless.StatelessSession):
         frame = self.__job_to_frame(job, id)
         job.frame = frame
         self._sm.outgoing(self, frame)
+        print "sent"
 
     def __worker(self):
         for id, (ts, att, job) in self.__jobs.items():
