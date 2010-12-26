@@ -399,6 +399,7 @@ class MainApp(object):
 
     def _refresh_lang(self):
         locales = { "English" : "en",
+                    "German" : "de",
                     "Italiano" : "it",
                     "Dutch" : "nl",
                     }

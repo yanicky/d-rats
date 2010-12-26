@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2010-12-24 07:07-0800\n"
+"POT-Creation-Date: 2010-12-26 07:46-0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -16,32 +16,6 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-
-#: d_rats/sessions/rpc.py:385
-msgid "Requested file list"
-msgstr ""
-
-#: d_rats/sessions/rpc.py:400
-msgid "Requested message list"
-msgstr ""
-
-#: d_rats/sessions/rpc.py:423
-#, python-format
-msgid "Requested file %s"
-msgstr ""
-
-#: d_rats/sessions/rpc.py:444
-#, python-format
-msgid "Requested message %s"
-msgstr ""
-
-#: d_rats/sessions/rpc.py:471
-msgid "Checking mail for"
-msgstr ""
-
-#: d_rats/sessions/rpc.py:503
-msgid "requested a mail check"
-msgstr ""
 
 #: d_rats/config.py:43 d_rats/config.py:770 d_rats/gps.py:105
 msgid "Imperial"
@@ -1404,6 +1378,32 @@ msgstr ""
 
 #: d_rats/sessions/file.py:215
 msgid "Failed to receive file (incomplete)"
+msgstr ""
+
+#: d_rats/sessions/rpc.py:385
+msgid "Requested file list"
+msgstr ""
+
+#: d_rats/sessions/rpc.py:400
+msgid "Requested message list"
+msgstr ""
+
+#: d_rats/sessions/rpc.py:423
+#, python-format
+msgid "Requested file %s"
+msgstr ""
+
+#: d_rats/sessions/rpc.py:444
+#, python-format
+msgid "Requested message %s"
+msgstr ""
+
+#: d_rats/sessions/rpc.py:471
+msgid "Checking mail for"
+msgstr ""
+
+#: d_rats/sessions/rpc.py:503
+msgid "requested a mail check"
 msgstr ""
 
 #: d_rats/sessions/sniff.py:36

@@ -779,7 +779,7 @@ class DratsPrefsPanel(DratsPanel):
         self.mv(_("Ping reply"), val)
 
         val = DratsConfigWidget(config, "prefs", "language")
-        val.add_combo(["English", "Italiano", "Dutch"])
+        val.add_combo(["English", "German", "Italiano", "Dutch"])
         self.mv(_("Language"), val)
 
         mval = DratsConfigWidget(config, "prefs", "blink_messages")
