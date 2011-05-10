@@ -68,7 +68,7 @@ class SocketListener(object):
                                       dest=self.dest,
                                       cls=SocketSession)
 
-            while s.get_state() != s.ST_CLSD:
+            while s.get_state() != base.ST_CLSD:
                 s.wait_for_state_change(10)
 
             print "%s ended" % name

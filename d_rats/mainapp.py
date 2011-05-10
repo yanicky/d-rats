@@ -160,6 +160,26 @@ class MainApp(object):
         else:
             return False
 
+    def _make_socket_listeners(self, sc):
+        forwards = self.config.options("tcp_out")
+        for forward in forwards:
+            try:
+                sport, dport, station = \
+                    self.config.get("tcp_out", forward).split(",")
+                sport = int(sport)
+                dport = int(dport)
+            except Exception, e:
+                print "Failed to parse TCP forward config %s: %s" % (forward, e)
+                return
+
+            try:
+                sc.create_socket_listener(sport, dport, station)
+                print "Started socket listener %i:%i@%s" % \
+                    (sport, dport, station)
+            except Exception, e:
+                print "Failed to start socket listener %i:%i@%s: %s" % \
+                    (sport, dport, station, e)
+
     def start_comms(self, portid):
         spec = self.config.get("ports", portid)
         try:
@@ -264,6 +284,8 @@ class MainApp(object):
             self.__connect_object(sc, name)
 
             sm.register_session_cb(sc.session_cb, None)
+
+            self._make_socket_listeners(sc)
 
             self.sm[name] = sm, sc
 
