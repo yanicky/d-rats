@@ -150,6 +150,7 @@ class MainApp(object):
         if self.sm.has_key(portid):
             sm, sc = self.sm[portid]
             sm.shutdown(True)
+            sc.shutdown()
             del self.sm[portid]
 
             portspec, pipe = self.__pipes[portid]
