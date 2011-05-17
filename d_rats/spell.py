@@ -13,7 +13,7 @@ class Spelling:
         p = subprocess.Popen([self.__aspell, "pipe"],
                              stdin=subprocess.PIPE,
                              stdout=subprocess.PIPE,
-                             close_fds=True,
+                             #close_fds=True,
                              **kwargs)
         return p
 
