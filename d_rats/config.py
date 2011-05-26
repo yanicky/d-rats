@@ -133,6 +133,7 @@ _DEF_SETTINGS = {
     "msg_smtp_port" : "9025",
     "delete_from" : "",
     "remote_admin_passwd" : "",
+    "expire_stations" : "60",
 }
 
 _DEF_STATE = {
@@ -922,6 +923,11 @@ class DratsAppearancePanel(DratsPanel):
         val = DratsConfigWidget(config, "prefs", "confirm_exit")
         val.add_bool()
         self.mv(_("Confirm exit"), val)
+
+        val = DratsConfigWidget(config, "settings", "expire_stations")
+        val.add_numeric(0, 9999, 1)
+        cap = gtk.Label(_("minutes"))
+        self.mv(_("Expire stations after"), val, cap)
 
 class DratsChatPanel(DratsPanel):
     def __init__(self, config):
