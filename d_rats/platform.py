@@ -293,8 +293,13 @@ class MacOSXPlatform(UnixPlatform):
         return "MacOS X"
 
     def source_dir(self):
-        if "site-packages" in find_me():
-            return "../Resources"
+        app_res = os.path.join(os.path.dirname(find_me()),
+                               "..", # d-rats
+                               "..", # Resources
+                               "..", # Contents
+                               "Resources")
+        if os.path.isdir(app_res):
+            return app_res
         else:
             return self._source_dir
 
