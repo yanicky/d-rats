@@ -292,6 +292,15 @@ class MainWindow(MainWindowElement):
         else:
             self.__window.resize(h, w)
 
+        try:
+            import gtkmacintegration
+            mbar = self._wtree.get_widget("menubar1")
+            mbar.hide()
+            gtkmacintegration.gtk_mac_menu_set_menu_bar(mbar)
+            print "Enabled OSX menubar integration"
+        except ImportError:
+            pass
+
         self.__window.show()
 
         gobject.timeout_add(3000, self.__update_status)
