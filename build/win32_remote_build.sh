@@ -26,7 +26,7 @@ do_build() {
     shift
     shift
 
-    ssh $HOST "cd $tmp && ./build/make_win32_build.sh $out $* && chmod 644 $out/*"
+    ssh $HOST "cd $tmp && ./build/make_win32_build.sh $out $* && chmod 755 $out/*"
 }
 
 grab_builds() {
@@ -35,8 +35,14 @@ grab_builds() {
     scp -r "$HOST:$out/*" dist
 }
 
+cleanup () {
+    tmp=$1
+
+    ssh $HOST "rm -Rf $tmp"
+}
 tmp1=$(temp_dir drats_build.XXXXX)
 tmp2=$(temp_dir drats_output.XXXXX)
 copy_source $tmp1
 do_build $tmp1 $tmp2 $*
 grab_builds $tmp2
+cleanup $tmp1
