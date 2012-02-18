@@ -155,6 +155,32 @@ class WinLinkMessage:
 
         return email.message_from_string(content), attachments
 
+    def encode_message(self, src, dst, name, body, attachments):
+        msgid = time.strftime("D%H%M%S") + src
+        
+        msg = "Mid: %s\r\n" % msgid[:12] + \
+            "Subject: %s\r\n" % name + \
+            "From: %s\r\n" % src
+        for _dst in dst:
+            msg += "To: %s\r\n" % _dst
+
+        msg += "Body: %i\r\n" % len(body) + \
+            "Date: %s\r\n" % time.strftime("%Y/%m/%d %H:%M", time.gmtime())
+
+        for attachment in attachments:
+            msg += "File: %i %s\r\n" % (len(attachment.get_content()),
+                                        attachment.get_name())
+
+        msg += "\r\n" + body + "\r\n"
+
+        for attachment in attachments:
+            msg += attachment.get_content() + "\r\n"
+
+        if attachments:
+            msg += "\r\n\x00"
+
+        self.set_content(msg, name)
+
     def recv_exactly(self, s, l):
         data = ""
         while len(data) < l:
@@ -521,24 +547,8 @@ class WinLinkThread(threading.Thread, gobject.GObject):
         server = self._config.get("prefs", "msg_wl2k_server")
         port = self._config.getint("prefs", "msg_wl2k_port")
         wl = self.wl2k_connect()
-        for mt in self.__send_msgs:
-
-            m = re.search("Mid: (.*)\r\nSubject: (.*)\r\n", mt)
-            if m:
-                mid = m.groups()[0]
-                subj = m.groups()[1]
-            else:
-                mid = time.strftime("%H%M%SDRATS")
-                subj = "Message"
-
-            wlm = WinLinkMessage()
-            wlm.set_id(mid)
-            wlm.set_content(mt, subj)
-            print m
-            print mt
+        for wlm in self.__send_msgs:
             wl.send_messages([wlm])
-
-            #self._emit("form-sent", -999, 
 
         return "Complete"
 
