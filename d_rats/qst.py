@@ -205,7 +205,8 @@ class QSTThreadedText(QSTText):
             print "Skipping QST because no data was returned"
             return
 
-        gobject.idle_add(self.emit, "qst-fired", "%s%s" % (self.prefix, msg))
+        gobject.idle_add(self.emit, "qst-fired",
+                         "%s%s" % (self.prefix, msg), self.key)
 
     def fire(self):
         if self.thread:
