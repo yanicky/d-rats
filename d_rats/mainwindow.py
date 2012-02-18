@@ -298,6 +298,7 @@ class MainWindow(MainWindowElement):
             mbar = self._wtree.get_widget("menubar1")
             mbar.hide()
             gtkmacintegration.gtk_mac_menu_set_menu_bar(mbar)
+            gtkmacintegration.gtk_mac_menu_set_global_key_handler_enabled(False)
             print "Enabled OSX menubar integration"
         except ImportError:
             pass
