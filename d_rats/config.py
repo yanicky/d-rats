@@ -26,7 +26,7 @@ import utils
 import miscwidgets
 import inputdialog
 import platform
-import geocode_ui
+#import geocode_ui
 import config_tips
 import spell
 
@@ -831,8 +831,8 @@ class DratsGPSPanel(DratsPanel):
         lon.add_coords()
         self.mv(_("Longitude"), lon)
 
-        geo = AddressLookup(_("Lookup"), lat, lon, window)
-        self.mv(_("Lookup by address"), geo)
+        #geo = AddressLookup(_("Lookup"), lat, lon, window)
+        #self.mv(_("Lookup by address"), geo)
 
         alt = DratsConfigWidget(config, "user", "altitude")
         alt.add_numeric(0, 29028, 1)
