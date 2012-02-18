@@ -86,6 +86,17 @@ def run_lzhuf_encode(data):
     lzh = struct.pack("<H", calc_checksum(lzh)) + lzh
     return lzh
 
+class WinLinkAttachment:
+    def __init__(self, name, content):
+        self.__name = name
+        self.__content = content
+
+    def get_name(self):
+        return self.__name
+
+    def get_content(self):
+        return self.__content
+
 class WinLinkMessage:
     def __init__(self, header=None):
         self.__name = ""
@@ -107,6 +118,42 @@ class WinLinkMessage:
 
     def __encode_lzhuf(self, data):
         return run_lzhuf_encode(data)
+
+    def decode_message(self):
+        files = []
+        body_length = 0
+        for line in self.__content.split("\r\n"):
+            if not line:
+                break
+            header, value = line.split(": ")
+            if header == "File":
+                length, name = value.split(" ", 1)
+                try:
+                    files.append((name, int(length)))
+                except ValueError:
+                    print "Error parsing File header length `%s'" % length
+            elif header == "Body":
+                try:
+                    body_length = int(value)
+                except ValueError:
+                    raise Exception("Error parsing Body header" +\
+                                        "length `%s'" % value)
+
+        content = self.__content
+
+        body_start = content.index("\r\n\r\n") + 4
+        rest = content[body_start + body_length:]
+        content = content[:body_start + body_length]
+
+        attachments = []
+        for name, length in files:
+            filedata = rest[2:length+2] # Length includes leading CRLF
+            print "File %s %i (%i)" % (name, len(filedata), length)
+            rest = rest[length+2:]
+            attachments.append(WinLinkAttachment(name, filedata))
+
+
+        return email.message_from_string(content), attachments
 
     def recv_exactly(self, s, l):
         data = ""
@@ -417,7 +464,7 @@ class WinLinkThread(threading.Thread, gobject.GObject):
         self.__send_msgs = send_msgs
 
     def __create_form(self, msg):
-        mail = email.message_from_string(msg.get_content())
+        mail, attachments = msg.decode_message()
 
         sender = mail.get("From", "Unknown")
 
@@ -444,6 +491,10 @@ class WinLinkThread(threading.Thread, gobject.GObject):
         form.set_path_src(sender.strip())
         form.set_path_dst(self._callsign)
         form.set_path_mid(msg.get_id())
+
+        for attachment in attachments:
+            form.add_attachment(attachment.get_name(), attachment.get_content())
+
         form.add_path_element("@WL2K")
         form.add_path_element(self._config.get("user", "callsign"))
         form.save_to(formfn)
