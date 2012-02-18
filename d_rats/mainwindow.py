@@ -85,14 +85,15 @@ class MainWindow(MainWindowElement):
             d = gtk.AboutDialog()
             d.set_transient_for(self._wtree.get_widget("mainwindow"))
 
-            verinfo = "GTK %s\nPyGTK %s\nLibXML using %.1f KB\n" % ( \
+            verinfo = "Python %s\nGTK %s\nPyGTK %s\nLibXML using %.1f KB\n" %(\
+                sys.version.split()[0],
                 ".".join([str(x) for x in gtk.gtk_version]),
                 ".".join([str(x) for x in gtk.pygtk_version]),
                 libxml2.memoryUsed() / 1024.0)
 
             d.set_name("D-RATS")
             d.set_version(DRATS_VERSION)
-            d.set_copyright("Copyright 2010 Dan Smith (KK7DS)")
+            d.set_copyright("Copyright 2012 Dan Smith (KK7DS)")
             d.set_website("http://www.d-rats.com")
             d.set_authors(("Dan Smith <dsmith@danplanet.com>",))
             d.set_comments(verinfo)
@@ -273,7 +274,7 @@ class MainWindow(MainWindowElement):
         self._current_tab = "messages"
 
         ic = "incomingcolor"
-        cpr = "Copyright 2010 Dan Smith (KK7DS)"
+        cpr = "Copyright 2012 Dan Smith (KK7DS)"
         self.tabs["chat"]._display_line("D-RATS v%s" % DRATS_VERSION, True, ic)
         self.tabs["chat"]._display_line(cpr, True, ic)
         self.tabs["chat"]._display_line("", True)        
