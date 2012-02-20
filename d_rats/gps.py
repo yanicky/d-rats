@@ -482,7 +482,7 @@ class GPSPosition(object):
         else:
             sta = self.station
 
-        s = "%s>%s,DSTAR*:@%sh" % (sta, dest, stamp)
+        s = "%s>%s,DSTAR*:/%sh" % (sta, dest, stamp)
 
         if self.latitude > 0:
             ns = "N"
@@ -499,11 +499,16 @@ class GPSPosition(object):
             lm = -1
 
         s += "%07.2f%s%s%08.2f%s%s" % (deg2nmea(self.latitude * Lm), ns,
-                                       symtab,
-                                       deg2nmea(self.longitude * lm), ew,
-                                       symbol)
+                                        symtab,
+                                        deg2nmea(self.longitude * lm), ew,
+                                        symbol)
         if self.speed and self.direction:
-            s += "%.1f/%.1f" % (float(self.speed), float(self.direction))
+            s += "%03.0f/%03.0f" % (float(self.speed), float(self.direction))
+
+        if self.altitude:
+            s += "/A=%06i" % meters2feet(float(self.altitude))
+        else:
+            s += "/"
 
         if self.comment:
             l = 43
@@ -511,10 +516,6 @@ class GPSPosition(object):
                 l -= len("/A=xxxxxx")
 
             s += "%s" % self.comment[:l]
-            
-        if self.altitude:
-            s += "%s/A=%06i" % (self.comment and " " or "",
-                                meters2feet(float(self.altitude)))
 
         s += "\r"
 
