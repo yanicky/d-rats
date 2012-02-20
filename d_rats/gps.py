@@ -498,10 +498,10 @@ class GPSPosition(object):
             ew = "W"            
             lm = -1
 
-        s += "%.2f%s%s%08.2f%s%s" % (deg2nmea(self.latitude * Lm), ns,
-                                     symtab,
-                                     deg2nmea(self.longitude * lm), ew,
-                                     symbol)
+        s += "%07.2f%s%s%08.2f%s%s" % (deg2nmea(self.latitude * Lm), ns,
+                                       symtab,
+                                       deg2nmea(self.longitude * lm), ew,
+                                       symbol)
         if self.speed and self.direction:
             s += "%.1f/%.1f" % (float(self.speed), float(self.direction))
 
@@ -778,7 +778,7 @@ class APRSGPSPosition(GPSPosition):
         #11 = altitude string
         
         expr = "^(([@/])[0-9]{6}([/hz])|!|=)" + \
-            "([0-9]{4}\.[0-9]{2})([NS])(.)?" + \
+            "([0-9]{1,4}\.[0-9]{2})([NS])(.)?" + \
             "([0-9]{5}\.[0-9]{2})([EW])(.)" + \
             "([^/]*)(/A=[0-9]{6})?"
 
@@ -1124,6 +1124,7 @@ if __name__ == "__main__":
         "$$CRC1F72,KI4IFW-1>APRATS,DSTAR*:@291930/4531.50N/12254.98W>APRS test beacon /A=000022",
         "$$CRC80C3,VA2PBI>APU25N,DSTAR*:=4539.33N/07330.28W-73 de Pierre D-Star Montreal {UIV32N}",
         "$$CRCA31F,VA2PBI>API282,DSTAR*:/221812z4526.56N07302.34W/\r",
+        '$$CRCF471,AB9FT-ML>APRATS,DSTAR*:@214235h0.00S/00000.00W>ON D-RATS at Work\r',
         ]
 
     print "\n-- GPS-A --"
