@@ -503,7 +503,7 @@ class GPSPosition(object):
                                         deg2nmea(self.longitude * lm), ew,
                                         symbol)
         if self.speed and self.direction:
-            s += "%03.0f/%03.0f" % (float(self.speed), float(self.direction))
+            s += "%03.0f/%03.0f" % (float(self.direction), float(self.speed))
 
         if self.altitude:
             s += "/A=%06i" % meters2feet(float(self.altitude))
