@@ -71,6 +71,14 @@ Section ""
   CreateShortCut "\$SMPROGRAMS\D-RATS\D-RATS Map Downloader.lnk" "\$INSTDIR\d-rats_mapdownloader.exe"
   CreateDirectory "\$APPDATA\D-RATS\Form_Templates"
   CopyFiles \$INSTDIR\forms\*.* "\$APPDATA\D-RATS\Form_Templates"
+  WriteUninstaller \$INSTDIR\Uninstall.exe
+  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\D-RATS" "DisplayName" "D-RATS"  
+  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\D-RATS" "UninstallString" \$\"\$INSTDIR\Uninstall.exe\$\""  
+SectionEnd
+Section "Uninstall"
+  RMDir /r "\$INSTDIR"
+  DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\D-RATS"
+  RMDir /r "\$SMPROGRAMS\D-RATS"
 SectionEnd
 EOF
 	unix2dos d-rats.nsi
