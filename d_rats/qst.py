@@ -168,7 +168,16 @@ class QSTGPS(QSTText):
         else:
             fix = self.fix
 
-        fix.set_station(fix.station, self.text[:20])
+        aicon = self.config.get("settings", "default_gps_symbol")
+        if self.text:
+            comment = self.text
+        else:
+            comment = self.config.get("settings", "default_gps_comment")
+
+        print "Icon: %s" % aicon
+        fix.set_station(fix.station, gps.construct_dprs(fix.station,
+                                                        aicon,
+                                                        comment))
 
         if fix.valid:
             return fix.to_NMEA_GGA()
@@ -186,8 +195,8 @@ class QSTGPSA(QSTGPS):
             fix.set_station(fix.station, self.text[:20])
 
         if fix.valid:
-            return fix.to_APRS(symtab=self.config.get("settings", "aprssymtab"),
-                               symbol=self.config.get("settings", "aprssymbol"))
+            aicon = self.config.get("settings", "default_gps_symbol")
+            return fix.to_APRS(symtab=aicon[0], symbol=aicon[1])
         else:
             return None
 
@@ -461,13 +470,6 @@ class QSTGPSEditWidget(QSTEditWidget):
     msg_limit = 20
     type = "GPS"
 
-    def prompt_for_DPRS(self, button):
-        dprs = do_dprs_calculator(self.__msg.get_text())
-        if dprs is None:
-            return
-        else:
-            self.__msg.set_text(dprs)
-
     def __init__(self, config):
         QSTEditWidget.__init__(self, False, 2)
 
@@ -484,16 +486,7 @@ class QSTGPSEditWidget(QSTEditWidget):
         self.__msg.show()
         hbox.pack_start(self.__msg, 1, 1, 1)
 
-        dprs = gtk.Button("DPRS")
-
-        if not isinstance(self, QSTGPSAEditWidget):
-            dprs.show()
-            self.__msg.set_text(config.get("settings", "default_gps_comment"))
-        else:
-            self.__msg.set_text("ON D-RATS")
-
-        dprs.connect("clicked", self.prompt_for_DPRS)
-        hbox.pack_start(dprs, 0, 0, 0)
+        self.__msg.set_text(config.get("settings", "default_gps_comment"))
         
     def __str__(self):
         return "Message: %s" % self.__msg.get_text()

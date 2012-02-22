@@ -23,7 +23,7 @@ import sys
 
 import gobject
 
-from d_rats import ddt2, signals, emailgw, wl2k
+from d_rats import ddt2, signals, emailgw, wl2k, gps
 
 # This feels wrong
 from d_rats.ui import main_events
@@ -367,6 +367,12 @@ class RPCActionSet(gobject.GObject):
             fix = None
             result["rc"] = "No data for station '%s'" % job.get_station()
 
+        aicon = self.__config.get("settings", "default_gps_symbol")
+        comment = self.__config.get("settings", "default_gps_comment")
+        
+        fix.set_station(fix.station, gps.construct_dprs(fix.station,
+                                                        aicon,
+                                                        comment))
         if fix:
             self.emit("user-send-chat",
                       "CQCQCQ", self.__port, fix.to_NMEA_GGA(), True)

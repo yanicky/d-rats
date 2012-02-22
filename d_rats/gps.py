@@ -257,6 +257,17 @@ def parse_date(string, fmt):
                              vals["M"],
                              vals["S"])
 
+def construct_dprs(call, icon, comment, overlay=" "):
+        try:
+            dicon = APRS_TO_DPRS[icon]
+        except:
+            dicon = APRS_TO_DPRS["/?"]
+
+        string = "%s%s %s" % (dicon, overlay, comment[:13])
+        check = DPRS_checksum(call, string)
+
+        return string + check
+
 class GPSPosition(object):
     """Represents a position on the globe, either from GPS data or a static
     positition"""

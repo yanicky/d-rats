@@ -29,6 +29,7 @@ import platform
 #import geocode_ui
 import config_tips
 import spell
+import gps
 
 from d_rats.ui.main_common import display_error
 
@@ -97,8 +98,7 @@ _DEF_SETTINGS = {
     "gpsport" : "",
     "gpsenabled" : "False",
     "gpsportspeed" : "4800",
-    "aprssymtab" : "/",
-    "aprssymbol" : ">",
+    "default_gps_symbol" : "/?",
     "compatmode" : "False",
     "inports" : "[]",
     "outports" : "[]",
@@ -479,6 +479,18 @@ class DratsConfigWidget(gtk.HBox):
 
         self.pack_start(w, 1, 1, 1)
 
+    def add_pixbuf_combo(self, choices=[]):
+        def changed(box):
+            self.value = choices[box.get_active()][1]
+
+        w = miscwidgets.make_pixbuf_choice(choices, self.value)
+        w.connect("changed", changed)
+        w.set_size_request(80, -1)
+        w.show()
+        self._widget = w
+
+        self.pack_start(w, 1, 1, 1)
+
     def add_bool(self, label=None):
         if label is None:
             label = _("Enabled")
@@ -852,31 +864,22 @@ class DratsGPSPanel(DratsPanel):
         disable_with_toggle(val._widget, port._widget)
         disable_with_toggle(val._widget, rate._widget)
 
-        val1 = DratsConfigWidget(config, "settings", "aprssymtab")
-        val1.add_text(1)
-        val2 = DratsConfigWidget(config, "settings", "aprssymbol")
-        val2.add_text(1)
-        self.mv(_("GPS-A Symbol"),
-                gtk.Label(_("Table:")), val1,
-                gtk.Label(_("Symbol:")), val2)
+        icons = []
+        for sym in sorted(gps.DPRS_TO_APRS.values()):
+            icon = utils.get_icon(sym)
+            if icon:
+                icons.append((icon, sym))
+        val = DratsConfigWidget(config, "settings", "default_gps_symbol")
+        val.add_pixbuf_combo(icons)
+        self.mv(_("Default GPS Symbol"), val)
+
+        val = DratsConfigWidget(config, "settings", "default_gps_comment")
+        val.add_text(20)
+        self.mv(_("Default GPS Comment"), val)
            
         val = DratsConfigWidget(config, "settings", "map_tile_ttl")
         val.add_numeric(0, 9999999999999, 1)
         self.mv(_("Freshen map after"), val, gtk.Label(_("hours")))
-
-        def gps_comment_from_dprs(button, val):
-            import qst
-            dprs = qst.do_dprs_calculator(config.get("settings",
-                                                     "default_gps_comment"))
-            if dprs is not None:
-                config.set("settings", "default_gps_comment", dprs)
-                val._widget.set_text(dprs)
-
-        val = DratsConfigWidget(config, "settings", "default_gps_comment")
-        val.add_text(20)
-        but = gtk.Button(_("DPRS"))
-        but.connect("clicked", gps_comment_from_dprs, val)
-        self.mv(_("Default GPS comment"), val, but)
 
         val = DratsConfigWidget(config, "settings", "timestamp_positions")
         val.add_bool()
