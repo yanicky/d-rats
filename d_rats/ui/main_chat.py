@@ -392,10 +392,15 @@ class ChatTab(MainWindowTab):
             display = self._display_matching_filter(text)
             noticere = self._config.get("prefs", "noticere")
             ignorere = self._config.get("prefs", "ignorere")
-            if noticere and re.search(noticere, text):
-                attrs += ("noticecolor",)
-            elif ignorere and re.search(ignorere, text):
-                attrs += ("ignorecolor",)
+            try:
+                if noticere and re.search(noticere, text):
+                    attrs += ("noticecolor",)
+                elif ignorere and re.search(ignorere, text):
+                    attrs += ("ignorecolor",)
+            except Exception, e:
+                print "Failed to search (`%s' or `%s'): %s" % (noticere,
+                                                               ignorere,
+                                                               e)
         else:
             display = self._display_selected()
 
