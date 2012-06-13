@@ -9,8 +9,8 @@ msgstr ""
 "Project-Id-Version: DRats\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2009-02-06 07:06-0800\n"
-"PO-Revision-Date: 2009-03-18 01:40-0800\n"
-"Last-Translator: N1KEZ <rob@n1kez.net>\n"
+"PO-Revision-Date: 2012-06-13 00:16+0100\n"
+"Last-Translator: ON7DQ <on7dq@hotmail.com>\n"
 "Language-Team: WashCoARES - N1KEZ <rob@n1kez.net>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -22,7 +22,7 @@ msgstr ""
 #: d_rats/config.py:455
 #: d_rats/gps.py:105
 msgid "Imperial"
-msgstr ""
+msgstr "Brits"
 
 #: d_rats/config.py:47
 msgid "Online (D-RATS)"
@@ -71,7 +71,7 @@ msgstr "Uitlogbericht"
 #: d_rats/config.py:455
 #: d_rats/gps.py:108
 msgid "Metric"
-msgstr ""
+msgstr "Metrisch"
 
 #: d_rats/config.py:456
 msgid "Units"
@@ -99,7 +99,7 @@ msgstr "Download Directory"
 
 #: d_rats/config.py:484
 msgid "Map Storage Directory"
-msgstr "Kaart opslag directory"
+msgstr "Map voor kaarten"
 
 #: d_rats/config.py:492
 #: d_rats/geocode_ui.py:70
@@ -145,7 +145,7 @@ msgstr "Externe GPS"
 
 #: d_rats/config.py:515
 msgid "Use External GPS"
-msgstr "Gebruik GPS"
+msgstr "Gebruik externe GPS"
 
 #: d_rats/config.py:521
 msgid "GPS-A Symbol"
@@ -181,11 +181,11 @@ msgstr "Chat lettertype"
 
 #: d_rats/config.py:564
 msgid "Scrollback Lines"
-msgstr "Terug blader regels"
+msgstr "Terugblader regels"
 
 #: d_rats/config.py:576
 msgid "Serial Port"
-msgstr "Serieele poort"
+msgstr "Seriële poort"
 
 #: d_rats/config.py:580
 msgid "Receive raw text"
@@ -368,7 +368,7 @@ msgstr "Wachtwoord"
 #: d_rats/config.py:870
 #: d_rats/config.py:891
 msgid "Poll Interval"
-msgstr "Test interval"
+msgstr "Interval tussen opvragingen"
 
 #: d_rats/config.py:835
 #: d_rats/config.py:847
@@ -404,7 +404,7 @@ msgstr "Bewerk"
 
 #: d_rats/config.py:916
 msgid "Incoming Accounts"
-msgstr "Inkomende namen"
+msgstr "Inkomende Namen"
 
 #: d_rats/config.py:983
 #: d_rats/config.py:991
@@ -426,7 +426,7 @@ msgstr "Beide"
 #: d_rats/config.py:1006
 #: d_rats/config.py:1014
 msgid "Email Filter"
-msgstr "Email filter"
+msgstr "Email Filter"
 
 #: d_rats/config.py:1017
 msgid "None"
@@ -443,7 +443,7 @@ msgstr "Voorkeuren"
 
 #: d_rats/config.py:1085
 msgid "Paths"
-msgstr "Paden"
+msgstr "Mappen"
 
 #: d_rats/config.py:1086
 #: d_rats/qst.py:1052
@@ -453,7 +453,7 @@ msgstr "GPS"
 
 #: d_rats/config.py:1087
 msgid "Appearance"
-msgstr "Vertoning"
+msgstr "Layout"
 
 #: d_rats/config.py:1090
 msgid "Radio"
@@ -465,7 +465,7 @@ msgstr "Verzendingen"
 
 #: d_rats/config.py:1092
 msgid "Tuning"
-msgstr "Instellen"
+msgstr "Afstemming"
 
 #: d_rats/config.py:1094
 msgid "Network"
@@ -497,7 +497,7 @@ msgstr "Doelstation"
 
 #: d_rats/chatgui.py:116
 msgid "Select (or enter) a destination station"
-msgstr "Selekteer (of type) een doelstation"
+msgstr "Selekteer (of typ) een doelstation"
 
 #: d_rats/chatgui.py:239
 msgid "Not connected"
@@ -509,7 +509,7 @@ msgstr "Niet verbonden"
 #: d_rats/chatgui.py:1727
 #: d_rats/chatgui.py:1849
 msgid "Send"
-msgstr "Zenden"
+msgstr "Zend"
 
 #: d_rats/chatgui.py:503
 #: d_rats/chatgui.py:993
@@ -538,11 +538,11 @@ msgstr "Start"
 
 #: d_rats/chatgui.py:643
 msgid "Create filter"
-msgstr "Creeer filter"
+msgstr "Creëer filter"
 
 #: d_rats/chatgui.py:644
 msgid "Enter a regular expression to define the filter:"
-msgstr "Type en normale uitdrukking om de filter in te stellen"
+msgstr "Geef een normale uitdrukking om het filter aan te maken"
 
 #: d_rats/chatgui.py:661
 msgid "All"
@@ -550,7 +550,7 @@ msgstr "Alle"
 
 #: d_rats/chatgui.py:758
 msgid "Multicast Receive"
-msgstr "Multicast ontvangen"
+msgstr "Multicast Ontvangen"
 
 #: d_rats/chatgui.py:828
 msgid "_File"
@@ -562,11 +562,11 @@ msgstr "_Zend Bestand"
 
 #: d_rats/chatgui.py:830
 msgid "_Multi Send File"
-msgstr "_Meervoud Zend Bestand"
+msgstr "_Zend Meerdere Bestanden"
 
 #: d_rats/chatgui.py:831
 msgid "_Multi Recv File"
-msgstr "_Meervoud Ontvang Bestand"
+msgstr "_Ontvang Meerdere Bestanden"
 
 #: d_rats/chatgui.py:832
 msgid "Main _Settings"
@@ -574,15 +574,15 @@ msgstr "Start _Instellingen"
 
 #: d_rats/chatgui.py:833
 msgid "_Auto QST Settings"
-msgstr "Auto QST Instellingen"
+msgstr "_Auto QST Instellingen"
 
 #: d_rats/chatgui.py:834
 msgid "Quick _Messages"
-msgstr "Snel_Berichten"
+msgstr "Snel _Berichten"
 
 #: d_rats/chatgui.py:835
 msgid "_Manage Form Templates"
-msgstr "_Onderhoud Formulier Sjablonen"
+msgstr "_Beheer Formulier Sjablonen"
 
 #: d_rats/chatgui.py:836
 msgid "_Quit"
@@ -590,7 +590,7 @@ msgstr "_Einde"
 
 #: d_rats/chatgui.py:837
 msgid "Broadcast _Text File"
-msgstr "Verstuur_Text Bestand"
+msgstr "Verstuur _Text Bestand"
 
 #: d_rats/chatgui.py:838
 #: d_rats/chatgui.py:1991
@@ -599,27 +599,27 @@ msgstr "Ping Station"
 
 #: d_rats/chatgui.py:839
 msgid "_View"
-msgstr ""
+msgstr "_Beeld"
 
 #: d_rats/chatgui.py:840
 msgid "_Clear"
-msgstr ""
+msgstr "_Wis"
 
 #: d_rats/chatgui.py:841
 msgid "_Filter by string"
-msgstr ""
+msgstr "_Filter op tekst"
 
 #: d_rats/chatgui.py:842
 msgid "_Remove current filter"
-msgstr ""
+msgstr "_Verwijder huidig filter"
 
 #: d_rats/chatgui.py:843
 msgid "Show \"_all\" filter"
-msgstr ""
+msgstr "Toon \"_all\" filter"
 
 #: d_rats/chatgui.py:844
 msgid "Log for this tab"
-msgstr "Log van deze pagina"
+msgstr "Log voor dit tabblad"
 
 #: d_rats/chatgui.py:845
 #: d_rats/mapdisplay.py:826
@@ -628,7 +628,7 @@ msgstr "Kaart"
 
 #: d_rats/chatgui.py:847
 msgid "_Help"
-msgstr ""
+msgstr "_Help"
 
 #: d_rats/chatgui.py:848
 msgid "Show debug log"
@@ -636,27 +636,27 @@ msgstr "Toon debug log"
 
 #: d_rats/chatgui.py:849
 msgid "_About"
-msgstr ""
+msgstr "_Over"
 
 #: d_rats/chatgui.py:851
 msgid "_Advanced"
-msgstr ""
+msgstr "_Geavanceerd"
 
 #: d_rats/chatgui.py:860
 msgid "_Connected"
-msgstr ""
+msgstr "_Geconnecteerd"
 
 #: d_rats/chatgui.py:867
 msgid "QSTs Enabled"
-msgstr "QSTs ingeschakeld"
+msgstr "QST's ingeschakeld"
 
 #: d_rats/chatgui.py:876
 msgid "Connected to Internet"
-msgstr "Verbindt met het Internet"
+msgstr "Verbonden met het Internet"
 
 #: d_rats/chatgui.py:883
 msgid "Send _Image"
-msgstr ""
+msgstr "Zend _Afbeelding"
 
 #: d_rats/chatgui.py:942
 msgid "Connected"
@@ -665,7 +665,7 @@ msgstr "Verbonden"
 #: d_rats/chatgui.py:944
 #: d_rats/chatgui.py:947
 msgid "Disconnected"
-msgstr "Verbroken"
+msgstr "Niet Verbonden"
 
 #: d_rats/chatgui.py:978
 #: d_rats/qst.py:555
@@ -674,11 +674,11 @@ msgstr "Snel Berichten"
 
 #: d_rats/chatgui.py:983
 msgid "QST Monitor"
-msgstr ""
+msgstr "QST Monitor"
 
 #: d_rats/chatgui.py:988
 msgid "Form Manager"
-msgstr "Forumulieren Beheer"
+msgstr "Forumulier Beheer"
 
 #: d_rats/chatgui.py:998
 msgid "Sessions"
@@ -686,7 +686,7 @@ msgstr "Sessies"
 
 #: d_rats/chatgui.py:1076
 msgid "Filter on this string"
-msgstr "Filter op deze karakters"
+msgstr "Filter op deze tekst"
 
 #: d_rats/chatgui.py:1172
 msgid "D-RATS Station Map"
@@ -706,11 +706,11 @@ msgstr "Snel berichten"
 
 #: d_rats/chatgui.py:1233
 msgid "Double-click to send"
-msgstr "Dubbel-klik om te sturen"
+msgstr "Dubbelklik om te verzenden"
 
 #: d_rats/chatgui.py:1283
 msgid "Double-click on a row to reset the timer and send now"
-msgstr "Dubbel-klik op een regel om de klok te resetten en nu te versturen"
+msgstr "Dubbel-klik op een regel om de klok te resetten en nu te verzenden"
 
 #: d_rats/chatgui.py:1288
 msgid "Period"
@@ -791,11 +791,11 @@ msgstr "Laatst bewerkt"
 
 #: d_rats/chatgui.py:1545
 msgid "Last Transferred"
-msgstr "Laatst verstuurd"
+msgstr "Laatst verzonden"
 
 #: d_rats/chatgui.py:1552
 msgid "Private"
-msgstr "Prive"
+msgstr "Persoonlijk"
 
 #: d_rats/chatgui.py:1585
 #: d_rats/chatgui.py:1864
@@ -812,7 +812,7 @@ msgstr "Geen standaard formulieren beschikbaar"
 #: d_rats/chatgui.py:1627
 #, python-format
 msgid "Please copy in the template forms to %s or create a new template by going to File->Manage Form Templates"
-msgstr ""
+msgstr "Kopieer naar sjabloon %s of maak een nieuw sjabloon aan via Bestand->Beheer Sjablonen"
 
 #: d_rats/chatgui.py:1638
 msgid "Choose a form"
@@ -820,7 +820,7 @@ msgstr "Kies een forumulier"
 
 #: d_rats/chatgui.py:1640
 msgid "Select a form type to create"
-msgstr "Selecteer een forumliertype om te creeren"
+msgstr "Selecteer het formuliertype dat je wil maken "
 
 #: d_rats/chatgui.py:1651
 #, python-format
@@ -830,15 +830,15 @@ msgstr "Nieuw %s formulier"
 #: d_rats/chatgui.py:1678
 #: d_rats/mapdisplay.py:1443
 msgid "Confirm Delete"
-msgstr "Bevestig verwijderen"
+msgstr "Bevestig Verwijderen"
 
 #: d_rats/chatgui.py:1681
 msgid "Really delete this form?"
-msgstr "Echt dit formulier verwijderen?"
+msgstr "Wil je dit formulier echt verwijderen?"
 
 #: d_rats/chatgui.py:1725
 msgid "Edit Form"
-msgstr "Bewerk formulier"
+msgstr "Bewerk Formulier"
 
 #: d_rats/chatgui.py:1782
 msgid "Reply to"
@@ -858,15 +858,15 @@ msgstr "Echo positie (GPS)"
 
 #: d_rats/chatgui.py:1982
 msgid "Echo position (GPS-A)"
-msgstr ""
+msgstr "Echo positie (GPS-A)"
 
 #: d_rats/chatgui.py:1983
 msgid "Request Position"
-msgstr "Vraag positie"
+msgstr "Vraag Positie"
 
 #: d_rats/chatgui.py:1984
 msgid "Request Position of..."
-msgstr "Vraag positie van..."
+msgstr "Vraag Positie van..."
 
 #: d_rats/chatgui.py:1985
 msgid "Get File"
@@ -892,15 +892,15 @@ msgstr "Raadpleeg (QRZ)"
 
 #: d_rats/chatgui.py:2052
 msgid "Last Seen"
-msgstr "Laatst gezien"
+msgstr "Laatst Gezien"
 
 #: d_rats/chatgui.py:2058
 msgid "Last Position"
-msgstr "Laatste positie"
+msgstr "Laatste Positie"
 
 #: d_rats/chatgui.py:2084
 msgid "Remove callsign from list"
-msgstr "Verwijder call van lijst"
+msgstr "Verwijder call uit lijst"
 
 #: d_rats/chatgui.py:2088
 #: d_rats/geocode_ui.py:69
@@ -919,15 +919,15 @@ msgstr "Reset de tijd dat deze call voor het laatst gezien is"
 
 #: d_rats/chatgui.py:2105
 msgid "Forget when this call was last seen"
-msgstr "Vergeet wanneer deze call was gezien"
+msgstr "Vergeet wanneer deze call laatst was gezien"
 
 #: d_rats/chatgui.py:2109
 msgid "Clear All"
-msgstr "Verwijder alles"
+msgstr "Wis Alles"
 
 #: d_rats/chatgui.py:2112
 msgid "Clear all recorded callsigns"
-msgstr "Verwijder alle geregistreerde calls"
+msgstr "Wis alle geregistreerde calls"
 
 #: d_rats/chatgui.py:2267
 msgid "days"
@@ -946,20 +946,24 @@ msgid ""
 "Your current latitude.  Use decimal degrees (DD.DDDDD)\n"
 "or D*M'S\".  Use a space for special characters"
 msgstr ""
+"Je actuele positie.  Gebruik decimale graden (DD.DDDDD)\n"
+"of D*M'S\".  Gebruik een spatie voor speciale karakters"
 
 #: d_rats/config_tips.py:5
 msgid ""
 "Your current longitude.  Use decimal degrees (DD.DDDDD)\n"
 "or D*M'S\".  Use a space for special characters"
 msgstr ""
+"Je actuele lengtegraad.   Gebruik decimale graden (DD.DDDDD)\n"
+"of D*M'S\".  Gebruik een spatie voor speciale karakters"
 
 #: d_rats/config_tips.py:6
 msgid "Your current altitude"
-msgstr "De huidige hoogte "
+msgstr "Je huidige hoogte "
 
 #: d_rats/config_tips.py:10
 msgid "When enabled, form time fields will default to current time in UTC.  When disabled, default to local time"
-msgstr ""
+msgstr "Indien aangevinkt wordt in formuliervelden UTC gebruikt, anders wordt lokale tijd gebruikt"
 
 #: d_rats/config_tips.py:11
 msgid "Requires a D-RATS restart"
@@ -967,723 +971,723 @@ msgstr "D-RATS start opnieuw op"
 
 #: d_rats/config_tips.py:12
 msgid "Allow remote stations to pull forms"
-msgstr "Sta stations op afstand toe formlieren te downloaden"
+msgstr "Stations op afstand toestaan formlieren te downloaden"
 
 #: d_rats/config_tips.py:13
 msgid "Allow remote stations to pull files"
-msgstr ""
+msgstr "Stations toestaan bestanden te downloaden "
 
 #: d_rats/config_tips.py:14
 msgid "Default state for private flag on new forms"
-msgstr ""
+msgstr "Standaard status voor private vlag in nieuw formulier"
 
 #: d_rats/config_tips.py:18
 msgid "On Windows, use something like 'COM12'"
-msgstr ""
+msgstr "Gebruik bij Windows iets als 'COM12'"
 
 #: d_rats/config_tips.py:19
 msgid "On UNIX, use something like '/dev/ttyUSB0'"
-msgstr ""
+msgstr "Gebruik bij UNIX iets als '/dev/ttyUSB0'"
 
 #: d_rats/config_tips.py:20
 msgid "For a network connection, use something like 'net:host:9000'"
-msgstr ""
+msgstr "Gebruik voor een netwerkverbinding iets als 'net:host:9000'"
 
 #: d_rats/config_tips.py:21
 msgid "9600 for mobile radios, 38400 for handhelds"
-msgstr ""
+msgstr "9600 voor mobiele toestellen, 38400 voor portabels"
 
 #: d_rats/config_tips.py:22
 msgid "Serial port for an NMEA-compliant external GPS"
-msgstr ""
+msgstr "Seriële poort voor een externe, NMEA-compatibele GPS"
 
 #: d_rats/config_tips.py:23
 msgid "If enabled, take current position from the external GPS"
-msgstr ""
+msgstr "Indien aangevinkt, gebruik de positie van de externe GPS"
 
 #: d_rats/config_tips.py:24
 msgid "The NMEA standard is 4800"
-msgstr ""
+msgstr "De NMEA standaard is 4800"
 
 #: d_rats/config_tips.py:25
 msgid "The symbol table character for GPS-A beacons"
-msgstr ""
+msgstr "Symbool uit de karaktertabel voor GPS-A bakens"
 
 #: d_rats/config_tips.py:26
 msgid "The symbol character for GPS-A beacons"
-msgstr ""
+msgstr "Symbool voor GPS-A bakens"
 
 #: d_rats/config_tips.py:27
 msgid "Treat incoming raw text (and garbage) as chat data and display it on-screen"
-msgstr ""
+msgstr "Plaats de inkomende 'raw text' (en junk) als chat data op het scherm"
 
 #: d_rats/config_tips.py:28
 msgid "Alternate location to store cached map images"
-msgstr ""
+msgstr "Alternatieve map om de cache voor kaarten op te slaan"
 
 #: d_rats/config_tips.py:29
 msgid "Amount of fake data to send during a warmup cycle"
-msgstr ""
+msgstr "Hoeveelheid 'fake data' te verzenden tijdens een opwarm-cyclus"
 
 #: d_rats/config_tips.py:30
 msgid "Length of time between transmissions that must pass before we send a warmup block to open the power-save circuits on handhelds"
-msgstr ""
+msgstr "Tijd tussen uitzendingen die moet verstrijken voor we een opwarm-blok zenden om de batterijbesparing van een portabel te openen"
 
 #: d_rats/config_tips.py:31
 msgid "Amount of time to wait between transmissions"
-msgstr ""
+msgstr "Wachttijd tussen uitzendingen"
 
 #: d_rats/config_tips.py:32
 msgid "Text string to return in response to a ping."
-msgstr ""
+msgstr "Tekst die als antwoord op een ping verstuurd wordt"
 
 #: d_rats/config_tips.py:33
 msgid "If prefixed by a > character, interpret as a path to a text file"
-msgstr ""
+msgstr "Indien voorafgegaan door een > karakter, wordt dit als een path naar een tekstbestand aanzien"
 
 #: d_rats/config_tips.py:34
 msgid "If prefixed by a ! character, interpret as a path to a script"
-msgstr ""
+msgstr "Indien voorafgegaan door een ! karakter, wordt dit als een path naar een script aanzien"
 
 #: d_rats/config_tips.py:35
 msgid "Hostname of outgoing SMTP server.  If this is specified, this station will be a gateway for email forms.  If left blank, this feature is disabled"
-msgstr ""
+msgstr "Hostnaam van een uitgaande SMPTP server. Indien opegegeven zal dit station de gateway zijn voor e-mail formulieren. Indien leeg, wordt deze functie uitgeschakeld"
 
 #: d_rats/config_tips.py:36
 msgid "Email address to set on outgoing form email messages"
-msgstr ""
+msgstr "Te gebruiken e-mail adres op uitgaande e-mail berichten"
 
 #: d_rats/config_tips.py:37
 msgid "If enabled, attempt to negotiate TLS/SSL with SMTP server"
-msgstr ""
+msgstr "Iniden aangevinkt: probeer TLS/SSL te verbinden met de SMTP server"
 
 #: d_rats/config_tips.py:38
 msgid "Username for SMTP authentication.  Disabled if blank"
-msgstr ""
+msgstr "Gebruikersnaam voor SMTP authenticatie. Uitgeschakeld indien leeg"
 
 #: d_rats/config_tips.py:39
 msgid "Password for SMTP authentication"
-msgstr ""
+msgstr "Paswoord voor SMTP authenticatie"
 
 #: d_rats/config_tips.py:40
 msgid "Default is 25.  Set to the value given by your ISP"
-msgstr ""
+msgstr "Standaardwaarde is 25. Vul de waarde in die door je ISP opgegeven wordt"
 
 #: d_rats/config_tips.py:41
 msgid "Display information about packets seen that are destined for other stations"
-msgstr ""
+msgstr "Toon informatie over paketten die voor andere stations bestemd zijn"
 
 #: d_rats/geocode_ui.py:53
 msgid "Enter an address, postal code, or intersection"
-msgstr ""
+msgstr "Vul een adres en postcode in, of het snijpunt van twee wegen"
 
 #: d_rats/geocode_ui.py:177
 msgid "Locate an address"
-msgstr ""
+msgstr "Vind een adres"
 
 #: d_rats/geocode_ui.py:182
 msgid "Locations found"
-msgstr ""
+msgstr "Posities gevonden"
 
 #: d_rats/geocode_ui.py:187
 msgid "Confirm address"
-msgstr ""
+msgstr "Bevestig het adres"
 
 #: d_rats/gps.py:327
 msgid "away"
-msgstr ""
+msgstr "weg"
 
 #: d_rats/gps.py:329
 msgid "degrees"
-msgstr ""
+msgstr "graden"
 
 #: d_rats/gps.py:346
 msgid "Heading"
-msgstr ""
+msgstr "Richting"
 
 #: d_rats/gps.py:357
 msgid "reporting"
-msgstr ""
+msgstr "reporting"
 
 #: d_rats/gps.py:367
 msgid "Invalid GPS data"
-msgstr ""
+msgstr "Ongeldige GPS data"
 
 #: d_rats/gps.py:691
 #: d_rats/qst.py:939
 msgid "UNKNOWN"
-msgstr ""
+msgstr "ONBEKEND"
 
 #: d_rats/gps.py:878
 msgid "Unable to open GPS port"
-msgstr ""
+msgstr "Kan de GPS poort niet openen"
 
 #: d_rats/gps.py:914
 msgid "ME"
-msgstr ""
+msgstr "IK"
 
 #: d_rats/gps.py:927
 msgid "GPS Locked"
-msgstr ""
+msgstr "GPS heeft een positie"
 
 #: d_rats/gps.py:929
 msgid "GPS Not Locked"
-msgstr ""
+msgstr "GPS heeft nog geen positie"
 
 #: d_rats/gps.py:958
 msgid "Unable to parse address"
-msgstr ""
+msgstr "Kan het adres niet omzetten"
 
 #: d_rats/gps.py:969
 msgid "Unable to connect"
-msgstr ""
+msgstr "Kan niet verbinden"
 
 #: d_rats/gps.py:989
 msgid "GPSd Socket closed"
-msgstr ""
+msgstr "GPS socket gesloten"
 
 #: d_rats/gps.py:1015
 msgid "GPSd Locked"
-msgstr ""
+msgstr "GPSd heeft een positie"
 
 #: d_rats/gps.py:1017
 msgid "GPSd Not Locked"
-msgstr ""
+msgstr "GPSd heeft nog geen positie"
 
 #: d_rats/gps.py:1042
 msgid "Static position"
-msgstr ""
+msgstr "Statische positie"
 
 #: d_rats/image.py:80
 msgid "Filename"
-msgstr ""
+msgstr "Bestandsnaam"
 
 #: d_rats/image.py:83
 msgid "Size"
-msgstr ""
+msgstr "Grootte"
 
 #: d_rats/image.py:87
 msgid "Resize to"
-msgstr ""
+msgstr "Pas de grootte aan naar"
 
 #: d_rats/image.py:93
 msgid "Quality"
-msgstr ""
+msgstr "Kwaliteit"
 
 #: d_rats/image.py:100
 msgid "Preview"
-msgstr ""
+msgstr "Preview"
 
 #: d_rats/image.py:124
 msgid "Unknown image type"
-msgstr ""
+msgstr "Onbekend type beeldbestand"
 
 #: d_rats/inputdialog.py:81
 msgid "An error has occurred"
-msgstr ""
+msgstr "Er is een fout opgetreden"
 
 #: d_rats/mapdisplay.py:334
 msgid "Loading map"
-msgstr ""
+msgstr "Kaart wordt geladen"
 
 #: d_rats/mapdisplay.py:336
 msgid "Getting map center"
-msgstr ""
+msgstr "Midden van de kaart wordt opgehaald"
 
 #: d_rats/mapdisplay.py:363
 msgid "Retrieving"
-msgstr ""
+msgstr "Aan het ophalen ..."
 
 #: d_rats/mapdisplay.py:366
 msgid "Loading"
-msgstr ""
+msgstr "Aan het laden ..."
 
 #: d_rats/mapdisplay.py:390
 #: d_rats/sessions.py:313
 #: d_rats/sessions.py:399
 msgid "Complete"
-msgstr ""
+msgstr "Voltooid"
 
 #: d_rats/mapdisplay.py:491
 #: d_rats/mapdisplay.py:515
 msgid "Zoom"
-msgstr ""
+msgstr "Zoom"
 
 #: d_rats/mapdisplay.py:498
 msgid "Min"
-msgstr ""
+msgstr "Min"
 
 #: d_rats/mapdisplay.py:511
 msgid "Max"
-msgstr ""
+msgstr "Max"
 
 #: d_rats/mapdisplay.py:587
 msgid "Center on this"
-msgstr ""
+msgstr "Hier centreren"
 
 #: d_rats/mapdisplay.py:618
 msgid "Show"
-msgstr ""
+msgstr "Toon"
 
 #: d_rats/mapdisplay.py:622
 msgid "Distance"
-msgstr ""
+msgstr "Afstand"
 
 #: d_rats/mapdisplay.py:623
 msgid "Direction"
-msgstr ""
+msgstr "Richting"
 
 #: d_rats/mapdisplay.py:700
 msgid "Track center"
-msgstr ""
+msgstr "Volg het midden van de kaart"
 
 #: d_rats/mapdisplay.py:709
 msgid "Are you sure you want to clear your map cache?"
-msgstr ""
+msgstr "Ben je zeker dat je de kaarten-cache wil wissen?"
 
 #: d_rats/mapdisplay.py:730
 msgid "Station map"
-msgstr ""
+msgstr "Stationskaart"
 
 #: d_rats/mapdisplay.py:731
 msgid "Generated at"
-msgstr ""
+msgstr "Gegenereerd op"
 
 #: d_rats/mapdisplay.py:791
 msgid "Failed to load overlay file"
-msgstr ""
+msgstr "Kan het overlaybestand niet laden "
 
 #: d_rats/mapdisplay.py:827
 msgid "Set Marker"
-msgstr ""
+msgstr "Zet een marker"
 
 #: d_rats/mapdisplay.py:828
 msgid "Refresh"
-msgstr ""
+msgstr "Vernieuw"
 
 #: d_rats/mapdisplay.py:829
 msgid "Clear Cache"
-msgstr ""
+msgstr "Cache Wissen"
 
 #: d_rats/mapdisplay.py:830
 msgid "Load Static Overlay"
-msgstr ""
+msgstr "Laad Statische Overlay"
 
 #: d_rats/mapdisplay.py:831
 msgid "Remove Static Overlay"
-msgstr ""
+msgstr "Verwijder Statische Overlay"
 
 #: d_rats/mapdisplay.py:832
 msgid "Export"
-msgstr ""
+msgstr "Exporteer"
 
 #: d_rats/mapdisplay.py:833
 msgid "Printable"
-msgstr ""
+msgstr "Afdrukbaar"
 
 #: d_rats/mapdisplay.py:834
 msgid "Printable (visible area)"
-msgstr ""
+msgstr "Afdrukbaar (zichtbaar gebied)"
 
 #: d_rats/mapdisplay.py:835
 msgid "Save Image"
-msgstr ""
+msgstr "Bewaar beeld"
 
 #: d_rats/mapdisplay.py:836
 msgid "Save Image (visible area)"
-msgstr ""
+msgstr "Bewaar beeld (zichtbaar gebied)"
 
 #: d_rats/mapdisplay.py:910
 msgid "Add Marker"
-msgstr ""
+msgstr "Voeg een marker toe"
 
 #: d_rats/mapdisplay.py:913
 #: d_rats/mapdisplay.py:1282
 #: d_rats/mapdisplay.py:1310
 #: d_rats/mapdisplay.py:1319
 msgid "Misc"
-msgstr ""
+msgstr "Diversen"
 
 #: d_rats/mapdisplay.py:922
 #: d_rats/mapdisplay.py:951
 msgid "Group"
-msgstr ""
+msgstr "Groep"
 
 #: d_rats/mapdisplay.py:931
 msgid "Lookup"
-msgstr ""
+msgstr "Zoek op"
 
 #: d_rats/mapdisplay.py:942
 #: d_rats/mapdisplay.py:955
 #: d_rats/qst.py:760
 msgid "Icon"
-msgstr ""
+msgstr "Icoon"
 
 #: d_rats/mapdisplay.py:947
 #: d_rats/mapdisplay.py:956
 msgid "Comment"
-msgstr ""
+msgstr "Commentaar"
 
 #: d_rats/mapdisplay.py:959
 msgid "Group name required"
-msgstr ""
+msgstr "Groepsnaam vereist"
 
 #: d_rats/mapdisplay.py:962
 msgid "Marker name required"
-msgstr ""
+msgstr "Markernaam vereist"
 
 #: d_rats/mapdisplay.py:967
 #: d_rats/mapdisplay.py:1006
 msgid "Invalid value"
-msgstr ""
+msgstr "Ongeldige waarde"
 
 #: d_rats/mapdisplay.py:982
 msgid "Broadcast Location"
-msgstr ""
+msgstr "Zend je locatie uit"
 
 #: d_rats/mapdisplay.py:985
 #: d_rats/mapdisplay.py:994
 msgid "Description"
-msgstr ""
+msgstr "Beschrijving"
 
 #: d_rats/mapdisplay.py:1023
 msgid "Center"
-msgstr ""
+msgstr "Center"
 
 #: d_rats/mapdisplay.py:1256
 msgid "Center here"
-msgstr ""
+msgstr "Hier centreren"
 
 #: d_rats/mapdisplay.py:1260
 msgid "New marker here"
-msgstr ""
+msgstr "Hier nieuwe marker plaatsen"
 
 #: d_rats/mapdisplay.py:1265
 msgid "Broadcast this location"
-msgstr ""
+msgstr "Zend deze locatie uit"
 
 #: d_rats/mapdisplay.py:1438
 msgid "Please select a top-level overlay group"
-msgstr ""
+msgstr "Selecteer een hoofd overlay groep"
 
 #: d_rats/mapdisplay.py:1447
 #, python-format
 msgid "Really delete overlay %s?"
-msgstr ""
+msgstr "Wil je echt overlay %s wissen?"
 
 #: d_rats/qst.py:318
 #: d_rats/qst.py:924
 #: d_rats/qst.py:938
 msgid "Airport"
-msgstr ""
+msgstr "Luchthaven"
 
 #: d_rats/qst.py:320
 #: d_rats/qst.py:924
 msgid "Personal"
-msgstr ""
+msgstr "Persoonlijk"
 
 #: d_rats/qst.py:432
 msgid "Move item up in list"
-msgstr ""
+msgstr "Verplaats item omhoog in de lijst"
 
 #: d_rats/qst.py:433
 msgid "Move item down in list"
-msgstr ""
+msgstr "Verplaats item omlaag in de lijst"
 
 #: d_rats/qst.py:434
 msgid "Discard item from list"
-msgstr ""
+msgstr "Verwijder item uit de lijst"
 
 #: d_rats/qst.py:493
 msgid "OK"
-msgstr ""
+msgstr "OK"
 
 #: d_rats/qst.py:494
 #: d_rats/qst.py:1107
 #: d_rats/sessiongui.py:442
 msgid "Cancel"
-msgstr ""
+msgstr "Annuleren"
 
 #: d_rats/qst.py:495
 msgid "Apply"
-msgstr ""
+msgstr "Toepassen"
 
 #: d_rats/qst.py:579
 msgid "Enter new message text"
-msgstr ""
+msgstr "Geef een nieuw bericht in"
 
 #: d_rats/qst.py:580
 msgid "Add new quick message"
-msgstr ""
+msgstr "Voeg een snelbericht toe"
 
 #: d_rats/qst.py:653
 msgid "Enter a message:"
-msgstr ""
+msgstr "Geef een bericht in:"
 
 #: d_rats/qst.py:686
 msgid "Choose a text file.  The contents will be used when the QST is sent."
-msgstr ""
+msgstr "Kies een tekstbestand. De inhoud wordt in de QST meegezonden."
 
 #: d_rats/qst.py:716
 msgid "Choose a script to execute.  The output will be used when the QST is sent"
-msgstr ""
+msgstr "Kies een script om uit te voeren. Het resultaat wordt in de QST meegezonden"
 
 #: d_rats/qst.py:729
 msgid "DPRS message"
-msgstr ""
+msgstr "DPRS bericht"
 
 #: d_rats/qst.py:761
 msgid "Overlay"
-msgstr ""
+msgstr "Overlay"
 
 #: d_rats/qst.py:783
 msgid "Enter your GPS message:"
-msgstr ""
+msgstr "Geef je GPS bericht:"
 
 #: d_rats/qst.py:822
 msgid "Enter the URL of an RSS feed:"
-msgstr ""
+msgstr "Geef de URL van een RSS feed:"
 
 #: d_rats/qst.py:852
 msgid "Enter the URL of a CAP feed:"
-msgstr ""
+msgstr "Geef de URL van een CAP feed:"
 
 #: d_rats/qst.py:868
 msgid "Choose a station whose position will be sent"
-msgstr ""
+msgstr "Kies een station waarvan je de positie wil  zenden"
 
 #: d_rats/qst.py:907
 msgid "Enter a WeatherUnderground station ID:"
-msgstr ""
+msgstr "Geef een WeatherUnderground stations ID:"
 
 #: d_rats/qst.py:955
 #: d_rats/qst.py:1049
 #: d_rats/qst.py:1090
 #: d_rats/qst.py:1142
 msgid "Text"
-msgstr ""
+msgstr "Tekst"
 
 #: d_rats/qst.py:956
 msgid "My message"
-msgstr ""
+msgstr "Mijn bericht"
 
 #: d_rats/qst.py:1034
 msgid "Interval"
-msgstr ""
+msgstr "Interval"
 
 #: d_rats/qst.py:1035
 #: d_rats/sessiongui.py:527
 msgid "Type"
-msgstr ""
+msgstr "Type"
 
 #: d_rats/qst.py:1036
 msgid "Content"
-msgstr ""
+msgstr "Inhoud"
 
 #: d_rats/qst.py:1050
 #: d_rats/qst.py:1144
 msgid "File"
-msgstr ""
+msgstr "Bestand"
 
 #: d_rats/qst.py:1051
 #: d_rats/qst.py:1143
 msgid "Exec"
-msgstr ""
+msgstr "Uitvoeren"
 
 #: d_rats/qst.py:1053
 #: d_rats/qst.py:1146
 msgid "GPS-A"
-msgstr ""
+msgstr "GPS-A"
 
 #: d_rats/qst.py:1054
 #: d_rats/qst.py:1061
 #: d_rats/qst.py:1148
 #: d_rats/qst.py:1154
 msgid "RSS"
-msgstr ""
+msgstr "RSS"
 
 #: d_rats/qst.py:1055
 #: d_rats/qst.py:1149
 msgid "CAP"
-msgstr ""
+msgstr "CAP"
 
 #: d_rats/qst.py:1057
 #: d_rats/qst.py:1150
 msgid "Weather (WU)"
-msgstr ""
+msgstr "Weer (WU)"
 
 #: d_rats/qst.py:1075
 msgid "QST Parameters"
-msgstr ""
+msgstr "QST Parameters"
 
 #: d_rats/qst.py:1102
 msgid "Save"
-msgstr ""
+msgstr "Opslaan"
 
 #: d_rats/sessiongui.py:87
 #: d_rats/sessiongui.py:89
 msgid "Total"
-msgstr ""
+msgstr "Totaal"
 
 #: d_rats/sessiongui.py:104
 msgid "Transfer Completed"
-msgstr ""
+msgstr "Overdracht voltooid"
 
 #: d_rats/sessiongui.py:128
 msgid "Transfer"
-msgstr ""
+msgstr "Overdracht"
 
 #: d_rats/sessiongui.py:128
 msgid "complete"
-msgstr ""
+msgstr "voltooid"
 
 #: d_rats/sessiongui.py:132
 msgid "Transfer Interrupted"
-msgstr ""
+msgstr "Overdracht onderbroken"
 
 #: d_rats/sessiongui.py:210
 msgid "from"
-msgstr ""
+msgstr "van"
 
 #: d_rats/sessiongui.py:248
 msgid "retries"
-msgstr ""
+msgstr "nieuwe pogingen"
 
 #: d_rats/sessiongui.py:254
 #: d_rats/sessiongui.py:256
 msgid "bytes"
-msgstr ""
+msgstr "bytes"
 
 #: d_rats/sessiongui.py:254
 msgid "sent"
-msgstr ""
+msgstr "verzonden"
 
 #: d_rats/sessiongui.py:256
 msgid "received"
-msgstr ""
+msgstr "ontvangen"
 
 #: d_rats/sessiongui.py:446
 msgid "Cancel (without ACK)"
-msgstr ""
+msgstr "Annuleer (zonder ACK)"
 
 #: d_rats/sessiongui.py:450
 msgid "Clear"
-msgstr ""
+msgstr "Wis"
 
 #: d_rats/sessiongui.py:454
 msgid "Clear all finished"
-msgstr ""
+msgstr "Wis alle voltooide"
 
 #: d_rats/sessiongui.py:458
 msgid "Resume transfer"
-msgstr ""
+msgstr "Hervat de overdracht"
 
 #: d_rats/sessiongui.py:462
 msgid "Stop transfer"
-msgstr ""
+msgstr "Onderbreek de overdracht"
 
 #: d_rats/sessiongui.py:528
 msgid "Remote Station"
-msgstr ""
+msgstr "Station op afstand"
 
 #: d_rats/sessiongui.py:636
 msgid "File transfer started with"
-msgstr ""
+msgstr "Bestandsoverdracht gestart met"
 
 #: d_rats/sessiongui.py:649
 msgid "Form transfer started with"
-msgstr ""
+msgstr "Formulier overdracht gestart met"
 
 #: d_rats/sessiongui.py:662
 msgid "Socket session started with"
-msgstr ""
+msgstr "Socket sessie gestart met"
 
 #: d_rats/sessiongui.py:694
 msgid "Error starting socket session"
-msgstr ""
+msgstr "Fout bij starten socket sessie"
 
 #: d_rats/sessiongui.py:717
 msgid "Idle"
-msgstr ""
+msgstr "Idle"
 
 #: d_rats/sessions.py:58
 msgid "Control: ACK"
-msgstr ""
+msgstr "Controle: ACK"
 
 #: d_rats/sessions.py:62
 #, python-format
 msgid "Control: END session %s"
-msgstr ""
+msgstr "Controle: EINDE sessie %s"
 
 #: d_rats/sessions.py:68
 msgid "Control: NEW session"
-msgstr ""
+msgstr "Controle: NIEUWE sessie"
 
 #: d_rats/sessions.py:70
 msgid "Control: UNKNOWN"
-msgstr ""
+msgstr "Controle: ONBEKEND"
 
 #: d_rats/sessions.py:80
 msgid "chat"
-msgstr ""
+msgstr "chat"
 
 #: d_rats/sessions.py:113
 msgid "Running"
-msgstr ""
+msgstr "Draait..."
 
 #: d_rats/sessions.py:143
 msgid "Ping function failed"
-msgstr ""
+msgstr "Ping functie mislukt"
 
 #: d_rats/sessions.py:153
 msgid "Ping request, sent reply"
-msgstr ""
+msgstr "Ping aanvraag beantwoord"
 
 #: d_rats/sessions.py:186
 msgid "Sent ping"
-msgstr ""
+msgstr "Ping verzonden"
 
 #: d_rats/sessions.py:270
 msgid "Waiting for response"
-msgstr ""
+msgstr "Wachten op antwoord"
 
 #: d_rats/sessions.py:272
 msgid "Negotiation Complete"
-msgstr ""
+msgstr "Onderhandeling Voltooid"
 
 #: d_rats/sessions.py:283
 msgid "Resuming at"
-msgstr ""
+msgstr "Hervatten aan"
 
 #: d_rats/sessions.py:308
 msgid "Failed to send file (incomplete)"
-msgstr ""
+msgstr "Bestand verzenden mislukt (onvolledig)"
 
 #: d_rats/sessions.py:317
 msgid "Waiting for transfer to start"
-msgstr ""
+msgstr "Wachten op begin van overdracht"
 
 #: d_rats/sessions.py:331
 msgid "No start block received!"
-msgstr ""
+msgstr "Geen startblock ontvangen!"
 
 #: d_rats/sessions.py:352
 msgid "Receiving file"
-msgstr ""
+msgstr "Ontvangen van bestand"
 
 #: d_rats/sessions.py:354
 msgid "of size"
-msgstr ""
+msgstr "van grootte"
 
 #: d_rats/sessions.py:370
 msgid "Waiting for first block"
-msgstr ""
+msgstr "Wachten op eerste block"
 
 #: d_rats/sessions.py:381
 msgid "Receiving"
-msgstr ""
+msgstr "Aan het ontvangen"
 
 #: d_rats/sessions.py:394
 msgid "Failed to receive file (incomplete)"
-msgstr ""
+msgstr "Ontvangst van bestand is mislukt (onvolledig)"
 
