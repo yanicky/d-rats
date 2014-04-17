@@ -1,0 +1,69 @@
+<xml>
+<form id='nhc_surfacewx'>
+<title>NHC Surface Weather Report</title>
+<field id='hurricane'>
+<caption>Hurricane</caption>
+<entry type='text'/>
+</field>
+<field id='callsign'>
+<caption>Reporting Station Callsign</caption>
+<entry type='text'/>
+</field>
+<field id='location'>
+<caption>Geographic Location</caption>
+<entry type='text'/>
+</field>
+<field id='lat'>
+<caption>Latitude</caption>
+<entry type='text'/>
+</field>
+<field id='lon'>
+<caption>Longitude</caption>
+<entry type='text'/>
+</field>
+<field id='date'>
+<caption>Date</caption>
+<entry type='date'>17-Apr-2014</entry>
+</field>
+<field id='time'>
+<caption>Time of Observation</caption>
+<entry type='time'>7:32:41</entry>
+</field>
+<field id='wind'>
+<caption>Wind Speed</caption>
+<entry type='numeric'>0</entry>
+</field>
+<field id='wind_units'>
+<caption>Units</caption>
+<entry type='choice'><choice set='y'>MPH</choice><choice>Knots</choice></entry>
+</field>
+<field id='wind_meas'>
+<caption>Measurement</caption>
+<entry type='choice'><choice set='y'>Estimated</choice><choice>Measured</choice></entry>
+</field>
+<field id='wind_gust'>
+<caption>Wind Gust</caption>
+<entry type='numeric'>0</entry>
+</field>
+<field id='wind_dir'>
+<caption>Wind Direction</caption>
+<entry type='text'/>
+</field>
+<field id='press'>
+<caption>Barometric Pressure</caption>
+<entry type='text'/>
+</field>
+<field id='press_units'>
+<caption>Pressure Units</caption>
+<entry type='choice'><choice set='y'>Inches</choice><choice>Millibars</choice></entry>
+</field>
+<field id='comments'>
+<caption>Comments</caption>
+<entry type='multiline'/>
+</field>
+<field id='op'>
+<caption>Operator</caption>
+<entry type='text'/>
+</field>
+</form>
+</xml>
