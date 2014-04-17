@@ -3,6 +3,7 @@
     <xsl:output method="html"/>
 
     <xsl:template match="form">
+      <xsl:text disable-output-escaping="yes">&lt;!DOCTYPE html&gt;</xsl:text>
       <html>
 	<head>
 	  <style>
@@ -36,8 +37,12 @@
 	    }
 	    tr.row td:first-child {
 	      border-left: thin solid black;
+	      border-right: 0px none black;
 	    }
-	    tr.row td:last-child {
+	    tr.row td {
+	      border-right: thin solid black;
+	    }
+	    #comments {
 	      border-right: thin solid black;
 	    }
 	    table.form td {
@@ -63,6 +68,7 @@
 	    }
 	    div.choice-block {
 	      text-align: right;
+	      display: inline-block;
 	    }
 	    .center-aligned {
 	      text-align: center;
@@ -85,7 +91,6 @@
 	    }
 	    div.coord {
 	      display: inline-block;
-	      //width: 120px;
 	      text-align: left;
 	      margin-left: 20px;
 	    }
@@ -113,14 +118,16 @@
 
 	  <table class="form" cellpadding="0" align="center">
 	    <tr class="row">
-	      <td colspan="2">
+	      <td>
 		Reporting Station Callsign: <xsl:apply-templates select="field[@id='callsign']"/>
 	      </td>
+	      <td></td>
 	    </tr>
 	    <tr class="row">
-	      <td colspan="2">
+	      <td>
 		Geographic Location: <xsl:apply-templates select="field[@id='location']"/>
 	      </td>
+	      <td></td>
 	    </tr>
 	    <tr class="row">
 	      <td>
@@ -165,7 +172,8 @@
 	      </td>
 	    </tr>
 	    <tr class="row">
-	      <td colspan="2">Wind Direction: <xsl:apply-templates select="field[@id='wind_dir']"/></td>
+	      <td>Wind Direction: <xsl:apply-templates select="field[@id='wind_dir']"/></td>
+	      <td></td>
 	    </tr>
 	    <tr class="spacer">
 	      <td colspan="2">&#160;</td>
@@ -183,7 +191,7 @@
 	      <td colspan="2">&#160;</td>
 	    </tr>
 	    <tr class="row">
-	      <td colspan="2">
+	      <td colspan="2" id="comments">
 		Additional Comments:
 		<div class="multiline">
 		  <xsl:apply-templates select="field[@id='comments']"/>
@@ -194,9 +202,10 @@
 	      <td colspan="2">&#160;</td>
 	    </tr>
 	    <tr class="row">
-	      <td colspan="2">
+	      <td>
 		Operator: <xsl:apply-templates select="field[@id='op']"/>
 	      </td>
+	      <td></td>
 	    </tr>
 	    <tr class="spacer">
 	      <td>&#160;</td>
